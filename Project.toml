@@ -3,6 +3,14 @@ uuid = "4249d9c7-3290-4ddd-961c-e1d3ec2467f8"
 authors = ["Eduard I. STAN", "Giovanni PAGLIARINI"]
 version = "0.1.0"
 
+[deps]
+Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
+SoleAlphabets = "bc461207-1577-452f-bfcc-57c11e9f51b7"
+SoleLogics = "b002da8f-3cb3-4d91-bbe3-2953433912b5"
+SoleModelChecking = "f545febf-9d2a-4ce1-b6cd-bbab897c9eb4"
+SoleTraits = "f0cd7361-857b-4e5b-8aae-3a26fab9cfa9"
+SoleWorlds = "d5f91e23-4e14-4856-a67b-b38735209aab"
+
 [compat]
 julia = "1"
 
