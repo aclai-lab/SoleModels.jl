@@ -4,9 +4,11 @@ using Reexport
 
 export AbstractModel
 export AbstractSymbolicModel, AbstractFunctionalModel
-export AbstractOutcome
+export CLabel, RLabel, Label, Consequent
+export Performance
 
-export Outcome
+export Rule, Branch
+export DecisionList, DecisionTree
 
 @reexport using SoleModelChecking
 
