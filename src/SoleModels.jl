@@ -1,5 +1,8 @@
 module SoleModels
 
+using SoleLogics
+using SoleData
+
 using Reexport
 
 export AbstractModel
@@ -9,8 +12,6 @@ export Performance
 
 export Rule, Branch
 export DecisionList, DecisionTree
-
-@reexport using SoleModelChecking
 
 include("definitions.jl")
 
