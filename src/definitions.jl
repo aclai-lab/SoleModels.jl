@@ -1,5 +1,5 @@
 """
-A `FinalOutcome` is whatever a model can output
+A `FinalOutcome` is whatever a model can output.
 """
 const FinalOutcome = Any
 
@@ -10,13 +10,13 @@ instance object (i.e., a piece of data).
 abstract type Model{F <: FinalOutcome} end
 
 """
-A `SymbolicModel` is a `Model` that is based on certain a logical language (or "logic"),
+A `SymbolicModel` is a `Model` that is based on a certain logical language (or "logic"),
 and can be easily interpreted by humans.
 """
 abstract type SymbolicModel{L, F} <: Model{F} end
 
 """
-A `FunctionalModel` is a `Model` that encodes an algebrain mathematical function.
+A `FunctionalModel` is a `Model` that encodes an algebraic mathematical function.
 """
 abstract type FunctionalModel{F}  <: Model{F} end
 
@@ -107,7 +107,7 @@ A `decision list` (or `decision table`, or `rule-based model`) is a symbolic mod
     ELSE (consequent_default) END
 where the antecedents are logical formulas and the consequents are the feasible outcomes of the block.
 
-In Sole, a `DecisionList{L<:Logic, O<:Outcome}` encodes this structure as a vector of rules 
+In Sole, a `DecisionList{L<:Logic, O<:Outcome}` encodes this structure as a vector of rules
 `rules::Vector{<:Rule{L,O}}`, plus a default consequent value `default::O`.
 It also includes an `info::NamedTuple` for storing additional information.
 """
