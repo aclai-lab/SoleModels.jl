@@ -6,13 +6,14 @@ using SoleData
 using Reexport
 
 export AbstractModel
-export AbstractSymbolicModel, AbstractFunctionalModel
-export CLabel, RLabel, Label, Consequent
+export Consequent
 export Performance
 
 export Rule, Branch
 export DecisionList, DecisionTree
 
 include("definitions.jl")
+
+include("confusion-matrix.jl")
 
 end
