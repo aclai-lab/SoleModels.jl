@@ -7,6 +7,7 @@ version = "0.1.0"
 Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
 SoleBase = "142d03a6-36c4-4bac-9273-c7ed2abbbb4d"
 SoleData = "54168690-57ea-4c60-bb56-74b41ba08e3a"
+SoleLogics = "b002da8f-3cb3-4d91-bbe3-2953433912b5"
 
 [compat]
 julia = "1"
