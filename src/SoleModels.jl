@@ -1,5 +1,10 @@
 module SoleModels
 
+
+abstract type AbstractDataset end
+abstract type AbstractInstance end
+
+
 using SoleLogics
 using SoleData
 
