@@ -176,7 +176,13 @@ The default behavior is the following: `Function`s and `FunctionWrapper`s are wr
 `FunctionModel`, while every other `FinalOutcome` object is wrapped into a `ConstantModel`.
 An error is thrown when wrapping objects of all other types.
 
+<<<<<<< HEAD
 See also [`ConstantModel`](@ref), [`FunctionModel`](@ref), [`FinalModel`](@ref).
+=======
+In Sole, a `DecisionList{L<:Logic, O<:Outcome}` encodes this structure as a vector of rules
+`rules::Vector{<:Rule{L,O}}`, plus a default consequent value `default::O`.
+It also includes an `info::NamedTuple` for storing additional information.
+>>>>>>> 4f6c880fb7043eb03e13743bf0331c7631810130
 """
 wrap(o::Any) = error("Can't wrap object of type $(o).")
 wrap(o::F where {F<:FinalOutcome}) = convert(Type{ConstantModel{F}}, o)
