@@ -1,5 +1,8 @@
 
 using SoleLogics: AbstractLogic, Formula
+# TODO check
+function check(::Formula, ::AbstractInstance) end
+function check(::Formula, ::AbstractDataset) end
 
 using FunctionWrappers: FunctionWrapper
 
@@ -51,7 +54,7 @@ Any `AbstractModel` can be applied to an instance object or a dataset of instanc
 See also [`AbstractModel`](@ref), [`AbstractInstance`](@ref), [`AbstractDataset`](@ref).
 """
 apply(m::AbstractModel, i::AbstractInstance)::output_type(m) = error("Please, provide method apply(::$(typeof(m)), ::$(typeof(i)))")
-apply(m::AbstractModel, d::AbstractDataset)::output_type(m) = map(i->apply(m, i), iterate_instances(d))
+apply(m::AbstractModel, d::AbstractDataset)::AbstractVector{<:output_type(m)} = map(i->apply(m, i), iterate_instances(d))
 
 doc_symbolic = """
 A `AbstractModel` is said to be `symbolic` when it is based on certain a logical language (or "logic",
@@ -334,6 +337,9 @@ consequent(m::Rule) = m.consequent
 is_symbolic(::Rule) = true
 logic(::Rule{F,L}) where {F<:FinalOutcome, L<:AbstractLogic} = L
 
+check(m::Rule, id) = check(m.antecedent, id)
+apply(m::Rule, id) = check(m.antecedent, id) ? apply(m.consequent, id) : nothing
+
 # TODO fix
 outcome_type(::Type{<:Rule{F}}) where {F<:FinalOutcome} = F
 # outcome_type(::Type{<:Rule{F,<:AbstractLogic,<:AbstractModel{F}}}) where {F<:FinalOutcome} = F
@@ -428,6 +434,9 @@ is_symbolic(::Branch) = true
 logic(::Branch{F,L}) where {F<:FinalOutcome, L<:AbstractLogic} = L
 
 is_open(::Branch) = false
+
+check(m::Branch, i::AbstractInstance) = check(m.antecedent, i)
+apply(m::Branch, d::Union{AbstractInstance,AbstractDataset}) = check(m.antecedent, d) ? apply(m.positive_consequent, d) : apply(m.negative_consequent, d)
 
 """
 A *decision list* (or *decision table*, or *rule-based model*) is a symbolic model that has the form:
@@ -525,6 +534,15 @@ logic(::DecisionList{F,L}) where {F<:FinalOutcome, L<:AbstractLogic} = L
 
 is_open(::DecisionList) = false
 
+function apply(m::DecisionList, i::AbstractInstance)
+    for rule in m.rules
+        if check(m, i)
+            return rule.consequent
+        end
+    end
+    m.default_consequent
+end
+
 """
 A `rule nest` is a symbolic model that consists of a nested structure of IF-THEN blocks:
 
@@ -596,6 +614,17 @@ consequent(m::RuleCascade) = m.consequent
 is_symbolic(::RuleCascade) = true
 logic(::RuleCascade{F,L}) where {F<:FinalOutcome, L<:AbstractLogic} = L
 
+function apply(m::RuleCascade, i::AbstractInstance)
+    for antecedent in m.antecedents
+        if ! check(antecedent, i)
+            return nothing
+        end
+    end
+    m.consequent
+end
+
+# TODO print_model
+
 """
 A `decision tree` is a symbolic model that consists of a nested structure of IF-THEN-ELSE blocks:
 
@@ -637,6 +666,10 @@ logic(::DecisionTree{F,L}) where {F<:FinalOutcome, L<:AbstractLogic} = L
 
 is_open(::DecisionTree) = false
 
+apply(m::DecisionTree, i::AbstractInstance) = apply(m.root, i)
+
+print_model(io::IO, m::DecisionTree; kwargs...) = print_model(io, m.root; kwargs...)
+
 """
 A `mixed symbolic model` is a symbolic model that consists of a nested structure of IF-THEN-ELSE
 and IF-ELSEIF-ELSE blocks:
@@ -674,6 +707,10 @@ is_symbolic(::MixedSymbolicModel) = true
 logic(::MixedSymbolicModel{F,L}) where {F<:FinalOutcome, L<:AbstractLogic} = L
 
 is_open(::MixedSymbolicModel) = false
+
+apply(m::MixedSymbolicModel, i::AbstractInstance) = apply(m.root, i)
+
+print_model(io::IO, m::MixedSymbolicModel; kwargs...) = print_model(io, m.root; kwargs...)
 
 
 # TODO fix from here onwards:

@@ -18,6 +18,8 @@ export DecisionList, DecisionTree
 
 include("definitions.jl")
 
+include("print.jl")
+
 include("confusion-matrix.jl")
 
 end
