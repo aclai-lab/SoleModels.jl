@@ -410,6 +410,14 @@ struct Branch{F<:FinalOutcome, L<:AbstractLogic, FIM<:AbstractModel{FF where FF<
         F = Union{F1, F2}
         new{F,L,AbstractModel{F}}(antecedent, positive_consequent, negative_consequent, info)
     end
+
+    function Branch(
+        antecedent::Formula{L},
+        (positive_consequent, negative_consequent)::Tuple{Any,Any},
+        info::NamedTuple = (;),
+    ) where {L<:AbstractLogic}
+        Branch(antecedent, positive_consequent, negative_consequent, info)
+    end
 end
 
 antecedent(m::Branch) = m.antecedent
