@@ -8,13 +8,19 @@ import Base: convert
 """
 A `FinalOutcome` is something that a model outputs.
 """
-const FinalOutcome = Any
+const FinalOutcome = Union{String,Number}
 
 """
 A Machine Learning model (`AbstractModel`) is a mathematical model that outputs a `FinalOutcome` given an
 instance object (i.e., a piece of data).
 """
 abstract type AbstractModel{F <: FinalOutcome} end
+
+"""
+`outcome_type` simply returns the outcome type of the model
+"""
+outcome_type(m::AbstractModel{F}) where {F} = F
+# TODO outcome_type(::Type{<:AbstractModel{<:F}}) where {F<:FinalOutcome} = F
 
 doc_open_model = """
 An `AbstractModel{F}` is *closed* if it is always able to provide an outcome of type `F`.
@@ -31,21 +37,21 @@ is_open(::AbstractModel) = true
 
 """
 $(doc_open_model)
-`outcome_type` leverages the `is_open` trait to provide the type for the outcome of a model:
+`output_type` leverages the `is_open` trait to provide the type for the outcome of a model:
 
-    outcome_type(M::AbstractModel{F}) = is_open(M) ? Union{Nothing,F} : F
+    output_type(M::AbstractModel{F}) = is_open(M) ? Union{Nothing,F} : F
 
 See also [`is_open`](@ref), [`AbstractModel`](@ref).
 """
-outcome_type(m::AbstractModel{F}) where {F} = is_open(m) ? Union{Nothing,F} : F
+output_type(m::AbstractModel{F}) where {F} = is_open(m) ? Union{Nothing,outcome_type(F)} : outcome_type(F)
 
 """
 Any `AbstractModel` can be applied to an instance object or a dataset of instance objects.
 
 See also [`AbstractModel`](@ref), [`AbstractInstance`](@ref), [`AbstractDataset`](@ref).
 """
-apply(m::AbstractModel, i::AbstractInstance)::outcome_type(typeof(m)) = error("Please, provide method apply(::$(typeof(m)), ::$(typeof(i)))")
-apply(m::AbstractModel, d::AbstractDataset)::outcome_type(typeof(m)) = error("Please, provide method apply(::$(typeof(m)), ::$(typeof(d)))")
+apply(m::AbstractModel, i::AbstractInstance)::output_type(m) = error("Please, provide method apply(::$(typeof(m)), ::$(typeof(i)))")
+apply(m::AbstractModel, d::AbstractDataset)::output_type(m) = error("Please, provide method apply(::$(typeof(m)), ::$(typeof(d)))")
 
 doc_symbolic = """
 A `AbstractModel` is said to be `symbolic` when it is based on certain a logical language (or "logic",
@@ -101,6 +107,11 @@ considered final; that is, it is a leaf of a tree of `AbstractModel`s.
 """
 abstract type FinalModel{F <: FinalOutcome} <: AbstractModel{F} end
 
+# """
+# Each `FinalModel` must provide a `convert` method
+# TODO remove """
+# convert(::Type{M1}, m::M2) where {F1<:FinalOutcome, F2<:F1, M1<:FinalModel{F1}, M2<:FinalModel{F2}} = M1([getfield(m, Symbol(field)) for field in fieldnames(M2)]...)
+
 """
 Since `FinalModel` rely on native Julia computation (e.g., a constant or a function),
 they should be easily instantiated; each subtype `M` of `FinalModel` should implement at
@@ -108,7 +119,7 @@ least one `convert(::Type{M<:FinalModel{F}, ::T}` method (where `T` is any type)
 
 See also [`FinalModel`](@ref).
 """
-convert(::Type{M<:FinalModel{F}}, ::T where {T}) where {F<:FinalOutcome} = error("Please, provide method convert(::Type{$(M)}, ::$(typeof(T))).")
+convert(::Type{M}, ::T) where {M<:FinalModel,T} = error("Please, provide method convert(::Type{$(M)}, ::$(typeof(T))).")
 
 """
 Perhaps the simplest type of `AbstractModel` is the `ConstantModel`.
@@ -126,16 +137,18 @@ struct ConstantModel{F<:FinalOutcome} <: FinalModel{F}
     ) where {F<:FinalOutcome}
         new{F}(final_outcome, info)
     end
-
-    function ConstantModel(
-        final_outcome::F,
-        info::NamedTuple = (;),
-    ) where {F<:FinalOutcome}
-        ConstantModel{F}(final_outcome, info)
-    end
 end
 
+function ConstantModel(
+    final_outcome::F,
+    info::NamedTuple = (;),
+) where {F<:FinalOutcome}
+    ConstantModel{F}(final_outcome, info)
+end
+
+# TODO remove convert(::Type{ConstantModel{F1}}, m::ConstantModel{F2}) where {F1, F2<:F1, F1<:FinalOutcome} = ConstantModel{F1}(m.final_outcome, m.info)
 convert(::Type{ConstantModel{F}}, o::F) where {F<:FinalOutcome} = ConstantModel{F}(o)
+convert(::Type{ConstantModel{F1}}, m::ConstantModel{F2}) where {F1<:FinalOutcome, F2<:F1} = ConstantModel{F1}(m.final_outcome, m.info)
 
 """
 A `FunctionModel` is a final model (`FinalModel`) that applies a native Julia `Function`
@@ -148,21 +161,22 @@ struct FunctionModel{F<:FinalOutcome} <: FinalModel{F}
     f::FunctionWrapper{F}
     info::NamedTuple
 
-    function ConstantModel{F}(
+    function FunctionModel{F}(
         f::FunctionWrapper{F},
         info::NamedTuple = (;),
     ) where {F<:FinalOutcome}
-        new{F}(final_outcome, info)
-    end
-
-    function ConstantModel(
-        f::FunctionWrapper{F},
-        info::NamedTuple = (;),
-    ) where {F<:FinalOutcome}
-        ConstantModel{F}(final_outcome, info)
+        new{F}(f, info)
     end
 end
 
+function FunctionModel(
+    f::FunctionWrapper{F},
+    info::NamedTuple = (;),
+) where {F<:FinalOutcome}
+    FunctionModel{F}(f, info)
+end
+
+# TODO remove convert(::Type{FunctionModel{F1}}, m::FunctionModel{F2}) where {F1, F2<:F1, F1<:FinalOutcome} = FunctionModel{F1}(m.f, m.info)
 convert(::Type{FunctionModel{F}}, f::FunctionWrapper{F}) where {F<:FinalOutcome} = FunctionModel{F}(f)
 convert(::Type{FunctionModel{F}}, f::Function) where {F<:FinalOutcome} = error("Please, wrap Julia functions in FunctionWrappers{F}, where F is their return type.")
 # function convert(::Type{FunctionModel{F}}, f::Function) where {F<:FinalOutcome}
@@ -174,19 +188,15 @@ convert(::Type{FunctionModel{F}}, f::Function) where {F<:FinalOutcome} = error("
 This function is used to specify the default `FinalModel` used for wrapping native computation. 
 The default behavior is the following: `Function`s and `FunctionWrapper`s are wrapped into a
 `FunctionModel`, while every other `FinalOutcome` object is wrapped into a `ConstantModel`.
+When called on an `AbstractModel`, the model is simply returned (without wrapping it).
 An error is thrown when wrapping objects of all other types.
 
-<<<<<<< HEAD
-See also [`ConstantModel`](@ref), [`FunctionModel`](@ref), [`FinalModel`](@ref).
-=======
-In Sole, a `DecisionList{L<:Logic, O<:Outcome}` encodes this structure as a vector of rules
-`rules::Vector{<:Rule{L,O}}`, plus a default consequent value `default::O`.
-It also includes an `info::NamedTuple` for storing additional information.
->>>>>>> 4f6c880fb7043eb03e13743bf0331c7631810130
+See also [`ConstantModel`](@ref), [`FunctionModel`](@ref), [`BoundedModel`](@ref), [`FinalModel`](@ref).
 """
+wrap(m::AbstractModel) = m
 wrap(o::Any) = error("Can't wrap object of type $(o).")
-wrap(o::F where {F<:FinalOutcome}) = convert(Type{ConstantModel{F}}, o)
-wrap(o::Union{Function,FunctionWrappers{F}}) = convert(Type{FunctionModel{F}}, o)
+wrap(o::F) where {F<:FinalOutcome} = convert(ConstantModel{F}, o)
+wrap(o::Union{Function,FunctionWrapper{F}}) where {F<:FinalOutcome} = convert(FunctionModel{F}, o)
 
 ############################################################################################
 ############################################################################################
@@ -196,28 +206,36 @@ wrap(o::Union{Function,FunctionWrappers{F}}) = convert(Type{FunctionModel{F}}, o
 An `AbstractModel` can wrap another `AbstractModel`, and use it to compute the outcome.
 As such, an `AbstractModel` can actually be the result of a composition of many models,
 and enclose a *tree* of `AbstractModel`s (with `FinalModel`s at the leaves).
-In order to typebound the Feasible Inner Models (`FIM`) allowed in the tree,
-the `PotentiallyBoundedModel` type is introduced:
+In order to typebound the Feasible Inner Models (`FIM`) allowed in the sub-tree,
+the `BoundedModel` type is introduced:
 
-    PotentiallyBoundedModel{F <: FinalOutcome, FIM <: AbstractModel{F}} <: AbstractModel{F}
+    BoundedModel{F <: FinalOutcome, FIM <: AbstractModel{FF where FF<:F}} <: AbstractModel{F}
 
-For example, `PotentiallyBoundedModel{String, Branch{String}}` indicates any `AbstractModel`
+For example, `BoundedModel{String, Branch{String}}` indicates any `AbstractModel`
 that makes use of models of type `Branch{String}` (essentially, a decision tree with `String`
 outcomes.
 
 See also [`FinalModel`](@ref), [`AbstractModel`](@ref).
 """
-abstract type PotentiallyBoundedModel{F <: FinalOutcome, FIM <: AbstractModel{F}} <: AbstractModel{F} end
+abstract type BoundedModel{F <: FinalOutcome, FIM <: AbstractModel{FF where FF<:F}} <: AbstractModel{F} end
 
 """
-This function is used wher constructing `PotentiallyBoundedModel`s to check that the inner
+This function is used when constructing `BoundedModel`s to check that the inner
 models satisfy the desired type constraints.
 
-See also [`PotentiallyBoundedModel`](@ref), [`Rule`](@ref), [`Branch`](@ref).
+See also [`BoundedModel`](@ref), [`Rule`](@ref), [`Branch`](@ref).
 """
-function check_model_bound(M::Type{<:AbstractModel{F}}, IM::Type{<:AbstractModel{F}}, FIM::Type{<:AbstractModel{F}}) where {F}
-    if ! (IM<:FinalModel{F})
-        @assert IM<:PotentiallyBoundedModel{F,FIM} "PotentiallyBoundedModels require IM<:PotentiallyBoundedModel{F,FIM}, but $(IM) does not subtype $(PotentiallyBoundedModel{F,FIM})"
+# function check_model_bound(::Type{M<:AbstractModel}, IM::Type{<:AbstractModel{F}}, FIM::Type{<:AbstractModel{IF}}) where {F, IF}
+#     @assert outcome_type(consequent) <: F "Can't instantiate $(M) with outcome_type $(F) with inner model of type $(outcome_type(consequent)). outcome_type(consequent) <: F must hold."
+#     F, IF
+#     if ! (IM<:FinalModel{<:F})
+#         @assert IM<:BoundedModel{F,FIM} "BoundedModels require IM<:BoundedModel{F,FIM}, but $(IM) does not subtype $(BoundedModel{F,FIM})"
+#     end
+# end
+function check_model_bound(::Type{M}, IM::Type{<:AbstractModel{IF}}, FIM::Type{<:AbstractModel{<:F}}) where {F, IF, M<:AbstractModel{F}}
+    @assert IF <: F "Can't instantiate $(M) with inner model outcome_type $(IF)! $(IF) <: $(F) should hold."
+    if ! (IM<:FinalModel{<:F})
+        @assert IM<:BoundedModel{F,FIM} "BoundedModels require IM<:BoundedModel{F,FIM}, but $(IM) does not subtype $(BoundedModel{F,FIM})"
     end
 end
 
@@ -243,53 +261,69 @@ A *rule* is one of the fundamental building blocks of symbolic modeling, and has
 
 where the antecedent is a logical formula and the consequent is the outcome of the block.
 
+
 In Sole, a `Rule{F<:FinalOutcome, L<:AbstractLogic}` wraps an `antecedent::Formula{L}`, that is, a formula of a given logic L,
-and a `consequent::AbstractModel{F}` that is to be applied to obtain an outcome.
+and a `consequent::AbstractModel{<:F}` that is to be applied to obtain an outcome.
+
 It also includes an `info::NamedTuple` for storing additional information.
 
-See also [`Branch`](@ref), [`PotentiallyBoundedModel`](@ref), [`AbstractModel`](@ref).
+# Extended help
+Being a BoundedModel, this struct is actually defined as:
+
+    struct Rule{F<:FinalOutcome, L<:AbstractLogic, FIM<:AbstractModel{<:F}} <: BoundedModel{F, FIM}
+
+where `FIM` refers to the Feasible Inner Models (`FIM`) allowed in the sub-tree.
+
+See also [`Branch`](@ref), [`BoundedModel`](@ref), [`AbstractModel`](@ref).
 """
-struct Rule{F<:FinalOutcome, L<:AbstractLogic, FIM<:AbstractModel{F}} <: PotentiallyBoundedModel{F, FIM}
+struct Rule{F<:FinalOutcome, L<:AbstractLogic, FIM<:AbstractModel{FF where FF<:F}} <: BoundedModel{F, FIM}
     antecedent::Formula{L}
     consequent::FIM
     info::NamedTuple
 
     function Rule{F, L, FIM}(
         antecedent::Formula{L},
-        consequent::M,
+        consequent::Any,
         info::NamedTuple = (;),
-    ) where {F<:FinalOutcome, L<:AbstractLogic, M<:AbstractModel{F}, FIM<:AbstractModel{F}}
-        check_model_bound(Rule, M, FIM)
+    ) where {F<:FinalOutcome, L<:AbstractLogic, FIM<:AbstractModel{FF where FF<:F}}
+        consequent = wrap(consequent)
+        check_model_bound(Rule{F}, typeof(consequent), FIM)
         new{F,L,FIM}(antecedent, consequent, info)
     end
 
     function Rule{F, L}(
         antecedent::Formula{L},
-        consequent::AbstractModel{F},
+        consequent::Any,
         info::NamedTuple = (;),
     ) where {F<:FinalOutcome, L<:AbstractLogic}
-        new{F,L,AbstractModel{F}}(antecedent, consequent, info)
+        new{F,L,AbstractModel{F}}(antecedent, wrap(consequent), info)
     end
 
     function Rule{F}(
         antecedent::Formula{L},
-        consequent::AbstractModel{F},
+        consequent::Any,
         info::NamedTuple = (;),
     ) where {F<:FinalOutcome, L<:AbstractLogic}
-        Rule{F,L}(antecedent, consequent, info)
+        new{F,L,AbstractModel{F}}(antecedent, wrap(consequent), info)
     end
 
     function Rule(
         antecedent::Formula{L},
-        consequent::AbstractModel{F},
+        consequent::Any,
         info::NamedTuple = (;),
-    ) where {F<:FinalOutcome, L<:AbstractLogic}
-        Rule{F}(antecedent, consequent, info)
+    ) where {L<:AbstractLogic}
+        consequent = wrap(consequent)
+        F = outcome_type(consequent)
+        new{F,L,AbstractModel{F}}(antecedent, consequent, info)
     end
 end
 
 antecedent(m::Rule) = m.antecedent
 consequent(m::Rule) = m.consequent
+
+# TODO fix
+outcome_type(::Type{<:Rule{F}}) where {F<:FinalOutcome} = F
+# outcome_type(::Type{<:Rule{F,<:AbstractLogic,<:AbstractModel{F}}}) where {F<:FinalOutcome} = F
 
 """
 A *branch* is one of the fundamental building blocks of symbolic modeling, and has the form:
@@ -298,14 +332,22 @@ A *branch* is one of the fundamental building blocks of symbolic modeling, and h
 
 where the antecedent is a logical formula and the consequents are the feasible outcomes of the block.
 
-In Sole, a `Branch{F<:FinalOutcome, L<:AbstractLogic, FIM<:AbstractModel{F}}` wraps an `antecedent::Formula{L}`, that is, a formula of a given logic L,
-and two `AbstractModel{F}`s (*positive_consequent*, *negative_consequent*) that are to be
+In Sole, a `Branch{F<:FinalOutcome, L<:AbstractLogic}` wraps an `antecedent::Formula{L}`, that is, a formula of a given logic L,
+and two `AbstractModel{<:F}`s (*positive_consequent*, *negative_consequent*) that are to be
 applied to obtain an outcome.
+
 It also includes an `info::NamedTuple` for storing additional information.
 
-See also [`Rule`](@ref), [`PotentiallyBoundedModel`](@ref), [`AbstractModel`](@ref).
+# Extended help
+Being a BoundedModel, this struct is actually defined as:
+
+    struct Branch{F<:FinalOutcome, L<:AbstractLogic, FIM<:AbstractModel{<:F}} <: BoundedModel{F, FIM}
+
+where `FIM` refers to the Feasible Inner Models (`FIM`) allowed in the sub-tree.
+
+See also [`Rule`](@ref), [`BoundedModel`](@ref), [`AbstractModel`](@ref).
 """
-struct Branch{F<:FinalOutcome, L<:AbstractLogic, FIM<:AbstractModel{F}} <: PotentiallyBoundedModel{F, FIM}
+struct Branch{F<:FinalOutcome, L<:AbstractLogic, FIM<:AbstractModel{FF where FF<:F}} <: BoundedModel{F, FIM}
     antecedent::Formula{L}
     positive_consequent::FIM
     negative_consequent::FIM
@@ -313,40 +355,47 @@ struct Branch{F<:FinalOutcome, L<:AbstractLogic, FIM<:AbstractModel{F}} <: Poten
 
     function Branch{F, L, FIM}(
         antecedent::Formula{L},
-        positive_consequent::M1,
-        negative_consequent::M2,
+        positive_consequent::Any,
+        negative_consequent::Any,
         info::NamedTuple = (;),
-    ) where {F<:FinalOutcome, L<:AbstractLogic, M1<:AbstractModel{F}, M2<:AbstractModel{F}, FIM<:AbstractModel{F}}
-        check_model_bound(Branch, M1, FIM)
-        check_model_bound(Branch, M2, FIM)
-        new{F,L,FIM}(antecedent, consequent, info)
+    ) where {F<:FinalOutcome, L<:AbstractLogic, FIM<:AbstractModel{FF where FF<:F}}
+        positive_consequent = wrap(positive_consequent)
+        negative_consequent = wrap(negative_consequent)
+        check_model_bound(Branch{F}, typeof(positive_consequent), FIM)
+        check_model_bound(Branch{F}, typeof(negative_consequent), FIM)
+        new{F,L,FIM}(antecedent, positive_consequent, negative_consequent, info)
     end
 
     function Branch{F, L}(
         antecedent::Formula{L},
-        positive_consequent::AbstractModel{F},
-        negative_consequent::AbstractModel{F},
+        positive_consequent::Any,
+        negative_consequent::Any,
         info::NamedTuple = (;),
     ) where {F<:FinalOutcome, L<:AbstractLogic}
-        new{F,L,AbstractModel{F}}(antecedent, positive_consequent, negative_consequent, info)
+        new{F,L,AbstractModel{F}}(antecedent, wrap(positive_consequent), wrap(negative_consequent), info)
     end
 
     function Branch{F}(
         antecedent::Formula{L},
-        positive_consequent::AbstractModel{F},
-        negative_consequent::AbstractModel{F},
+        positive_consequent::Any,
+        negative_consequent::Any,
         info::NamedTuple = (;),
     ) where {F<:FinalOutcome, L<:AbstractLogic}
-        Branch{F,L}(antecedent, positive_consequent, negative_consequent, info)
+        new{F,L,AbstractModel{F}}(antecedent, wrap(positive_consequent), wrap(negative_consequent), info)
     end
 
     function Branch(
         antecedent::Formula{L},
-        positive_consequent::AbstractModel{F},
-        negative_consequent::AbstractModel{F},
+        positive_consequent::Any,
+        negative_consequent::Any,
         info::NamedTuple = (;),
-    ) where {F<:FinalOutcome, L<:AbstractLogic}
-        Branch{F}(antecedent, positive_consequent, negative_consequent, info)
+    ) where {L<:AbstractLogic}
+        positive_consequent = wrap(positive_consequent)
+        negative_consequent = wrap(negative_consequent)
+        F1 = outcome_type(positive_consequent)
+        F2 = outcome_type(negative_consequent)
+        F = Union{F1, F2}
+        new{F,L,AbstractModel{F}}(antecedent, positive_consequent, negative_consequent, info)
     end
 end
 
@@ -354,60 +403,143 @@ antecedent(m::Branch) = m.antecedent
 positive_consequent(m::Branch) = m.positive_consequent
 negative_consequent(m::Branch) = m.negative_consequent
 
-# """
-# A *decision list* (or *decision table*, or *rule-based model*) is a symbolic model that has the form:
-#     IF (antecedent_1)     THEN (consequent_1)
-#     ELSEIF (antecedent_2) THEN (consequent_2)
-#     ...
-#     ELSEIF (antecedent_n) THEN (consequent_n)
-#     ELSE (consequent_default) END
+"""
+A *decision list* (or *decision table*, or *rule-based model*) is a symbolic model that has the form:
 
-# where the antecedents are logical formulas and the consequents are the feasible outcomes of the block.
+    IF (antecedent_1)     THEN (consequent_1)
+    ELSEIF (antecedent_2) THEN (consequent_2)
+    ...
+    ELSEIF (antecedent_n) THEN (consequent_n)
+    ELSE (consequent_default) END
 
-# In Sole, a `DecisionList{F<:FinalOutcome, L<:AbstractLogic, FIM<:AbstractModel{F}}` encodes this structure as a vector of rules 
-# `rules::Vector{<:Rule{F,L,FIM}}`, plus a default consequent value `default::F`.
-# It also includes an `info::NamedTuple` for storing additional information.
-# """
+where the antecedents are logical formulas and the consequents are the feasible outcomes of the block.
 
-# struct DecisionList{F<:FinalOutcome, L<:AbstractLogic, FIM<:AbstractModel{F}} <: PotentiallyBoundedModel{F, FIM}
-#     rules::Vector{<:Rule{F,L,FIM}}
-#     default::Outcome{F}
-#     info::NamedTuple
-# end
-# rules(m::DecisionList) = m.rules
-# default(m::DecisionList) = m.default
+This model has the classical operational semantics of an IF-ELSEIF-ELSE block, where the
+antecedents are evaluated in order, and a consequent is returned as soon as a valid antecedent is found,
+(or when the computation reaches the ELSE clause).
 
+In Sole, a `DecisionList{F<:FinalOutcome, L<:AbstractLogic, FIM<:AbstractModel{<:F}}` encodes
+this structure as a vector `rules::Vector{<:Rule{F,L,FIM}}`, plus a default consequent value `default_consequent::F`.
+Note that `FIM` refers to the Feasible Inner Models (`FIM`) allowed in the sub-tree (see also
+[`BoundedModel`](@ref)).
 
-# const DecisionTreeNode = Union{F, CompositeModel{F,Branch{F,L},AbstractBranch{F,L}}}
+It also includes an `info::NamedTuple` for storing additional information.
 
-# """
-# A `decision tree` is a symbolic model that consists of a nested structure of if-then-else blocks:
-#     IF (antecedent_1) THEN
-#         IF (antecedent_2) THEN
-#             (consequent_1)
-#         ELSE
-#             (consequent_2)
-#         END
-#     ELSE
-#         IF (antecedent_3) THEN
-#             (consequent_3)
-#         ELSE
-#             (consequent_4)
-#         END
-#     END
+See also [`Rule`](@ref), [`BoundedModel`](@ref), [`DecisionTree`](@ref), [`AbstractModel`](@ref).
+"""
 
-# where the antecedents are logical formulas and the consequents are the feasible outcomes of the block.
+struct DecisionList{F<:FinalOutcome, L<:AbstractLogic, FIM<:AbstractModel{FF where FF<:F}} <: BoundedModel{F, FIM}
+    rules::Vector{Rule{<:F,L}}
+    # rules::Vector{typeintersect(Rule{<:F,L},FIM)}
+    # rules::Vector{typeintersect(Rule{<:F,L},M where M<:FIM)}
+    # rules::Vector{M} where {M<:Rule{<:F,L}}
+    # rules::Vector{M where {M<:Rule{<:F,L},M<:FIM}}
+    # rules::Vector{<:FIM}
+    default_consequent::FIM
+    info::NamedTuple
 
-# In Sole, a `DecisionTree{L<:AbstractLogic, O<:Outcome}` encodes this structure by simply wrapping
-# a root block `root::Union{O, Branch{L,O}}` which (note!) it can be an if-then-else block, but also
-# more simply a consequent.
-# It also includes an `info::NamedTuple` for storing additional information.
-# """
-# struct DecisionTree{F<:FinalOutcome, L<:AbstractLogic} <: SymbolicModel{F}
-#     root::Branch{F,L}
+    function DecisionList{F, L, FIM}(
+        rules::Vector{<:Rule},
+        default_consequent::Any,
+        info::NamedTuple = (;),
+    ) where {F<:FinalOutcome, L<:AbstractLogic, FIM<:AbstractModel{FF where FF<:F}}
+        default_consequent = wrap(default_consequent)
+        check_model_bound.(DecisionList{F}, rules, FIM)
+        # check_model_bound.(DecisionList{F}, typeof.(consequent.(rules)), FIM)
+        check_model_bound(DecisionList{F}, typeof(default_consequent), FIM)
+        new{F,L,FIM}(rules, default_consequent, info)
+    end
+
+    function DecisionList{F, L}(
+        rules::Vector{<:Rule},
+        default_consequent::Any,
+        info::NamedTuple = (;),
+    ) where {F<:FinalOutcome, L<:AbstractLogic}
+        default_consequent = wrap(default_consequent)
+        new{F,L,AbstractModel{F}}(rules, default_consequent, info)
+    end
+
+    function DecisionList{F}(
+        rules::Vector{<:Rule{<:FinalOutcome,L}},
+        default_consequent::Any,
+        info::NamedTuple = (;),
+    ) where {F<:FinalOutcome, L<:AbstractLogic}
+        default_consequent = wrap(default_consequent)
+        new{F,L,AbstractModel{F}}(rules, default_consequent, info)
+    end
+
+    function DecisionList(
+        rules::Vector{<:Rule{<:FinalOutcome,L}},
+        default_consequent::Any,
+        info::NamedTuple = (;),
+    ) where {L<:AbstractLogic}
+        default_consequent = wrap(default_consequent)
+        F1 = outcome_type(default_consequent)
+        Fs = outcome_type.(rules)
+        F = Union{F1, Fs...}
+        # TODO fix this structure. Doesn't work properly.
+        # println("1")
+        # println(eltype(rules))
+        # println(T where T<:Rule{<:F,L,<:AbstractModel{FF where FF<:F}})
+        # println("1")
+        # println(typeof(rules))
+        # println(Vector{<:Rule{<:F,L,<:AbstractModel{FF where FF<:F}}})
+        # # rules = Vector{Rule{<:F,L,<:AbstractModel{FF where FF<:F}}}(rules)
+        # rules = Vector{Rule{<:F,L,<:AbstractModel{<:F}}}(rules)
+        # println("1")
+        new{F,L,AbstractModel{F}}(rules, default_consequent, info)
+    end
+end
+
+rules(m::DecisionList) = m.rules
+default_consequent(m::DecisionList) = m.default_consequent
+
+"""
+A `decision tree` is a symbolic model that consists of a nested structure of IF-THEN-ELSE blocks:
+
+    IF (antecedent_1) THEN
+        IF (antecedent_2) THEN
+            (consequent_1)
+        ELSE
+            (consequent_2)
+        END
+    ELSE
+        IF (antecedent_3) THEN
+            (consequent_3)
+        ELSE
+            (consequent_4)
+        END
+    END
+
+where the antecedents are logical formulas and the consequents are the feasible outcomes of the block.
+
+In Sole, a `DecisionTree{L<:AbstractLogic, O<:Outcome}` encodes this structure by simply wrapping
+a root block `root::Union{O, Branch{L,O}}` which (note!) it can be an IF-THEN-ELSE block, but also
+more simply a consequent.
+
+It also includes an `info::NamedTuple` for storing additional information.
+"""
+
+# struct DecisionTree{F<:FinalOutcome, L<:AbstractLogic, FFM<:AbstractModel{FF where FF<:F}} <: FinallyBoundedModel{F, FFM}
+#     root::Union{FFM,FinallyBoundedModel{F,<:Union{Branch{F,L},FFM}}}
+#     # root::Union{FinalModel{F},FinallyBoundedModel{F,<:Union{Branch{F,L},FinalModel{F}}}}
 #     info::NamedTuple
 # end
 # root(m::DecisionTree) = m.root
+
+
+# struct RuleNest{F<:FinalOutcome,L<:AbstractLogic, FFM<:AbstractModel{FF where FF<:F}} <: FinallyBoundedModel{F, FFM}
+#     root::Union{FinalModel{F},Rule{F,L,<:Union{Rule{F,L},FinalModel{F}}}}
+# end
+
+# struct MixedModel{F<:FinalOutcome,L<:AbstractLogic, FFM<:AbstractModel{FF where FF<:F}} <: FinallyBoundedModel{F, FFM}
+#     root::Union{FinalModel{F},FinallyBoundedModel{F,<:Union{Rule{F,L},FinalModel{F}}}}
+# end
+
+# struct MixedSymbolicModel{F<:FinalOutcome,L<:AbstractLogic, FFM<:AbstractModel{FF where FF<:F}} <: FinallyBoundedModel{F, FFM}
+#     root::Union{FinalModel{F},FinallyBoundedModel{F,<:Union{Branch{F,L},Rule{F,L},FinalModel{F}}}}
+# end
+
 
 # TODO fix from here onwards:
 # ############################################################################################
