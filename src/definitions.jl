@@ -51,7 +51,7 @@ Any `AbstractModel` can be applied to an instance object or a dataset of instanc
 See also [`AbstractModel`](@ref), [`AbstractInstance`](@ref), [`AbstractDataset`](@ref).
 """
 apply(m::AbstractModel, i::AbstractInstance)::output_type(m) = error("Please, provide method apply(::$(typeof(m)), ::$(typeof(i)))")
-apply(m::AbstractModel, d::AbstractDataset)::output_type(m) = error("Please, provide method apply(::$(typeof(m)), ::$(typeof(d)))")
+apply(m::AbstractModel, d::AbstractDataset)::output_type(m) = map(i->apply(m, i), iterate_instances(d))
 
 doc_symbolic = """
 A `AbstractModel` is said to be `symbolic` when it is based on certain a logical language (or "logic",
@@ -149,6 +149,9 @@ end
 convert(::Type{ConstantModel{F}}, o::F) where {F<:FinalOutcome} = ConstantModel{F}(o)
 convert(::Type{ConstantModel{F1}}, m::ConstantModel{F2}) where {F1<:FinalOutcome, F2<:F1} = ConstantModel{F1}(m.final_outcome, m.info)
 
+apply(m::ConstantModel, i::AbstractInstance) = m.final_outcome
+apply(m::ConstantModel, d::AbstractDataset) = m.final_outcome
+
 """
 A `FunctionModel` is a final model (`FinalModel`) that applies a native Julia `Function`
 in order to compute the outcome. Over efficiency concerns, it is mandatory to make explicit
@@ -182,6 +185,8 @@ convert(::Type{FunctionModel{F}}, f::Function) where {F<:FinalOutcome} = error("
 #     @warn "Over efficiency concerns, please consider wrapping Function's into FunctionWrapper's."
 #     FunctionModel{F}(f)
 # end
+
+apply(m::FunctionModel, i::AbstractInstance) = m.f(i)
 
 """
 This function is used to specify the default `FinalModel` used for wrapping native computation. 
@@ -329,7 +334,6 @@ consequent(m::Rule) = m.consequent
 is_symbolic(::Rule) = true
 logic(::Rule{F,L}) where {F<:FinalOutcome, L<:AbstractLogic} = L
 
-
 # TODO fix
 outcome_type(::Type{<:Rule{F}}) where {F<:FinalOutcome} = F
 # outcome_type(::Type{<:Rule{F,<:AbstractLogic,<:AbstractModel{F}}}) where {F<:FinalOutcome} = F
@@ -458,7 +462,7 @@ struct DecisionList{F<:FinalOutcome, L<:AbstractLogic, FIM<:AbstractModel{FF whe
         info::NamedTuple = (;),
     ) where {F<:FinalOutcome, L<:AbstractLogic, FIM<:AbstractModel{FF where FF<:F}}
         default_consequent = wrap(default_consequent)
-        check_model_bound.(DecisionList{F}, rules, FIM)
+        check_model_bound.(DecisionList{F}, typeof.(rules), FIM)
         # check_model_bound.(DecisionList{F}, typeof.(consequent.(rules)), FIM) TODO remove?
         check_model_bound(DecisionList{F}, typeof(default_consequent), FIM)
         new{F,L,FIM}(rules, default_consequent, info)
@@ -533,20 +537,22 @@ A `RuleCascade` encodes this logic by wrapping an object `antecedents::Vector{Fo
 and a `consequent::FFM`.
 
 It also includes an `info::NamedTuple` for storing additional information.
+
+See also [`Rule`](@ref), [`BoundedModel`](@ref), [`DecisionList`](@ref), [`AbstractModel`](@ref).
 """
-struct RuleCascade{F<:FinalOutcome, L<:AbstractLogic, FFM<:FinalModel{FF where FF<:F}} <: FinallyBoundedModel{F, FFM}
+struct RuleCascade{F<:FinalOutcome, L<:AbstractLogic, FIM<:AbstractModel{FF where FF<:F}} <: BoundedModel{F, FIM}
     antecedents::Vector{Formula{L}}
-    consequent::FFM
+    consequent::FIM
     info::NamedTuple
 
-    function RuleCascade{F, L, FFM}(
+    function RuleCascade{F, L, FIM}(
         antecedents::Vector{Formula{L}},
         consequent::Any,
         info::NamedTuple = (;),
-    ) where {F<:FinalOutcome, L<:AbstractLogic, FFM<:FinalModel{FF where FF<:F}}
+    ) where {F<:FinalOutcome, L<:AbstractLogic, FIM<:AbstractModel{FF where FF<:F}}
         consequent = wrap(consequent)
-        check_model_bound(RuleCascade{F}, typeof(consequent), FFM)
-        new{F,L,FFM}(antecedents, consequent, info)
+        check_model_bound(RuleCascade{F}, typeof(consequent), FIM)
+        new{F,L,FIM}(antecedents, consequent, info)
     end
 
     function RuleCascade{F, L}(
@@ -607,6 +613,8 @@ field `root::Union{FFM,Branch{<:F,L,Union{Branch{<:F,L},FFM}}}`
 IF-THEN block, but also more simply a consequent.
 
 It also includes an `info::NamedTuple` for storing additional information.
+
+See also [`DecisionTree`](@ref), [`MixedSymbolicModel`](@ref), [`DecisionList`](@ref), [`FinallyBoundedModel`](@ref).
 """
 
 struct DecisionTree{F<:FinalOutcome, L<:AbstractLogic, FFM<:FinalModel{FF where FF<:F}} <: FinallyBoundedModel{F, FFM}
@@ -644,6 +652,8 @@ A `MixedSymbolicModel` simply wraps a constrained sub-tree of `DecisionList`s, `
 field `root::Union{FFM,BoundedModel{F,<:Union{DecisionList{<:F,L},DecisionTree{<:F,L},FFM}}}`.
 
 It also includes an `info::NamedTuple` for storing additional information.
+
+See also [`MixedSymbolicModel`](@ref), [`DecisionTree`](@ref), [`DecisionList`](@ref), [`FinallyBoundedModel`](@ref).
 """
 
 struct MixedSymbolicModel{F<:FinalOutcome, L<:AbstractLogic, FFM<:FinalModel{FF where FF<:F}} <: FinallyBoundedModel{F, FFM}
