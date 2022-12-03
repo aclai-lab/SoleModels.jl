@@ -6,7 +6,7 @@
 This function provides access to the list of immediate child models; 
 the list is empty for `FinalModel`s.
 
-See also [`all_submodels`](@ref), [`BoundedModel`](@ref), [`FinalModel`](@ref).
+See also [`all_submodels`](@ref), [`ConstrainedModel`](@ref), [`FinalModel`](@ref).
 """
 immediate_submodels(m::AbstractModel{F} where {F})::Vector{<:{AbstractModel{<:F}}} =
     error("Please, provide method immediate_submodels(::$(typeof(m))).")
@@ -22,7 +22,7 @@ immediate_submodels(m::MixedSymbolicModel) = immediate_submodels(root(m))
 """
 This function provides access to the list of all child models in the sub-tree.
 
-See also [`immediate_submodels`](@ref), [`BoundedModel`](@ref), [`FinalModel`](@ref).
+See also [`immediate_submodels`](@ref), [`ConstrainedModel`](@ref), [`FinalModel`](@ref).
 """
 all_submodels(m::AbstractModel) = [Iterators.flatten(_all_submodels.(immediate_submodels(m)))...]
 _all_submodels(m::AbstractModel) = [m, Iterators.flatten(_all_submodels.(immediate_submodels(m)))...]

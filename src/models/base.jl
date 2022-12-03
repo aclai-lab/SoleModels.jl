@@ -174,7 +174,7 @@ end
 
 convert(::Type{ConstantModel}, m::ConstantModel) = ConstantModel(m)
 convert(::Type{ConstantModel{F}}, o::F) where {F} = ConstantModel{F}(o)
-convert(::Type{<:AbstractModel{F1}}, m::ConstantModel}) where {F1} = ConstantModel{F1}(m)
+convert(::Type{<:AbstractModel{F1}}, m::ConstantModel) where {F1} = ConstantModel{F1}(m)
 
 apply(m::ConstantModel, i::AbstractInstance) = m.final_outcome
 apply(m::ConstantModel, d::AbstractDataset) = m.final_outcome
@@ -232,7 +232,7 @@ The default behavior is the following: `Function`s and `FunctionWrapper`s are wr
 When called on an `AbstractModel`, the model is simply returned (without wrapping it).
 An error is thrown when wrapping objects of all other types.
 
-See also [`ConstantModel`](@ref), [`FunctionModel`](@ref), [`BoundedModel`](@ref), [`FinalModel`](@ref).
+See also [`ConstantModel`](@ref), [`FunctionModel`](@ref), [`ConstrainedModel`](@ref), [`FinalModel`](@ref).
 """
 wrap(o::Any, FIM::Type{<:AbstractModel}) = convert(FIM, wrap(o))
 wrap(o::Any) = error("Can't wrap object of type $(o).")
@@ -249,43 +249,45 @@ An `AbstractModel` can wrap another `AbstractModel`, and use it to compute the o
 As such, an `AbstractModel` can actually be the result of a composition of many models,
 and enclose a *tree* of `AbstractModel`s (with `FinalModel`s at the leaves).
 In order to typebound the Feasible Inner Models (`FIM`) allowed in the sub-tree,
-the `BoundedModel` type is introduced:
+the `ConstrainedModel` type is introduced:
 
-    BoundedModel{F <: FinalOutcome, FIM <: AbstractModel{FF where FF<:F}} <: AbstractModel{F}
+    ConstrainedModel{F <: FinalOutcome, FIM <: AbstractModel{FF where FF<:F}} <: AbstractModel{F}
 
-For example, `BoundedModel{String, Union{Branch{String},ConstantModel{String}}}` supertypes models
+For example, `ConstrainedModel{String, Union{Branch{String},ConstantModel{String}}}` supertypes models
 that with `String` outcomes that make use of `Branch{String}` and `ConstantModel{String}`
 (essentially, a decision trees with `String`s at the leaves).
 
 See also [`FinalModel`](@ref), [`AbstractModel`](@ref).
 """
-abstract type BoundedModel{F <: FinalOutcome, FIM <: AbstractModel{FF where FF<:F}} <: AbstractModel{F} end
+abstract type ConstrainedModel{F <: FinalOutcome, FIM <: AbstractModel{FF where FF<:F}} <: AbstractModel{F} end
 
 """
-This function is used when constructing `BoundedModel`s to check that the inner
+This function is used when constructing `ConstrainedModel`s to check that the inner
 models satisfy the desired type constraints.
 
-See also [`BoundedModel`](@ref), [`Rule`](@ref), [`Branch`](@ref).
+See also [`ConstrainedModel`](@ref), [`Rule`](@ref), [`Branch`](@ref).
 """
-function check_model_bound(::Type{M}, IM::Type{<:AbstractModel{IF}}, FIM::Type{<:AbstractModel{<:F}}) where {F, IF, M<:AbstractModel{F}}
+function check_model_constraints(::Type{M}, IM::Type{<:AbstractModel{IF}}, FIM::Type{<:AbstractModel{<:F}}) where {F, IF, M<:AbstractModel{F}}
     @assert IF <: F "Can't instantiate $(M) with inner model outcome_type $(IF)! $(IF) <: $(F) should hold."
+    # TODO now it's kinda implicit, but one day maybe not:
+    # @assert IM <: FIM "Can't instantiate $(M) with inner model $(IM))! $(IM) <: $(FIM) should hold."
     if ! (IM<:FinalModel{<:F})
-        @assert IM<:BoundedModel{F,FIM} "BoundedModels require IM<:BoundedModel{F,FIM}, but $(IM) does not subtype $(BoundedModel{F,FIM})"
+        @assert IM<:ConstrainedModel{F,FIM} "ConstrainedModels require IM<:ConstrainedModel{F,FIM}, but $(IM) does not subtype $(ConstrainedModel{F,FIM})"
     end
 end
 
 """
-Some `BoundedModel`s (e.g., decision trees) inherently rely on specific `BoundedModel` types.
-In such cases, the bounding type parameter only serves to bound the type of `FinalModel`s in the sub-tree:
+Some `ConstrainedModel`s (e.g., decision trees) inherently rely on specific `ConstrainedModel` types.
+In such cases, the bounding type parameter only serves to constrain the type of `FinalModel`s in the sub-tree:
 
-    FinallyBoundedModel{F <: FinalOutcome, FFM <: FinalModel{FF where FF<:F}} <: BoundedModel{F, FFM}
+    FinallyConstrainedModel{F <: FinalOutcome, FFM <: FinalModel{FF where FF<:F}} <: ConstrainedModel{F, FFM}
 
-For example, `FinallyBoundedModel{String, ConstantModel{String}}` supertypes implementations
+For example, `FinallyConstrainedModel{String, ConstantModel{String}}` supertypes implementations
 of decision lists with `String`s as consequents, and decision trees with `String`s at the leaves.
 
-See also [`BoundedModel`](@ref), [`FinalModel`](@ref), [`DecisionList`](@ref), [`DecisionTree`](@ref).
+See also [`ConstrainedModel`](@ref), [`FinalModel`](@ref), [`DecisionList`](@ref), [`DecisionTree`](@ref).
 """
-abstract type FinallyBoundedModel{F <: FinalOutcome, FFM <: FinalModel{FF where FF<:F}} <: BoundedModel{F, FFM} end
+abstract type FinallyConstrainedModel{F <: FinalOutcome, FFM <: FinalModel{FF where FF<:F}} <: ConstrainedModel{F, FFM} end
 
 ############################################################################################
 ############################################################################################
@@ -316,18 +318,18 @@ and a `consequent::AbstractModel{<:F}` that is to be applied to obtain an outcom
 It also includes an `info::NamedTuple` for storing additional information.
 
 # Extended help
-Being a `BoundedModel`, this struct is actually defined as:
+Being a `ConstrainedModel`, this struct is actually defined as:
 
-    struct Rule{F<:FinalOutcome, L<:AbstractLogic, FIM<:AbstractModel{<:F}} <: BoundedModel{F, FIM}
+    struct Rule{F<:FinalOutcome, L<:AbstractLogic, FIM<:AbstractModel{<:F}} <: ConstrainedModel{F, FIM}
 
 where `FIM` refers to the Feasible Inner Models (`FIM`) allowed in the sub-tree.
 
-See also [`Branch`](@ref), [`BoundedModel`](@ref), [`AbstractModel`](@ref).
+See also [`Branch`](@ref), [`ConstrainedModel`](@ref), [`AbstractModel`](@ref).
 """
-struct Rule{F<:FinalOutcome, L<:AbstractLogic, FIM<:AbstractModel{FF where FF<:F}} <: BoundedModel{F, FIM}
+struct Rule{F<:FinalOutcome, L<:AbstractLogic, FIM<:AbstractModel{FF where FF<:F}} <: ConstrainedModel{F, FIM}
     antecedent::Formula{L}
-    # consequent::FIM
-    consequent::AbstractModel{<:F} #TODO test FIM in check_model_bound
+    consequent::FIM
+    # consequent::AbstractModel{<:F} #TODO test FIM in check_model_constraints
     info::NamedTuple
 
     function Rule{F, L, FIM}(
@@ -335,10 +337,8 @@ struct Rule{F<:FinalOutcome, L<:AbstractLogic, FIM<:AbstractModel{FF where FF<:F
         consequent::Any,
         info::NamedTuple = (;),
     ) where {F<:FinalOutcome, L<:AbstractLogic, FIM<:AbstractModel{FF where FF<:F}}
-        # TODO patch FIM so that one can avoid specifying the final outcome:
-        # FIM = typeintersect(AbstractModel{F},_FIM)
         consequent = wrap(consequent, FIM)
-        check_model_bound(Rule{F}, typeof(consequent), FIM)
+        check_model_constraints(Rule{F}, typeof(consequent), FIM)
         new{F,L,FIM}(antecedent, consequent, info)
     end
 
@@ -407,15 +407,15 @@ applied to obtain an outcome.
 It also includes an `info::NamedTuple` for storing additional information.
 
 # Extended help
-Being a `BoundedModel`, this struct is actually defined as:
+Being a `ConstrainedModel`, this struct is actually defined as:
 
-    struct Branch{F<:FinalOutcome, L<:AbstractLogic, FIM<:AbstractModel{<:F}} <: BoundedModel{F, FIM}
+    struct Branch{F<:FinalOutcome, L<:AbstractLogic, FIM<:AbstractModel{<:F}} <: ConstrainedModel{F, FIM}
 
 where `FIM` refers to the Feasible Inner Models (`FIM`) allowed in the sub-tree.
 
-See also [`Rule`](@ref), [`BoundedModel`](@ref), [`AbstractModel`](@ref).
+See also [`Rule`](@ref), [`ConstrainedModel`](@ref), [`AbstractModel`](@ref).
 """
-struct Branch{F<:FinalOutcome, L<:AbstractLogic, FIM<:AbstractModel{FF where FF<:F}} <: BoundedModel{F, FIM}
+struct Branch{F<:FinalOutcome, L<:AbstractLogic, FIM<:AbstractModel{FF where FF<:F}} <: ConstrainedModel{F, FIM}
     antecedent::Formula{L}
     positive_consequent::FIM
     negative_consequent::FIM
@@ -429,8 +429,8 @@ struct Branch{F<:FinalOutcome, L<:AbstractLogic, FIM<:AbstractModel{FF where FF<
     ) where {F<:FinalOutcome, L<:AbstractLogic, FIM<:AbstractModel{FF where FF<:F}}
         positive_consequent = wrap(positive_consequent, FIM)
         negative_consequent = wrap(negative_consequent, FIM)
-        check_model_bound(Branch{F}, typeof(positive_consequent), FIM)
-        check_model_bound(Branch{F}, typeof(negative_consequent), FIM)
+        check_model_constraints(Branch{F}, typeof(positive_consequent), FIM)
+        check_model_constraints(Branch{F}, typeof(negative_consequent), FIM)
         new{F,L,FIM}(antecedent, positive_consequent, negative_consequent, info)
     end
 
@@ -518,14 +518,14 @@ antecedents are evaluated in order, and a consequent is returned as soon as a va
 In Sole, a `DecisionList{F<:FinalOutcome, L<:AbstractLogic, FIM<:AbstractModel{<:F}}` encodes
 this structure as a vector `rules::Vector{<:Rule{F,L,FIM}}`, plus a default consequent value `default_consequent::F`.
 Note that `FIM` refers to the Feasible Inner Models (`FIM`) allowed in the sub-tree (see also
-[`BoundedModel`](@ref)).
+[`ConstrainedModel`](@ref)).
 
 It also includes an `info::NamedTuple` for storing additional information.
 
-See also [`Rule`](@ref), [`BoundedModel`](@ref), [`DecisionTree`](@ref), [`AbstractModel`](@ref).
+See also [`Rule`](@ref), [`ConstrainedModel`](@ref), [`DecisionTree`](@ref), [`AbstractModel`](@ref).
 """
 
-struct DecisionList{F<:FinalOutcome, L<:AbstractLogic, FIM<:AbstractModel{FF where FF<:F}} <: BoundedModel{F, FIM}
+struct DecisionList{F<:FinalOutcome, L<:AbstractLogic, FIM<:AbstractModel{FF where FF<:F}} <: ConstrainedModel{F, FIM}
     rules::Vector{Rule{<:F,L}}
     # rules::Vector{typeintersect(Rule{<:F,L},FIM)}
     # rules::Vector{typeintersect(Rule{<:F,L},M where M<:FIM)}
@@ -541,9 +541,9 @@ struct DecisionList{F<:FinalOutcome, L<:AbstractLogic, FIM<:AbstractModel{FF whe
         info::NamedTuple = (;),
     ) where {F<:FinalOutcome, L<:AbstractLogic, FIM<:AbstractModel{FF where FF<:F}}
         default_consequent = wrap(default_consequent, FIM)
-        check_model_bound.(DecisionList{F}, typeof.(rules), FIM)
-        # check_model_bound.(DecisionList{F}, typeof.(consequent.(rules)), FIM) TODO remove?
-        check_model_bound(DecisionList{F}, typeof(default_consequent), FIM)
+        check_model_constraints.(DecisionList{F}, typeof.(rules), FIM)
+        # check_model_constraints.(DecisionList{F}, typeof.(consequent.(rules)), FIM) TODO remove?
+        check_model_constraints(DecisionList{F}, typeof(default_consequent), FIM)
         new{F,L,FIM}(rules, default_consequent, info)
     end
 
@@ -639,9 +639,9 @@ and a `consequent::FFM`.
 
 It also includes an `info::NamedTuple` for storing additional information.
 
-See also [`Rule`](@ref), [`BoundedModel`](@ref), [`DecisionList`](@ref), [`AbstractModel`](@ref).
+See also [`Rule`](@ref), [`ConstrainedModel`](@ref), [`DecisionList`](@ref), [`AbstractModel`](@ref).
 """
-struct RuleCascade{F<:FinalOutcome, L<:AbstractLogic, FIM<:AbstractModel{FF where FF<:F}} <: BoundedModel{F, FIM}
+struct RuleCascade{F<:FinalOutcome, L<:AbstractLogic, FIM<:AbstractModel{FF where FF<:F}} <: ConstrainedModel{F, FIM}
     antecedents::Vector{Formula{L}}
     consequent::FIM
     info::NamedTuple
@@ -652,7 +652,7 @@ struct RuleCascade{F<:FinalOutcome, L<:AbstractLogic, FIM<:AbstractModel{FF wher
         info::NamedTuple = (;),
     ) where {F<:FinalOutcome, L<:AbstractLogic, FIM<:AbstractModel{FF where FF<:F}}
         consequent = wrap(consequent, FIM)
-        check_model_bound(RuleCascade{F}, typeof(consequent), FIM)
+        check_model_constraints(RuleCascade{F}, typeof(consequent), FIM)
         new{F,L,FIM}(antecedents, consequent, info)
     end
 
@@ -741,12 +741,11 @@ IF-THEN block, but also more simply a consequent.
 
 It also includes an `info::NamedTuple` for storing additional information.
 
-See also [`DecisionTree`](@ref), [`MixedSymbolicModel`](@ref), [`DecisionList`](@ref), [`FinallyBoundedModel`](@ref).
+See also [`DecisionTree`](@ref), [`MixedSymbolicModel`](@ref), [`DecisionList`](@ref), [`FinallyConstrainedModel`](@ref).
 """
 
-struct DecisionTree{F<:FinalOutcome, L<:AbstractLogic, FFM<:FinalModel{FF where FF<:F}} <: FinallyBoundedModel{F, FFM}
-    root::Union{FFM,Branch{<:F,L,Union{Branch{<:F,L},FFM}}}
-    # root::Union{FinalModel{F},BoundedModel{F,<:Union{Branch{F,L},FinalModel{F}}}}
+struct DecisionTree{F<:FinalOutcome, L<:AbstractLogic, FFM<:FinalModel{FF where FF<:F}} <: FinallyConstrainedModel{F, FFM}
+    root::Union{FFM,ConstrainedModel{<:F,<:Union{Branch{<:F,L},FFM}}}
     info::NamedTuple
 end
 root(m::DecisionTree) = m.root
@@ -780,15 +779,15 @@ where the antecedents are logical formulas and the consequents are the feasible 
 
 In Sole, this logic can be instantiated as a `MixedSymbolicModel{F<:FinalOutcome, L<:AbstractLogic, FFM<:FinalModel{<:F}}`.
 A `MixedSymbolicModel` simply wraps a constrained sub-tree of `DecisionList`s, `DecisionTree`s, and `FinalModel`s via a
-field `root::Union{FFM,BoundedModel{F,<:Union{DecisionList{<:F,L},DecisionTree{<:F,L},FFM}}}`.
+field `root::Union{FFM,ConstrainedModel{F,<:Union{DecisionList{<:F,L},DecisionTree{<:F,L},FFM}}}`.
 
 It also includes an `info::NamedTuple` for storing additional information.
 
-See also [`MixedSymbolicModel`](@ref), [`DecisionTree`](@ref), [`DecisionList`](@ref), [`FinallyBoundedModel`](@ref).
+See also [`MixedSymbolicModel`](@ref), [`DecisionTree`](@ref), [`DecisionList`](@ref), [`FinallyConstrainedModel`](@ref).
 """
 
-struct MixedSymbolicModel{F<:FinalOutcome, L<:AbstractLogic, FFM<:FinalModel{FF where FF<:F}} <: FinallyBoundedModel{F, FFM}
-    root::Union{FFM,BoundedModel{F,<:Union{DecisionList{<:F,L},DecisionTree{<:F,L},FFM}}}
+struct MixedSymbolicModel{F<:FinalOutcome, L<:AbstractLogic, FFM<:FinalModel{FF where FF<:F}} <: FinallyConstrainedModel{F, FFM}
+    root::Union{FFM,ConstrainedModel{<:F,<:Union{DecisionList{<:F,L},DecisionTree{<:F,L},FFM}}}
     info::NamedTuple
 end
 root(m::MixedSymbolicModel) = m.root
@@ -802,96 +801,13 @@ convert(::Type{<:AbstractModel{F1}}, m::MixedSymbolicModel{F2, L, FIM}) where {F
 
 apply(m::MixedSymbolicModel, i::AbstractInstance) = apply(m.root, i)
 
-include("print.jl")
-
-include("symbolic-utils.jl")
-
-# # Evaluation for single decision
-# # TODO
+# Evaluation for single decision
+# TODO
 # function evaluate_decision(dec::Decision, X::MultiFrameModalDataset) end
 
-# ############################################################################################
-# ############################################################################################
-# ############################################################################################
-
-# # Extract decisions from rule
-# function extract_decisions(formula::Formula{L}) where {L<:AbstractLogic}
-#     # TODO remove in favor of operators_set = operators(L)
-#     operators_set = operators(logic(formula))
-#     function _extract_decisions(node::FNode, decs::AbstractVector{<:Decision})
-#         # Leaf or internal node
-#         if !isdefined(node, :leftchild) && !isdefined(node, :rightchild)
-#             if token(node) in operators_set
-#                 return decs
-#             else
-#                 return push!(decs, token(node))
-#             end
-#         else
-#             isdefined(node, :leftchild)  && _extract_decisions(leftchild(node),  decs)
-#             isdefined(node, :rightchild) && _extract_decisions(rightchild(node), decs)
-
-#             if !(token(node) in operators_set)
-#                 return push!(decs, token(node))
-#             end
-#             decs
-#         end
-#     end
-#     _extract_decisions(tree(formula), [])
-# end
-
-# ############################################################################################
-# # Formula Update
-# ############################################################################################
-
-# function formula_update(formula::Formula{L},nodes_deleted::AbstractVector)
-#     root = tree(formula)
-
-#     function _transplant(u::FNode,v::FNode)
-#         #u è radice
-#         u == root ? root = v : nothing
-
-#         #u è figlio sx
-#         u == leftchild(parent(u)) ? leftchild!(parent(u),v) : nothing
-
-#         #u è figlio dx
-#         u == rightchild(parent(u)) ? rightchild!(parent(u),v) : nothing
-
-#         #v definito
-#         isdefined(v,:token) ? parent!(v,parent(u)) : nothing
-
-#         return nothing
-#     end
-
-#     function _formula_update(node::FNode,node_deleted::FNode)
-
-#         #è il nodo da eliminare
-#         if node == node_deleted
-#             if leftchild(parent(node)) == node
-#                 return _transplant(parent(node),rightchild(parent(node)))
-#             else
-#                 return _transplant(parent(node),leftchild(parent(node)))
-#             end
-#         end
-
-#         #non è il nodo da eliminare
-
-#         #se non sono in una foglia, passo ai rami
-#         isdefined(node, :leftchild)  && _formula_update(leftchild(node), node_deleted)
-#         isdefined(node, :rightchild) && _formula_update(rightchild(node), node_deleted)
-
-#         return nothing
-#     end
-
-#     for node in nodes_deleted
-#         _formula_update(root,node)
-#     end
-
-#     return Formula{L}(root)
-# end
-
-# ############################################################################################
-# # Rule evaluation
-# ############################################################################################
+############################################################################################
+# Rule evaluation
+############################################################################################
 
 # # Evaluation for an antecedent
 
@@ -1055,46 +971,3 @@ include("symbolic-utils.jl")
 # ############################################################################################
 # ############################################################################################
 # ############################################################################################
-
-#TODO: Define Open versions
-# DecisionList doesn't have default value
-# DecisionTree can also have Rule{L,F}
-
-# ml.jl
-
-# Classification and regression labels
-const CLabel  = Union{String,Integer}
-const RLabel  = AbstractFloat
-const Label   = Union{CLabel,RLabel}
-# Raw labels
-const _CLabel = Integer # (classification labels are internally represented as integers)
-const _Label  = Union{_CLabel,RLabel}
-
-
-const AssociationRule{L<:AbstractLogic} = Rule{L, Formula{L}} #NOTE: maybe where {L<:AbstractLogic}
-
-# const ClassificationRule = Rule{L,CLabel} where {L<:AbstractLogic}
-# const RegressionRule = Rule{L,RLabel} where {L<:AbstractLogic}
-
-
-# const ClassificationDL = DecisionList{L,CLabel} where {L<:AbstractLogic}
-# const RegressionDL = DecisionList{L,RLabel} where {L<:AbstractLogic}
-
-
-
-# Translate a list of labels into categorical form
-Base.@propagate_inbounds @inline function get_categorical_form(Y :: AbstractVector{T}) where {T}
-    class_names = unique(Y)
-
-    dict = Dict{T, Int64}()
-    @simd for i in 1:length(class_names)
-        @inbounds dict[class_names[i]] = i
-    end
-
-    _Y = Array{Int64}(undef, length(Y))
-    @simd for i in 1:length(Y)
-        @inbounds _Y[i] = dict[Y[i]]
-    end
-
-    return class_names, _Y
-end

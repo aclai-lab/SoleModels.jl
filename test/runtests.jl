@@ -5,6 +5,8 @@ using Test
 
 @testset "SoleModels.jl" begin
     
+    buf = IOBuffer()
+
     p = SoleLogics.build_tree("p")
     phi = SoleLogics.build_tree("p∧q∨r")
     phi2 = SoleLogics.build_tree("q∧s→r")
@@ -103,16 +105,16 @@ using Test
     bmodel_mixed = @test_broken Branch(phi, r, DecisionList(rules, default_consequent))
     @test_broken output_type(bmodel_mixed) == Union{Float64,Int}
 
-    @test_nowarn print_model.(rules);
-    @test_nowarn print_model(dlmodel);
-    @test_nowarn print_model(bmodel);
+    @test_nowarn [print_model(buf, r) for r in rules];
+    @test_nowarn print_model(buf, dlmodel);
+    @test_nowarn print_model(buf, bmodel);
 
     @test_nowarn Branch(phi,(bmodel,bmodel))
     @test_broken bmodel_2 = Branch(phi,(bmodel,rfloat_number))
     @test_broken bmodel_2 = Branch(phi,(dlmodel,rmodel))
     bmodel_2 = @test_nowarn Branch(phi,(dlmodel,bmodel))
-    @test_nowarn print_model(bmodel_2);
-    @test_nowarn print_model(Branch(phi, SoleModels.RuleCascade([phi,phi,phi], cmodel_integer), bmodel_2))
+    @test_nowarn print_model(buf, bmodel_2);
+    @test_nowarn print_model(buf, Branch(phi, SoleModels.RuleCascade([phi,phi,phi], cmodel_integer), bmodel_2));
     
 
     formula_p = SoleLogics.build_tree("p")
