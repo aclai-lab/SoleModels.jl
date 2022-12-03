@@ -1,6 +1,4 @@
 
-using SoleLogics: AbstractLogic, Formula
-
 ############################################################################################
 # TODO move this stuff
 ############################################################################################
@@ -16,10 +14,6 @@ end
 function check(::Formula, ::AbstractInstance) end
 function check(::Formula, ::AbstractDataset) end
 ############################################################################################
-
-using FunctionWrappers: FunctionWrapper
-
-import Base: convert
 
 """
 A `FinalOutcome` is something that a model outputs.
