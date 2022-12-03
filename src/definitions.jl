@@ -1,8 +1,21 @@
 
 using SoleLogics: AbstractLogic, Formula
-# TODO check
+
+############################################################################################
+# TODO move this stuff
+############################################################################################
+import SoleLogics: CONJUCTION
+function SoleLogics.CONJUNCTION(formulas::Formula...)
+    if length(formulas) > 2
+        SoleLogics.CONJUNCTION(tree(formulas[1]),SoleLogics.CONJUNCTION(formulas[2:end]...))
+    else
+        SoleLogics.CONJUNCTION(tree(formulas[1]),tree(formulas[2]))
+    end
+end
+
 function check(::Formula, ::AbstractInstance) end
 function check(::Formula, ::AbstractDataset) end
+############################################################################################
 
 using FunctionWrappers: FunctionWrapper
 
@@ -47,6 +60,20 @@ $(doc_open_model)
 See also [`is_open`](@ref), [`AbstractModel`](@ref).
 """
 output_type(m::AbstractModel{F}) where {F} = is_open(m) ? Union{Nothing,outcome_type(F)} : outcome_type(F)
+
+"""
+Any `M<:AbstractModel` must provide a `print_model(m::M; kwargs...)` method
+that is used for rendering the model in text. See print.jl.
+
+See also [`AbstractModel`](@ref).
+"""
+print_model(m::AbstractModel; kwargs...) = print_model(stdout, m; kwargs...)
+
+function Base.show(io::IO, ::MIME"text/plain", m::AbstractModel)
+    io = IOBuffer()
+    print_model(io, m)
+    String(take!(io))
+end
 
 """
 Any `AbstractModel` can be applied to an instance object or a dataset of instance objects.
@@ -623,7 +650,11 @@ function apply(m::RuleCascade, i::AbstractInstance)
     m.consequent
 end
 
-# TODO print_model
+antecedent(m::RuleCascade) = SoleLogics.CONJUNCTION(m.antecedents...)
+
+function to_rule(m::RuleCascade{F, L, FIM}) where {F<:FinalOutcome, L<:AbstractLogic, FIM<:AbstractModel}
+    Rule{F,L,FIM}(antecedent(m), m.consequent, m.info)
+end
 
 """
 A `decision tree` is a symbolic model that consists of a nested structure of IF-THEN-ELSE blocks:
@@ -668,8 +699,6 @@ is_open(::DecisionTree) = false
 
 apply(m::DecisionTree, i::AbstractInstance) = apply(m.root, i)
 
-print_model(io::IO, m::DecisionTree; kwargs...) = print_model(io, m.root; kwargs...)
-
 """
 A `mixed symbolic model` is a symbolic model that consists of a nested structure of IF-THEN-ELSE
 and IF-ELSEIF-ELSE blocks:
@@ -710,8 +739,7 @@ is_open(::MixedSymbolicModel) = false
 
 apply(m::MixedSymbolicModel, i::AbstractInstance) = apply(m.root, i)
 
-print_model(io::IO, m::MixedSymbolicModel; kwargs...) = print_model(io, m.root; kwargs...)
-
+include("print.jl")
 
 # TODO fix from here onwards:
 # ############################################################################################
@@ -741,8 +769,8 @@ print_model(io::IO, m::MixedSymbolicModel; kwargs...) = print_model(io, m.root; 
 # function list_rules(node::Branch{L}, this_formula::Formula{L}) where {L<:AbstractLogic}
 #     # left  child formula = father formula ∧   current_antecedent
 #     # right child formula = father formula ∧ ¬ current_antecedent
-#     left_formula  = SoleLogics.CONJUCTION(this_formula, antecedent(node)) # TODO rename into condition?
-#     right_formula = SoleLogics.CONJUCTION(this_formula, SoleLogics.NEG(antecedent(node)))
+#     left_formula  = SoleLogics.CONJUNCTION(this_formula, antecedent(node)) # TODO rename into condition?
+#     right_formula = SoleLogics.CONJUNCTION(this_formula, SoleLogics.NEG(antecedent(node)))
 #     return [
 #         list_rules(leftchild(node),  left_formula)...,
 #         list_rules(rightchild(node), right_formula)...,

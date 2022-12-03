@@ -1,27 +1,27 @@
-function Base.show(io::IO, ::MIME"text/plain", m::AbstractModel)
-    io = IOBuffer()
-    print_model(io, m)
-    String(take!(io))
-end
-
-print_model(m::AbstractModel; kwargs...) = print_model(stdout, m; kwargs...)
-
-# TODO @macro print_submodel (there any/last)
-
+############################################################################################
+# Printing utils
+############################################################################################
 
 default_indentation_list_children = "┐"
-default_indentation_any_first  = "├ "
+default_indentation_any_first  = "├ " # "╭✔ "
 default_indentation_any_space  = "│ "
-default_indentation_last_first = "└ "
+default_indentation_last_first = "└ " # "╰✘ "
 default_indentation_last_space = "  "
 
 default_indentation = (default_indentation_list_children, default_indentation_any_first, default_indentation_any_space, default_indentation_last_first, default_indentation_last_space)
 
-
-# "╭✔ "
-# "╰✘ "
-
-
+macro print_submodel(io, submodel, indentation_str, indentation, depth, max_depth, kwargs)
+    quote
+        print_model($(esc(io)), $(esc(submodel));
+            indentation_str = $(esc(indentation_str)),
+            indentation = $(esc(indentation)),
+            header = false,
+            depth = $(esc(depth))+1,
+            max_depth = $(esc(max_depth)),
+            $(esc(kwargs))...,
+        )
+    end
+end
 
 function print_model(
         io::IO,
@@ -61,16 +61,10 @@ function print_model(
         pipe = "$(indentation_list_children)"
         # println(io, "$(indentation_str*pipe)$(m.antecedent)")
         println(io, "$(pipe)$(m.antecedent)")
-        pad_str = indentation_str*repeat(" ", length(pipe)-length(indentation_last_space))
+        pad_str = indentation_str*repeat(" ", length(pipe)-length(indentation_last_space)+1)
         print(io, "$(pad_str*indentation_last_first)$("✔ ")")
-        print_model(io, m.consequent;
-            indentation_str = pad_str*indentation_last_space*repeat(" ", length("✔ ")+1),
-            indentation = indentation,
-            header = false,
-            depth = depth+1,
-            max_depth = max_depth,
-            kwargs...,
-        )
+        ind = pad_str*indentation_last_space*repeat(" ", length("✔ ")+1)
+        @print_submodel io m.consequent ind indentation depth max_depth kwargs
     else
         println(io, "[...]")
     end
@@ -95,19 +89,14 @@ function print_model(
             # pad_str = indentation_str*indentation_flag_first**repeat(" ", length(pipe)-length(indentation_flag_first))
             pad_str = "$(indentation_str*indentation_flag_first)$(f)"
             print(io, "$(pad_str)")
-            print_model(io, consequent;
-                indentation_str = indentation_str*indentation_flag_space*repeat(" ", length(f)+1),
-                indentation = indentation,
-                header = false,
-                depth = depth+1,
-                max_depth = max_depth,
-                kwargs...,
-            )
+            ind = indentation_str*indentation_flag_space*repeat(" ", length(f))
+            @print_submodel io consequent ind indentation depth max_depth kwargs
         end
     else
         println(io, "[...]")
     end
 end
+
 
 function print_model(
         io::IO,
@@ -129,28 +118,48 @@ function print_model(
             println(io, "$(indentation_str*pipe) $(antecedent(rule))")
             pad_str = indentation_str*indentation_any_space*repeat(" ", length(pipe)-length(indentation_any_space)-1)
             print(io, "$(pad_str*indentation_last_first)")
-            print_model(io, consequent(rule);
-                indentation_str = pad_str*indentation_last_space,
-                indentation = indentation,
-                header = false,
-                depth = depth+1,
-                max_depth = max_depth,
-                kwargs...,
-            )
+            ind = pad_str*indentation_last_space
+            @print_submodel io consequent(rule) ind indentation depth max_depth kwargs
         end
         pipe = indentation_last_first*"$("✘ ")"
         print(io, "$(indentation_str*pipe)")
         # print(io, "$(indentation_str*indentation_last_space*repeat(" ", length(pipe)-length(indentation_last_space)-1)*indentation_last_space)")
-        print_model(io, m.default_consequent;
-            indentation_str = indentation_str*indentation_last_space*repeat(" ", length(pipe)-length(indentation_last_space)-1)*indentation_last_space,
-            # indentation_str = indentation_str*indentation_last_space,
-            indentation = indentation,
-            header = false,
-            depth = depth+1,
-            max_depth = max_depth,
-            kwargs...,
-        )
+        ind = indentation_str*indentation_last_space*repeat(" ", length(pipe)-length(indentation_last_space)-1)*indentation_last_space
+        # ind = indentation_str*indentation_last_space,
+        @print_submodel io m.default_consequent ind indentation depth max_depth kwargs
     else
         println(io, "[...]")
     end
 end
+
+
+function print_model(
+        io::IO,
+        m::RuleCascade;
+        header = true,
+        indentation_str="",
+        indentation = default_indentation,
+        depth = 0,
+        max_depth = nothing,
+        kwargs...,
+    )
+    (indentation_list_children, indentation_any_first, indentation_any_space, indentation_last_first, indentation_last_space) = indentation
+    !header || println(io, "$(indentation_str)$(typeof(m))\n$(indentation_str)Info:$(info(m))")
+    if isnothing(max_depth) || depth < max_depth
+        pipe = "$(indentation_list_children)"
+        # println(io, "$(indentation_str*pipe)$("⩚"*join(", ", antecedents(m)))")
+        println(io, "$(pipe)$("⩚"*join(", ", antecedents(m)))")
+        pad_str = indentation_str*repeat(" ", length(pipe)-length(indentation_last_space)+1)
+        print(io, "$(pad_str*indentation_last_first)$("✔ ")")
+        ind = pad_str*indentation_last_space*repeat(" ", length("✔ ")+1)
+        @print_submodel io m.consequent ind indentation depth max_depth kwargs
+    else
+        println(io, "[...]")
+    end
+end
+
+
+print_model(io::IO, m::DecisionTree; kwargs...) = print_model(io, m.root; kwargs...)
+
+print_model(io::IO, m::MixedSymbolicModel; kwargs...) = print_model(io, m.root; kwargs...)
+

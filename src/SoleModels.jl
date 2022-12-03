@@ -14,11 +14,11 @@ export Consequent
 export Performance
 
 export Rule, Branch
-export DecisionList, DecisionTree
+
+export DecisionList, RuleCascade
+export DecisionTree, MixedSymbolicModel
 
 include("definitions.jl")
-
-include("print.jl")
 
 include("confusion-matrix.jl")
 
