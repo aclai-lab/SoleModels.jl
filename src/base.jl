@@ -711,10 +711,8 @@ function apply(m::RuleCascade, i::AbstractInstance)
     m.consequent
 end
 
-antecedent(m::RuleCascade) = SoleLogics.CONJUNCTION(m.antecedents...)
-
 function to_rule(m::RuleCascade{F, L, FIM}) where {F<:FinalOutcome, L<:AbstractLogic, FIM<:AbstractModel}
-    Rule{F,L,FIM}(antecedent(m), m.consequent, m.info)
+    Rule{F,L,FIM}(SoleLogics.CONJUNCTION(m.antecedents...), m.consequent, m.info)
 end
 
 """
@@ -806,7 +804,7 @@ apply(m::MixedSymbolicModel, i::AbstractInstance) = apply(m.root, i)
 
 include("print.jl")
 
-# include("symbolic-utils.jl")
+include("symbolic-utils.jl")
 
 # # Evaluation for single decision
 # # TODO

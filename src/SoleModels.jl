@@ -29,7 +29,7 @@ export Rule, Branch
 export DecisionList, RuleCascade
 export DecisionTree, MixedSymbolicModel
 
-include("main.jl")
+include("base.jl")
 
 include("confusion-matrix.jl")
 
