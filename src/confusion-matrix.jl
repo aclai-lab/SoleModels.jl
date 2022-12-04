@@ -30,6 +30,8 @@ export compute_metrics,
         safe_macro_NPV
 
 
+using SoleBase: nat_sort
+
 ############################################################################################
 ############################################################################################
 ############################################################################################
@@ -184,7 +186,7 @@ struct ConfusionMatrix{T<:Number}
         class_labels = begin
             class_labels = unique([actual; predicted])
             if isnothing(force_class_order)
-                class_labels = sort(class_labels, lt=util.nat_sort)
+                class_labels = sort(class_labels, lt=nat_sort)
             else
                 @assert length(setdiff(force_class_order, class_labels)) == 0
                 class_labels = force_class_order

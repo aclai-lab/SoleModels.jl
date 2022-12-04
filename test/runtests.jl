@@ -1,3 +1,4 @@
+# using Revise
 using SoleLogics
 using SoleModels
 using SoleModels: ConstantModel
