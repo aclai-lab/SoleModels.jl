@@ -27,7 +27,7 @@ instance object (i.e., a piece of data).
 abstract type AbstractModel{F <: FinalOutcome} end
 
 """
-`outcome_type` simply returns the outcome type of the model
+Returns the outcome type of the model
 """
 outcome_type(m::AbstractModel{F}) where {F} = F
 outcome_type(::Type{<:AbstractModel{F}}) where {F} = F
@@ -39,28 +39,28 @@ Otherwise, the model can produce `nothing` as outcome and is referred to as *ope
 
 """
 $(doc_open_model)
-This behavior can be expressed via the `is_open` trait, which defaults to `true`:
+This behavior can be expressed via the `isopen` trait, which defaults to `true`:
 
-    is_open(::AbstractModel) = true
+    isopen(::AbstractModel) = true
 """
-is_open(::AbstractModel) = true
+isopen(::AbstractModel) = true
 
 """
 $(doc_open_model)
-`output_type` leverages the `is_open` trait to provide the type for the outcome of a model:
+`output_type` leverages the `isopen` trait to provide the type for the outcome of a model:
 
-    output_type(M::AbstractModel{F}) = is_open(M) ? Union{Nothing,F} : F
+    output_type(M::AbstractModel{F}) = isopen(M) ? Union{Nothing,F} : F
 
-See also [`is_open`](@ref), [`AbstractModel`](@ref).
+See also [`isopen`](@ref), [`AbstractModel`](@ref).
 """
-output_type(m::AbstractModel{F}) where {F} = is_open(m) ? Union{Nothing,outcome_type(m)} : outcome_type(m)
+output_type(m::AbstractModel{F}) where {F} = isopen(m) ? Union{Nothing,outcome_type(m)} : outcome_type(m)
 
 """
 Any `AbstractModel` can be applied to an instance object or a dataset of instance objects.
 
 See also [`AbstractModel`](@ref), [`AbstractInstance`](@ref), [`AbstractDataset`](@ref).
 """
-apply(m::AbstractModel, i::AbstractInstance)::output_type(m) = error("Please, provide method apply(::$(typeof(m)), ::$(typeof(i)))")
+apply(m::AbstractModel, i::AbstractInstance)::output_type(m) = error("Please, provide method apply(::$(typeof(m)), ::$(typeof(i))).")
 apply(m::AbstractModel, d::AbstractDataset)::AbstractVector{<:output_type(m)} = map(i->apply(m, i), iterate_instances(d))
 
 
@@ -72,19 +72,19 @@ Symbolic models provide a form of transparent and interpretable modeling.
 
 """
 $(doc_symbolic)
-The `is_symbolic` trait, defaulted to `false` can be used to specify that a model is symbolic.
+The `issymbolic` trait, defaulted to `false` can be used to specify that a model is symbolic.
 
 See also [`logic`](@ref), [`unroll_rules`](@ref), [`AbstractModel`](@ref).
 """
-is_symbolic(::AbstractModel) = false
+issymbolic(::AbstractModel) = false
 
 """
 $(doc_symbolic)
 Every symbolic model must provide access to its corresponding `Logic` type via the `logic` trait.
 
-See also [`is_symbolic`](@ref), [`AbstractModel`](@ref).
+See also [`issymbolic`](@ref), [`AbstractModel`](@ref).
 """
-logic(m::AbstractModel)::AbstractLogic = error(is_symbolic(m) ? "Please, provide method logic(::$(typeof(m))) ($(typeof(m)) is a symbolic model)." : "Models of type $(typeof(m)) are not symbolic, and thus have no logic associated.")
+logic(m::AbstractModel)::AbstractLogic = error(issymbolic(m) ? "Please, provide method logic(::$(typeof(m))), or define issymbolic(::$(typeof(m))) = false." : "Models of type $(typeof(m)) are not symbolic, and thus have no logic associated.")
 
 """
 Instead, a `AbstractModel` is said to be functional when it encodes an algebraic mathematical function.
@@ -98,16 +98,16 @@ about the `AbstractModel`'s statistical performance during the learning phase.
 
 """
 $(doc_info)
-The `has_info` trait, defaulted to `true`, can be used to specify models that do not implement an
+The `hasinfo` trait, defaulted to `true`, can be used to specify models that do not implement an
 `info` field.
 """
-has_info(::AbstractModel) = true
+hasinfo(::AbstractModel) = true
 
 """
 $(doc_info)
 The `info` getter function accesses this structure.
 """
-info(m::AbstractModel) = has_info(m) ? m.info : error("Type $(typeof(m)) does not have an `info` field.")
+info(m::AbstractModel)::NamedTuple = hasinfo(m) ? m.info : error("Type $(typeof(m)) does not have an `info` field.")
 
 
 ############################################################################################
@@ -272,7 +272,7 @@ function check_model_constraints(::Type{M}, IM::Type{<:AbstractModel{IF}}, FIM::
     # TODO now it's kinda implicit, but one day maybe not:
     # @assert IM <: FIM "Can't instantiate $(M) with inner model $(IM))! $(IM) <: $(FIM) should hold."
     if ! (IM<:FinalModel{<:F})
-        @assert IM<:ConstrainedModel{F,FIM} "ConstrainedModels require IM<:ConstrainedModel{F,FIM}, but $(IM) does not subtype $(ConstrainedModel{F,FIM})"
+        @assert IM<:ConstrainedModel{F,FIM} "ConstrainedModels require IM<:ConstrainedModel{F,FIM}, but $(IM) does not subtype $(ConstrainedModel{F,FIM})."
     end
 end
 
@@ -383,7 +383,7 @@ end
 antecedent(m::Rule) = m.antecedent
 consequent(m::Rule) = m.consequent
 
-is_symbolic(::Rule) = true
+issymbolic(::Rule) = true
 logic(::Rule{F,L}) where {F, L} = L
 
 convert(::Type{<:AbstractModel{F1}}, m::Rule{F2, L, FIM}) where {F1, F2, L, FIM} = Rule{F1, L, FIM}(m)
@@ -490,10 +490,10 @@ antecedent(m::Branch) = m.antecedent
 positive_consequent(m::Branch) = m.positive_consequent
 negative_consequent(m::Branch) = m.negative_consequent
 
-is_symbolic(::Branch) = true
+issymbolic(::Branch) = true
 logic(::Branch{F,L}) where {F<:FinalOutcome, L<:AbstractLogic} = L
 
-is_open(::Branch) = false
+isopen(::Branch) = false
 
 convert(::Type{<:AbstractModel{F1}}, m::Branch{F2, L, FIM}) where {F1, F2, L, FIM} = Branch{F1, L, FIM}(m)
 
@@ -602,10 +602,10 @@ end
 rules(m::DecisionList) = m.rules
 default_consequent(m::DecisionList) = m.default_consequent
 
-is_symbolic(::DecisionList) = true
+issymbolic(::DecisionList) = true
 logic(::DecisionList{F,L}) where {F<:FinalOutcome, L<:AbstractLogic} = L
 
-is_open(::DecisionList) = false
+isopen(::DecisionList) = false
 
 convert(::Type{<:AbstractModel{F1}}, m::DecisionList{F2, L, FIM}) where {F1, F2, L, FIM} = DecisionList{F1, L, FIM}(m)
 
@@ -697,7 +697,7 @@ end
 antecedents(m::RuleCascade) = m.antecedents
 consequent(m::RuleCascade) = m.consequent
 
-is_symbolic(::RuleCascade) = true
+issymbolic(::RuleCascade) = true
 logic(::RuleCascade{F,L}) where {F<:FinalOutcome, L<:AbstractLogic} = L
 
 convert(::Type{<:AbstractModel{F1}}, m::RuleCascade{F2, L, FIM}) where {F1, F2, L, FIM} = RuleCascade{F1, L, FIM}(m)
@@ -750,10 +750,10 @@ struct DecisionTree{F<:FinalOutcome, L<:AbstractLogic, FFM<:FinalModel{FF where 
 end
 root(m::DecisionTree) = m.root
 
-is_symbolic(::DecisionTree) = true
+issymbolic(::DecisionTree) = true
 logic(::DecisionTree{F,L}) where {F<:FinalOutcome, L<:AbstractLogic} = L
 
-is_open(::DecisionTree) = false
+isopen(::DecisionTree) = false
 
 convert(::Type{<:AbstractModel{F1}}, m::DecisionTree{F2, L, FIM}) where {F1, F2, L, FIM} = DecisionTree{F1, L, FIM}(m)
 
@@ -792,10 +792,10 @@ struct MixedSymbolicModel{F<:FinalOutcome, L<:AbstractLogic, FFM<:FinalModel{FF 
 end
 root(m::MixedSymbolicModel) = m.root
 
-is_symbolic(::MixedSymbolicModel) = true
+issymbolic(::MixedSymbolicModel) = true
 logic(::MixedSymbolicModel{F,L}) where {F<:FinalOutcome, L<:AbstractLogic} = L
 
-is_open(::MixedSymbolicModel) = false
+isopen(::MixedSymbolicModel) = false
 
 convert(::Type{<:AbstractModel{F1}}, m::MixedSymbolicModel{F2, L, FIM}) where {F1, F2, L, FIM} = MixedSymbolicModel{F1, L, FIM}(m)
 
