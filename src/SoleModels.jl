@@ -29,6 +29,10 @@ export Rule, Branch
 export DecisionList, RuleCascade
 export DecisionTree, MixedSymbolicModel
 
+export evaluate_antecedent, evaluate_rule
+export rule_metrics
+export convert, list_paths
+
 include("models/base.jl")
 include("models/print.jl")
 include("models/symbolic-utils.jl")
