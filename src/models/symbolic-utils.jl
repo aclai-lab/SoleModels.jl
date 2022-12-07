@@ -106,7 +106,7 @@ function unroll_rules(m::AbstractModel, assumed_formula = nothing)
     # [advance_formula(rule) for rule in unroll_rules(m)]
     error(begin
         if is_symbolic(m)
-            "Please, provide method list_immediate_rules(::$(typeof(m))) ($(typeof(m)) is a symbolic model)."
+            "Please, provide method unroll_rules(::$(typeof(m))) ($(typeof(m)) is a symbolic model)."
         else
             "Models of type $(typeof(m)) are not symbolic, and thus have no rules associated."
         end
@@ -126,7 +126,7 @@ unroll_rules(m::Branch) = [
     ) for rule in unroll_rules(negative_consequent(m))]...,
 ]
 
-unroll_rules(m::DecisionList) = [rules(m)]
+unroll_rules(m::DecisionList) = [rules(m)...,unroll_rules(default_consequent(m))...]
 
 unroll_rules(m::RuleCascade) = [convert(::Rule,m)]
 
@@ -139,34 +139,41 @@ unroll_rules(m::MixedSymbolicModel) = unroll_rules(root(m))
 ############################################################################################
 
 
-# function unroll_rules_cascade(m::AbstractModel, assumed_formula = nothing)
-#     # TODO @Michele
-#     # [advance_formula(rule) for rule in unroll_rules(m)]
-#     error(begin
-#         if is_symbolic(m)
-#             "Please, provide method list_immediate_rules(::$(typeof(m))) ($(typeof(m)) is a symbolic model)."
-#         else
-#             "Models of type $(typeof(m)) are not symbolic, and thus have no rules associated."
-#         end
-#     end)
-# end
+function unroll_rules_cascade(m::AbstractModel, assumed_formula = nothing)
+    # TODO @Michele
+    # [advance_formula(rule) for rule in unroll_rules(m)]
+    error(begin
+        if is_symbolic(m)
+            "Please, provide method unroll_rules_cascade(::$(typeof(m))) ($(typeof(m)) is a symbolic model)."
+        else
+            "Models of type $(typeof(m)) are not symbolic, and thus have no rules associated."
+        end
+    end)
+end
 
-# unroll_rules_cascade(m::FinalModel) = [RuleCascade(SoleLogics.TOP,m)]
+unroll_rules_cascade(m::FinalModel) = [RuleCascade(SoleLogics.TOP,m)]
 
-# unroll_rules_cascade(m::Rule) = [RuleCascade(antecedent(m),consequent(m))]
+unroll_rules_cascade(m::Rule) = [convert(RuleCascade,m)]
 
-# unroll_rules_cascade(m::Branch) = [
-#     ...
-# ]
+unroll_rules_cascade(m::Branch) = [
+    [RuleCascade(
+        [antecedent(m),antecedent(rule)...],
+        consequent(rule)) for rule in unroll_rules_cascade(positive_consequent(m))]...,
+    [RuleCascade(
+        [NEGATION(antecedent(m)),antecedent(rule)...],
+        consequent(rule)) for rule in unroll_rules_cascade(negative_consequent(m))]...,
+]
 
-# unroll_rules_cascade(m::DecisionList) =
-#     [RuleCascade(antecedent(rule),consequent(rule)) for rule in m]
+unroll_rules_cascade(m::DecisionList) = [
+    [convert(RuleCascade,rule) for rule in rules(m)]...,
+    unroll_rules_cascade(default_consequent(m))...,
+]
 
-# unroll_rules_cascade(m::RuleCascade) = [m]
+unroll_rules_cascade(m::RuleCascade) = [m]
 
-# unroll_rules_cascade(m::DecisionTree) = unroll_rules_cascade(root(m))
+unroll_rules_cascade(m::DecisionTree) = unroll_rules_cascade(root(m))
 
-# unroll_rules_cascade(m::MixedSymbolicModel) = unroll_rules_cascade(root(m))
+unroll_rules_cascade(m::MixedSymbolicModel) = unroll_rules_cascade(root(m))
 
 ############################################################################################
 ############################################################################################
