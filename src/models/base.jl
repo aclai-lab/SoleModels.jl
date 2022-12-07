@@ -848,6 +848,30 @@ end
 ############################################################################################
 
 """
+Convert a rule in a rule cascade
+"""
+
+function convert(::RuleCascade,rule::Rule)
+
+    function convert_formula(node::FNode)
+        if isleaf(node)
+            return [Formula(node)]
+        end
+
+        return [
+            convert_formula(leftchild(node))...,
+            convert_formula(rightchild(node))...,
+        ]
+    end
+
+    RuleCascade(convert_formula(tree(antecedent(rule))),consequent(rule))
+end
+
+############################################################################################
+############################################################################################
+############################################################################################
+
+"""
 Function for evaluating the antecedent of a rule
 """
 
