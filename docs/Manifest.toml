@@ -65,9 +65,9 @@ version = "0.1.4"
 
 [[CodeTracking]]
 deps = ["InteractiveUtils", "UUIDs"]
-git-tree-sha1 = "cc4bd91eba9cdbbb4df4746124c22c0832a460d6"
+git-tree-sha1 = "3bf60ba2fae10e10f70d53c070424e40a820dac2"
 uuid = "da1fd8a2-8d9e-5ec2-8556-3022fb5608a2"
-version = "1.1.1"
+version = "1.1.2"
 
 [[CodecZlib]]
 deps = ["TranscodingStreams", "Zlib_jll"]
@@ -298,9 +298,9 @@ version = "0.21.3"
 
 [[JuliaInterpreter]]
 deps = ["CodeTracking", "InteractiveUtils", "Random", "UUIDs"]
-git-tree-sha1 = "a79c4cf60cc7ddcdcc70acbb7216a5f9b4f8d188"
+git-tree-sha1 = "2a64e529fd5b228224360f80f3314a633f30e0e1"
 uuid = "aa1ae85d-cabe-5617-a682-6adf51b2e16a"
-version = "0.9.16"
+version = "0.9.17"
 
 [[LaTeXStrings]]
 git-tree-sha1 = "f2355693d6778a178ade15952b7ac47a4ff97996"
@@ -540,8 +540,9 @@ version = "1.0.1"
 uuid = "6462fe0b-24de-5631-8697-dd941f90decc"
 
 [[SoleBase]]
-git-tree-sha1 = "3a5bc246f3b91c3d92e9606f412177076203bfe4"
-repo-rev = "main"
+deps = ["Logging", "Random"]
+git-tree-sha1 = "c6c3042fd61c7b7162ddf16b69939bdace7d5e30"
+repo-rev = "dev"
 repo-url = "https://github.com/aclai-lab/SoleBase.jl"
 uuid = "4475fa32-7023-44a0-aa70-4813b230e492"
 version = "0.1.0"
@@ -549,14 +550,14 @@ version = "0.1.0"
 [[SoleData]]
 deps = ["CSV", "Catch22", "DataFrames", "DataStructures", "Logging", "Random", "Reexport", "ScientificTypes", "SoleBase", "Statistics"]
 git-tree-sha1 = "338d3dd73e31b8932ce4cbe7e882ca92010a684b"
-repo-rev = "main"
+repo-rev = "dev"
 repo-url = "https://github.com/aclai-lab/SoleData.jl"
 uuid = "123f1ae1-6307-4526-ab5b-aab3a92a2b8c"
 version = "0.1.0"
 
 [[SoleLogics]]
 deps = ["DataStructures", "Dictionaries", "IterTools", "Lazy", "Random", "Reexport", "SoleBase"]
-git-tree-sha1 = "956425eedeb9e3fd5ecac05d416d063c165fd9d0"
+git-tree-sha1 = "4c1d96824cd44a2c6445a183652d277a1e5a0f3c"
 repo-rev = "algebras/giopaglia"
 repo-url = "https://github.com/aclai-lab/SoleLogics.jl"
 uuid = "b002da8f-3cb3-4d91-bbe3-2953433912b5"
@@ -564,7 +565,7 @@ version = "0.1.1"
 
 [[SoleModels]]
 deps = ["FunctionWrappers", "Reexport", "Revise", "SoleBase", "SoleData", "SoleLogics"]
-git-tree-sha1 = "e5cdf3f34dca8842c098832d04cf09925cc21ac3"
+git-tree-sha1 = "7107f30c61e421efae33a93c4559018b0f5641ea"
 repo-rev = "definitions/giopaglia"
 repo-url = "https://github.com/aclai-lab/SoleModels.jl"
 uuid = "4249d9c7-3290-4ddd-961c-e1d3ec2467f8"
