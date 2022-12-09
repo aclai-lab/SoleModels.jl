@@ -119,16 +119,18 @@ unroll_rules(m::Rule) = [m]
 
 unroll_rules(m::Branch) = [
     [Rule(
-        SoleLogics.CONJUNCTION(antecedent(m),antecedent(rule)), consequent(rule)
-    ) for rule in unroll_rules(positive_consequent(m))]...,
+        Formula(SoleLogics.CONJUNCTION(tree(antecedent(m)),tree(antecedent(rule)))),
+        consequent(rule)) for rule in unroll_rules(positive_consequent(m))]...,
     [Rule(
-        SoleLogics.CONJUNCTION(NEGATION(antecedent(m)),antecedent(rule)), consequent(rule)
-    ) for rule in unroll_rules(negative_consequent(m))]...,
+        Formula(SoleLogics.CONJUNCTION(
+            NEGATION(tree(antecedent(m))),
+            tree(antecedent(rule)))
+        ), consequent(rule)) for rule in unroll_rules(negative_consequent(m))]...,
 ]
 
 unroll_rules(m::DecisionList) = [rules(m)...,unroll_rules(default_consequent(m))...]
 
-unroll_rules(m::RuleCascade) = [convert(::Rule,m)]
+unroll_rules(m::RuleCascade) = [convert(Rule,m)]
 
 unroll_rules(m::DecisionTree) = unroll_rules(root(m))
 
@@ -151,16 +153,16 @@ function unroll_rules_cascade(m::AbstractModel, assumed_formula = nothing)
     end)
 end
 
-unroll_rules_cascade(m::FinalModel) = [RuleCascade(SoleLogics.TOP,m)]
+unroll_rules_cascade(m::FinalModel) = [RuleCascade([SoleLogics.TOP],m)]
 
 unroll_rules_cascade(m::Rule) = [convert(RuleCascade,m)]
 
 unroll_rules_cascade(m::Branch) = [
     [RuleCascade(
-        [antecedent(m),antecedent(rule)...],
+        [antecedent(m),antecedents(rule)...],
         consequent(rule)) for rule in unroll_rules_cascade(positive_consequent(m))]...,
     [RuleCascade(
-        [NEGATION(antecedent(m)),antecedent(rule)...],
+        [Formula(NEGATION(tree(antecedent(m)))),antecedents(rule)...],
         consequent(rule)) for rule in unroll_rules_cascade(negative_consequent(m))]...,
 ]
 
@@ -202,7 +204,7 @@ end
 
 function list_paths(node::Branch)
     positive_path  = [antecedent(node)]
-    negative_path = [NEGATION(antecedent(node))]
+    negative_path = [NEGATION(tree(antecedent(node)))]
     return [
         list_paths(positive_consequent(node),  positive_path)...,
         list_paths(negative_consequent(node), negative_path)...,
@@ -216,7 +218,7 @@ end
 function list_paths(node::Branch, this_path::AbstractVector)
     # NOTE: antecedent(node) or tree(antecedent(node)) to obtain a FNode?
     positive_path  = [this_path..., antecedent(node)]
-    negative_path = [this_path..., NEGATION(antecedent(node))]
+    negative_path = [this_path..., NEGATION(tree(antecedent(node)))]
     return [
         list_paths(positive_consequent(node),  positive_path)...,
         list_paths(negative_consequent(node), negative_path)...,

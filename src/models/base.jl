@@ -808,10 +808,10 @@ apply(m::MixedSymbolicModel, i::AbstractInstance) = apply(m.root, i)
 """
     Convert a rule cascade in a rule
 """
-convert(::Rule,rule_cascade::RuleCascade) =
-    convert(::Rule, antecedent::AbstractVector{<:Formula}, consequent::AbstractModel)
+convert(::Type{Rule},rule_cascade::RuleCascade) =
+    convert(Rule, antecedents(rule_cascade), consequent(rule_cascade))
 
-function convert(::Rule,antecedent::AbstractVector{<:Formula}, consequent::AbstractModel)
+function convert(::Type{Rule},antecedent::AbstractVector{<:Formula}, consequent::AbstractModel)
     # Building antecedent
     function _build_formula(conjuncts::AbstractVector{<:Formula{L}}) where {L<:Logic}
         if length(conjuncts) > 2
@@ -851,7 +851,7 @@ end
 Convert a rule in a rule cascade
 """
 
-function convert(::RuleCascade,rule::Rule)
+function convert(::Type{RuleCascade},rule::Rule)
 
     function convert_formula(node::FNode)
         if isleaf(node)
@@ -879,7 +879,7 @@ function evaluate_antecedent(rule::Rule, X::AbstractDataset)
     evaluate_antecedent(antecedent(rule), X)
 end
 
-function evaluate_antecedent(antecedent::Formula{L}, X::AbstractDataset)
+function evaluate_antecedent(antecedent::Formula{L}, X::AbstractDataset) where L<:Logic
     check(antecedent, X)
 end
 
@@ -889,7 +889,7 @@ Function for evaluating a rule
 function evaluate_rule(
     rule::Rule,
     X::AbstractDataset,
-    Y::AbstractVector{<:Consequent}
+    Y::AbstractVector{<:FinalModel}
 )
     # Antecedent satisfaction. For each instances in X:
     #  - `false` when not satisfiable,
@@ -919,7 +919,7 @@ function evaluate_rule(
     end
 
     y_pred = begin
-        y_pred = Vector{Union{Consequent, Nothing}}(fill(nothing, length(Y)))
+        y_pred = Vector{Union{FinalModel, Nothing}}(fill(nothing, length(Y)))
         y_pred[idxs_sat] .= consequent(rule)
         y_pred
     end
@@ -941,7 +941,7 @@ Length of the rule
 """
 
 rule_length(rule::Rule) = rule_length(antecedent(rule))
-rule_length(formula::Formula) = rule_length(root(formula))
+rule_length(formula::Formula) = rule_length(tree(formula))
 
 function rule_length(node::FNode)
     if isleaf(node)
@@ -958,8 +958,8 @@ Metrics of the rule
 
 function rule_metrics(
     rule::Rule,
-    X::MultiFrameModalDataset,
-    Y::AbstractVector{<:Consequent}
+    X::AbstractDataset,
+    Y::AbstractVector{<:FinalModel}
 )
 
     eval_result = evaluate_rule(rule, X, Y)
