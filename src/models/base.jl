@@ -69,7 +69,7 @@ apply(m::AbstractModel, d::AbstractDataset)::AbstractVector{<:output_type(m)} = 
 
 doc_symbolic = """
 A `AbstractModel` is said to be `symbolic` when it is based on certain a logical language (or "logic",
-see [`SoleLogics`](@ref) package).
+see [`SoleLogics`](@doc) package).
 Symbolic models provide a form of transparent and interpretable modeling.
 """
 
@@ -545,7 +545,6 @@ It also includes an `info::NamedTuple` for storing additional information.
 
 See also [`Rule`](@ref), [`ConstrainedModel`](@ref), [`DecisionTree`](@ref), [`AbstractModel`](@ref).
 """
-
 struct DecisionList{F<:Outcome, L<:AbstractLogic, FIM<:AbstractModel{FF where FF<:F}} <: ConstrainedModel{F, FIM}
     rules::Vector{Rule{<:F,L}}
     # rules::Vector{typeintersect(Rule{<:F,L},FIM)}
@@ -766,7 +765,6 @@ It also includes an `info::NamedTuple` for storing additional information.
 
 See also [`DecisionTree`](@ref), [`MixedSymbolicModel`](@ref), [`DecisionList`](@ref), [`FinallyConstrainedModel`](@ref).
 """
-
 struct DecisionTree{F<:Outcome, L<:AbstractLogic, FFM<:FinalModel{FF where FF<:F}} <: FinallyConstrainedModel{F, FFM}
     root::Union{FFM,ConstrainedModel{<:F,<:Union{Branch{<:F,L},FFM}}}
     info::NamedTuple
@@ -809,7 +807,6 @@ It also includes an `info::NamedTuple` for storing additional information.
 
 See also [`MixedSymbolicModel`](@ref), [`DecisionTree`](@ref), [`DecisionList`](@ref), [`FinallyConstrainedModel`](@ref).
 """
-
 struct MixedSymbolicModel{F<:Outcome, L<:AbstractLogic, FFM<:FinalModel{FF where FF<:F}} <: FinallyConstrainedModel{F, FFM}
     root::Union{FFM,ConstrainedModel{<:F,<:Union{DecisionList{<:F,L},DecisionTree{<:F,L},FFM}}}
     info::NamedTuple

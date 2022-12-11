@@ -298,9 +298,9 @@ version = "0.21.3"
 
 [[JuliaInterpreter]]
 deps = ["CodeTracking", "InteractiveUtils", "Random", "UUIDs"]
-git-tree-sha1 = "2a64e529fd5b228224360f80f3314a633f30e0e1"
+git-tree-sha1 = "847da597e4271c88bb54b8c7dfbeac44ea85ace4"
 uuid = "aa1ae85d-cabe-5617-a682-6adf51b2e16a"
-version = "0.9.17"
+version = "0.9.18"
 
 [[LaTeXStrings]]
 git-tree-sha1 = "f2355693d6778a178ade15952b7ac47a4ff97996"
@@ -557,15 +557,15 @@ version = "0.1.0"
 
 [[SoleLogics]]
 deps = ["DataStructures", "Dictionaries", "IterTools", "Lazy", "Random", "Reexport", "SoleBase"]
-git-tree-sha1 = "4c1d96824cd44a2c6445a183652d277a1e5a0f3c"
+git-tree-sha1 = "86fd496e354c3bfbf845d6bec70a39c98347544b"
 repo-rev = "algebras/giopaglia"
 repo-url = "https://github.com/aclai-lab/SoleLogics.jl"
 uuid = "b002da8f-3cb3-4d91-bbe3-2953433912b5"
 version = "0.1.1"
 
 [[SoleModels]]
-deps = ["FunctionWrappers", "Reexport", "Revise", "SoleBase", "SoleData", "SoleLogics"]
-git-tree-sha1 = "7107f30c61e421efae33a93c4559018b0f5641ea"
+deps = ["FunctionWrappers", "Reexport", "Revise", "SoleBase", "SoleData", "SoleLogics", "Suppressor"]
+git-tree-sha1 = "92606800e8737d9c3b40df3ca756d85f682dbe99"
 repo-rev = "definitions/giopaglia"
 repo-url = "https://github.com/aclai-lab/SoleModels.jl"
 uuid = "4249d9c7-3290-4ddd-961c-e1d3ec2467f8"
@@ -623,6 +623,11 @@ version = "0.3.0"
 [[SuiteSparse]]
 deps = ["Libdl", "LinearAlgebra", "Serialization", "SparseArrays"]
 uuid = "4607b0f0-06f3-5cda-b6b1-a6196a1729e9"
+
+[[Suppressor]]
+git-tree-sha1 = "c6ed566db2fe3931292865b966d6d140b7ef32a9"
+uuid = "fd094767-a336-5f1f-9728-57cf17d0bbfb"
+version = "0.2.1"
 
 [[TOML]]
 deps = ["Dates"]
