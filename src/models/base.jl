@@ -119,7 +119,7 @@ info(m::AbstractModel)::NamedTuple = hasinfo(m) ? m.info : error("Type $(typeof(
 
 """
 A `FinalModel` is a model which outcomes do not depend on another model.
-An `AbstractModel` can generally wrap other `AbstractModel`s. In such case, the outcome can 
+An `AbstractModel` can generally wrap other `AbstractModel`s. In such case, the outcome can
 depend on the inner models being applied on the instance object. Otherwise, the model is
 considered final; that is, it is a leaf of a tree of `AbstractModel`s.
 """
@@ -229,7 +229,7 @@ convert(::Type{<:AbstractModel{F1}}, m::FunctionModel) where {F1} = FunctionMode
 apply(m::FunctionModel, i::AbstractInstance) = m.f(i)
 
 """
-This function is used to specify the default `FinalModel` used for wrapping native computation. 
+This function is used to specify the default `FinalModel` used for wrapping native computation.
 The default behavior is the following: `Function`s and `FunctionWrapper`s are wrapped into a
 `FunctionModel`, while every other `Outcome` object is wrapped into a `ConstantModel`.
 When called on an `AbstractModel`, the model is simply returned (without wrapping it).
@@ -485,7 +485,7 @@ struct Branch{F<:Outcome, L<:AbstractLogic, FIM<:AbstractModel{FF where FF<:F}} 
         antecedent::Formula{L},
         (positive_consequent, negative_consequent)::Tuple{Any,Any},
         info::NamedTuple = (;),
-    ) where F, {L}
+    ) where {F, L}
         Branch{F, L}(antecedent, positive_consequent, negative_consequent, info)
     end
 
