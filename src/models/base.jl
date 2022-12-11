@@ -69,7 +69,7 @@ apply(m::AbstractModel, d::AbstractDataset)::AbstractVector{<:output_type(m)} = 
 
 doc_symbolic = """
 A `AbstractModel` is said to be `symbolic` when it is based on certain a logical language (or "logic",
-see [`SoleLogics`](@doc) package).
+see [`SoleLogics`](@ref) package).
 Symbolic models provide a form of transparent and interpretable modeling.
 """
 

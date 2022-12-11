@@ -565,7 +565,7 @@ version = "0.1.1"
 
 [[SoleModels]]
 deps = ["FunctionWrappers", "Reexport", "Revise", "SoleBase", "SoleData", "SoleLogics", "Suppressor"]
-git-tree-sha1 = "92606800e8737d9c3b40df3ca756d85f682dbe99"
+git-tree-sha1 = "e95bb0d0dc1dbe7d914bcc342c33d86b0ed3157d"
 repo-rev = "definitions/giopaglia"
 repo-url = "https://github.com/aclai-lab/SoleModels.jl"
 uuid = "4249d9c7-3290-4ddd-961c-e1d3ec2467f8"
