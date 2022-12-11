@@ -2,7 +2,7 @@ using Revise
 
 using SoleLogics
 using SoleModels
-using SoleModels: ConstantModel
+using SoleModels: ConstantModel, FinalModel
 using Test
 
 
@@ -12,86 +12,90 @@ p = SoleLogics.build_tree("p")
 phi = SoleLogics.build_tree("p∧q∨r")
 phi2 = SoleLogics.build_tree("q∧s→r")
 
+L = @test_nowarn Logic{:ModalLogic}
+
 @test_nowarn ConstantModel(1,(;))
 @test_nowarn ConstantModel(1)
 @test_throws MethodError ConstantModel{Float64}(1,(;))
 
-const_any = "Hi there!"
 const_string = "Wow!"
 const_float = 1.0
-const_number = 1
 const_integer = 1
 
-cmodel_any = @test_nowarn ConstantModel{String}(const_any,(;))
-cmodel_string = @test_nowarn ConstantModel(const_string,(;))
-cmodel_float = @test_nowarn ConstantModel{Float64}(const_float,(;))
-cmodel_number = @test_nowarn ConstantModel{Number}(const_number,(;))
+consts = @test_nowarn [const_string, const_float, const_integer]
+
+@test_nowarn ConstantModel{String}(const_string)
+cmodel_string = @test_nowarn ConstantModel(const_string)
+@test cmodel_string isa ConstantModel{String}
+cmodel_float = @test_nowarn ConstantModel{Float64}(const_float)
+cmodel_number = @test_nowarn ConstantModel{Number}(const_integer)
 cmodel_integer = @test_nowarn ConstantModel{Int}(const_integer)
 
-@test_throws MethodError convert(AbstractModel{<:Int}, cmodel_number)
-convert(AbstractModel{Int}, cmodel_number)
+cmodels = @test_nowarn [cmodel_string, cmodel_float, cmodel_number, cmodel_integer]
+cmodels_num = @test_nowarn [cmodel_float, cmodel_number, cmodel_integer]
 
-r1 = @test_nowarn Rule(phi, cmodel_number)
-r2 = @test_nowarn Rule(phi, cmodel_integer)
-r3 = @test_nowarn Rule{Int}(phi, cmodel_number)
-r4 = @test_nowarn Rule{Int}(phi, cmodel_integer)
-
-@test_nowarn [cmodel_string, cmodel_any, cmodel_float, cmodel_number, cmodel_integer]
-@test_nowarn ConstantModel{String}[cmodel_string]
-@test_nowarn ConstantModel{String}[cmodel_string, cmodel_any]
+@test [cmodel_string, cmodel_float, cmodel_number, cmodel_integer] isa Vector{ConstantModel}
+@test_nowarn ConstantModel[cmodel_string, cmodel_float]
+@test_throws MethodError ConstantModel{String}[cmodel_string, cmodel_float]
 @test_nowarn ConstantModel{Int}[cmodel_number, cmodel_integer]
 @test_nowarn ConstantModel{Number}[cmodel_number, cmodel_integer]
 
-consts = @test_nowarn [const_any, const_string, const_float, const_number, const_integer]
-cmodels = @test_nowarn [cmodel_any, cmodel_string, cmodel_float, cmodel_number, cmodel_integer]
-cmodels_num = @test_nowarn [cmodel_float, cmodel_number, cmodel_integer]
+@test convert(AbstractModel{Int}, cmodel_number) isa AbstractModel{Int}
+@test_throws MethodError convert(AbstractModel{<:Int}, cmodel_number)
+
+@test Rule(phi, cmodel_number) isa Rule{Number}
+@test Rule(phi, cmodel_integer) isa Rule{Int}
+@test Rule{Int}(phi, cmodel_number) isa Rule{Int}
+@test Rule{Int}(phi, cmodel_integer) isa Rule{Int}
+@test Rule{Number}(phi, cmodel_integer) isa Rule{Number}
+@test Rule{Number}(phi, cmodel_number) isa Rule{Number}
 
 @test_nowarn [Rule(phi, c) for c in consts]
 @test_nowarn [Rule(phi, c) for c in cmodels]
 
-L = @test_nowarn Logic{:ModalLogic}
+@test_nowarn Rule{Float64}(phi,const_float)
+rmodel_float = @test_nowarn Rule{Float64}(phi,const_float)
+@test rmodel_float == Rule{Float64,Union{Rule{Float64},ConstantModel{Float64}}}(phi,const_float)
+@test rmodel_float != Rule{Float64,Union{Rule{Float64},FinalModel{Float64}}}(phi,const_float)
+@test rmodel_float == Rule{Float64,Union{Rule, ConstantModel}}(phi,const_float)
 
-rule1 = @test_nowarn Rule{Float64,L}(phi,const_float)
-rule1 = @test_nowarn Rule{Float64,L,Union{Rule{Float64},ConstantModel{Float64}}}(phi,const_float)
-
-# TODO create macro for shortened version of:
-# rule1_ = @test_nowarn Rule{Float64,L,Union{Rule,ConstantModel}}(phi,const_float)
-# @test rule1 == rule1_
-
-rule2 = @test_nowarn Rule(phi2, rule1)
+rmodel2_float = @test_nowarn Rule(phi2, rmodel_float)
 
 @test_nowarn [Rule{<:Any}(phi, c) for c in cmodels]
 @test_nowarn [Rule{Number}(phi, c) for c in cmodels_num]
 @test_nowarn [Rule{Number}(phi, c) for c in cmodels_num]
 
-@test_nowarn Rule{Number,L}(phi,1)
-@test_nowarn Rule{Number,L,ConstantModel{Number}}(phi, 1)
+rmodel3 = @test_nowarn Rule{Number}(phi,1)
+rmodel4 = @test_nowarn Rule{Number,ConstantModel{Number}}(phi, 1)
+@test_nowarn [rmodel3, rmodel4]
 
-@test_nowarn Rule{Number,L,ConstantModel{Number}}(phi,1)
-@test_broken Rule{Number,L,ConstantModel{Int}}(phi, 1)
-@test_broken Rule{Int,L,ConstantModel{Number}}(phi, 1)
-@test_throws TypeError Rule{Int,L,ConstantModel{Number}}(phi, 1.0)
+rmodel_number = @test_nowarn Rule{Number,ConstantModel{Number}}(phi,1)
+@test rmodel_number == Rule{Number,Union{Rule{Number},ConstantModel{Number}}}(phi,1)
+@test Rule{Number,ConstantModel{Int}}(phi, 1) isa Rule{Number, Union{ConstantModel{Number}, Rule{Number}}}
+@test Rule{Int,ConstantModel{Number}}(phi, 1) isa Rule{Int, Union{ConstantModel{Int}, Rule{Int}}}
+@test_throws MethodError Rule{Int,ConstantModel{Number}}(phi, 1.0)
 
-rmodel_number = @test_nowarn Rule{Number,L,Union{Rule{Number},ConstantModel{Number}}}(phi,1)
-@test_broken Rule{Number,L,Union{Rule{Int},ConstantModel{Number}}}(phi,1)
-@test_broken Rule{Number,L,Union{Rule{Number},ConstantModel{Int}}}(phi,1)
+@test rmodel_number == Rule{Number,Union{Rule{Int},ConstantModel{Number}}}(phi,1)
+@test rmodel_number == Rule{Number,Union{Rule{Number},ConstantModel{Int}}}(phi,1)
 
-@test_broken Rule{Number,L,ConstantModel{<:Number}}(phi,1)
-@test_broken Rule{Number,L,Union{ConstantModel{Int},ConstantModel{Float64}}}(phi,1)
+@test_nowarn Rule{Number,ConstantModel{<:Number}}(phi,1)
+@test_nowarn Rule{Number,Union{ConstantModel{Int},ConstantModel{Float64}}}(phi,1)
 
-rfloat_number = @test_nowarn Rule{Float64,L,Union{Rule{Float64},ConstantModel{Float64}}}(phi,1.0)
+rfloat_number = @test_nowarn Rule{Float64,Union{Rule{Float64},ConstantModel{Float64}}}(phi,1.0)
 
-@test_broken Rule{Number,L,Union{Rule{Number},ConstantModel{Number}}}(phi,rfloat_number)
-r = @test_nowarn Rule{Number,L,Union{Rule{Number},ConstantModel{Number}}}(phi,rmodel_number)
-r = @test_nowarn Rule{Number,L,Union{Rule{Number},ConstantModel{Number}}}(phi,r)
-r = @test_nowarn Rule{Number,L,Union{Rule{Number},ConstantModel{Number}}}(phi,r)
+@test_broken Rule{Number,Union{Rule{Number},ConstantModel{Number}}}(phi, rfloat_number)
+r = @test_nowarn Rule{Number,Union{Rule{Number},ConstantModel{Number}}}(phi,rmodel_number)
+r = @test_nowarn Rule{Number,Union{Rule{Number},ConstantModel{Number}}}(phi,r)
+r = @test_nowarn Rule{Number,Union{Rule{Number},ConstantModel{Number}}}(phi,r)
 
 @test outcometype(r) == Number
 @test output_type(r) == Union{Nothing,Number}
 
 default_consequent = cmodel_integer
 
-rules = @test_nowarn [Rule(phi, cmodel_integer), Rule(phi, cmodel_float), Rule{Float64,L,Union{Rule{Float64},ConstantModel{Float64}}}(phi,Rule{Float64,L,Union{Rule{Float64},ConstantModel{Float64}}}(phi,cmodel_float))]
+# TODO from here
+
+rules = @test_nowarn [Rule(phi, cmodel_integer), Rule(phi, cmodel_float), Rule{Float64,Union{Rule{Float64},ConstantModel{Float64}}}(phi,Rule{Float64,Union{Rule{Float64},ConstantModel{Float64}}}(phi,cmodel_float))]
 dlmodel = @test_nowarn DecisionList(rules, default_consequent)
 @test output_type(dlmodel) == Union{Float64,Int}
 
