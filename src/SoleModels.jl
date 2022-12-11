@@ -18,7 +18,7 @@ import Base: convert
 
 export AbstractModel
 
-export FinalOutcome, outcome_type, output_type
+export outcometype, output_type
 export print_model
 
 export Consequent

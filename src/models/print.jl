@@ -45,7 +45,7 @@ function print_model(
         kwargs...,
     )
     !header || println(io, "$(indentation_str)$(typeof(m))$(length(info(m)) == 0 ? "" : "\n$(indentation_str)Info: $(info(m))")")
-    println(io, "$(m.final_outcome)")
+    println(io, "$(outcome(m))")
 end
 
 function print_model(
@@ -56,7 +56,7 @@ function print_model(
         kwargs...,
     )
     !header || println(io, "$(indentation_str)$(typeof(m))$(length(info(m)) == 0 ? "" : "\n$(indentation_str)Info: $(info(m))")")
-    println(io, "$(m.f)")
+    println(io, "$(f(m))")
 end
 
 function print_model(
@@ -73,12 +73,12 @@ function print_model(
     !header || println(io, "$(indentation_str)$(typeof(m))$(length(info(m)) == 0 ? "" : "\n$(indentation_str)Info: $(info(m))")")
     if isnothing(max_depth) || depth < max_depth
         pipe = "$(indentation_list_children)"
-        # println(io, "$(indentation_str*pipe)$(m.antecedent)")
-        println(io, "$(pipe)$(m.antecedent)")
+        # println(io, "$(indentation_str*pipe)$(antecedent(m))")
+        println(io, "$(pipe)$(antecedent(m))")
         pad_str = indentation_str*repeat(" ", length(pipe)-length(indentation_last_space)+1)
         print(io, "$(pad_str*indentation_last_first)$("✔ ")")
         ind = pad_str*indentation_last_space*repeat(" ", length("✔ ")-length(indentation_last_space)+2)
-        @print_submodel io m.consequent ind indentation depth max_depth kwargs
+        @print_submodel io consequent(m) ind indentation depth max_depth kwargs
     else
         println(io, "[...]")
     end
@@ -98,8 +98,8 @@ function print_model(
     !header || println(io, "$(indentation_str)$(typeof(m))$(length(info(m)) == 0 ? "" : "\n$(indentation_str)Info: $(info(m))")")
     if isnothing(max_depth) || depth < max_depth
         pipe = "$(indentation_list_children) "
-        println(io, "$(pipe)$(m.antecedent)")
-        for (consequent, indentation_flag_space, indentation_flag_first, f) in [(m.positive_consequent, indentation_any_space, indentation_any_first, "✔ "), (m.negative_consequent, indentation_last_space, indentation_last_first, "✘ ")]
+        println(io, "$(pipe)$(antecedent(m))")
+        for (consequent, indentation_flag_space, indentation_flag_first, f) in [(positive_consequent(m), indentation_any_space, indentation_any_first, "✔ "), (negative_consequent(m), indentation_last_space, indentation_last_first, "✘ ")]
             # pad_str = indentation_str*indentation_flag_first**repeat(" ", length(pipe)-length(indentation_flag_first))
             pad_str = "$(indentation_str*indentation_flag_first)$(f)"
             print(io, "$(pad_str)")
@@ -126,9 +126,9 @@ function print_model(
     !header || println(io, "$(indentation_str)$(typeof(m))$(length(info(m)) == 0 ? "" : "\n$(indentation_str)Info: $(info(m))")")
     if isnothing(max_depth) || depth < max_depth
         println(io, "$(indentation_list_children)")
-        for (i_rule, rule) in enumerate(m.rules)
+        for (i_rule, rule) in enumerate(rules(m))
             # pipe = indentation_any_first
-            pipe = indentation_any_first*"[$(i_rule)/$(length(m.rules))]┐"
+            pipe = indentation_any_first*"[$(i_rule)/$(length(rules(m)))]┐"
             println(io, "$(indentation_str*pipe) $(antecedent(rule))")
             pad_str = indentation_str*indentation_any_space*repeat(" ", length(pipe)-length(indentation_any_space)-1)
             print(io, "$(pad_str*indentation_last_first)")
@@ -140,7 +140,7 @@ function print_model(
         # print(io, "$(indentation_str*indentation_last_space*repeat(" ", length(pipe)-length(indentation_last_space)-1)*indentation_last_space)")
         ind = indentation_str*indentation_last_space*repeat(" ", length(pipe)-length(indentation_last_space)-1)*indentation_last_space
         # ind = indentation_str*indentation_last_space,
-        @print_submodel io m.default_consequent ind indentation depth max_depth kwargs
+        @print_submodel io default_consequent(m) ind indentation depth max_depth kwargs
     else
         println(io, "[...]")
     end
@@ -166,14 +166,14 @@ function print_model(
         pad_str = indentation_str*repeat(" ", length(pipe)-length(indentation_last_space)+1)
         print(io, "$(pad_str*indentation_last_first)$("✔ ")")
         ind = pad_str*indentation_last_space*repeat(" ", length("✔ ")+1)
-        @print_submodel io m.consequent ind indentation depth max_depth kwargs
+        @print_submodel io consequent(m) ind indentation depth max_depth kwargs
     else
         println(io, "[...]")
     end
 end
 
 
-print_model(io::IO, m::DecisionTree; kwargs...) = print_model(io, m.root; kwargs...)
+print_model(io::IO, m::DecisionTree; kwargs...) = print_model(io, root(m); kwargs...)
 
-print_model(io::IO, m::MixedSymbolicModel; kwargs...) = print_model(io, m.root; kwargs...)
+print_model(io::IO, m::MixedSymbolicModel; kwargs...) = print_model(io, root(m); kwargs...)
 

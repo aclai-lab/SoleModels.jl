@@ -8,10 +8,10 @@ the list is empty for `FinalModel`s.
 
 See also [`all_submodels`](@ref), [`ConstrainedModel`](@ref), [`FinalModel`](@ref).
 """
-immediate_submodels(m::AbstractModel{F} where {F})::Vector{<:{AbstractModel{<:F}}} =
+immediate_submodels(m::AbstractModel{O} where {O})::Vector{<:{AbstractModel{<:O}}} =
     error("Please, provide method immediate_submodels(::$(typeof(m))).")
 
-immediate_submodels(m::FinalModel{F}) where {F} = Vector{<:AbstractModel{<:F}}[]
+immediate_submodels(m::FinalModel{O}) where {O} = Vector{<:AbstractModel{<:O}}[]
 immediate_submodels(m::Rule) = [consequent(m)]
 immediate_submodels(m::Branch) = [positive_consequent(m), negative_consequent(m)]
 immediate_submodels(m::DecisionList) = [rules(m)..., consequent(m)]
@@ -50,11 +50,11 @@ $(doc_symbolic)
 Every symbolic model must provide access to its corresponding immediate rules via the
 `list_immediate_rules` trait.
 
-See also [`unroll_rules`](@ref), [`is_symbolic`](@ref), [`AbstractModel`](@ref).
+See also [`unroll_rules`](@ref), [`issymbolic`](@ref), [`AbstractModel`](@ref).
 """
-list_immediate_rules(m::AbstractModel{F} where {F})::Rule{<:F} =
+list_immediate_rules(m::AbstractModel{O} where {O})::Rule{<:O} =
     error(begin
-        if is_symbolic(m)
+        if issymbolic(m)
             "Please, provide method list_immediate_rules(::$(typeof(m))) ($(typeof(m)) is a symbolic model)."
         else
             "Models of type $(typeof(m)) are not symbolic, and thus have no rules associated."
@@ -65,12 +65,12 @@ list_immediate_rules(m::FinalModel) = [Rule(SoleLogics.TOP, m)]
 
 list_immediate_rules(m::Rule) = [m]
 
-list_immediate_rules(m::Branch{F, L, FIM}) where {F,L,FIM} = [
-    Rule{F,L,FIM}(antecedent(m), positive_consequent(m)),
-    Rule{F,L,FIM}(SoleLogics.NEGATION(antecedent(m)), negative_consequent(m)),
+list_immediate_rules(m::Branch{O, L, FIM}) where {O,L,FIM} = [
+    Rule{O,L,FIM}(antecedent(m), positive_consequent(m)),
+    Rule{O,L,FIM}(SoleLogics.NEGATION(antecedent(m)), negative_consequent(m)),
 ]
 
-function list_immediate_rules(m::DecisionList{F,L,FIM}) where {F,L,FIM}
+function list_immediate_rules(m::DecisionList{O,L,FIM}) where {O,L,FIM}
     assumed_formula = nothing
     normalized_rules = Vector{eltype(rules(m))}[]
     for rule in rules(m)
@@ -78,11 +78,11 @@ function list_immediate_rules(m::DecisionList{F,L,FIM}) where {F,L,FIM}
         assumed_formula = advance_formula(SoleLogics.NEGATION(antecedent(rule)), assumed_formula)
     end
     default_antecedent = isnothing(assumed_formula) ? SoleLogics.TOP : assumed_formula
-    push!(normalized_rules, Rule{F,L,FIM}(default_antecedent, default_consequent(m)))
+    push!(normalized_rules, Rule{O,L,FIM}(default_antecedent, default_consequent(m)))
     normalized_rules
 end
 
-list_immediate_rules(m::RuleCascade) = [to_rule(m)]
+list_immediate_rules(m::RuleCascade) = [convert(Rule, m)]
 
 list_immediate_rules(m::DecisionTree) = list_immediate_rules(root(m))
 
@@ -99,13 +99,13 @@ set of mutually exclusive (and jointly exaustive, if the model is closed) rules,
 which can be useful
 for many purposes.
 
-See also [`list_immediate_rules`](@ref), [`is_symbolic`](@ref), [`AbstractModel`](@ref).
+See also [`list_immediate_rules`](@ref), [`issymbolic`](@ref), [`AbstractModel`](@ref).
 """
 function unroll_rules(m::AbstractModel, assumed_formula = nothing)
     # TODO @Michele
     # [advance_formula(rule) for rule in unroll_rules(m)]
     error(begin
-        if is_symbolic(m)
+        if issymbolic(m)
             "Please, provide method unroll_rules(::$(typeof(m))) ($(typeof(m)) is a symbolic model)."
         else
             "Models of type $(typeof(m)) are not symbolic, and thus have no rules associated."
@@ -145,7 +145,7 @@ function unroll_rules_cascade(m::AbstractModel, assumed_formula = nothing)
     # TODO @Michele
     # [advance_formula(rule) for rule in unroll_rules(m)]
     error(begin
-        if is_symbolic(m)
+        if issymbolic(m)
             "Please, provide method unroll_rules_cascade(::$(typeof(m))) ($(typeof(m)) is a symbolic model)."
         else
             "Models of type $(typeof(m)) are not symbolic, and thus have no rules associated."
@@ -189,7 +189,7 @@ List all paths of a decision tree by performing a tree traversal
 # List all paths of a decision tree by performing a tree traversal
 # TODO @Michele
 # """
-# function list_paths(tree::DecisionTree{L<:AbstractLogic, O<:Outcome})::AbstractVector{<:AbstractVector{Union{FinalOutcome,Rule{L,O}}}}
+# function list_paths(tree::DecisionTree{L<:AbstractLogic, O})::AbstractVector{<:AbstractVector{Union{Any,Rule{L,O}}}}
 #     return list_immediate_rules(root(tree))
 # end
 function list_paths(tree::DecisionTree)
