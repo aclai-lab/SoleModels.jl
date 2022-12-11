@@ -119,7 +119,7 @@ info(m::AbstractModel)::NamedTuple = hasinfo(m) ? m.info : error("Type $(typeof(
 
 """
 A `FinalModel` is a model which outcomes do not depend on another model.
-An `AbstractModel` can generally wrap other `AbstractModel`s. In such case, the outcome can 
+An `AbstractModel` can generally wrap other `AbstractModel`s. In such case, the outcome can
 depend on the inner models being applied on the instance object. Otherwise, the model is
 considered final; that is, it is a leaf of a tree of `AbstractModel`s.
 """
@@ -229,7 +229,7 @@ convert(::Type{<:AbstractModel{F1}}, m::FunctionModel) where {F1} = FunctionMode
 apply(m::FunctionModel, i::AbstractInstance) = m.f(i)
 
 """
-This function is used to specify the default `FinalModel` used for wrapping native computation. 
+This function is used to specify the default `FinalModel` used for wrapping native computation.
 The default behavior is the following: `Function`s and `FunctionWrapper`s are wrapped into a
 `FunctionModel`, while every other `Outcome` object is wrapped into a `ConstantModel`.
 When called on an `AbstractModel`, the model is simply returned (without wrapping it).
@@ -824,6 +824,195 @@ isopen(::MixedSymbolicModel) = false
 convert(::Type{<:AbstractModel{F1}}, m::MixedSymbolicModel{F2, L, FIM}) where {F1, F2, L, FIM} = MixedSymbolicModel{F1, L, FIM}(m)
 
 apply(m::MixedSymbolicModel, i::AbstractInstance) = apply(m.root, i)
+
+############################################################################################
+############################################################################################
+############################################################################################
+
+"""
+    Convert a rule cascade in a rule
+"""
+convert(::Type{Rule},rule_cascade::RuleCascade) =
+    convert(Rule, antecedents(rule_cascade), consequent(rule_cascade))
+
+function convert(::Type{Rule},antecedent::AbstractVector{<:Formula}, consequent::AbstractModel)
+    # Building antecedent
+    function _build_formula(conjuncts::AbstractVector{<:Formula{L}}) where {L<:Logic}
+        if length(conjuncts) > 2
+            SoleLogics.CONJUNCTION(conjuncts[1],_build_formula(conjuncts[2:end]))
+        else
+            SoleLogics.CONJUNCTION(conjuncts[1],conjuncts[2])
+        end
+    end
+
+    # Antecedent of the rule
+    ant = begin
+
+        root = begin
+            # Number of internal nodes in the antecedent
+            n_internal = length(antecedent)
+
+            if n_internal == 0
+                FNode(SoleLogics.TOP)
+            elseif n_internal == 1
+                tree(antecedent[1])
+            else
+                _build_formula(antecedent)
+            end
+        end
+
+        Formula(root)
+    end
+
+    Rule(ant, consequent)
+end
+
+############################################################################################
+############################################################################################
+############################################################################################
+
+"""
+Convert a rule in a rule cascade
+"""
+
+function convert(::Type{RuleCascade},rule::Rule)
+
+    function convert_formula(node::FNode)
+        if isleaf(node)
+            return [Formula(node)]
+        end
+
+        return [
+            convert_formula(leftchild(node))...,
+            convert_formula(rightchild(node))...,
+        ]
+    end
+
+    RuleCascade(convert_formula(tree(antecedent(rule))),consequent(rule))
+end
+
+############################################################################################
+############################################################################################
+############################################################################################
+
+"""
+Function for evaluating the antecedent of a rule
+"""
+
+function evaluate_antecedent(rule::Rule, X::AbstractDataset)
+    evaluate_antecedent(antecedent(rule), X)
+end
+
+function evaluate_antecedent(antecedent::Formula{L}, X::AbstractDataset) where L<:Logic
+    check(antecedent, X)
+end
+
+"""
+Function for evaluating a rule
+"""
+function evaluate_rule(
+    rule::Rule,
+    X::AbstractDataset,
+    Y::AbstractVector{<:FinalModel}
+)
+    # Antecedent satisfaction. For each instances in X:
+    #  - `false` when not satisfiable,
+    #  - `true` when satisfiable.
+    ant_sat = evaluate_antecedent(antecedent(rule),X)
+
+    # Indices of satisfiable instances
+    idxs_sat = findall(ant_sat .== true)
+
+    # Consequent satisfaction. For each instances in X:
+    #  - `false` when not satisfiable,
+    #  - `true` when satisfiable,
+    #  - `nothing` when antecedent does not hold.
+    cons_sat = begin
+        cons_sat = Vector{Union{Bool, Nothing}}(fill(nothing, length(Y)))
+        idxs_true = begin
+            idx_cons = findall(consequent(rule) .== Y)
+            intersect(idxs_sat,idx_cons)
+        end
+        idxs_false = begin
+            idx_cons = findall(consequent(rule) .!= Y)
+            intersect(idxs_sat,idx_cons)
+        end
+        cons_sat[idxs_true]  .= true
+        cons_sat[idxs_false] .= false
+        cons_sat
+    end
+
+    y_pred = begin
+        y_pred = Vector{Union{FinalModel, Nothing}}(fill(nothing, length(Y)))
+        y_pred[idxs_sat] .= consequent(rule)
+        y_pred
+    end
+
+    return (;
+        ant_sat   = ant_sat,
+        idxs_sat  = idxs_sat,
+        cons_sat  = cons_sat,
+        y_pred    = y_pred,
+    )
+end
+
+############################################################################################
+############################################################################################
+############################################################################################
+
+"""
+Length of the rule
+"""
+
+rule_length(rule::Rule) = rule_length(antecedent(rule))
+rule_length(formula::Formula) = rule_length(tree(formula))
+
+function rule_length(node::FNode)
+    if isleaf(node)
+        return 1
+    else
+        return ((isdefined(node,:leftchild) ? rule_length(leftchild(node)) : 0)
+                    + (isdefined(node,:rightchild) ? rule_length(rightchild(node)) : 0))
+    end
+end
+
+"""
+Metrics of the rule
+"""
+
+function rule_metrics(
+    rule::Rule,
+    X::AbstractDataset,
+    Y::AbstractVector{<:FinalModel}
+)
+
+    eval_result = evaluate_rule(rule, X, Y)
+    n_instances = Base.size(X,1)
+    n_satisfy = sum(eval_result[:ant_sat])
+
+    # Support of the rule
+    rule_support =  n_satisfy / n_instances
+
+    # Error of the rule
+    rule_error = begin
+        if outcome_type(consequent(rule)) <: CLabel
+            # Number of incorrectly classified instances divided by number of instances
+            # satisfying the rule condition.
+            misclassified_instances = length(findall(eval_result[:y_pred] .== Y))
+            misclassified_instances / n_satisfy
+        elseif outcome_type(consequent(rule)) <: RLabel
+            # Mean Squared Error (mse)
+            idxs_sat = eval_result[:idxs_sat]
+            mse(eval_result[:y_pred][idxs_sat], Y[idxs_sat])
+        end
+    end
+
+    return (;
+        support   = rule_support,
+        error     = rule_error,
+        length    = rule_length(rule),
+    )
+end
 
 # Evaluation for single decision
 # TODO

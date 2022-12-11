@@ -3,7 +3,7 @@
 ############################################################################################
 
 """
-This function provides access to the list of immediate child models; 
+This function provides access to the list of immediate child models;
 the list is empty for `FinalModel`s.
 
 See also [`all_submodels`](@ref), [`ConstrainedModel`](@ref), [`FinalModel`](@ref).
@@ -35,10 +35,10 @@ _all_submodels(m::AbstractModel) = [m, Iterators.flatten(_all_submodels.(immedia
 """
 When `assumed_formula` is assumed, and `f` is known to be true, their conjuction holds.
 """
-advance_formula(f::Formula, assumed_formula::Union{Nothing,Formula}) = 
+advance_formula(f::Formula, assumed_formula::Union{Nothing,Formula}) =
     isnothing(assumed_formula) ? f : SoleLogics.CONJUNCTION(assumed_formula, f)
 
-advance_formula(r::R where {R<:Rule}, assumed_formula::Union{Nothing,Formula}) = 
+advance_formula(r::R where {R<:Rule}, assumed_formula::Union{Nothing,Formula}) =
     R(advance_formula(antecedent(r), assumed_formula), consequent(r), info(r))
 
 ############################################################################################
@@ -104,8 +104,87 @@ See also [`list_immediate_rules`](@ref), [`is_symbolic`](@ref), [`AbstractModel`
 function unroll_rules(m::AbstractModel, assumed_formula = nothing)
     # TODO @Michele
     # [advance_formula(rule) for rule in unroll_rules(m)]
+    error(begin
+        if is_symbolic(m)
+            "Please, provide method unroll_rules(::$(typeof(m))) ($(typeof(m)) is a symbolic model)."
+        else
+            "Models of type $(typeof(m)) are not symbolic, and thus have no rules associated."
+        end
+    end)
 end
 
+unroll_rules(m::FinalModel) = [Rule(SoleLogics.TOP,m)]
+
+unroll_rules(m::Rule) = [m]
+
+unroll_rules(m::Branch) = [
+    [Rule(
+        Formula(SoleLogics.CONJUNCTION(tree(antecedent(m)),tree(antecedent(rule)))),
+        consequent(rule)) for rule in unroll_rules(positive_consequent(m))]...,
+    [Rule(
+        Formula(SoleLogics.CONJUNCTION(
+            NEGATION(tree(antecedent(m))),
+            tree(antecedent(rule)))
+        ), consequent(rule)) for rule in unroll_rules(negative_consequent(m))]...,
+]
+
+unroll_rules(m::DecisionList) = [rules(m)...,unroll_rules(default_consequent(m))...]
+
+unroll_rules(m::RuleCascade) = [convert(Rule,m)]
+
+unroll_rules(m::DecisionTree) = unroll_rules(root(m))
+
+unroll_rules(m::MixedSymbolicModel) = unroll_rules(root(m))
+
+############################################################################################
+############################################################################################
+############################################################################################
+
+
+function unroll_rules_cascade(m::AbstractModel, assumed_formula = nothing)
+    # TODO @Michele
+    # [advance_formula(rule) for rule in unroll_rules(m)]
+    error(begin
+        if is_symbolic(m)
+            "Please, provide method unroll_rules_cascade(::$(typeof(m))) ($(typeof(m)) is a symbolic model)."
+        else
+            "Models of type $(typeof(m)) are not symbolic, and thus have no rules associated."
+        end
+    end)
+end
+
+unroll_rules_cascade(m::FinalModel) = [RuleCascade([SoleLogics.TOP],m)]
+
+unroll_rules_cascade(m::Rule) = [convert(RuleCascade,m)]
+
+unroll_rules_cascade(m::Branch) = [
+    [RuleCascade(
+        [antecedent(m),antecedents(rule)...],
+        consequent(rule)) for rule in unroll_rules_cascade(positive_consequent(m))]...,
+    [RuleCascade(
+        [Formula(NEGATION(tree(antecedent(m)))),antecedents(rule)...],
+        consequent(rule)) for rule in unroll_rules_cascade(negative_consequent(m))]...,
+]
+
+unroll_rules_cascade(m::DecisionList) = [
+    [convert(RuleCascade,rule) for rule in rules(m)]...,
+    unroll_rules_cascade(default_consequent(m))...,
+]
+
+unroll_rules_cascade(m::RuleCascade) = [m]
+
+unroll_rules_cascade(m::DecisionTree) = unroll_rules_cascade(root(m))
+
+unroll_rules_cascade(m::MixedSymbolicModel) = unroll_rules_cascade(root(m))
+
+############################################################################################
+############################################################################################
+############################################################################################
+
+"""
+$(doc_symbolic)
+List all paths of a decision tree by performing a tree traversal
+"""
 # """
 # List all paths of a decision tree by performing a tree traversal
 # TODO @Michele
@@ -113,3 +192,43 @@ end
 # function list_paths(tree::DecisionTree{L<:AbstractLogic, O<:Outcome})::AbstractVector{<:AbstractVector{Union{FinalOutcome,Rule{L,O}}}}
 #     return list_immediate_rules(root(tree))
 # end
+function list_paths(tree::DecisionTree)
+    # tree(f) [where f is a Formula object] is used to
+    # retrieve the root FNode of the formula(syntax) tree
+    pathset = list_paths(root(tree))
+
+    (length(pathset) == 1) && (return [RuleCascade(SoleLogics.TOP,pathset[1])])
+
+    return [RuleCascade(path[1:end-1],path[end]) for path in pathset]
+end
+
+function list_paths(node::Branch)
+    positive_path  = [antecedent(node)]
+    negative_path = [NEGATION(tree(antecedent(node)))]
+    return [
+        list_paths(positive_consequent(node),  positive_path)...,
+        list_paths(negative_consequent(node), negative_path)...,
+    ]
+end
+
+function list_paths(node::AbstractModel)
+    return [node]
+end
+
+function list_paths(node::Branch, this_path::AbstractVector)
+    # NOTE: antecedent(node) or tree(antecedent(node)) to obtain a FNode?
+    positive_path  = [this_path..., antecedent(node)]
+    negative_path = [this_path..., NEGATION(tree(antecedent(node)))]
+    return [
+        list_paths(positive_consequent(node),  positive_path)...,
+        list_paths(negative_consequent(node), negative_path)...,
+    ]
+end
+
+function list_paths(node::AbstractModel,this_path::AbstractVector)
+    return [[this_path..., node], ]
+end
+
+############################################################################################
+############################################################################################
+############################################################################################
