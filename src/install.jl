@@ -26,3 +26,5 @@ end
 install("SoleBase", "https://github.com/aclai-lab/SoleBase.jl", "dev")
 install("SoleData", "https://github.com/aclai-lab/SoleData.jl", "dev")
 install("SoleLogics", "https://github.com/aclai-lab/SoleLogics.jl", "algebras/giopaglia")
+
+Pkg.instantiate()
