@@ -173,7 +173,31 @@ function print_model(
 end
 
 
-print_model(io::IO, m::DecisionTree; kwargs...) = print_model(io, root(m); kwargs...)
+function print_model(
+        io::IO,
+        m::DecisionTree;
+        header = true,
+        indentation_str="",
+        indentation = default_indentation,
+        depth = 0,
+        kwargs...
+    )
+    (indentation_list_children, indentation_any_first, indentation_any_space, indentation_last_first, indentation_last_space) = indentation
+    !header || println(io, "$(indentation_str)$(typeof(m))$(length(info(m)) == 0 ? "" : "\n$(indentation_str)Info: $(info(m))")")
+    print_model(io, root(m); kwargs...)
+end
 
-print_model(io::IO, m::MixedSymbolicModel; kwargs...) = print_model(io, root(m); kwargs...)
+function print_model(
+        io::IO,
+        m::MixedSymbolicModel;
+        header = true,
+        indentation_str="",
+        indentation = default_indentation,
+        depth = 0,
+        kwargs...
+    )
+    (indentation_list_children, indentation_any_first, indentation_any_space, indentation_last_first, indentation_last_space) = indentation
+    !header || println(io, "$(indentation_str)$(typeof(m))$(length(info(m)) == 0 ? "" : "\n$(indentation_str)Info: $(info(m))")")
+    print_model(io, root(m); kwargs...)
+end
 
