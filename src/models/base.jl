@@ -21,6 +21,7 @@ end
 function check(::Formula, ::AbstractInstance) end
 function check(::Formula, ::AbstractDataset) end
 
+typename(::Type{T}) where T = eval(nameof(T))
 ############################################################################################
 
 abstract type Condition end
@@ -185,9 +186,11 @@ end
 
 outcome(m::ConstantModel) = m.outcome
 
+isopen(::ConstantModel) = false
+
 convert(::Type{ConstantModel}, m::ConstantModel) = ConstantModel(m)
 convert(::Type{ConstantModel{O}}, o::O) where {O} = ConstantModel{O}(o)
-convert(::Type{<:AbstractModel{F1}}, m::ConstantModel) where {F1} = ConstantModel{F1}(m)
+convert(::Type{<:AbstractModel{F}}, m::ConstantModel) where {F} = ConstantModel{F}(m)
 
 apply(m::ConstantModel, i::AbstractInstance) = outcome(m)
 apply(m::ConstantModel, d::AbstractDataset) = outcome(m)
@@ -201,6 +204,7 @@ See also [`ConstantModel`](@ref), [`FunctionWrapper`](@ref), [`FinalModel`](@ref
 """
 struct FunctionModel{O} <: FinalModel{O}
     f::FunctionWrapper{O}
+    # isopen::Bool
     info::NamedTuple
 
     function FunctionModel{O}(
@@ -226,7 +230,9 @@ struct FunctionModel{O} <: FinalModel{O}
     end
 end
 
-f(m::ConstantModel) = m.f
+f(m::FunctionModel) = m.f
+
+isopen(::FunctionModel) = false
 
 convert(::Type{FunctionModel}, m::FunctionModel) = FunctionModel(m)
 convert(::Type{FunctionModel{O}}, f::FunctionWrapper) where {O} = FunctionModel{O}(f)
@@ -235,7 +241,7 @@ convert(::Type{FunctionModel{O}}, f::Function) where {O} = error("Please, wrap J
 #     @warn "Over efficiency concerns, please consider wrapping Function's into FunctionWrapper's."
 #     FunctionModel{O}(f)
 # end
-convert(::Type{<:AbstractModel{F1}}, m::FunctionModel) where {F1} = FunctionModel{F1}(m)
+convert(::Type{<:AbstractModel{F}}, m::FunctionModel) where {F} = FunctionModel{F}(m)
 
 apply(m::FunctionModel, i::AbstractInstance) = f(m)(i)
 
@@ -282,9 +288,16 @@ Returns the type of the Feasible Models (`FM`).
 
 See also [`ConstrainedModel`](@ref).
 """
-feasiblemodeltypes(::Type{M}) where {M<:AbstractModel} = M
+feasiblemodeltypes(::Type{M}) where {O, M<:AbstractModel{O}} = AbstractModel{<:O}
+feasiblemodeltypes(::Type{M}) where {M<:AbstractModel} = AbstractModel
+feasiblemodeltypes(::Type{M}) where {O, M<:FinalModel{O}} = Union{}
+feasiblemodeltypes(::Type{M}) where {M<:FinalModel} = Union{}
 feasiblemodeltypes(::Type{<:ConstrainedModel{O, FM}}) where {O, FM} = FM
 feasiblemodeltypes(m::ConstrainedModel) = outcometype(typeof(m))
+
+# TODO explain, this assumes that the first type parameter is for the outcome
+propagate_FMs(M::Type{<:AbstractModel}) = Union{typename(M){outcometype(M)}, feasiblemodeltypes(M)}
+propagate_FMs(m::AbstractModel) = propagate_FMs(typeof(m))
 
 """
 This function is used when constructing `ConstrainedModel`s to check that the inner
@@ -292,13 +305,14 @@ models satisfy the desired type constraints.
 
 See also [`ConstrainedModel`](@ref), [`Rule`](@ref), [`Branch`](@ref).
 """
-function check_model_constraints(M::Type{<:AbstractModel}, I_M::Type{<:AbstractModel}, FM::Type{<:AbstractModel})
+function check_model_constraints(M::Type{<:AbstractModel}, I_M::Type{<:AbstractModel}, FM::Type{<:AbstractModel}, FM_O::Type = outcometype(FM))
     I_O = outcometype(I_M)
-    O = outcometype(FM)
-    @assert I_O <: O "Can't instantiate $(M) with inner model outcometype $(I_O)! $(I_O) <: $(O) should hold."
+    # FM_O = outcometype(FM)
+    @assert I_O <: FM_O "Can't instantiate $(M) with inner model outcometype $(I_O)! $(I_O) <: $(FM_O) should hold."
+    # @assert I_M <: FM || typename(I_M) <: typename(FM) "Can't instantiate $(M) with inner model $(I_M))! $(I_M) <: $(FM) || $(typename(I_M)) <: $(typename(FM)) should hold."
     @assert I_M <: FM "Can't instantiate $(M) with inner model $(I_M))! $(I_M) <: $(FM) should hold."
-    if ! (I_M<:FinalModel{<:O})
-        @assert I_M<:ConstrainedModel{O,FM} "ConstrainedModels require I_M<:ConstrainedModel{O,FM}, but $(I_M) does not subtype $(ConstrainedModel{O,FM})."
+    if ! (I_M<:FinalModel{<:FM_O})
+        @assert I_M<:ConstrainedModel{FM_O,<:FM} "ConstrainedModels require I_M<:ConstrainedModel{O,<:FM}, but $(I_M) does not subtype $(ConstrainedModel{FM_O,<:FM})."
     end
 end
 
@@ -338,7 +352,7 @@ A *rule* is one of the fundamental building blocks of symbolic modeling, and has
 where the antecedent is a logical formula and the consequent is the local outcome of the block.
 
 
-In Sole, a `Rule{O, L<:AbstractLogic}` wraps an `antecedent::Formula{L}`, that is, a formula of a given logic L,
+TODO: In Sole, a `Rule` wraps an `antecedent::Formula{L}`, that is, a formula of a given logic L,
 and a `consequent::AbstractModel{<:O}` that is to be applied to obtain an outcome.
 
 It also includes an `info::NamedTuple` for storing additional information.
@@ -346,47 +360,56 @@ It also includes an `info::NamedTuple` for storing additional information.
 # Extended help
 Being a `ConstrainedModel`, this struct is actually defined as:
 
-    struct Rule{O, L<:AbstractLogic, FM<:AbstractModel{<:O}} <: ConstrainedModel{O, FM}
+    struct Rule{O, FM<:AbstractModel, C<:Condition} <: ConstrainedModel{O, FM}
 
 where `FM` refers to the Feasible Models (`FM`) allowed in the sub-tree.
 
 See also [`Branch`](@ref), [`ConstrainedModel`](@ref), [`AbstractModel`](@ref).
 """
-struct Rule{O, FM<:AbstractModel, C<:Condition, M<:AbstractModel} <: ConstrainedModel{O, FM}
+struct Rule{O, FM<:AbstractModel, C<:Condition} <: ConstrainedModel{O, FM}
     antecedent::C
-    consequent::M
+    consequent::FM
     info::NamedTuple
 
-    function Rule{O, _FM, C, _M}(
+    # function Rule{O, _FM, C, _M}(
+    #     antecedent::Union{Condition, Formula},
+    #     consequent::Any,
+    #     info::NamedTuple = (;),
+    # ) where {O, _FM<:AbstractModel, C<:Condition, _M<:AbstractModel}
+    #     antecedent = convert(C, antecedent)
+    #     consequent = wrap(consequent, _M)
+    #     M = typeof(consequent)
+    #     # FM = _FM
+    #     # FM = typeintersect(Union{propagate_FMs(M), _FM}, AbstractModel{<:O})
+    #     FM = propagate_FMs(M)
+    #     check_model_constraints(Rule{O}, typeof(consequent), FM)
+    #     new{O,FM,C,M}(antecedent, consequent, info)
+    # end
+
+    function Rule{O, _FM, C}(
         antecedent::Union{Condition, Formula},
         consequent::Any,
         info::NamedTuple = (;),
-    ) where {O, _FM<:AbstractModel, C<:Condition, _M<:AbstractModel}
-        antecedent = convert(C, antecedent)
-        consequent = wrap(consequent, _M)
-        M = typeof(consequent)
-        # FM = _FM
-        # FM = typeintersect(Union{Rule{O}, feasiblemodeltypes(M), _FM}, AbstractModel{<:O})
-        FM = typeintersect(Union{Rule{O}, feasiblemodeltypes(M), _FM}, AbstractModel{O})
-        check_model_constraints(Rule{O}, typeof(consequent), FM)
-        new{O,FM,C,M}(antecedent, consequent, info)
+    ) where {O, _FM<:AbstractModel, C<:Condition}
+        antecedent = convert(Condition, antecedent)
+        consequent = wrap(consequent, AbstractModel{O})
+        FM = typeintersect(Union{propagate_FMs(consequent), _FM}, AbstractModel{<:O})
+        check_model_constraints(Rule{O}, typeof(consequent), FM, O)
+        new{O,FM,C}(antecedent, consequent, info)
     end
 
-    function Rule{O, _FM}(
-        antecedent::Union{Condition, Formula},
-        consequent::Any,
-        info::NamedTuple = (;),
-    ) where {O, _FM<:AbstractModel}
-        antecedent = convert(Condition, antecedent)
-        C = typeof(antecedent)
-        consequent = wrap(consequent, AbstractModel{O})
-        M = typeof(consequent)
-        # FM = _FM
-        # FM = typeintersect(Union{Rule{O}, feasiblemodeltypes(M), _FM}, AbstractModel{<:O})
-        FM = typeintersect(Union{Rule{O}, feasiblemodeltypes(M), _FM}, AbstractModel{O})
-        check_model_constraints(Rule{O}, typeof(consequent), FM)
-        new{O,FM,C,M}(antecedent, consequent, info)
-    end
+    # function Rule{O, _FM}(
+    #     antecedent::Union{Condition, Formula},
+    #     consequent::Any,
+    #     info::NamedTuple = (;),
+    # ) where {O, _FM<:AbstractModel}
+    #     antecedent = convert(Condition, antecedent)
+    #     C = typeof(antecedent)
+    #     consequent = wrap(consequent, AbstractModel{O})
+    #     FM = typeintersect(Union{propagate_FMs(consequent), _FM}, AbstractModel{<:O})
+    #     check_model_constraints(Rule{O}, typeof(consequent), FM, O)
+    #     new{O,FM,C}(antecedent, consequent, info)
+    # end
 
     function Rule{O}(
         antecedent::Union{Condition, Formula},
@@ -396,10 +419,9 @@ struct Rule{O, FM<:AbstractModel, C<:Condition, M<:AbstractModel} <: Constrained
         antecedent = convert(Condition, antecedent)
         C = typeof(antecedent)
         consequent = wrap(consequent, AbstractModel{O})
-        M = typeof(consequent)
-        FM = Union{Rule{O},feasiblemodeltypes(M)}
-        check_model_constraints(Rule{O}, typeof(consequent), FM)
-        new{O,FM,C,M}(antecedent, consequent, info)
+        FM = typeintersect(propagate_FMs(consequent), AbstractModel{<:O})
+        check_model_constraints(Rule{O}, typeof(consequent), FM, O)
+        new{O,FM,C}(antecedent, consequent, info)
     end
 
     function Rule(
@@ -410,20 +432,19 @@ struct Rule{O, FM<:AbstractModel, C<:Condition, M<:AbstractModel} <: Constrained
         antecedent = convert(Condition, antecedent)
         C = typeof(antecedent)
         consequent = wrap(consequent)
-        M = typeof(consequent)
         O = outcometype(consequent)
-        FM = Union{Rule{O},feasiblemodeltypes(M)}
-        check_model_constraints(Rule{O}, typeof(consequent), FM)
-        new{O,FM,C,M}(antecedent, consequent, info)
+        FM = typeintersect(propagate_FMs(consequent), AbstractModel{<:O})
+        check_model_constraints(Rule{O}, typeof(consequent), FM, O)
+        new{O,FM,C}(antecedent, consequent, info)
     end
 
-    # TODO fix
-    # function Rule{O, L, FM}(m::Rule) where {O, L<:AbstractLogic, FM<:AbstractModel}
-    #     Rule{O, L, FM}(m.antecedent, m.consequent, m.info)
+    # TODO obv
+    # function Rule{O, FM, C}(m::Rule) where {O, FM<:AbstractModel, C<:Condition}
+    #     Rule{O, FM, C}(m.antecedent, m.consequent, m.info)
     # end
 
-    # function Rule(m::Rule{O, L, FM}) where {O, L<:AbstractLogic, FM<:AbstractModel}
-    #     Rule{O, L, FM}(m)
+    # function Rule(m::Rule{O, FM, C}) where {O, FM<:AbstractModel, C<:Condition}
+    #     Rule{O, FM, C}(m)
     # end
 end
 
@@ -432,7 +453,8 @@ consequent(m::Rule) = m.consequent
 
 issymbolic(::Rule) = true
 
-# convert(::Type{<:AbstractModel{F1}}, m::Rule{F2, L, FM}) where {F1, F2, L, FM} = Rule{F1, L, FM}(m)
+# TODO obv
+# convert(::Type{<:AbstractModel{O1}}, m::Rule{O2, L, FM}) where {O1, O2, L, FM} = Rule{O1, L, FM}(m)
 
 check(m::Rule, id) = check(antecedent(m), id)
 apply(m::Rule, id) = check(antecedent(m), id) ? apply(consequent(m), id) : nothing
@@ -461,91 +483,59 @@ where `FM` refers to the Feasible Models (`FM`) allowed in the sub-tree.
 
 See also [`Rule`](@ref), [`ConstrainedModel`](@ref), [`AbstractModel`](@ref).
 """
-struct Branch{O, L<:AbstractLogic, FM<:AbstractModel} <: ConstrainedModel{O, FM}
-    antecedent::Formula{L}
+struct Branch{O, FM<:AbstractModel, C<:Condition} <: ConstrainedModel{O, FM}
+    antecedent::C
     positive_consequent::FM
     negative_consequent::FM
     info::NamedTuple
 
-    function Branch{O, L, FM}(
-        antecedent::Formula{L},
+    function Branch{O, _FM, C}(
+        antecedent::Union{Condition, Formula},
         positive_consequent::Any,
         negative_consequent::Any,
         info::NamedTuple = (;),
-    ) where {O, L<:AbstractLogic, FM<:AbstractModel}
-        positive_consequent = wrap(positive_consequent, FM)
-        negative_consequent = wrap(negative_consequent, FM)
-        check_model_constraints(Branch{O}, typeof(positive_consequent), FM)
-        check_model_constraints(Branch{O}, typeof(negative_consequent), FM)
-        new{O,L,FM}(antecedent, positive_consequent, negative_consequent, info)
-    end
-
-    function Branch{O, L}(
-        antecedent::Formula{L},
-        positive_consequent::Any,
-        negative_consequent::Any,
-        info::NamedTuple = (;),
-    ) where {O, L<:AbstractLogic}
-        FM = AbstractModel{O}
-        new{O,L,FM}(antecedent, wrap(positive_consequent, FM), wrap(negative_consequent, FM), info)
-    end
-
-    function Branch{O}(
-        antecedent::Formula{L},
-        positive_consequent::Any,
-        negative_consequent::Any,
-        info::NamedTuple = (;),
-    ) where {O, L<:AbstractLogic}
-        FM = AbstractModel{O}
-        new{O,L,FM}(antecedent, wrap(positive_consequent, FM), wrap(negative_consequent, FM), info)
+    ) where {O, _FM<:AbstractModel, C<:Condition}
+        antecedent = convert(Condition, antecedent)
+        positive_consequent = wrap(positive_consequent, AbstractModel{O})
+        negative_consequent = wrap(negative_consequent, AbstractModel{O})
+        FM = typeintersect(Union{propagate_FMs(positive_consequent),propagate_FMs(negative_consequent)}, AbstractModel{<:O})
+        check_model_constraints(Branch{O}, typeof(positive_consequent), FM, O)
+        check_model_constraints(Branch{O}, typeof(negative_consequent), FM, O)
+        new{O,FM,C}(antecedent, positive_consequent, negative_consequent, info)
     end
 
     function Branch(
-        antecedent::Formula{L},
+        antecedent::Union{Condition, Formula},
         positive_consequent::Any,
         negative_consequent::Any,
         info::NamedTuple = (;),
-    ) where {L<:AbstractLogic}
+    )
+        antecedent = convert(Condition, antecedent)
+        C = typeof(antecedent)
         positive_consequent = wrap(positive_consequent)
         negative_consequent = wrap(negative_consequent)
-        F1 = outcometype(positive_consequent)
-        F2 = outcometype(negative_consequent)
-        O = Union{F1, F2}
-        FM = AbstractModel{O}
-        new{O,L,FM}(antecedent, positive_consequent, negative_consequent, info)
-    end
-
-    function Branch{O, L, FM}(
-        antecedent::Formula{L},
-        (positive_consequent, negative_consequent)::Tuple{Any,Any},
-        info::NamedTuple = (;),
-    ) where {O, L, FM}
-        Branch{O, L, FM}(antecedent, positive_consequent, negative_consequent, info)
-    end
-
-    function Branch{O, L}(
-        antecedent::Formula{L},
-        (positive_consequent, negative_consequent)::Tuple{Any,Any},
-        info::NamedTuple = (;),
-    ) where {O, L}
-        Branch{O, L}(antecedent, positive_consequent, negative_consequent, info)
+        O = Union{outcometype(positive_consequent), outcometype(negative_consequent)}
+        FM = typeintersect(Union{propagate_FMs(positive_consequent),propagate_FMs(negative_consequent)}, AbstractModel{<:O})
+        check_model_constraints(Branch{O}, typeof(positive_consequent), FM, O)
+        check_model_constraints(Branch{O}, typeof(negative_consequent), FM, O)
+        new{O,FM,C}(antecedent, positive_consequent, negative_consequent, info)
     end
 
     function Branch(
-        antecedent::Formula{L},
+        antecedent::Union{Condition, Formula},
         (positive_consequent, negative_consequent)::Tuple{Any,Any},
         info::NamedTuple = (;),
-    ) where {L<:AbstractLogic}
+    )
         Branch(antecedent, positive_consequent, negative_consequent, info)
     end
 
-    function Branch{O, L, FM}(m::Branch) where {O, L<:AbstractLogic, FM<:AbstractModel}
-        Branch{O, L, FM}(m.antecedent, m.positive_consequent, m.negative_consequent, m.info)
-    end
+    # function Branch{O, FM, C}(m::Branch) where {O, FM<:AbstractModel, C<:Condition}
+    #     Branch{O, FM, C}(m.antecedent, m.positive_consequent, m.negative_consequent, m.info)
+    # end
 
-    function Branch(m::Branch{O, L, FM}) where {O, L<:AbstractLogic, FM<:AbstractModel}
-        Branch{O, L, FM}(m)
-    end
+    # function Branch(m::Branch{O, FM, C}) where {O, FM<:AbstractModel, C<:Condition}
+    #     Branch{O, FM, C}(m)
+    # end
 end
 
 antecedent(m::Branch) = m.antecedent
@@ -556,7 +546,8 @@ issymbolic(::Branch) = true
 
 isopen(m::Branch) = isopen(positive_consequent(m)) || isopen(negative_consequent(m))
 
-convert(::Type{<:AbstractModel{F1}}, m::Branch{F2, L, FM}) where {F1, F2, L, FM} = Branch{F1, L, FM}(m)
+# TODO obv
+# convert(::Type{<:AbstractModel{O1}}, m::Branch{O2, L, FM}) where {O1, O2, L, FM} = Branch{O1, L, FM}(m)
 
 check(m::Branch, i::AbstractInstance) = check(antecedent(m), i)
 apply(m::Branch, d::Union{AbstractInstance, AbstractDataset}) = check(antecedent(m), d) ? apply(positive_consequent(m), d) : apply(negative_consequent(m), d)
@@ -586,79 +577,54 @@ It also includes an `info::NamedTuple` for storing additional information.
 
 See also [`Rule`](@ref), [`ConstrainedModel`](@ref), [`DecisionTree`](@ref), [`AbstractModel`](@ref).
 """
-
-struct DecisionList{O, L<:AbstractLogic, FM<:AbstractModel} <: ConstrainedModel{O, FM}
-    rules::Vector{Rule{<:O,L}}
-    # rules::Vector{typeintersect(Rule{<:O,L},FM)}
-    # rules::Vector{typeintersect(Rule{<:O,L},M where M<:FM)}
-    # rules::Vector{M} where {M<:Rule{<:O,L}}
-    # rules::Vector{M where {M<:Rule{<:O,L},M<:FM}}
-    # rules::Vector{<:FM}
-    default_consequent::FM # TODO fix error maybe with AbstractModel/AbstractModel{OO}?
+struct DecisionList{O, FM<:AbstractModel} <: ConstrainedModel{O, FM}
+    rules::Vector{Rule{<:O, <:FM}}
+    default_consequent::FM
     info::NamedTuple
 
-    function DecisionList{O, L, FM}(
-        rules::Vector{<:Rule},
-        default_consequent::Any,
-        info::NamedTuple = (;),
-    ) where {O, L<:AbstractLogic, FM<:AbstractModel}
-        default_consequent = wrap(default_consequent, FM)
-        check_model_constraints.(DecisionList{O}, typeof.(rules), FM)
-        # check_model_constraints.(DecisionList{O}, typeof.(consequent.(rules)), FM) TODO remove?
-        check_model_constraints(DecisionList{O}, typeof(default_consequent), FM)
-        new{O,L,FM}(rules, default_consequent, info)
-    end
+    # function DecisionList{O, FM}(
+    #     rules::Vector{<:Rule},
+    #     default_consequent::Any,
+    #     info::NamedTuple = (;),
+    # ) where {O, FM<:AbstractModel}
+    #     default_consequent = wrap(default_consequent, FM)
+    #     check_model_constraints.(DecisionList{O}, typeof.(rules), FM)
+    #     # check_model_constraints.(DecisionList{O}, typeof.(consequent.(rules)), FM) TODO remove?
+    #     check_model_constraints(DecisionList{O}, typeof(default_consequent), FM)
+    #     new{O,FM}(rules, default_consequent, info)
+    # end
 
-    function DecisionList{O, L}(
-        rules::Vector{<:Rule},
-        default_consequent::Any,
-        info::NamedTuple = (;),
-    ) where {O, L<:AbstractLogic}
-        FM = AbstractModel{O}
-        default_consequent = wrap(default_consequent, FM)
-        new{O,L,AbstractModel{O}}(rules, default_consequent, info)
-    end
-
-    function DecisionList{O}(
-        rules::Vector{<:Rule{<:Any,L}},
-        default_consequent::Any,
-        info::NamedTuple = (;),
-    ) where {O, L<:AbstractLogic}
-        FM = AbstractModel{O}
-        default_consequent = wrap(default_consequent, FM)
-        new{O,L,AbstractModel{O}}(rules, default_consequent, info)
-    end
+    # function DecisionList{O}(
+    #     rules::Vector{<:Rule{<:O}},
+    #     default_consequent::Any,
+    #     info::NamedTuple = (;),
+    # ) where {O}
+    #     FM = AbstractModel{O}
+    #     default_consequent = wrap(default_consequent, FM)
+    #     new{O,AbstractModel{O}}(rules, default_consequent, info)
+    # end
 
     function DecisionList(
-        rules::Vector{<:Rule{<:Any,L}},
+        rules::Vector{<:Rule{<:Any}},
         default_consequent::Any,
         info::NamedTuple = (;),
-    ) where {L<:AbstractLogic}
+    ) where {}
         default_consequent = wrap(default_consequent)
-        F1 = outcometype(default_consequent)
-        Fs = outcometype.(rules)
-        O = Union{F1, Fs...}
-        FM = AbstractModel{O}
-        # TODO fix this structure. Doesn't work properly.
-        # println("1")
-        # println(eltype(rules))
-        # println(T where T<:Rule{<:O,L,<:AbstractModel})
-        # println("1")
-        # println(typeof(rules))
-        # println(Vector{<:Rule{<:O,L,<:AbstractModel}})
-        # # rules = Vector{Rule{<:O,L,<:AbstractModel}}(rules)
-        # rules = Vector{Rule{<:O,L,<:AbstractModel{<:O}}}(rules)
-        # println("1")
-        new{O,L,AbstractModel{O}}(rules, default_consequent, info)
+        O = Union{outcometype(default_consequent), outcometype.(rules)...}
+        FM = typeintersect(Union{propagate_FMs(default_consequent),propagate_FMs.(rules)...}, AbstractModel{<:O})
+        # FM = typeintersect(Union{propagate_FMs(default_consequent),propagate_FMs.(rules)...}, AbstractModel{O})
+        # FM = Union{propagate_FMs(default_consequent),propagate_FMs.(rules)...}
+        check_model_constraints(DecisionList{O}, typeof(default_consequent), FM, O)
+        new{O,FM}(rules, default_consequent, info)
     end
 
-    function DecisionList{O, L, FM}(m::DecisionList) where {O, L<:AbstractLogic, FM<:AbstractModel}
-        DecisionList{O, L, FM}(m.rules, m.default_consequent, m.info)
-    end
+    # function DecisionList{O, FM}(m::DecisionList) where {O, FM<:AbstractModel}
+    #     DecisionList{O, FM}(m.rules, m.default_consequent, m.info)
+    # end
 
-    function DecisionList(m::DecisionList{O, L, FM}) where {O, L<:AbstractLogic, FM<:AbstractModel}
-        DecisionList{O, L, FM}(m)
-    end
+    # function DecisionList(m::DecisionList{O, FM}) where {O, FM<:AbstractModel}
+    #     DecisionList{O, FM}(m)
+    # end
 end
 
 rules(m::DecisionList) = m.rules
@@ -668,7 +634,7 @@ issymbolic(::DecisionList) = true
 
 isopen(m::DecisionList) = isopen(default_consequent(m))
 
-convert(::Type{<:AbstractModel{F1}}, m::DecisionList{F2, L, FM}) where {F1, F2, L, FM} = DecisionList{F1, L, FM}(m)
+# convert(::Type{<:AbstractModel{O1}}, m::DecisionList{O2, FM}) where {O1, O2, FM} = DecisionList{O1, FM}(m)
 
 function apply(m::DecisionList, i::AbstractInstance)
     for rule in rules(m)
@@ -761,7 +727,7 @@ consequent(m::RuleCascade) = m.consequent
 
 issymbolic(::RuleCascade) = true
 
-convert(::Type{<:AbstractModel{F1}}, m::RuleCascade{F2, L, FM}) where {F1, F2, L, FM} = RuleCascade{F1, L, FM}(m)
+convert(::Type{<:AbstractModel{O1}}, m::RuleCascade{O2, L, FM}) where {O1, O2, L, FM} = RuleCascade{O1, L, FM}(m)
 
 function apply(m::RuleCascade, i::AbstractInstance)
     for antecedent in antecedents(m)
@@ -801,7 +767,6 @@ It also includes an `info::NamedTuple` for storing additional information.
 
 See also [`DecisionTree`](@ref), [`MixedSymbolicModel`](@ref), [`DecisionList`](@ref), [`FinallyConstrainedModel`](@ref).
 """
-
 struct DecisionTree{O, L<:AbstractLogic, FFM<:FinalModel} <: FinallyConstrainedModel{O, FFM}
     root::Union{FFM,ConstrainedModel{<:O,<:Union{Branch{<:O,L},FFM}}}
     info::NamedTuple
@@ -812,7 +777,7 @@ issymbolic(::DecisionTree) = true
 
 isopen(::DecisionTree) = false
 
-convert(::Type{<:AbstractModel{F1}}, m::DecisionTree{F2, L, FM}) where {F1, F2, L, FM} = DecisionTree{F1, L, FM}(m)
+convert(::Type{<:AbstractModel{O1}}, m::DecisionTree{O2, L, FM}) where {O1, O2, L, FM} = DecisionTree{O1, L, FM}(m)
 
 apply(m::DecisionTree, i::AbstractInstance) = apply(root(m), i)
 
@@ -843,7 +808,6 @@ It also includes an `info::NamedTuple` for storing additional information.
 
 See also [`MixedSymbolicModel`](@ref), [`DecisionTree`](@ref), [`DecisionList`](@ref), [`FinallyConstrainedModel`](@ref).
 """
-
 struct MixedSymbolicModel{O, L<:AbstractLogic, FFM<:FinalModel} <: FinallyConstrainedModel{O, FFM}
     root::Union{FFM,ConstrainedModel{<:O,<:Union{DecisionList{<:O,L},DecisionTree{<:O,L},FFM}}}
     info::NamedTuple
@@ -852,9 +816,9 @@ root(m::MixedSymbolicModel) = m.root
 
 issymbolic(::MixedSymbolicModel) = true
 
-isopen(::MixedSymbolicModel) = false
+isopen(::MixedSymbolicModel) = isopen(root)
 
-convert(::Type{<:AbstractModel{F1}}, m::MixedSymbolicModel{F2, L, FM}) where {F1, F2, L, FM} = MixedSymbolicModel{F1, L, FM}(m)
+convert(::Type{<:AbstractModel{O1}}, m::MixedSymbolicModel{O2, L, FM}) where {O1, O2, L, FM} = MixedSymbolicModel{O1, L, FM}(m)
 
 apply(m::MixedSymbolicModel, i::AbstractInstance) = apply(root(m), i)
 

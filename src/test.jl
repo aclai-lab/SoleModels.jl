@@ -12,6 +12,11 @@ p = SoleLogics.build_tree("p")
 phi = SoleLogics.build_tree("p∧q∨r")
 phi2 = SoleLogics.build_tree("q∧s→r")
 
+formula_p = SoleLogics.build_tree("p")
+formula_q = SoleLogics.build_tree("q")
+formula_r = SoleLogics.build_tree("r")
+formula_s = SoleLogics.build_tree("s")
+
 L = @test_nowarn Logic{:ModalLogic}
 
 @test_nowarn ConstantModel(1,(;))
@@ -43,8 +48,11 @@ cmodels_num = @test_nowarn [cmodel_float, cmodel_number, cmodel_integer]
 @test convert(AbstractModel{Int}, cmodel_number) isa AbstractModel{Int}
 @test_throws MethodError convert(AbstractModel{<:Int}, cmodel_number)
 
-@test Rule(phi, cmodel_number) isa Rule{Number}
-@test Rule(phi, cmodel_integer) isa Rule{Int}
+rmodel_number = @test_nowarn Rule(phi, cmodel_number)
+rmodel_integer = @test_nowarn Rule(phi, cmodel_integer)
+
+@test rmodel_number isa Rule{Number}
+@test rmodel_integer isa Rule{Int}
 @test Rule{Int}(phi, cmodel_number) isa Rule{Int}
 @test Rule{Int}(phi, cmodel_integer) isa Rule{Int}
 @test Rule{Number}(phi, cmodel_integer) isa Rule{Number}
@@ -54,10 +62,14 @@ cmodels_num = @test_nowarn [cmodel_float, cmodel_number, cmodel_integer]
 @test_nowarn [Rule(phi, c) for c in cmodels]
 
 @test_nowarn Rule{Float64}(phi,const_float)
-rmodel_float = @test_nowarn Rule{Float64}(phi,const_float)
-@test rmodel_float == Rule{Float64,Union{Rule{Float64},ConstantModel{Float64}}}(phi,const_float)
-@test rmodel_float != Rule{Float64,Union{Rule{Float64},FinalModel{Float64}}}(phi,const_float)
-@test rmodel_float == Rule{Float64,Union{Rule, ConstantModel}}(phi,const_float)
+# @test_nowarn Rule{Float64,Union{Rule, ConstantModel}}(phi,const_float)
+rmodel_float0 = @test_nowarn Rule{Float64}(phi,const_float)
+rmodel_float = @test_nowarn Rule{Float64}(phi,rmodel_float0)
+rmodel_float2 = @test_nowarn Rule{Float64}(phi,rmodel_float)
+@test typeof(rmodel_float2) == typeof(rmodel_float)
+# @test typeof(rmodel_float) == typeof(Rule{Float64,Union{Rule{Float64},ConstantModel{Float64}}}(phi,rmodel_float0))
+# @test typeof(rmodel_float) != typeof(Rule{Float64,Union{Rule{Float64},FinalModel{Float64}}}(phi,rmodel_float0))
+# @test typeof(rmodel_float) == typeof(Rule{Float64,Union{Rule, ConstantModel}}(phi,rmodel_float0))
 
 rmodel2_float = @test_nowarn Rule(phi2, rmodel_float)
 
@@ -66,45 +78,59 @@ rmodel2_float = @test_nowarn Rule(phi2, rmodel_float)
 @test_nowarn [Rule{Number}(phi, c) for c in cmodels_num]
 
 rmodel3 = @test_nowarn Rule{Number}(phi,1)
-rmodel4 = @test_nowarn Rule{Number,ConstantModel{Number}}(phi, 1)
-@test_nowarn [rmodel3, rmodel4]
+# rmodel4 = @test_nowarn Rule{Number,ConstantModel{Number}}(phi, 1)
+# @test_nowarn [rmodel3, rmodel4]
 
-rmodel_number = @test_nowarn Rule{Number,ConstantModel{Number}}(phi,1)
-@test rmodel_number == Rule{Number,Union{Rule{Number},ConstantModel{Number}}}(phi,1)
-@test Rule{Number,ConstantModel{Int}}(phi, 1) isa Rule{Number, Union{ConstantModel{Number}, Rule{Number}}}
-@test Rule{Int,ConstantModel{Number}}(phi, 1) isa Rule{Int, Union{ConstantModel{Int}, Rule{Int}}}
-@test_throws MethodError Rule{Int,ConstantModel{Number}}(phi, 1.0)
+# rmodel3 = @test_nowarn Rule{Number,ConstantModel{Number}}(phi,1)
+@test rmodel3 isa Rule{Number,Union{ConstantModel{Number}}}
+# @test Rule{Number,ConstantModel{Int}}(phi, 1) isa Rule{Number, Union{ConstantModel{Number}}}
+# @test Rule{Int,ConstantModel{Number}}(phi, 1) isa Rule{Int, Union{ConstantModel{Int}}}
+# @test_throws MethodError Rule{Int,ConstantModel{Number}}(phi, 1.0)
 
-@test rmodel_number == Rule{Number,Union{Rule{Int},ConstantModel{Number}}}(phi,1)
-@test rmodel_number == Rule{Number,Union{Rule{Number},ConstantModel{Int}}}(phi,1)
+# @test rmodel3 == Rule{Number,Union{Rule{Int},ConstantModel{Number}}}(phi,1)
+# @test rmodel3 != Rule{Number,Union{Rule{Number},ConstantModel{Int}}}(phi,1)
 
-@test_nowarn Rule{Number,ConstantModel{<:Number}}(phi,1)
-@test_nowarn Rule{Number,Union{ConstantModel{Int},ConstantModel{Float64}}}(phi,1)
+# @test_nowarn Rule{Number,ConstantModel{<:Number}}(phi,1)
+# @test_nowarn Rule{Number,Union{ConstantModel{Int},ConstantModel{Float64}}}(phi,1)
 
-rfloat_number = @test_nowarn Rule{Float64,Union{Rule{Float64},ConstantModel{Float64}}}(phi,1.0)
+# rfloat_number = @test_nowarn Rule{Float64,Union{Rule{Float64},ConstantModel{Float64}}}(phi,1.0)
+rfloat_number = @test_nowarn Rule{Float64}(phi,1.0)
 
-@test_broken Rule{Number,Union{Rule{Number},ConstantModel{Number}}}(phi, rfloat_number)
-r = @test_nowarn Rule{Number,Union{Rule{Number},ConstantModel{Number}}}(phi,rmodel_number)
-r = @test_nowarn Rule{Number,Union{Rule{Number},ConstantModel{Number}}}(phi,r)
-r = @test_nowarn Rule{Number,Union{Rule{Number},ConstantModel{Number}}}(phi,r)
+# @test_broken Rule{Number,Union{Rule{Number},ConstantModel{Number}}}(phi, rfloat_number)
+# r = @test_nowarn Rule{Number,Union{Rule{Number},ConstantModel{Number}}}(phi,rmodel3)
+# r = @test_nowarn Rule{Number,Union{Rule{Number},ConstantModel{Number}}}(phi,r)
+# r = @test_nowarn Rule{Number,Union{Rule{Number},ConstantModel{Number}}}(phi,r)
 
-@test outcometype(r) == Number
-@test output_type(r) == Union{Nothing,Number}
+rfloat_number = @test_nowarn Rule{Number}(phi,rmodel3)
+rfloat_number = @test_nowarn Rule{Number}(phi,rfloat_number)
+rfloat_number = @test_nowarn Rule{Number}(phi,rfloat_number)
+
+@test outcometype(rfloat_number) == Number
+@test output_type(rfloat_number) == Union{Nothing, Number}
+
 
 default_consequent = cmodel_integer
 
+branch_q = @test_nowarn Branch(formula_q,("yes","no"),(;))
+branch_s = @test_nowarn Branch(formula_s,("yes","no"),(;))
+branch_r = @test_nowarn Branch(formula_r,(branch_s,"yes"),(;))
+
+# rmodel_bounded_float = @test_nowarn Rule{Float64,Union{Rule{Float64},ConstantModel{Float64}}}(phi,Rule{Float64,Union{Rule{Float64},ConstantModel{Float64}}}(phi,cmodel_float))
+
 # TODO from here
 
-rules = @test_nowarn [Rule(phi, cmodel_integer), Rule(phi, cmodel_float), Rule{Float64,Union{Rule{Float64},ConstantModel{Float64}}}(phi,Rule{Float64,Union{Rule{Float64},ConstantModel{Float64}}}(phi,cmodel_float))]
+rules = @test_nowarn [rmodel_number, rmodel_integer, Rule(phi, cmodel_float), rfloat_number] # , rmodel_bounded_float]
 dlmodel = @test_nowarn DecisionList(rules, default_consequent)
-@test output_type(dlmodel) == Union{Float64,Int}
+@test output_type(dlmodel) == Union{outcometype(default_consequent),outcometype.(rules)...}
 
-rules = @test_nowarn [Rule(phi, cmodel_integer), Rule(phi, cmodel_integer)]
-dlmodel = @test_nowarn DecisionList(rules, default_consequent)
-@test output_type(dlmodel) == Int
+rules_integer = @test_nowarn [Rule(phi, cmodel_integer), Rule(phi, cmodel_integer)]
+dlmodel_integer = @test_nowarn DecisionList(rules_integer, default_consequent)
+@test output_type(dlmodel_integer) == Union{outcometype(default_consequent),outcometype.(rules_integer)...}
 
-bmodel = @test_nowarn Branch(phi, DecisionList(rules, default_consequent), DecisionList(rules, default_consequent))
-@test output_type(bmodel) == Int
+bmodel_integer = @test_nowarn Branch(phi, dlmodel_integer, dlmodel_integer)
+@test output_type(bmodel_integer) == Int
+bmodel = @test_nowarn Branch(phi, dlmodel_integer, dlmodel)
+@test output_type(bmodel) == Union{outcometype.([dlmodel_integer, dlmodel])...}
 
 bmodel_mixed = @test_broken Branch{Union{Float64,Int}}(phi, r, DecisionList(rules, default_consequent))
 bmodel_mixed = @test_broken Branch(phi, r, DecisionList(rules, default_consequent))
@@ -122,15 +148,6 @@ bmodel_2 = @test_nowarn Branch(phi,(dlmodel,bmodel))
 rcmodel = SoleModels.RuleCascade([phi,phi,phi], cmodel_integer)
 @test_nowarn print_model(buf, Branch(phi, rcmodel, bmodel_2));
 
-
-formula_p = SoleLogics.build_tree("p")
-formula_q = SoleLogics.build_tree("q")
-formula_r = SoleLogics.build_tree("r")
-formula_s = SoleLogics.build_tree("s")
-
-branch_q = @test_nowarn Branch(formula_q,("yes","no"),(;))
-branch_s = @test_nowarn Branch(formula_s,("yes","no"),(;))
-branch_r = @test_nowarn Branch(formula_r,(branch_s,"yes"),(;))
 
 # dtmodel = DecisionTree(branch_r, (;))
 # msmodel = MixedSymbolicModel(dtmodel)

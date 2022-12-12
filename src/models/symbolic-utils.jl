@@ -65,12 +65,12 @@ list_immediate_rules(m::FinalModel) = [Rule(SoleLogics.TOP, m)]
 
 list_immediate_rules(m::Rule) = [m]
 
-list_immediate_rules(m::Branch{O, L, FIM}) where {O,L,FIM} = [
-    Rule{O,L,FIM}(antecedent(m), positive_consequent(m)),
-    Rule{O,L,FIM}(SoleLogics.NEGATION(antecedent(m)), negative_consequent(m)),
+list_immediate_rules(m::Branch{O, FM}) where {O, FM} = [
+    Rule{O,FM}(antecedent(m), positive_consequent(m)),
+    Rule{O,FM}(SoleLogics.NEGATION(antecedent(m)), negative_consequent(m)),
 ]
 
-function list_immediate_rules(m::DecisionList{O,L,FIM}) where {O,L,FIM}
+function list_immediate_rules(m::DecisionList{O,FM}) where {O,FM}
     assumed_formula = nothing
     normalized_rules = Vector{eltype(rules(m))}[]
     for rule in rules(m)
@@ -78,7 +78,7 @@ function list_immediate_rules(m::DecisionList{O,L,FIM}) where {O,L,FIM}
         assumed_formula = advance_formula(SoleLogics.NEGATION(antecedent(rule)), assumed_formula)
     end
     default_antecedent = isnothing(assumed_formula) ? SoleLogics.TOP : assumed_formula
-    push!(normalized_rules, Rule{O,L,FIM}(default_antecedent, default_consequent(m)))
+    push!(normalized_rules, Rule{O,FM}(default_antecedent, default_consequent(m)))
     normalized_rules
 end
 
