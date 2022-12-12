@@ -30,6 +30,8 @@ struct TruthCondition{F<:AbstractFormula} <: Condition
     formula::F
 end
 
+formula(c::TruthCondition) = c.formula
+
 convert(::Type{Condition}, f::AbstractFormula) = TruthCondition(f)
 
 """
@@ -830,19 +832,19 @@ apply(m::MixedSymbolicModel, i::AbstractInstance) = apply(root(m), i)
 """
     Convert a rule cascade in a rule
 """
-function convert(::Type{Rule}, m::RuleCascade{O, L, FM}) where {O, L<:AbstractLogic, FM<:AbstractModel}
-    Rule{O, L, FM}(_antecedent(m), consequent(m), info(m))
+function convert(::Type{Rule}, m::RuleCascade{O, FM, C}) where {O, FM<:AbstractModel, C<:TruthCondition}
+    Rule{O, FM, C}(_antecedent(m), consequent(m), info(m))
 end
 function convert(::Type{R}, m::RuleCascade) where {R<:Rule}
     R(_antecedent(m), consequent(m), info(m))
 end
 
-function _antecedent(m::RuleCascade)
+function _antecedent(m::RuleCascade{O, FM, C}) where {O, FM<:AbstractModel, C<:TruthCondition}
     antecedents = antecedents(m)
     if length(antecedents) == 0
         Formula(FNode(SoleLogics.TOP))
     else
-        SoleLogics.CONJUNCTION(antecedents...)
+        SoleLogics.CONJUNCTION(formula.(antecedents)...)
     end
 end
 
