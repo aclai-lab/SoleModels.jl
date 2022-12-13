@@ -1,3 +1,5 @@
+export immediate_submodels, unroll_rules, list_immediate_rules, unroll_rules_cascade, list_paths
+
 ############################################################################################
 # Symbolic modeling utils
 ############################################################################################
@@ -61,7 +63,7 @@ list_immediate_rules(m::AbstractModel{O} where {O})::Rule{<:O} =
         end
     end)
 
-list_immediate_rules(m::FinalModel) = [Rule(SoleLogics.TOP, m)]
+list_immediate_rules(m::FinalModel) = [Rule(TOP, m)]
 
 list_immediate_rules(m::Rule) = [m]
 
@@ -77,7 +79,7 @@ function list_immediate_rules(m::DecisionList{O,FM}) where {O,FM}
         rule = advance_formula(rule, assumed_formula)
         assumed_formula = advance_formula(SoleLogics.NEGATION(antecedent(rule)), assumed_formula)
     end
-    default_antecedent = isnothing(assumed_formula) ? SoleLogics.TOP : assumed_formula
+    default_antecedent = isnothing(assumed_formula) ? TOP : assumed_formula
     push!(normalized_rules, Rule{O,FM}(default_antecedent, default_consequent(m)))
     normalized_rules
 end
@@ -113,17 +115,17 @@ function unroll_rules(m::AbstractModel, assumed_formula = nothing)
     end)
 end
 
-unroll_rules(m::FinalModel) = [Rule(SoleLogics.TOP,m)]
+unroll_rules(m::FinalModel) = [Rule(TOP,m)]
 
 unroll_rules(m::Rule) = [m]
 
 unroll_rules(m::Branch) = [
     [Rule(
-        Formula(SoleLogics.CONJUNCTION(tree(antecedent(m)),tree(antecedent(rule)))),
+        Formula(SoleLogics.CONJUNCTION(tree(formula(antecedent(m))),tree(antecedent(rule)))),
         consequent(rule)) for rule in unroll_rules(positive_consequent(m))]...,
     [Rule(
         Formula(SoleLogics.CONJUNCTION(
-            NEGATION(tree(antecedent(m))),
+            NEGATION(tree(formula(antecedent(m)))),
             tree(antecedent(rule)))
         ), consequent(rule)) for rule in unroll_rules(negative_consequent(m))]...,
 ]
@@ -153,7 +155,7 @@ function unroll_rules_cascade(m::AbstractModel, assumed_formula = nothing)
     end)
 end
 
-unroll_rules_cascade(m::FinalModel) = [RuleCascade([SoleLogics.TOP],m)]
+unroll_rules_cascade(m::FinalModel) = [RuleCascade([TOP],m)]
 
 unroll_rules_cascade(m::Rule) = [convert(RuleCascade,m)]
 
@@ -162,7 +164,7 @@ unroll_rules_cascade(m::Branch) = [
         [antecedent(m),antecedents(rule)...],
         consequent(rule)) for rule in unroll_rules_cascade(positive_consequent(m))]...,
     [RuleCascade(
-        [Formula(NEGATION(tree(antecedent(m)))),antecedents(rule)...],
+        [Formula(NEGATION(tree(formula(antecedent(m))))),antecedents(rule)...],
         consequent(rule)) for rule in unroll_rules_cascade(negative_consequent(m))]...,
 ]
 
@@ -197,14 +199,14 @@ function list_paths(tree::DecisionTree)
     # retrieve the root FNode of the formula(syntax) tree
     pathset = list_paths(root(tree))
 
-    (length(pathset) == 1) && (return [RuleCascade(SoleLogics.TOP,pathset[1])])
+    (length(pathset) == 1) && (return [RuleCascade(TOP,pathset[1])])
 
     return [RuleCascade(path[1:end-1],path[end]) for path in pathset]
 end
 
 function list_paths(node::Branch)
     positive_path  = [antecedent(node)]
-    negative_path = [NEGATION(tree(antecedent(node)))]
+    negative_path = [NEGATION(tree(formula(antecedent(node))))]
     return [
         list_paths(positive_consequent(node),  positive_path)...,
         list_paths(negative_consequent(node), negative_path)...,
@@ -216,9 +218,9 @@ function list_paths(node::AbstractModel)
 end
 
 function list_paths(node::Branch, this_path::AbstractVector)
-    # NOTE: antecedent(node) or tree(antecedent(node)) to obtain a FNode?
+    # NOTE: antecedent(node) or tree(formula(antecedent(node))) to obtain a FNode?
     positive_path  = [this_path..., antecedent(node)]
-    negative_path = [this_path..., NEGATION(tree(antecedent(node)))]
+    negative_path = [this_path..., NEGATION(tree(formula(antecedent(node))))]
     return [
         list_paths(positive_consequent(node),  positive_path)...,
         list_paths(negative_consequent(node), negative_path)...,

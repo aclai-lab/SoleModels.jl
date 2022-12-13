@@ -20,6 +20,8 @@ function SoleLogics.CONJUNCTION(formulas::Formula...)
     end
 end
 
+TOP = SoleLogics.build_tree("⊤")
+
 function check(::Formula, ::AbstractInstance) end
 function check(::Formula, ::AbstractDataset) end
 

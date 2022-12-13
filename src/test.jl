@@ -193,3 +193,6 @@ ms_model = MixedSymbolicModel(ms_model)
 ms_model = MixedSymbolicModel(ms_model)
 
 @test typeof(ms_model1) == typeof(ms_model)
+
+
+unroll_rules.([rfloat_number, dlmodel, dlmodel_integer, bmodel_integer, bmodel, bmodel_mixed, bmodel_mixed_number, dtmodel0, dtmodel, ms_model])
