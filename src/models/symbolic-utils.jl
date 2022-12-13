@@ -34,13 +34,6 @@ _all_submodels(m::AbstractModel) = [m, Iterators.flatten(_all_submodels.(immedia
 ############################################################################################
 ############################################################################################
 
-# const TruthRule                = Rule{O, C, FM}                   where {O, C<:LogicalTruthCondition, FM<:AbstractModel}
-# const TruthBranch              = Branch{O, C, FM}                 where {O, C<:LogicalTruthCondition, FM<:AbstractModel}
-# const TruthDecisionList        = DecisionList{O, C, FM}           where {O, C<:LogicalTruthCondition, FM<:AbstractModel}
-# const TruthRuleCascade         = RuleCascade{O, C, FM}            where {O, C<:LogicalTruthCondition, FM<:AbstractModel}
-# const TruthDecisionTree        = DecisionTree{O, C, FM}           where {O, C<:LogicalTruthCondition, FM<:AbstractModel}
-# const TruthMixedSymbolicModel  = MixedSymbolicModel{O, C, FM}     where {O, C<:LogicalTruthCondition, FM<:AbstractModel}
-
 """
 When `assumed_formula` is assumed, and `f` is known to be true, their conjuction holds.
 """
