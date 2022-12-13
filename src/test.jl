@@ -4,7 +4,7 @@ using FunctionWrappers: FunctionWrapper
 using SoleLogics
 using SoleModels
 using SoleModels: ConstantModel, FinalModel
-using SoleModels: propagate_FMs, ConstrainedModel, check_model_constraints
+using SoleModels: ConstrainedModel, check_model_constraints
 using Test
 
 
@@ -33,7 +33,7 @@ const_funwrap = FunctionWrapper{Float64, Tuple{Float64, Float64}}(sum)
 
 consts = @test_nowarn [const_string, const_float, const_integer, const_funwrap]
 
-@test SoleModels.wrap(const_fun) isa SoleModels.FunctionModel{Any}
+# @test SoleModels.wrap(const_fun) isa SoleModels.FunctionModel{Any}
 @test_nowarn SoleModels.wrap.(consts)
 @test_nowarn ConstantModel{String}(const_string)
 cmodel_string = @test_nowarn ConstantModel(const_string)
