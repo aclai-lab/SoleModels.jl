@@ -46,6 +46,9 @@ struct LogicalTruthCondition{F<:AbstractFormula} <: AbstractBooleanCondition
     formula::F
 end
 
+# condition_length(condition::LogicalTruthCondition) = npropositions(formula(condition))
+condition_length(condition::LogicalTruthCondition) = formula_length(formula(condition))
+
 formula(c::LogicalTruthCondition) = c.formula
 
 # Helper
@@ -844,20 +847,29 @@ apply(m::MixedSymbolicModel, i::AbstractInstance) = apply(root(m), i)
 
 
 ############################################################################################
+####################################### UTILS ##############################################
 ############################################################################################
-############################################################################################
+
+# TODO maybe too much
+# const TruthRule                = Rule{O, C, FM}                   where {O, C<:LogicalTruthCondition, FM<:AbstractModel}
+# const TruthBranch              = Branch{O, C, FM}                 where {O, C<:LogicalTruthCondition, FM<:AbstractModel}
+# const TruthDecisionList        = DecisionList{O, C, FM}           where {O, C<:LogicalTruthCondition, FM<:AbstractModel}
+# const TruthRuleCascade         = RuleCascade{O, C, FM}            where {O, C<:LogicalTruthCondition, FM<:AbstractModel}
+# const TruthDecisionTree        = DecisionTree{O, C, FM}           where {O, C<:LogicalTruthCondition, FM<:AbstractModel}
+# const TruthMixedSymbolicModel  = MixedSymbolicModel{O, C, FM}     where {O, C<:LogicalTruthCondition, FM<:AbstractModel}
 
 """
     Convert a rule cascade into a rule
 """
-function convert(::Type{Rule}, m::RuleCascade{O, FM, C}) where {O, FM<:AbstractModel, C<:LogicalTruthCondition}
-    Rule{O, FM, C}(_antecedent(m), consequent(m), info(m))
+function convert(::Type{Rule}, m::RuleCascade{O, C, FM}) where {O, C<:LogicalTruthCondition, FM<:AbstractModel}
+    Rule{O, C, FM}(_antecedent(m), consequent(m), info(m))
 end
+
 function convert(::Type{R}, m::RuleCascade) where {R<:Rule}
     R(_antecedent(m), consequent(m), info(m))
 end
 
-function _antecedent(m::RuleCascade{O, FM, C}) where {O, FM<:AbstractModel, C<:LogicalTruthCondition}
+function _antecedent(m::RuleCascade{O, C, FM}) where {O, C<:LogicalTruthCondition, FM<:AbstractModel}
     antecedents = antecedents(m)
     if length(antecedents) == 0
         Formula(FNode(SoleLogics.TOP))
@@ -866,25 +878,11 @@ function _antecedent(m::RuleCascade{O, FM, C}) where {O, FM<:AbstractModel, C<:L
     end
 end
 
-
 """
 Convert a rule into a rule cascade
-TODO does this work? Probably this should not exist.
 """
-
 function convert(::Type{RuleCascade}, rule::Rule)
-    function convert_formula(node::FNode)
-        if isleaf(node)
-            return [Formula(node)]
-        end
-
-        return [
-            convert_formula(leftchild(node))...,
-            convert_formula(rightchild(node))...,
-        ]
-    end
-
-    RuleCascade(convert_formula(tree(antecedent(rule))),consequent(rule))
+    RuleCascade([antecedent(rule)],consequent(rule))
 end
 
 ############################################################################################
@@ -959,16 +957,16 @@ end
 """
 Length of the rule
 """
+rule_length(rule::Rule) = condition_length(antecedent(rule))
 
-rule_length(rule::Rule) = rule_length(antecedent(rule))
-rule_length(formula::Formula) = rule_length(tree(formula))
-
-function rule_length(node::FNode)
+# TODO
+formula_length(formula::Formula) = formula_length(tree(formula))
+function formula_length(node::FNode)
     if isleaf(node)
         return 1
     else
-        return ((isdefined(node,:leftchild) ? rule_length(leftchild(node)) : 0)
-                    + (isdefined(node,:rightchild) ? rule_length(rightchild(node)) : 0))
+        return ((isdefined(node,:leftchild) ? formula_length(leftchild(node)) : 0)
+                    + (isdefined(node,:rightchild) ? formula_length(rightchild(node)) : 0))
     end
 end
 

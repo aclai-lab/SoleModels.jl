@@ -8,6 +8,8 @@ using SoleModels: ConstrainedModel, check_model_constraints
 using Test
 
 
+# base.jl
+
 buf = IOBuffer()
 
 p = SoleLogics.build_tree("p")
@@ -193,6 +195,33 @@ ms_model = MixedSymbolicModel(ms_model)
 ms_model = MixedSymbolicModel(ms_model)
 
 @test typeof(ms_model1) == typeof(ms_model)
+
+
+# symbolic-utils.jl
+
+unroll_rules(cmodel_string)
+unroll_rules(rule_r)
+ruleset = unroll_rules(branch_r)
+unroll_rules(dl_model)
+unroll_rules(rcmodel)
+
+# Testing unroll_rules_cascade ---- COMPLETED
+unroll_rules_cascade(cmodel_string)
+unroll_rules_cascade(rule_r)
+unroll_rules_cascade(branch_r)
+unroll_rules_cascade(dl_model)
+unroll_rules_cascade(rcmodel)
+
+#Testing list_paths
+list_paths(branch_r)
+
+#Testing convert function --- COMPLETED
+convert(Rule, rcmodel)
+convert(RuleCascade, ruleset[1])
+
+#Testing rule_length ---- COMPLETED
+rule_length(rule_r)
+rule_length(ruleset[1])
 
 
 unroll_rules.([rfloat_number, dlmodel, dlmodel_integer, bmodel_integer, bmodel, bmodel_mixed, bmodel_mixed_number, dtmodel0, dtmodel, ms_model])

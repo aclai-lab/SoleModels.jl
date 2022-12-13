@@ -34,6 +34,13 @@ _all_submodels(m::AbstractModel) = [m, Iterators.flatten(_all_submodels.(immedia
 ############################################################################################
 ############################################################################################
 
+# const TruthRule                = Rule{O, C, FM}                   where {O, C<:LogicalTruthCondition, FM<:AbstractModel}
+# const TruthBranch              = Branch{O, C, FM}                 where {O, C<:LogicalTruthCondition, FM<:AbstractModel}
+# const TruthDecisionList        = DecisionList{O, C, FM}           where {O, C<:LogicalTruthCondition, FM<:AbstractModel}
+# const TruthRuleCascade         = RuleCascade{O, C, FM}            where {O, C<:LogicalTruthCondition, FM<:AbstractModel}
+# const TruthDecisionTree        = DecisionTree{O, C, FM}           where {O, C<:LogicalTruthCondition, FM<:AbstractModel}
+# const TruthMixedSymbolicModel  = MixedSymbolicModel{O, C, FM}     where {O, C<:LogicalTruthCondition, FM<:AbstractModel}
+
 """
 When `assumed_formula` is assumed, and `f` is known to be true, their conjuction holds.
 """
@@ -115,20 +122,23 @@ function unroll_rules(m::AbstractModel, assumed_formula = nothing)
     end)
 end
 
-unroll_rules(m::FinalModel) = [Rule(TOP,m)]
+unroll_rules(m::FinalModel) = [m]
 
 unroll_rules(m::Rule) = [m]
 
-unroll_rules(m::Branch) = [
-    [Rule(
-        Formula(SoleLogics.CONJUNCTION(tree(formula(antecedent(m))),tree(antecedent(rule)))),
-        consequent(rule)) for rule in unroll_rules(positive_consequent(m))]...,
-    [Rule(
-        Formula(SoleLogics.CONJUNCTION(
-            NEGATION(tree(formula(antecedent(m)))),
-            tree(antecedent(rule)))
-        ), consequent(rule)) for rule in unroll_rules(negative_consequent(m))]...,
-]
+function unroll_rules(m::Branch{O, <:LogicalTruthCondition}) where {O}
+    f = tree(formula(antecedent(m)))
+    [
+        [Rule(
+            LogicalTruthCondition(
+                Formula(SoleLogics.CONJUNCTION(f,tree(antecedent(rule))))
+            ), consequent(rule)) for rule in unroll_rules(positive_consequent(m))]...,
+        [Rule(
+            LogicalTruthCondition(
+                Formula(SoleLogics.CONJUNCTION(NEGATION(f), tree(antecedent(rule))))
+            ), consequent(rule)) for rule in unroll_rules(negative_consequent(m))]...,
+    ]
+end
 
 unroll_rules(m::DecisionList) = [rules(m)...,unroll_rules(default_consequent(m))...]
 
@@ -155,21 +165,21 @@ function unroll_rules_cascade(m::AbstractModel, assumed_formula = nothing)
     end)
 end
 
-unroll_rules_cascade(m::FinalModel) = [RuleCascade([TOP],m)]
+unroll_rules_cascade(m::FinalModel) = [m]
 
 unroll_rules_cascade(m::Rule) = [convert(RuleCascade,m)]
 
-unroll_rules_cascade(m::Branch) = [
+unroll_rules_cascade(m::Branch{O, <:LogicalTruthCondition}) where {O} = [
     [RuleCascade(
         [antecedent(m),antecedents(rule)...],
         consequent(rule)) for rule in unroll_rules_cascade(positive_consequent(m))]...,
     [RuleCascade(
-        [Formula(NEGATION(tree(formula(antecedent(m))))),antecedents(rule)...],
+        [LogicalTruthCondition(Formula(NEGATION(tree(formula(antecedent(m)))))),antecedents(rule)...],
         consequent(rule)) for rule in unroll_rules_cascade(negative_consequent(m))]...,
 ]
 
 unroll_rules_cascade(m::DecisionList) = [
-    [convert(RuleCascade,rule) for rule in rules(m)]...,
+    [unroll_rules_cascade(m) for rule in rules(m)]...,
     unroll_rules_cascade(default_consequent(m))...,
 ]
 
