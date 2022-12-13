@@ -119,6 +119,7 @@ unroll_rules(m::FinalModel) = [m]
 
 unroll_rules(m::Rule) = [m]
 
+# TODO Michele something is wrong here.
 function unroll_rules(m::Branch{O, <:LogicalTruthCondition}) where {O}
     f = tree(formula(antecedent(m)))
     [
