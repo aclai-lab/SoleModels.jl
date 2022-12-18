@@ -5,7 +5,7 @@ import Base: isopen
 ############################################################################################
 # TODO move this stuff
 ############################################################################################
-using SoleLogics: AbstractFormula
+using SoleLogics: AbstractFormula, TOP, AbstractTruthOperator
 
 import SoleLogics: CONJUCTION
 function SoleLogics.CONJUNCTION(formulas::Formula...)
@@ -19,8 +19,6 @@ function SoleLogics.CONJUNCTION(formulas::Formula...)
         error("TODO error")
     end
 end
-
-TOP = SoleLogics.build_tree("⊤")
 
 function check(::Formula, ::AbstractInstance) end
 function check(::Formula, ::AbstractDataset) end
@@ -39,6 +37,18 @@ A boolean condition is a `Condition` that evaluates to a boolean truth value (`t
 abstract type AbstractBooleanCondition <: AbstractCondition end
 
 """
+A true condition is the boolean `Condition` that is always true.
+"""
+struct TrueCondition <: AbstractBooleanCondition end
+
+check(::TrueCondition, args...) = true
+
+condition_length(c::TrueCondition) = 0
+
+# Helper
+convert(::Type{AbstractBooleanCondition}, ::typeof(TOP)) = TrueCondition()
+
+"""
 A logical truth condition is the boolean `Condition` that a logical formula is true on a logical model.
 Namely, that the formula checks `TOP` on the model.
 """
@@ -46,10 +56,10 @@ struct LogicalTruthCondition{F<:AbstractFormula} <: AbstractBooleanCondition
     formula::F
 end
 
-# condition_length(condition::LogicalTruthCondition) = npropositions(formula(condition))
-condition_length(condition::LogicalTruthCondition) = formula_length(formula(condition))
-
 formula(c::LogicalTruthCondition) = c.formula
+check(c::LogicalTruthCondition, args...) = (check(formula(c), args...) == TOP)
+
+condition_length(c::LogicalTruthCondition) = npropositions(formula(c))
 
 # Helper
 convert(::Type{AbstractBooleanCondition}, f::AbstractFormula) = LogicalTruthCondition(f)
@@ -125,7 +135,7 @@ issymbolic(::AbstractModel) = false
 
 # """
 # $(doc_symbolic)
-# Every symbolic model must provide access to its corresponding `Logic` type via the `logic` trait.
+# Every symbolic model must provide access to its corresponding `AbstractLogic` type via the `logic` trait.
 
 # TODO remove
 # See also [`issymbolic`](@ref), [`AbstractModel`](@ref).
@@ -387,7 +397,7 @@ struct Rule{O, C<:AbstractBooleanCondition, FM<:AbstractModel} <: ConstrainedMod
     info::NamedTuple
 
     # function Rule{O, C, _FM, _M}(
-    #     antecedent::Union{AbstractBooleanCondition, Formula},
+    #     antecedent::Union{AbstractBooleanCondition, AbstractFormula, AbstractTruthOperator},
     #     consequent::Any,
     #     info::NamedTuple = (;),
     # ) where {O, C<:AbstractBooleanCondition, _FM<:AbstractModel, _M<:AbstractModel}
@@ -402,7 +412,7 @@ struct Rule{O, C<:AbstractBooleanCondition, FM<:AbstractModel} <: ConstrainedMod
     # end
 
     # function Rule{O, C, _FM}(
-    #     antecedent::Union{AbstractBooleanCondition, Formula},
+    #     antecedent::Union{AbstractBooleanCondition, AbstractFormula, AbstractTruthOperator},
     #     consequent::Any,
     #     info::NamedTuple = (;),
     # ) where {O, C<:AbstractBooleanCondition, _FM<:AbstractModel}
@@ -414,7 +424,7 @@ struct Rule{O, C<:AbstractBooleanCondition, FM<:AbstractModel} <: ConstrainedMod
     # end
 
     # function Rule{O, _FM}(
-    #     antecedent::Union{AbstractBooleanCondition, Formula},
+    #     antecedent::Union{AbstractBooleanCondition, AbstractFormula, AbstractTruthOperator},
     #     consequent::Any,
     #     info::NamedTuple = (;),
     # ) where {O, _FM<:AbstractModel}
@@ -427,7 +437,7 @@ struct Rule{O, C<:AbstractBooleanCondition, FM<:AbstractModel} <: ConstrainedMod
     # end
 
     function Rule{O}(
-        antecedent::Union{AbstractBooleanCondition, Formula},
+        antecedent::Union{AbstractBooleanCondition, AbstractFormula, AbstractTruthOperator},
         consequent::Any,
         info::NamedTuple = (;),
     ) where {O}
@@ -440,7 +450,7 @@ struct Rule{O, C<:AbstractBooleanCondition, FM<:AbstractModel} <: ConstrainedMod
     end
 
     function Rule(
-        antecedent::Union{AbstractBooleanCondition, Formula},
+        antecedent::Union{AbstractBooleanCondition, AbstractFormula, AbstractTruthOperator},
         consequent::Any,
         info::NamedTuple = (;),
     )
@@ -493,7 +503,7 @@ struct Branch{O, C<:AbstractBooleanCondition, FM<:AbstractModel} <: ConstrainedM
     info::NamedTuple
 
     # function Branch{O, C, _FM}(
-    #     antecedent::Union{AbstractBooleanCondition, Formula},
+    #     antecedent::Union{AbstractBooleanCondition, AbstractFormula, AbstractTruthOperator},
     #     positive_consequent::Any,
     #     negative_consequent::Any,
     #     info::NamedTuple = (;),
@@ -508,7 +518,7 @@ struct Branch{O, C<:AbstractBooleanCondition, FM<:AbstractModel} <: ConstrainedM
     # end
 
     function Branch(
-        antecedent::Union{AbstractBooleanCondition, Formula},
+        antecedent::Union{AbstractBooleanCondition, AbstractFormula, AbstractTruthOperator},
         positive_consequent::Any,
         negative_consequent::Any,
         info::NamedTuple = (;),
@@ -525,7 +535,7 @@ struct Branch{O, C<:AbstractBooleanCondition, FM<:AbstractModel} <: ConstrainedM
     end
 
     function Branch(
-        antecedent::Union{AbstractBooleanCondition, Formula},
+        antecedent::Union{AbstractBooleanCondition, AbstractFormula, AbstractTruthOperator},
         (positive_consequent, negative_consequent)::Tuple{Any,Any},
         info::NamedTuple = (;),
     )
@@ -689,7 +699,7 @@ struct RuleCascade{O, C<:AbstractBooleanCondition, FFM<:FinalModel} <: Constrain
     # end
 
     function RuleCascade(
-        antecedents::Vector{<:Union{AbstractBooleanCondition, Formula}},
+        antecedents::Vector{<:Union{AbstractBooleanCondition, AbstractFormula, AbstractTruthOperator}},
         consequent::Any,
         info::NamedTuple = (;),
     ) where {}
@@ -861,8 +871,8 @@ apply(m::MixedSymbolicModel, i::AbstractInstance) = apply(root(m), i)
 """
     Convert a rule cascade into a rule
 """
-function convert(::Type{Rule}, m::RuleCascade{O, C, FM}) where {O, C<:LogicalTruthCondition, FM<:AbstractModel}
-    Rule{O, C, FM}(_antecedent(m), consequent(m), info(m))
+function convert(::Type{Rule}, m::RuleCascade{O, C}) where {O, C<:LogicalTruthCondition}
+    Rule(_antecedent(m), consequent(m), info(m))
 end
 
 function convert(::Type{R}, m::RuleCascade) where {R<:Rule}
@@ -872,9 +882,9 @@ end
 function _antecedent(m::RuleCascade{O, C, FM}) where {O, C<:LogicalTruthCondition, FM<:AbstractModel}
     antecedents = antecedents(m)
     if length(antecedents) == 0
-        Formula(FNode(SoleLogics.TOP))
+        return TOP
     else
-        SoleLogics.CONJUNCTION(formula.(antecedents)...)
+        return SoleLogics.CONJUNCTION(formula.(antecedents)...)
     end
 end
 
@@ -897,7 +907,7 @@ function evaluate_antecedent(rule::Rule, X::AbstractDataset)
     evaluate_antecedent(antecedent(rule), X)
 end
 
-function evaluate_antecedent(antecedent::Formula{L}, X::AbstractDataset) where L<:Logic
+function evaluate_antecedent(antecedent::Formula, X::AbstractDataset)
     check(antecedent, X)
 end
 
@@ -958,17 +968,6 @@ end
 Length of the rule
 """
 rule_length(rule::Rule) = condition_length(antecedent(rule))
-
-# TODO
-formula_length(formula::Formula) = formula_length(tree(formula))
-function formula_length(node::FNode)
-    if isleaf(node)
-        return 1
-    else
-        return ((isdefined(node,:leftchild) ? formula_length(leftchild(node)) : 0)
-                    + (isdefined(node,:rightchild) ? formula_length(rightchild(node)) : 0))
-    end
-end
 
 """
 Metrics of the rule

@@ -12,10 +12,10 @@ using SoleModels: unroll_rules, unroll_rules_cascade
 #struct AbstractDataset end
 
 #Sostituto di SoleLogics.TOP
-const TOP = SoleLogics.build_tree("⊤")
+const TOP = SoleLogics.parseformula("⊤")
 
-formula_s = SoleLogics.build_tree("s")
-formula_r = SoleLogics.build_tree("r")
+formula_s = SoleLogics.parseformula("s")
+formula_r = SoleLogics.parseformula("r")
 
 branch_s = Branch(formula_s,("yes","no"))
 branch_r = Branch(formula_r,(branch_s,"yes"))

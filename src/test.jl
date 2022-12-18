@@ -2,6 +2,7 @@ using Revise
 
 using FunctionWrappers: FunctionWrapper
 using SoleLogics
+using SoleLogics: AbstractLogic
 using SoleModels
 using SoleModels: ConstantModel, FinalModel
 using SoleModels: ConstrainedModel, check_model_constraints
@@ -12,16 +13,14 @@ using Test
 
 buf = IOBuffer()
 
-p = SoleLogics.build_tree("p")
-phi = SoleLogics.build_tree("p∧q∨r")
-phi2 = SoleLogics.build_tree("q∧s→r")
+p = SoleLogics.parseformula("p")
+phi = SoleLogics.parseformula("p∧q∨r")
+phi2 = SoleLogics.parseformula("q∧s→r")
 
-formula_p = SoleLogics.build_tree("p")
-formula_q = SoleLogics.build_tree("q")
-formula_r = SoleLogics.build_tree("r")
-formula_s = SoleLogics.build_tree("s")
-
-L = @test_nowarn Logic{:ModalLogic}
+formula_p = SoleLogics.parseformula("p")
+formula_q = SoleLogics.parseformula("q")
+formula_r = SoleLogics.parseformula("r")
+formula_s = SoleLogics.parseformula("s")
 
 @test_nowarn ConstantModel(1,(;))
 @test_nowarn ConstantModel(1)
