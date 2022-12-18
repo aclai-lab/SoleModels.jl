@@ -2,29 +2,19 @@ export antecedent, consequent, positive_consequent, negative_consequent, default
 
 import Base: isopen
 
+using SoleLogics: AbstractFormula, TOP, AbstractTruthOperator
+
 ############################################################################################
 # TODO move this stuff
 ############################################################################################
-using SoleLogics: AbstractFormula, TOP, AbstractTruthOperator
-
-import SoleLogics: CONJUCTION
-function SoleLogics.CONJUNCTION(formulas::Formula...)
-    if length(formulas) == 1
-        formulas[1]
-    elseif length(formulas) == 2
-        SoleLogics.CONJUNCTION(tree(formulas[1]), tree(formulas[2]))
-    elseif length(formulas) > 2
-        SoleLogics.CONJUNCTION(tree(formulas[1]), SoleLogics.CONJUNCTION(formulas[2:end]...))
-    else
-        error("TODO error")
-    end
-end
 
 function check(::Formula, ::AbstractInstance) end
 function check(::Formula, ::AbstractDataset) end
 
-typename(::Type{T}) where T = eval(nameof(T))
 ############################################################################################
+
+# Util
+typename(::Type{T}) where T = eval(nameof(T))
 
 """
 A condition is something that can be tested on a piece of data, and giving a truth value.
