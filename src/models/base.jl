@@ -269,6 +269,7 @@ The default behavior is the following:
 
 See also [`ConstantModel`](@ref), [`FunctionModel`](@ref), [`ConstrainedModel`](@ref), [`FinalModel`](@ref).
 """
+FinalModel(o::Any) = wrap(o)
 wrap(o::Any, FM::Type{<:AbstractModel}) = convert(FM, wrap(o))
 wrap(m::AbstractModel) = m
 wrap(o::O) where {O} = convert(ConstantModel{O}, o)

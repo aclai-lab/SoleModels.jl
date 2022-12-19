@@ -13,6 +13,10 @@ using SoleLogics: AbstractLogic, Formula
 
 using FunctionWrappers: FunctionWrapper
 
+using Logging: LogLevel, @logmsg
+
+using StatsBase
+
 import Base: convert
 
 
