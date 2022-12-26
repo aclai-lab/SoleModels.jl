@@ -48,11 +48,11 @@ function compute_metrics(
     @assert length(actual) == length(predicted) "Can't compute_metrics with uneven number of actual $(length(actual)) and predicted $(length(predicted)) labels."
     (;
         # n_inst = length(actual),
-        # 
+        #
         # actual = actual,
         # predicted = predicted,
         # weights = weights,
-        # 
+        #
         cm = ConfusionMatrix(actual, predicted, weights),
     )
 end
@@ -69,11 +69,11 @@ function compute_metrics(
     predicted = Vector{eltype(actual)}(predicted)
     (;
         # n_inst = length(actual),
-        # 
+        #
         # actual = actual,
         # predicted = predicted,
         # weights = weights,
-        # 
+        #
         cor   = cor(actual, predicted),
         MAE   = sum(abs.(actual .- predicted)) / length(predicted),
         # MSE   = mean((actual - predicted).^2)
@@ -112,12 +112,12 @@ struct ConfusionMatrix{T<:Number}
     PPVs::Vector{Float64}
     NPVs::Vector{Float64}
     ############################################################################
-    
-    function ConfusionMatrix(matrix::Matrix)
+
+    function ConfusionMatrix(matrix::AbstractMatrix)
         ConfusionMatrix(string.(1:size(matrix, 1)), matrix)
     end
-    function ConfusionMatrix(class_names::Vector, matrix::Matrix{T}) where {T<:Number}
-        
+    function ConfusionMatrix(class_names::Vector, matrix::AbstractMatrix{T}) where {T<:Number}
+
         @assert size(matrix,1) == size(matrix,2) "Can't instantiate ConfusionMatrix with matrix of size ($(size(matrix))"
         n_classes = size(matrix,1)
         @assert length(class_names) == n_classes "Can't instantiate ConfusionMatrix with mismatching n_classes ($(n_classes)) and class_names $(class_names)"
@@ -180,7 +180,7 @@ struct ConfusionMatrix{T<:Number}
             force_class_order = nothing,
         ) where {L<:CLabel,Z}
         @assert length(actual) == length(predicted) "Can't compute ConfusionMatrix with uneven number of actual $(length(actual)) and predicted $(length(predicted)) labels."
-        
+
         if isnothing(weights)
             weights = default_weights(length(actual))
         end
@@ -227,7 +227,7 @@ kappa(cm::ConfusionMatrix)            = cm.kappa
 class_counts(cm::ConfusionMatrix) = sum(cm.matrix,dims=2)
 
 
-# Useful arcticles: 
+# Useful arcticles:
 # - https://towardsdatascience.com/a-tale-of-two-macro-f1s-8811ddcf8f04
 # - https://towardsdatascience.com/multi-class-metrics-made-simple-part-i-precision-and-recall-9250280bddc2
 # - https://towardsdatascience.com/multi-class-metrics-made-simple-part-ii-the-f1-score-ebe8b2c2ca1
@@ -285,7 +285,7 @@ safe_macro_PPV(cm::ConfusionMatrix)         = length(cm.class_names) == 2 ? cm.P
 safe_macro_NPV(cm::ConfusionMatrix)         = length(cm.class_names) == 2 ? cm.NPVs[1]          : macro_NPV(cm)
 
 function Base.show(io::IO, cm::ConfusionMatrix)
-    
+
     max_num_digits = maximum(length(string(val)) for val in cm.matrix)
 
     println(io, "Confusion Matrix ($(length(cm.class_names)) classes):")
