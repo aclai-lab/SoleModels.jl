@@ -52,7 +52,8 @@ $(doc_symbolic)
 Every symbolic model must provide access to its corresponding immediate rules via the
 `list_immediate_rules` trait.
 
-See also [`unroll_rules`](@ref), [`issymbolic`](@ref), [`AbstractModel`](@ref).
+See also [`unroll_rules`](@ref), [`unroll_rules_cascade`](@ref), [`issymbolic`](@ref),
+[`AbstractModel`](@ref).
 """
 list_immediate_rules(m::AbstractModel{O} where {O})::Rule{<:O} =
     error(begin
@@ -101,7 +102,8 @@ set of mutually exclusive (and jointly exaustive, if the model is closed) rules,
 which can be useful
 for many purposes.
 
-See also [`list_immediate_rules`](@ref), [`issymbolic`](@ref), [`AbstractModel`](@ref).
+See also [`list_immediate_rules`](@ref), [`unroll_rules_cascade`](@ref),
+[`issymbolic`](@ref), [`AbstractModel`](@ref).
 """
 function unroll_rules(m::AbstractModel, assumed_formula = nothing)
     # TODO @Michele
@@ -119,7 +121,7 @@ unroll_rules(m::FinalModel) = [m]
 
 unroll_rules(m::Rule) = [m]
 
-function unroll_rules(m::Branch{O, <:LogicalTruthCondition}) where {O}
+function unroll_rules(m::Branch{O,<:LogicalTruthCondition}) where {O}
     pos_rules = begin
         r = unroll_rules(positive_consequent(m))
         typeof(r) <: Vector{<:FinalModel} ?
@@ -140,7 +142,7 @@ function unroll_rules(m::Branch{O, <:LogicalTruthCondition}) where {O}
                 ,fm) for fm in r] :
             [Rule(
                 LogicalTruthCondition{SyntaxTree}(
-                    ∧(¬(formula(antecedent(m))), formula(antecedent(rule)))
+                    ∧(¬(formula(antecedent(m))),formula(antecedent(rule)))
                 ),
                 consequent(rule),
             ) for rule in r]
@@ -170,7 +172,15 @@ unroll_rules(m::MixedSymbolicModel) = unroll_rules(root(m))
 ############################################################################################
 ############################################################################################
 
+"""
+$(doc_symbolic)
+This function extracts the behavior of a symbolic model and represents it as a
+set of mutually exclusive (and jointly exaustive, if the model is closed) rules cascade
+vectors, which can be useful for many purposes.
 
+See also [`list_immediate_rules`](@ref), [`issymbolic`](@ref), [`AbstractModel`](@ref),
+[`unroll_rules`](@ref).
+"""
 function unroll_rules_cascade(m::AbstractModel, assumed_formula = nothing)
     # TODO @Michele
     # [advance_formula(rule) for rule in unroll_rules(m)]
@@ -187,7 +197,7 @@ unroll_rules_cascade(m::FinalModel) = [m]
 
 unroll_rules_cascade(m::Rule) = [convert(RuleCascade,m)]
 
-function unroll_rules_cascade(m::Branch{O, <:LogicalTruthCondition}) where {O}
+function unroll_rules_cascade(m::Branch{O,<:LogicalTruthCondition}) where {O}
     pos_rules = begin
         r = unroll_rules_cascade(positive_consequent(m))
         typeof(r) <: Vector{<:FinalModel} ?
@@ -249,6 +259,7 @@ List all paths of a decision tree by performing a tree traversal
 # function list_paths(tree::DecisionTree{L<:AbstractLogic, O})::AbstractVector{<:AbstractVector{Union{Any,Rule{L,O}}}}
 #     return list_immediate_rules(root(tree))
 # end
+#=
 function list_paths(tree::DecisionTree)
     # tree(f) [where f is a Formula object] is used to
     # retrieve the root FNode of the formula(syntax) tree
@@ -285,6 +296,7 @@ end
 function list_paths(node::AbstractModel,this_path::AbstractVector)
     return [[this_path..., node], ]
 end
+=#
 
 ############################################################################################
 ############################################################################################
