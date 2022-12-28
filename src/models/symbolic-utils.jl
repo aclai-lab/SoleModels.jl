@@ -119,22 +119,46 @@ unroll_rules(m::FinalModel) = [m]
 
 unroll_rules(m::Rule) = [m]
 
-# TODO Michele something is wrong here.
 function unroll_rules(m::Branch{O, <:LogicalTruthCondition}) where {O}
-    f = tree(formula(antecedent(m)))
-    [
-        [Rule(
-            LogicalTruthCondition(
-                Formula(SoleLogics.CONJUNCTION(f,tree(antecedent(rule))))
-            ), consequent(rule)) for rule in unroll_rules(positive_consequent(m))]...,
-        [Rule(
-            LogicalTruthCondition(
-                Formula(SoleLogics.CONJUNCTION(NEGATION(f), tree(antecedent(rule))))
-            ), consequent(rule)) for rule in unroll_rules(negative_consequent(m))]...,
+    pos_rules = begin
+        r = unroll_rules(positive_consequent(m))
+        typeof(r) <: Vector{<:FinalModel} ?
+            [Rule(antecedent(m),fm) for fm in r] :
+            [Rule(
+                LogicalTruthCondition{SyntaxTree}(
+                    ∧(formula(antecedent(m)),formula(antecedent(rule)))
+                ),
+                consequent(rule),
+            ) for rule in r]
+    end
+
+    neg_rules = begin
+        r = unroll_rules(negative_consequent(m))
+        typeof(r) <: Vector{<:FinalModel} ?
+            [Rule(
+                LogicalTruthCondition{SyntaxTree}(¬(formula(antecedent(m))))
+                ,fm) for fm in r] :
+            [Rule(
+                LogicalTruthCondition{SyntaxTree}(
+                    ∧(¬(formula(antecedent(m))), formula(antecedent(rule)))
+                ),
+                consequent(rule),
+            ) for rule in r]
+    end
+
+    return [
+        pos_rules...,
+        neg_rules...,
     ]
 end
 
-unroll_rules(m::DecisionList) = [rules(m)...,unroll_rules(default_consequent(m))...]
+unroll_rules(m::DecisionList) = [
+    rules(m)...,
+    Rule(
+        LogicalTruthCondition(SyntaxTree(⊤)),
+        unroll_rules(default_consequent(m))...,
+    ),
+]
 
 unroll_rules(m::RuleCascade) = [convert(Rule,m)]
 
@@ -163,18 +187,45 @@ unroll_rules_cascade(m::FinalModel) = [m]
 
 unroll_rules_cascade(m::Rule) = [convert(RuleCascade,m)]
 
-unroll_rules_cascade(m::Branch{O, <:LogicalTruthCondition}) where {O} = [
-    [RuleCascade(
-        [antecedent(m),antecedents(rule)...],
-        consequent(rule)) for rule in unroll_rules_cascade(positive_consequent(m))]...,
-    [RuleCascade(
-        [LogicalTruthCondition(Formula(NEGATION(tree(formula(antecedent(m)))))),antecedents(rule)...],
-        consequent(rule)) for rule in unroll_rules_cascade(negative_consequent(m))]...,
-]
+function unroll_rules_cascade(m::Branch{O, <:LogicalTruthCondition}) where {O}
+    pos_rules = begin
+        r = unroll_rules_cascade(positive_consequent(m))
+        typeof(r) <: Vector{<:FinalModel} ?
+            [RuleCascade(LogicalTruthCondition{SyntaxTree}[antecedent(m)],fm) for fm in r] :
+            [RuleCascade(
+                LogicalTruthCondition{SyntaxTree}[antecedent(m),antecedents(rule)...],
+                consequent(rule),
+            ) for rule in r]
+    end
+
+    neg_rules = begin
+        r = unroll_rules_cascade(negative_consequent(m))
+        typeof(r) <: Vector{<:FinalModel} ?
+            [RuleCascade(
+                LogicalTruthCondition{SyntaxTree}[
+                    LogicalTruthCondition{SyntaxTree}(¬(formula(antecedent(m))))
+                ],fm) for fm in r] :
+            [RuleCascade(
+                LogicalTruthCondition{SyntaxTree}[
+                    LogicalTruthCondition{SyntaxTree}(¬(formula(antecedent(m)))),
+                    antecedents(rule)...
+                ],
+                consequent(rule),
+            ) for rule in r]
+    end
+
+    return [
+        pos_rules...,
+        neg_rules...,
+    ]
+end
 
 unroll_rules_cascade(m::DecisionList) = [
-    [unroll_rules_cascade(m) for rule in rules(m)]...,
-    unroll_rules_cascade(default_consequent(m))...,
+    [unroll_rules_cascade(rule) for rule in rules(m)]...,
+    RuleCascade(
+        [LogicalTruthCondition(SyntaxTree(⊤))],
+        unroll_rules_cascade(default_consequent(m))...,
+    ),
 ]
 
 unroll_rules_cascade(m::RuleCascade) = [m]

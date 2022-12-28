@@ -2,7 +2,8 @@ export antecedent, consequent, positive_consequent, negative_consequent, default
 
 import Base: isopen
 
-using SoleLogics: AbstractFormula, TOP, AbstractTruthOperator
+using SoleLogics: Formula, TOP, AbstractTruthOperator, ⊤, ¬, ∧
+const AbstractFormula = Union{Formula,SyntaxTree}
 
 ############################################################################################
 # TODO move this stuff
@@ -322,8 +323,8 @@ feasiblemodelstype(m::ConstrainedModel) = outcometype(typeof(m))
 This function is used upon construction of a `ConstrainedModel`,
 to compute its Feasible Models (`FM`).
 In general, its `FM` are a `Union` of the `FM` of its immediate child models, but
-a trick is used in order to avoid unneccessary propagation of types throughout the model tree. 
-Note that this trick assumes that the first type parameter of any `ConstrainedModel` is 
+a trick is used in order to avoid unneccessary propagation of types throughout the model tree.
+Note that this trick assumes that the first type parameter of any `ConstrainedModel` is
 its `outcometype` `O`.
 
 See also [`feasiblemodelstype`](@ref), [`ConstrainedModel`](@ref).
@@ -863,22 +864,37 @@ apply(m::MixedSymbolicModel, i::AbstractInstance) = apply(root(m), i)
 """
     Convert a rule cascade into a rule
 """
+# TODO: to fix
 function convert(::Type{Rule}, m::RuleCascade{O, C}) where {O, C<:LogicalTruthCondition}
-    Rule(_antecedent(m), consequent(m), info(m))
+    cond = LogicalTruthCondition(_antecedent(antecedents(m)))
+    Rule{O, C, FM}(cond, consequent(m), info(m))
 end
 
 function convert(::Type{R}, m::RuleCascade) where {R<:Rule}
-    R(_antecedent(m), consequent(m), info(m))
+    cond = LogicalTruthCondition(_antecedent(antecedents(m)))
+    R(cond, consequent(m), info(m))
 end
 
-function _antecedent(m::RuleCascade{O, C, FM}) where {O, C<:LogicalTruthCondition, FM<:AbstractModel}
-    antecedents = antecedents(m)
-    if length(antecedents) == 0
-        return TOP
+function _antecedent(m::Vector{<:AbstractBooleanCondition})
+    if length(m) == 0
+        return SyntaxTree(⊤)
+    elseif length(m) == 1
+        return formula(m[1])
     else
-        return SoleLogics.CONJUNCTION(formula.(antecedents)...)
+        return ∧(formula(m[1]),_antecedent(m[2:end]))
     end
 end
+
+#=
+function _antecedent(m::RuleCascade{O, C, FM}) where {O, C<:LogicalTruthCondition, FM<:AbstractModel}
+    antecedents = m.antecedents
+    if length(antecedents) == 0
+        Formula(FNode(SoleLogics.TOP))
+    else
+        Formula(SoleLogics.CONJUNCTION(formula.(antecedents)...))
+    end
+end
+=#
 
 """
 Convert a rule into a rule cascade
