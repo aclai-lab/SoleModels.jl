@@ -166,6 +166,8 @@ unroll_rules(m::RuleCascade) = [convert(Rule,m)]
 
 unroll_rules(m::DecisionTree) = unroll_rules(root(m))
 
+unroll_rules(m::DecisionForest) = vcat(unroll_rules.(trees(m))...)
+
 unroll_rules(m::MixedSymbolicModel) = unroll_rules(root(m))
 
 ############################################################################################
@@ -241,6 +243,8 @@ unroll_rules_cascade(m::DecisionList) = [
 unroll_rules_cascade(m::RuleCascade) = [m]
 
 unroll_rules_cascade(m::DecisionTree) = unroll_rules_cascade(root(m))
+
+unroll_rules_cascade(m::DecisionForest) = vcat(unroll_rules_cascade.(trees(m))...)
 
 unroll_rules_cascade(m::MixedSymbolicModel) = unroll_rules_cascade(root(m))
 

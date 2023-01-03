@@ -792,6 +792,49 @@ isopen(::DecisionTree) = false
 apply(m::DecisionTree, i::AbstractInstance) = apply(root(m), i)
 
 """
+A `Decision Forest` is a symbolic model that wraps an ensemble of models
+
+    struct DecisionForest{O, C<:AbstractBooleanCondition, FFM<:FinalModel} <: ConstrainedModel{O, Union{<:Branch{<:O,<:C}, <:FFM}}
+        trees::Vector{<:DecisionTree}
+        info::NamedTuple
+    end
+
+Note that this structure also includes an `info::NamedTuple` for storing additional information.
+
+See also [`ConstrainedModel`](@ref), [`MixedSymbolicModel`](@ref), [`DecisionList`](@ref),
+[`DecisionTree`](@ref)
+"""
+struct DecisionForest{O, C<:AbstractBooleanCondition, FFM<:FinalModel} <: ConstrainedModel{O, Union{<:Branch{<:O,<:C}, <:FFM}}
+    trees::Vector{<:DecisionTree}
+    info::NamedTuple
+
+    function DecisionForest(
+        trees::Vector{<:DecisionTree},
+        info::NamedTuple = (;),
+    )
+        root_tree = wrap(root(trees[1]))
+        M = typeof(root_tree)
+        O = outcometype(root_tree)
+        C = (root_tree isa FinalModel ? AbstractBooleanCondition : conditiontype(M))
+        FM = typeintersect(Union{propagate_feasiblemodels(M)}, AbstractModel{<:O})
+        FFM = typeintersect(FM, FinalModel{<:O})
+        @assert M <: Union{<:FFM,<:Branch{<:O,<:C,<:Union{Branch,FFM}}} "Cannot instantiate DecisionForest{$(O),$(C),$(FFM),$(M)}(...) with root first tree of type $(typeof(root)). Note that the should be either a FinalNode or a bounded Banch. $(M) <: $(Union{FinalModel,Branch{<:O,<:C,<:Union{Branch,FFM}}}) should hold."
+        check_model_constraints(DecisionTree{O}, typeof(root_tree), FM, O)
+        new{O,C,FFM}(trees, info)
+    end
+end
+
+trees(forest::DecisionForest) = forest.trees
+info(forest::DecisionForest) = forest.info
+
+issymbolic(::DecisionForest) = true
+
+apply(f::DecisionForest, i::AbstractInstance) = [apply(t,i) for t in trees(f)]
+
+# NOTE: dependencies problems
+majority_vote(f::DecisionForest, i::AbstractInstance) = majority_vote(apply(f,i))
+
+"""
 A `MixedSymbolicModel` is a symbolic model that operaters as a free nested structure of IF-THEN-ELSE
 and IF-ELSEIF-ELSE blocks:
 

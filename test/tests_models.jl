@@ -4,8 +4,8 @@ using FunctionWrappers: FunctionWrapper
 using Base
 using Test
 using SoleLogics: Proposition, AbstractFormula, SyntaxTree, ¬, ∧, ⊤
-using SoleModels: ConstantModel, FinalModel, LogicalTruthCondition, DecisionList, DecisionTree, Branch, Rule, RuleCascade, AbstractBooleanCondition
-using SoleModels: unroll_rules, unroll_rules_cascade, formula
+using SoleModels: ConstantModel, FinalModel, LogicalTruthCondition, DecisionForest, DecisionList, DecisionTree, Branch, Rule, RuleCascade, AbstractBooleanCondition
+using SoleModels: unroll_rules, unroll_rules_cascade, formula, root
 
 #Riga 14-15 di base.jl
 #abstract type AbstractInstance end
@@ -67,7 +67,11 @@ b_fdx = @test_nowarn Branch(cond_t,b_nsx,outcome_string)
 b_p = @test_nowarn Branch(cond_r,b_fsx,b_fdx)
 
 # DecisionTree
-dt = @test_nowarn DecisionTree(b_p)
+dt1 = @test_nowarn DecisionTree(b_p)
+dt2 = @test_nowarn DecisionTree(b_fdx)
+
+# DecisionForest
+df = @test_nowarn DecisionForest([dt1,dt2])
 
 
 ############################################################################################
@@ -91,7 +95,10 @@ dt = @test_nowarn DecisionTree(b_p)
 @test_nowarn unroll_rules_cascade(b_fdx)
 @test_nowarn unroll_rules_cascade(b_p)
 
-@test_nowarn unroll_rules_cascade(dt)
+@test_nowarn unroll_rules_cascade(dt1)
+@test_nowarn unroll_rules_cascade(dt2)
+
+@test_nowarn unroll_rules_cascade(df)
 
 ############################################################################################
 ############################ Testing unroll_rules ##########################################
@@ -116,7 +123,10 @@ dt = @test_nowarn DecisionTree(b_p)
 @test_nowarn unroll_rules(b_fdx)
 @test_nowarn unroll_rules(b_p)
 
-@test_nowarn unroll_rules(dt)
+@test_nowarn unroll_rules(dt1)
+@test_nowarn unroll_rules(dt2)
+
+@test_nowarn unroll_rules(df)
 
 #=
 
