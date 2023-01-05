@@ -907,11 +907,16 @@ apply(m::MixedSymbolicModel, i::AbstractInstance) = apply(root(m), i)
 """
     Convert a rule cascade into a rule
 """
-# TODO: to fix
+convert(::Type{Rule}, antecedents::Vector{<:AbstractBooleanCondition}, consequent::Any) =
+    convert(Rule,RuleCascade(antecedents,consequent))
+
 function convert(::Type{Rule}, m::RuleCascade{O, C}) where {O, C<:LogicalTruthCondition}
-    cond = LogicalTruthCondition(_antecedent(antecedents(m)))
-    Rule{O, C, FM}(cond, consequent(m), info(m))
+    cond = LogicalTruthCondition{SyntaxTree}(_antecedent(antecedents(m)))
+    Rule(cond, consequent(m), info(m))
 end
+
+convert(::Type{R}, antecedents::Vector{<:AbstractBooleanCondition}, consequent::Any) =
+    convert(Rule,RuleCascade(antecedents,consequent))
 
 function convert(::Type{R}, m::RuleCascade) where {R<:Rule}
     cond = LogicalTruthCondition(_antecedent(antecedents(m)))

@@ -59,6 +59,7 @@ d1_string = @test_nowarn DecisionList([r1_string,r2_string],outcome_string)
 
 # RuleCascade
 rc1_string = @test_nowarn RuleCascade([cond_r,cond_s,cond_t],outcome_string)
+rc2_string = @test_nowarn RuleCascade([cond_r],outcome_string)
 
 # Branch
 b_nsx = @test_nowarn Branch(cond_q,outcome_string,outcome_string2)
@@ -127,6 +128,18 @@ df = @test_nowarn DecisionForest([dt1,dt2])
 @test_nowarn unroll_rules(dt2)
 
 @test_nowarn unroll_rules(df)
+
+############################################################################################
+############################ Testing unroll_rules ##########################################
+############################################################################################
+
+@test_nowarn convert(Rule,[cond_r],outcome_string)
+
+@test_nowarn convert(Rule,rc1_string)
+@test_nowarn convert(Rule,rc2_string)
+
+@test_nowarn convert(RuleCascade,r1_string)
+@test_nowarn convert(RuleCascade,r2_string)
 
 #=
 
