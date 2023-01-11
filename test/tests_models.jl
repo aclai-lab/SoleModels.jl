@@ -92,9 +92,18 @@ df = @test_nowarn DecisionForest([dt1,dt2])
 @test_nowarn unroll_rules_cascade(b_fdx)
 @test_nowarn unroll_rules_cascade(b_p)
 
-b_fdx_cascade = unroll_rules_cascade(b_fdx)
-@test length(b_fdx_cascade) == 3
-@test string(b_fdx_cascade) == "[{t, q} => true, {t, ¬q} => false, {¬t} => true]"
+@test string(print_model(unroll_rules_cascade(b_fdx))) == """
+RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+┐⩚(t, q)
+└ ✔ true
+RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+┐⩚(t, ¬(q))
+└ ✔ false
+RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+┐⩚(¬(t))
+└ ✔ true
+"""
+# [{t, q} => true, {t, ¬q} => false, {¬t} => true]"
 
 @test_nowarn unroll_rules_cascade(dt1)
 @test_nowarn unroll_rules_cascade(dt2)
