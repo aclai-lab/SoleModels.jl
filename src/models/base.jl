@@ -3,7 +3,7 @@ export antecedent, consequent, positive_consequent, negative_consequent, default
 import Base: isopen
 
 using SoleLogics: Formula, TOP, AbstractTruthOperator, ⊤, ¬, ∧
-const AbstractFormula = Union{Formula,SyntaxTree}
+const FormulaOrTree = Union{Formula,SyntaxTree}
 
 ############################################################################################
 # TODO move this stuff
@@ -36,14 +36,14 @@ check(::TrueCondition, args...) = true
 
 condition_length(c::TrueCondition) = 0
 
-# Helper
+# Helper. Mh, what about TOP as a formula?
 convert(::Type{AbstractBooleanCondition}, ::typeof(TOP)) = TrueCondition()
 
 """
 A logical truth condition is the boolean `Condition` that a logical formula is true on a logical model.
 Namely, that the formula checks `TOP` on the model.
 """
-struct LogicalTruthCondition{F<:AbstractFormula} <: AbstractBooleanCondition
+struct LogicalTruthCondition{F<:FormulaOrTree} <: AbstractBooleanCondition
     formula::F
 end
 
@@ -53,7 +53,7 @@ check(c::LogicalTruthCondition, args...) = (check(formula(c), args...) == TOP)
 condition_length(c::LogicalTruthCondition) = npropositions(formula(c))
 
 # Helper
-convert(::Type{AbstractBooleanCondition}, f::AbstractFormula) = LogicalTruthCondition(f)
+convert(::Type{AbstractBooleanCondition}, f::FormulaOrTree) = LogicalTruthCondition(f)
 
 """
 A Machine Learning model (`AbstractModel`) is a mathematical model that,
@@ -146,7 +146,7 @@ Instead, a `AbstractModel` is said to be functional when it encodes an algebraic
 doc_info = """
 In Sole.jl, each `AbstractModel` encompasses an `info::NamedTuple` field for storing additional information,
 that does not affect on the model's behavior. This structure can hold, for example, information
-about the `AbstractModel`'s statistical performance during the learning phase.
+about the `AbstractModel`ss statistical performance during the learning phase.
 """
 
 """
@@ -390,7 +390,7 @@ struct Rule{O, C<:AbstractBooleanCondition, FM<:AbstractModel} <: ConstrainedMod
     info::NamedTuple
 
     # function Rule{O, C, _FM, _M}(
-    #     antecedent::Union{AbstractBooleanCondition, AbstractFormula, AbstractTruthOperator},
+    #     antecedent::Union{AbstractBooleanCondition, FormulaOrTree, AbstractTruthOperator},
     #     consequent::Any,
     #     info::NamedTuple = (;),
     # ) where {O, C<:AbstractBooleanCondition, _FM<:AbstractModel, _M<:AbstractModel}
@@ -405,7 +405,7 @@ struct Rule{O, C<:AbstractBooleanCondition, FM<:AbstractModel} <: ConstrainedMod
     # end
 
     # function Rule{O, C, _FM}(
-    #     antecedent::Union{AbstractBooleanCondition, AbstractFormula, AbstractTruthOperator},
+    #     antecedent::Union{AbstractBooleanCondition, FormulaOrTree, AbstractTruthOperator},
     #     consequent::Any,
     #     info::NamedTuple = (;),
     # ) where {O, C<:AbstractBooleanCondition, _FM<:AbstractModel}
@@ -417,7 +417,7 @@ struct Rule{O, C<:AbstractBooleanCondition, FM<:AbstractModel} <: ConstrainedMod
     # end
 
     # function Rule{O, _FM}(
-    #     antecedent::Union{AbstractBooleanCondition, AbstractFormula, AbstractTruthOperator},
+    #     antecedent::Union{AbstractBooleanCondition, FormulaOrTree, AbstractTruthOperator},
     #     consequent::Any,
     #     info::NamedTuple = (;),
     # ) where {O, _FM<:AbstractModel}
@@ -430,7 +430,7 @@ struct Rule{O, C<:AbstractBooleanCondition, FM<:AbstractModel} <: ConstrainedMod
     # end
 
     function Rule{O}(
-        antecedent::Union{AbstractBooleanCondition, AbstractFormula, AbstractTruthOperator},
+        antecedent::Union{AbstractBooleanCondition, FormulaOrTree, AbstractTruthOperator},
         consequent::Any,
         info::NamedTuple = (;),
     ) where {O}
@@ -443,7 +443,7 @@ struct Rule{O, C<:AbstractBooleanCondition, FM<:AbstractModel} <: ConstrainedMod
     end
 
     function Rule(
-        antecedent::Union{AbstractBooleanCondition, AbstractFormula, AbstractTruthOperator},
+        antecedent::Union{AbstractBooleanCondition, FormulaOrTree, AbstractTruthOperator},
         consequent::Any,
         info::NamedTuple = (;),
     )
@@ -496,7 +496,7 @@ struct Branch{O, C<:AbstractBooleanCondition, FM<:AbstractModel} <: ConstrainedM
     info::NamedTuple
 
     # function Branch{O, C, _FM}(
-    #     antecedent::Union{AbstractBooleanCondition, AbstractFormula, AbstractTruthOperator},
+    #     antecedent::Union{AbstractBooleanCondition, FormulaOrTree, AbstractTruthOperator},
     #     positive_consequent::Any,
     #     negative_consequent::Any,
     #     info::NamedTuple = (;),
@@ -511,7 +511,7 @@ struct Branch{O, C<:AbstractBooleanCondition, FM<:AbstractModel} <: ConstrainedM
     # end
 
     function Branch(
-        antecedent::Union{AbstractBooleanCondition, AbstractFormula, AbstractTruthOperator},
+        antecedent::Union{AbstractBooleanCondition, FormulaOrTree, AbstractTruthOperator},
         positive_consequent::Any,
         negative_consequent::Any,
         info::NamedTuple = (;),
@@ -528,7 +528,7 @@ struct Branch{O, C<:AbstractBooleanCondition, FM<:AbstractModel} <: ConstrainedM
     end
 
     function Branch(
-        antecedent::Union{AbstractBooleanCondition, AbstractFormula, AbstractTruthOperator},
+        antecedent::Union{AbstractBooleanCondition, FormulaOrTree, AbstractTruthOperator},
         (positive_consequent, negative_consequent)::Tuple{Any,Any},
         info::NamedTuple = (;),
     )
@@ -692,7 +692,7 @@ struct RuleCascade{O, C<:AbstractBooleanCondition, FFM<:FinalModel} <: Constrain
     # end
 
     function RuleCascade(
-        antecedents::Vector{<:Union{AbstractBooleanCondition, AbstractFormula, AbstractTruthOperator}},
+        antecedents::Vector{<:Union{AbstractBooleanCondition, FormulaOrTree, AbstractTruthOperator}},
         consequent::Any,
         info::NamedTuple = (;),
     ) where {}
@@ -829,10 +829,8 @@ info(forest::DecisionForest) = forest.info
 
 issymbolic(::DecisionForest) = true
 
-apply(f::DecisionForest, i::AbstractInstance) = [apply(t,i) for t in trees(f)]
-
-# NOTE: dependencies problems
-majority_vote(f::DecisionForest, i::AbstractInstance) = majority_vote(apply(f,i))
+apply_trees(f::DecisionForest, i::AbstractInstance) = [apply(t,i) for t in trees(f)]
+apply(f::DecisionForest, i::AbstractInstance) = majority_vote(apply_trees(trees(f), i))
 
 """
 A `MixedSymbolicModel` is a symbolic model that operaters as a free nested structure of IF-THEN-ELSE
@@ -896,14 +894,6 @@ apply(m::MixedSymbolicModel, i::AbstractInstance) = apply(root(m), i)
 ####################################### UTILS ##############################################
 ############################################################################################
 
-# TODO maybe too much
-# const TruthRule                = Rule{O, C, FM}                   where {O, C<:LogicalTruthCondition, FM<:AbstractModel}
-# const TruthBranch              = Branch{O, C, FM}                 where {O, C<:LogicalTruthCondition, FM<:AbstractModel}
-# const TruthDecisionList        = DecisionList{O, C, FM}           where {O, C<:LogicalTruthCondition, FM<:AbstractModel}
-# const TruthRuleCascade         = RuleCascade{O, C, FM}            where {O, C<:LogicalTruthCondition, FM<:AbstractModel}
-# const TruthDecisionTree        = DecisionTree{O, C, FM}           where {O, C<:LogicalTruthCondition, FM<:AbstractModel}
-# const TruthMixedSymbolicModel  = MixedSymbolicModel{O, C, FM}     where {O, C<:LogicalTruthCondition, FM<:AbstractModel}
-
 """
     Convert a rule cascade into a rule
 """
@@ -912,24 +902,27 @@ convert(::Type{Rule}, antecedents::Vector{<:AbstractBooleanCondition}, consequen
 
 function convert(::Type{Rule}, m::RuleCascade{O, C}) where {O, C<:LogicalTruthCondition}
     cond = LogicalTruthCondition{SyntaxTree}(_antecedent(antecedents(m)))
-    Rule(cond, consequent(m), info(m))
+    return Rule(cond, consequent(m), info(m))
 end
 
-convert(::Type{R}, antecedents::Vector{<:AbstractBooleanCondition}, consequent::Any) =
-    convert(Rule,RuleCascade(antecedents,consequent))
+function convert(::Type{R}, antecedents::Vector{<:AbstractBooleanCondition}, consequent::Any) where {R<:Rule}
+    return convert(Rule,RuleCascade(antecedents,consequent))
+end
 
 function convert(::Type{R}, m::RuleCascade) where {R<:Rule}
     cond = LogicalTruthCondition(_antecedent(antecedents(m)))
-    R(cond, consequent(m), info(m))
+    return R(cond, consequent(m), info(m))
 end
 
-function _antecedent(m::Vector{<:AbstractBooleanCondition})
+# Note: Assuming the logic is a BaseLogic
+_antecedent(m::Vector{<:AbstractBooleanCondition}) = base_formula(__antecedent)
+function __antecedent(m::Vector{<:AbstractBooleanCondition})
     if length(m) == 0
         return SyntaxTree(⊤)
     elseif length(m) == 1
         return formula(m[1])
     else
-        return ∧(formula(m[1]),_antecedent(m[2:end]))
+        return ∧(formula(m[1]),__antecedent(m[2:end]))
     end
 end
 

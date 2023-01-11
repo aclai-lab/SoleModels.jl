@@ -3,16 +3,14 @@ using FunctionWrappers
 using FunctionWrappers: FunctionWrapper
 using Base
 using Test
-using SoleLogics: Proposition, AbstractFormula, SyntaxTree, ¬, ∧, ⊤
+using SoleLogics
+using SoleLogics: Proposition, FormulaOrTree, SyntaxTree, ¬, ∧, ⊤
+using SoleModels
 using SoleModels: ConstantModel, FinalModel, LogicalTruthCondition, DecisionForest, DecisionList, DecisionTree, Branch, Rule, RuleCascade, AbstractBooleanCondition
 using SoleModels: unroll_rules, unroll_rules_cascade, formula, root
 
-#Riga 14-15 di base.jl
-#abstract type AbstractInstance end
-#struct AbstractDataset end
-
 #Sostituto di SoleLogics.TOP
-#const TOP = SoleLogics.parseformula("⊤")
+# const TOP = SoleLogics.parseformula("⊤")
 
 # Three possible outcome - FinalModel
 outcome_int =  @test_nowarn ConstantModel(2)
@@ -87,14 +85,16 @@ df = @test_nowarn DecisionForest([dt1,dt2])
 @test_nowarn unroll_rules_cascade(r1_string)
 @test_nowarn unroll_rules_cascade(r2_string)
 
-@test_nowarn unroll_rules_cascade(d1_string)
-
 @test_nowarn unroll_rules_cascade(rc1_string)
 
 @test_nowarn unroll_rules_cascade(b_nsx)
 @test_nowarn unroll_rules_cascade(b_fsx)
 @test_nowarn unroll_rules_cascade(b_fdx)
 @test_nowarn unroll_rules_cascade(b_p)
+
+b_fdx_cascade = unroll_rules_cascade(b_fdx)
+@test length(b_fdx_cascade) == 3
+@test string(b_fdx_cascade) == "[{t, q} => true, {t, ¬q} => false, {¬t} => true]"
 
 @test_nowarn unroll_rules_cascade(dt1)
 @test_nowarn unroll_rules_cascade(dt2)
@@ -113,6 +113,8 @@ df = @test_nowarn DecisionForest([dt1,dt2])
 
 @test_nowarn unroll_rules(r1_string)
 @test_nowarn unroll_rules(r2_string)
+
+@test unroll_rules_cascade(d1_string) isa Vector{RuleCascade}
 
 @test_nowarn unroll_rules(d1_string)
 
