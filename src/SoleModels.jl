@@ -1,7 +1,6 @@
 module SoleModels
 
 
-abstract type AbstractDataset end
 abstract type AbstractInstance end
 
 
@@ -10,14 +9,39 @@ using SoleData
 
 using Reexport
 
+using SoleLogics: AbstractLogic, Formula
+
+using FunctionWrappers: FunctionWrapper
+
+using Logging: LogLevel, @logmsg
+
+using StatsBase
+
+import Base: convert
+
+
 export AbstractModel
+
+export outcometype, output_type
+export print_model
+
 export Consequent
 export Performance
 
 export Rule, Branch
-export DecisionList, DecisionTree
 
-include("definitions.jl")
+export DecisionList, RuleCascade
+export DecisionTree, MixedSymbolicModel
+
+export evaluate_antecedent, evaluate_rule
+export rule_metrics
+export convert, list_paths
+
+include("models/base.jl")
+include("models/print.jl")
+include("models/symbolic-utils.jl")
+
+include("machine-learning.jl")
 
 include("confusion-matrix.jl")
 
