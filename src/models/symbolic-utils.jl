@@ -235,7 +235,8 @@ end
 unroll_rules_cascade(m::DecisionList) = [
     [unroll_rules_cascade(rule) for rule in rules(m)]...,
     RuleCascade(
-        [LogicalTruthCondition(SyntaxTree(⊤))],
+        LogicalTruthCondition{SyntaxTree}[
+            LogicalTruthCondition{SyntaxTree}(SyntaxTree(⊤))],
         unroll_rules_cascade(default_consequent(m))...,
     ),
 ]

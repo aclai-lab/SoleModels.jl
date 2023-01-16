@@ -74,7 +74,8 @@ function print_model(
     if isnothing(max_depth) || depth < max_depth
         pipe = "$(indentation_list_children)"
         # println(io, "$(indentation_str*pipe)$(antecedent(m))")
-        println(io, "$(pipe)$(antecedent(m))")
+        #println(io, "$(pipe)$(antecedent(m))")
+        println(io, "$(pipe)$(print_string(formula(antecedent(m))))")
         pad_str = indentation_str*repeat(" ", length(pipe)-length(indentation_last_space)+1)
         print(io, "$(pad_str*indentation_last_first)$("✔ ")")
         ind = pad_str*indentation_last_space*repeat(" ", length("✔ ")-length(indentation_last_space)+2)
@@ -162,7 +163,8 @@ function print_model(
     if isnothing(max_depth) || depth < max_depth
         pipe = "$(indentation_list_children)"
         # println(io, "$(indentation_str*pipe)⩚("*join(antecedents(m), ", ")*")")
-        println(io, "$(pipe)⩚("*join(antecedents(m), ", ")*")")
+        #println(io, "$(pipe)⩚("*join(antecedents(m), ", ")*")")
+        println(io, "$(pipe)⩚("*join(print_string.(formula.(antecedents(m))), " AND ")*")")
         pad_str = indentation_str*repeat(" ", length(pipe)-length(indentation_last_space)+1)
         print(io, "$(pad_str*indentation_last_first)$("✔ ")")
         ind = pad_str*indentation_last_space*repeat(" ", length("✔ ")+1)
@@ -201,3 +203,65 @@ function print_model(
     print_model(io, root(m); kwargs...)
 end
 
+print_model(m::Any; kwargs...) = print_model(stdout, m; kwargs...)
+
+function print_string(f::Formula)
+    print_string(tree(f))
+end
+
+function print_string(st::SyntaxTree)
+    if length(children(st)) == 0
+        return string(token(st))
+    elseif token(st) == ¬
+        return string(st)
+    else
+        return join([print_string(i) for i in children(st)]," ∧ ")
+    end
+end
+
+function print_model(
+    io::IO,
+    m::Vector{<:RuleCascade};
+    header = true,
+    indentation_str="",
+    indentation = default_indentation,
+    depth = 0,
+    max_depth = nothing,
+    kwargs...,
+)
+    (indentation_list_children, indentation_any_first, indentation_any_space, indentation_last_first, indentation_last_space) = indentation
+    !header || println(io, "$(length(m))-element $(typeof(m))")
+    for r in m
+        (indentation_list_children, indentation_any_first, indentation_any_space, indentation_last_first, indentation_last_space) = indentation
+        !header || println(io, "$(indentation_str)$(typeof(r))$(length(info(r)) == 0 ? "" : "\n$(indentation_str)Info: $(info(r))")")
+
+        if isnothing(max_depth) || depth < max_depth
+            print_model(io,r; header = false)
+        else
+            println(io, "[...]")
+        end
+    end
+end
+
+function print_model(
+    io::IO,
+    m::Vector{<:Rule};
+    header = true,
+    indentation_str="",
+    indentation = default_indentation,
+    depth = 0,
+    max_depth = nothing,
+    kwargs...,
+)
+    (indentation_list_children, indentation_any_first, indentation_any_space, indentation_last_first, indentation_last_space) = indentation
+    !header || println(io, "$(length(m))-element $(typeof(m))")
+    for r in m
+        (indentation_list_children, indentation_any_first, indentation_any_space, indentation_last_first, indentation_last_space) = indentation
+        !header || println(io, "$(indentation_str)$(typeof(r))$(length(info(r)) == 0 ? "" : "\n$(indentation_str)Info: $(info(r))")")
+        if isnothing(max_depth) || depth < max_depth
+            print_model(io,r; header=false)
+        else
+            println(io, "[...]")
+        end
+    end
+end
