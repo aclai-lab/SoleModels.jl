@@ -69,6 +69,7 @@ function majority_vote(
     argmax(counts)
 end
 
+# Regression: use mean (or other central tendency measures?)
 function majority_vote(
         labels::AbstractVector{L},
         weights::Union{Nothing,AbstractVector} = nothing;

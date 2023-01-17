@@ -20,7 +20,7 @@ end
 ############################################################################################
 
 # Feature (modal features in ModalDecisionTrees.jl)
-abstract type AbstractFeature{U} end
+abstract type AbstractFeature{U<:Real} end
 
 struct FeaturedMetaCondition{F<:AbstractFeature,T,O<:FunctionWrapper{T}} <: AbstractMetaCondition
   feature::F
@@ -31,7 +31,7 @@ end
 
 # abstract type AbstractConditionalKripkeDataset{M<:AbstractKripkeModel} <: AbstractLogicalModelSet{M} end
 
-# check(::AbstractConditionalKripkeDataset, ::Int, ::W, Letter{<:Condition})
+# check(::AbstractConditionalKripkeDataset, ::Int, ::W, Proposition{<:Condition})
 # accessibles(::AbstractConditionalKripkeDataset, ::Int, ::W, AbstractRelation)
 
 # # active = ha un alphabet. Ci puoi checkare e imparare formule.

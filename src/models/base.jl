@@ -17,14 +17,14 @@ function check(::Formula, ::AbstractDataset) end
 typename(::Type{T}) where T = eval(nameof(T))
 
 """
-A condition is something that can be tested on a piece of data, and giving a truth value.
+A symbolic condition is something that can be tested on a piece of data, and giving a truth value.
 """
-abstract type AbstractCondition end
+abstract type AbstractSymbolicCondition end
 
 """
 A boolean condition is a `Condition` that evaluates to a boolean truth value (`true`/`false`.
 """
-abstract type AbstractBooleanCondition <: AbstractCondition end
+abstract type AbstractBooleanCondition <: AbstractSymbolicCondition end
 
 """
 A true condition is the boolean `Condition` that is always true.
