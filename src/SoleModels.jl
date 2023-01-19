@@ -6,6 +6,7 @@ abstract type AbstractInstance end
 
 using SoleLogics
 using SoleData
+using SoleData: AbstractDimensionalInstance, get_instance_attribute
 
 using Reexport
 
@@ -46,5 +47,8 @@ include("machine-learning.jl")
 include("confusion-matrix.jl")
 
 include("data/conditional-data-prototype.jl")
+
+include("modal-features.jl")
+include("test-operators.jl")
 
 end
