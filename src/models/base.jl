@@ -937,13 +937,6 @@ function _antecedent(m::RuleCascade{O, C, FM}) where {O, C<:LogicalTruthConditio
 end
 =#
 
-"""
-Convert a rule into a rule cascade
-"""
-function convert(::Type{RuleCascade}, rule::Rule)
-    RuleCascade([antecedent(rule)],consequent(rule))
-end
-
 ############################################################################################
 ############################################################################################
 ############################################################################################
