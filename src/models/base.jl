@@ -897,16 +897,9 @@ apply(m::MixedSymbolicModel, i::AbstractInstance) = apply(root(m), i)
 """
     Convert a rule cascade into a rule
 """
-convert(::Type{Rule}, antecedents::Vector{<:AbstractBooleanCondition}, consequent::Any) =
-    convert(Rule,RuleCascade(antecedents,consequent))
-
 function convert(::Type{Rule}, m::RuleCascade{O, C}) where {O, C<:LogicalTruthCondition}
     cond = LogicalTruthCondition{SyntaxTree}(_antecedent(antecedents(m)))
     return Rule(cond, consequent(m), info(m))
-end
-
-function convert(::Type{R}, antecedents::Vector{<:AbstractBooleanCondition}, consequent::Any) where {R<:Rule}
-    return convert(Rule,RuleCascade(antecedents,consequent))
 end
 
 function convert(::Type{R}, m::RuleCascade) where {R<:Rule}
@@ -925,17 +918,6 @@ function __antecedent(m::Vector{<:AbstractBooleanCondition})
         return ∧(formula(m[1]),__antecedent(m[2:end]))
     end
 end
-
-#=
-function _antecedent(m::RuleCascade{O, C, FM}) where {O, C<:LogicalTruthCondition, FM<:AbstractModel}
-    antecedents = m.antecedents
-    if length(antecedents) == 0
-        Formula(FNode(SoleLogics.TOP))
-    else
-        Formula(SoleLogics.CONJUNCTION(formula.(antecedents)...))
-    end
-end
-=#
 
 ############################################################################################
 ############################################################################################
