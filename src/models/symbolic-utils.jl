@@ -124,7 +124,7 @@ unroll_rules(m::Rule) = [m]
 function unroll_rules(m::Branch{O,<:LogicalTruthCondition}) where {O}
     pos_rules = begin
         r = unroll_rules(positive_consequent(m))
-        typeof(r) <: Vector{<:FinalModel} ?
+        r isa Vector{<:FinalModel} ?
             [Rule(antecedent(m),fm) for fm in r] :
             [Rule(
                 LogicalTruthCondition{SyntaxTree}(
@@ -136,7 +136,7 @@ function unroll_rules(m::Branch{O,<:LogicalTruthCondition}) where {O}
 
     neg_rules = begin
         r = unroll_rules(negative_consequent(m))
-        typeof(r) <: Vector{<:FinalModel} ?
+        r isa Vector{<:FinalModel} ?
             [Rule(
                 LogicalTruthCondition{SyntaxTree}(¬(formula(antecedent(m))))
                 ,fm) for fm in r] :
@@ -162,11 +162,23 @@ unroll_rules(m::DecisionList) = [
     ),
 ]
 
-unroll_rules(m::RuleCascade) = [convert(Rule,m)]
+function unroll_rules(m::RuleCascade)
+    rules = begin
+        r = unroll_rules(consequent(m))
+        r isa Vector{<:FinalModel} ?
+            [Rule(antecedent(m),fm) for fm in r] :
+            [Rule(
+                LogicalTruthCondition{SyntaxTree}(
+                    ∧(formula(antecedent(m)),formula(antecedent(rule)))
+                ),
+                consequent(rule),
+            ) for rule in r]
+    end
+
+    return [rules...]
+end
 
 unroll_rules(m::DecisionTree) = unroll_rules(root(m))
-
-unroll_rules(m::DecisionForest) = vcat(unroll_rules.(trees(m))...)
 
 unroll_rules(m::MixedSymbolicModel) = unroll_rules(root(m))
 
@@ -197,12 +209,24 @@ end
 
 unroll_rules_cascade(m::FinalModel) = [m]
 
-unroll_rules_cascade(m::Rule) = [convert(RuleCascade,m)]
+function unroll_rules_cascade(m::Rule)
+    rules = begin
+        r = unroll_rules_cascade(consequent(m))
+        r isa Vector{<:FinalModel} ?
+            [RuleCascade(LogicalTruthCondition[antecedent(m)],fm) for fm in r] :
+            [RuleCascade(
+                LogicalTruthCondition[antecedent(m),antecedents(rule)...],
+                consequent(rule),
+            ) for rule in r]
+    end
+
+    return [rules...]
+end
 
 function unroll_rules_cascade(m::Branch{O,<:LogicalTruthCondition}) where {O}
     pos_rules = begin
         r = unroll_rules_cascade(positive_consequent(m))
-        typeof(r) <: Vector{<:FinalModel} ?
+        r isa Vector{<:FinalModel} ?
             [RuleCascade(LogicalTruthCondition{SyntaxTree}[antecedent(m)],fm) for fm in r] :
             [RuleCascade(
                 LogicalTruthCondition{SyntaxTree}[antecedent(m),antecedents(rule)...],
@@ -212,7 +236,7 @@ function unroll_rules_cascade(m::Branch{O,<:LogicalTruthCondition}) where {O}
 
     neg_rules = begin
         r = unroll_rules_cascade(negative_consequent(m))
-        typeof(r) <: Vector{<:FinalModel} ?
+        r isa Vector{<:FinalModel} ?
             [RuleCascade(
                 LogicalTruthCondition{SyntaxTree}[
                     LogicalTruthCondition{SyntaxTree}(¬(formula(antecedent(m))))
