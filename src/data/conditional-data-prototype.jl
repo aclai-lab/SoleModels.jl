@@ -13,7 +13,7 @@ struct Condition{M<:AbstractMetaCondition,U} <: AbstractCondition
   a::U
 
   function Condition(
-      metacond       :: M<:AbstractMetaCondition,
+      metacond       :: M,
       a              :: U
   ) where {M<:AbstractMetaCondition,U}
       new{M,U}(metacond, a)
@@ -67,27 +67,27 @@ test_operator(m::FeaturedMetaCondition) = m.operator
 
 # ############################################################################################
 
-# abstract type AbstractConditionalKripkeDataset{M<:AbstractKripkeModel} <: AbstractLogicalModelSet{M} end
+# abstract type AbstractConditionalKripkeDataset{M<:AbstractKripkeStructure} <: AbstractLogicalModelSet{M} end
 
 # check(::AbstractConditionalKripkeDataset, ::Int, ::W, Letter{<:Condition})
 # accessibles(::AbstractConditionalKripkeDataset, ::Int, ::W, AbstractRelation)
 
 # # active = ha un alphabet. Ci puoi checkare e imparare formule.
-# abstract type ActiveConditionalKripkeDataset{M<:AbstractKripkeModel} <: AbstractConditionalKripkeDataset{M} end
+# abstract type ActiveConditionalKripkeDataset{M<:AbstractKripkeStructure} <: AbstractConditionalKripkeDataset{M} end
 
 # alphabet(::ActiveConditionalKripkeDataset)
 
 
 # # passive = non ha un alphabet. Ci puoi solo checkare formule
-# abstract type PassiveConditionalKripkeDataset{M<:AbstractKripkeModel} <: AbstractConditionalKripkeDataset{M} end
+# abstract type PassiveConditionalKripkeDataset{M<:AbstractKripkeStructure} <: AbstractConditionalKripkeDataset{M} end
 
-# abstract type PassiveFeaturedKripkeDataset{N,U,W<:AbstractWorld,C<:Condition,KF,KFS<:AbstractFrameSet{KF},M<:AbstractKripkeModel{W,C,T,KF}} <: PassiveConditionalKripkeDataset{M} end
+# abstract type PassiveFeaturedKripkeDataset{N,U,W<:AbstractWorld,C<:Condition,KF,KFS<:AbstractFrameSet{KF},M<:AbstractKripkeStructure{W,C,T,KF}} <: PassiveConditionalKripkeDataset{M} end
 
 # featurevalue(::PassiveFeaturedKripkeDataset, ::Int, ::W, AbstractFeature)
 
 
 # # forma passiva implicita del dataset (simile a ontological dataset)
-# struct ImplicitConditionalDataset{N,U,W<:AbstractWorld,C<:Condition,KF,KFS<:AbstractFrameSet{KF},M<:AbstractKripkeModel{W,C,T,KF}} <: PassiveFeaturedKripkeDataset{M} end
+# struct ImplicitConditionalDataset{N,U,W<:AbstractWorld,C<:Condition,KF,KFS<:AbstractFrameSet{KF},M<:AbstractKripkeStructure{W,C,T,KF}} <: PassiveFeaturedKripkeDataset{M} end
 #   domain::AbstractArray{N,U} # TODO questo non dovrebbe essere necessariamente dimensionale! C'è un altro Layer qui in mezzo.
 #   frameset::KFS
 # end
@@ -104,7 +104,7 @@ test_operator(m::FeaturedMetaCondition) = m.operator
 # struct ConditionalKripkeDataset{
 #   W<:AbstractWorld,
 #   T<:TruthValue,
-#   M<:AbstractKripkeModel{W,T},
+#   M<:AbstractKripkeStructure{W,T},
 #   C<:Condition, # Nota che le non sono! Quando checcki formule, devi avere vere condizioni.
 #   PCD<:PassiveFeaturedKripkeDataset{U,W,C},
 #   AL<:AbstractConditionalAlphabet{C}, # Però questo alfabeto può essere implementato come un vettore di MetaCondition's, che induce un alfabeto infinito di Condition's

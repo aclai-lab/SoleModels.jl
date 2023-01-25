@@ -40,7 +40,8 @@ condition_length(c::TrueCondition) = 0
 convert(::Type{AbstractBooleanCondition}, ::typeof(TOP)) = TrueCondition()
 
 """
-A logical truth condition is the boolean `Condition` that a logical formula is true on a logical model.
+A logical truth condition is the boolean `Condition` that a logical formula is true on
+a logical interpretation.
 Namely, that the formula checks `TOP` on the model.
 """
 struct LogicalTruthCondition{F<:FormulaOrTree} <: AbstractBooleanCondition
