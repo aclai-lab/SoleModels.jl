@@ -211,14 +211,14 @@ unroll_rules_cascade(branch_r)
 unroll_rules_cascade(dl_model)
 unroll_rules_cascade(rcmodel)
 
-#Testing list_paths
+# Testing list_paths
 list_paths(branch_r)
 
-#Testing convert function --- COMPLETED
+# Testing convert function --- COMPLETED
 convert(Rule, rcmodel)
 convert(RuleCascade, ruleset[1])
 
-#Testing rule_length ---- COMPLETED
+# Testing rule_length ---- COMPLETED
 rule_length(rule_r)
 rule_length(ruleset[1])
 

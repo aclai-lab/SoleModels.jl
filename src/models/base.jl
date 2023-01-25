@@ -23,12 +23,12 @@ A condition is something that can be tested on a piece of data, and giving a tru
 abstract type AbstractCondition end
 
 """
-A boolean condition is a `Condition` that evaluates to a boolean truth value (`true`/`false`.
+A boolean condition is a condition that evaluates to a boolean truth value (`true`/`false`.
 """
 abstract type AbstractBooleanCondition <: AbstractCondition end
 
 """
-A true condition is the boolean `Condition` that is always true.
+A true condition is the boolean condition that is always true.
 """
 struct TrueCondition <: AbstractBooleanCondition end
 
@@ -40,7 +40,7 @@ condition_length(c::TrueCondition) = 0
 convert(::Type{AbstractBooleanCondition}, ::typeof(TOP)) = TrueCondition()
 
 """
-A logical truth condition is the boolean `Condition` that a logical formula is true on
+A logical truth condition is the boolean condition that a logical formula is true on
 a logical interpretation.
 Namely, that the formula checks `TOP` on the model.
 """
