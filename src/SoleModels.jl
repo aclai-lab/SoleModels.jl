@@ -46,9 +46,9 @@ include("machine-learning.jl")
 
 include("confusion-matrix.jl")
 
+include("data/features.jl")
+include("data/test-operators.jl")
 include("data/conditional-data-prototype.jl")
 
-include("modal-features.jl")
-include("test-operators.jl")
 
 end

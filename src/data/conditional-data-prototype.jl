@@ -5,9 +5,42 @@ abstract type AbstractCondition end # TODO parametric?
 abstract type AbstractMetaCondition <: AbstractCondition end # TODO parametric?
 
 struct Condition{M<:AbstractMetaCondition,U} <: AbstractCondition
+  
+  # Metacondition
   metacond::M
+ 
+  # Threshold value
   a::U
+
+  function Condition(
+      metacond       :: M<:AbstractMetaCondition,
+      a              :: U
+  ) where {M<:AbstractMetaCondition,U}
+      new{M,U}(metacond, a)
+  end
+
+  function Condition(
+      condition      :: Condition{M,U},
+      a              :: U
+  ) where {M<:AbstractMetaCondition,U}
+      Condition{M,U}(condition.metacond, a)
+  end
+
+  function Condition(
+      feature       :: AbstractFeature,
+      test_operator :: FunctionWrapper,
+      threshold     :: T
+  ) where {T}
+      metacond = FeaturedMetaCondition(feature, test_operator)
+      Condition(metacond, threshold)
+  end
 end
+
+# TODO fix: here, I'm assuming that metacondition isa FeaturedMetaCondition
+feature(d::Condition) = feature(d.metacond)
+test_operator(d::Condition) = test_operator(d.metacond)
+threshold(d::Condition) = d.a
+
 
 # Alphabet of conditions
 abstract type AbstractConditionalAlphabet{M,C<:Condition{M}} <: AbstractAlphabet{C} end
@@ -19,13 +52,18 @@ end
 
 ############################################################################################
 
-# Feature (modal features in ModalDecisionTrees.jl)
-abstract type AbstractFeature{U} end
-
-struct FeaturedMetaCondition{F<:AbstractFeature,T,O<:FunctionWrapper{T}} <: AbstractMetaCondition
+struct FeaturedMetaCondition{F<:AbstractFeature,T,O<:TestOperatorFun} <: AbstractMetaCondition
+  
+  # Feature: a scalar function that can be computed on a world
   feature::F
+
+  # Test operator (e.g. ≥)
   operator::O
+
 end
+
+feature(m::FeaturedMetaCondition) = m.feature
+test_operator(m::FeaturedMetaCondition) = m.operator
 
 # ############################################################################################
 

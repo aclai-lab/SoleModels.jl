@@ -1,11 +1,11 @@
 
-export ModalFeature,
+export AbstractFeature,
         DimensionalFeature, SingleAttributeFeature,
         SingleAttributeNamedFeature,
         SingleAttributeMin, SingleAttributeMax,
         SingleAttributeSoftMin, SingleAttributeSoftMax,
         SingleAttributeGenericFeature, MultiAttributeFeature,
-        NamedFeature, ExternalFWDFeature, AbstractFeature
+        NamedFeature, ExternalFWDFeature
 
 export interpret_feature
 
@@ -13,14 +13,13 @@ export interpret_feature
 ############################################################################################
 ############################################################################################
 
-# A modal feature represents a function that can be computed on a world.
-# The simplest example is, min(A1), which computes the minimum for attribute 1
-#  for a given world.
-# The value of a feature for a given world can be then evaluated in a condition,
-#  such as: min(A1) >= 10.
-abstract type ModalFeature{U<:Real} <: AbstractFeature{U} end
+# A feature represents a function that can be computed (interpreted) on a world.
+# TODO rename interpret_feature->compute_feature
+abstract type AbstractFeature{U<:Real} end
 
-Base.show(io::IO, f::ModalFeature, args...; kwargs...) = print(io, display_feature(f, args...; kwargs...))
+@inline (f::DimensionalFeature)(args...) = interpret_feature(f, args...)
+
+Base.show(io::IO, f::AbstractFeature, args...; kwargs...) = print(io, display_feature(f, args...; kwargs...))
 
 ################################################################################
 ################################################################################
@@ -28,8 +27,11 @@ Base.show(io::IO, f::ModalFeature, args...; kwargs...) = print(io, display_featu
 # A dimensional feature represents a function that can be computed when the world
 #  is an entity that lives in a dimensional context; for example, the world
 #  can be a region of the matrix representing a b/w image.
-abstract type DimensionalFeature{U} <: ModalFeature{U} end
-@inline (f::DimensionalFeature)(args...) = interpret_feature(f, args...)
+# The simplest dimensional feature is, min(A1), which computes the minimum for attribute 1
+#  for a given world.
+# The value of a feature for a given world can be then evaluated in a condition,
+#  such as: min(A1) >= 10.
+abstract type DimensionalFeature{U} <: AbstractFeature{U} end
 
 # Dimensional features functions are computed on dimensional channels,
 #  namely, interpretations of worlds on a dimensional contexts
@@ -168,7 +170,7 @@ is_collapsing_single_attribute_feature(f::SingleAttributeGenericFeature) = (f.f 
 ############################################################################################
 
 # A feature can also be just a name
-struct NamedFeature{U} <: ModalFeature{U}
+struct NamedFeature{U} <: AbstractFeature{U}
     name::String
 end
 function interpret_feature(f::NamedFeature, inst::AbstractDimensionalInstance{T}) where {T}
@@ -180,7 +182,7 @@ display_feature(f::NamedFeature,             args...; kwargs...) = "$(f.name)"
 
 
 # A feature can be imported from a FWD (FWD) structure (see ModalLogic module)
-struct ExternalFWDFeature{U} <: ModalFeature{U}
+struct ExternalFWDFeature{U} <: AbstractFeature{U}
     name::String
     fwd::Any
 end
