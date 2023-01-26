@@ -83,15 +83,15 @@ end
 # # passive = non ha un alphabet. Ci puoi solo checkare formule
 # abstract type PassiveConditionalKripkeDataset{M<:AbstractKripkeStructure} <: AbstractConditionalKripkeDataset{M} end
 
-# abstract type PassiveFeaturedKripkeDataset{N,U,W<:AbstractWorld,C<:FeatCondition,KF,KFS<:AbstractFrameSet{KF},M<:AbstractKripkeStructure{W,C,T,KF}} <: PassiveConditionalKripkeDataset{M} end
+# abstract type PassiveFeaturedKripkeDataset{N,U,W<:AbstractWorld,C<:FeatCondition,FR,FRS<:AbstractFrameSet{FR},M<:AbstractKripkeStructure{W,C,T,FR}} <: PassiveConditionalKripkeDataset{M} end
 
 # featurevalue(::PassiveFeaturedKripkeDataset, ::Int, ::W, AbstractFeature)
 
 
 # # forma passiva implicita del dataset (simile a ontological dataset)
-# struct ImplicitConditionalDataset{N,U,W<:AbstractWorld,C<:FeatCondition,KF,KFS<:AbstractFrameSet{KF},M<:AbstractKripkeStructure{W,C,T,KF}} <: PassiveFeaturedKripkeDataset{M} end
+# struct ImplicitConditionalDataset{N,U,W<:AbstractWorld,C<:FeatCondition,FR,FRS<:AbstractFrameSet{FR},M<:AbstractKripkeStructure{W,C,T,FR}} <: PassiveFeaturedKripkeDataset{M} end
 #   domain::AbstractArray{N,U} # TODO questo non dovrebbe essere necessariamente dimensionale! C'è un altro Layer qui in mezzo.
-#   frameset::KFS
+#   frameset::FRS
 # end
 
 # # forma passiva esplicita (= tabella proposizionale)
