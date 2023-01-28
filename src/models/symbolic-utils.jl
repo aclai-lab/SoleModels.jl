@@ -127,7 +127,7 @@ function unroll_rules(m::Branch{O,<:LogicalTruthCondition}) where {O}
         r isa Vector{<:FinalModel} ?
             [Rule(antecedent(m),fm) for fm in r] :
             [Rule(
-                LogicalTruthCondition{SyntaxTree}(
+                LogicalTruthCondition(
                     ∧(formula(antecedent(m)),formula(antecedent(rule)))
                 ),
                 consequent(rule),
@@ -138,10 +138,10 @@ function unroll_rules(m::Branch{O,<:LogicalTruthCondition}) where {O}
         r = unroll_rules(negative_consequent(m))
         r isa Vector{<:FinalModel} ?
             [Rule(
-                LogicalTruthCondition{SyntaxTree}(¬(formula(antecedent(m))))
+                LogicalTruthCondition(¬(formula(antecedent(m))))
                 ,fm) for fm in r] :
             [Rule(
-                LogicalTruthCondition{SyntaxTree}(
+                LogicalTruthCondition(
                     ∧(¬(formula(antecedent(m))),formula(antecedent(rule)))
                 ),
                 consequent(rule),
@@ -168,7 +168,7 @@ function unroll_rules(m::RuleCascade)
         r isa Vector{<:FinalModel} ?
             [Rule(antecedent(m),fm) for fm in r] :
             [Rule(
-                LogicalTruthCondition{SyntaxTree}(
+                LogicalTruthCondition(
                     ∧(formula(antecedent(m)),formula(antecedent(rule)))
                 ),
                 consequent(rule),
@@ -223,13 +223,13 @@ function unroll_rules_cascade(m::Rule)
     return [rules...]
 end
 
-function unroll_rules_cascade(m::Branch{O,<:LogicalTruthCondition}) where {O}
+function unroll_rules_cascade(m::Branch{O}) where {O}
     pos_rules = begin
         r = unroll_rules_cascade(positive_consequent(m))
         r isa Vector{<:FinalModel} ?
-            [RuleCascade(LogicalTruthCondition{SyntaxTree}[antecedent(m)],fm) for fm in r] :
+            [RuleCascade(LogicalTruthCondition[antecedent(m)],fm) for fm in r] :
             [RuleCascade(
-                LogicalTruthCondition{SyntaxTree}[antecedent(m),antecedents(rule)...],
+                LogicalTruthCondition[antecedent(m),antecedents(rule)...],
                 consequent(rule),
             ) for rule in r]
     end
@@ -238,12 +238,12 @@ function unroll_rules_cascade(m::Branch{O,<:LogicalTruthCondition}) where {O}
         r = unroll_rules_cascade(negative_consequent(m))
         r isa Vector{<:FinalModel} ?
             [RuleCascade(
-                LogicalTruthCondition{SyntaxTree}[
-                    LogicalTruthCondition{SyntaxTree}(¬(formula(antecedent(m))))
+                LogicalTruthCondition[
+                    LogicalTruthCondition(¬(formula(antecedent(m))))
                 ],fm) for fm in r] :
             [RuleCascade(
-                LogicalTruthCondition{SyntaxTree}[
-                    LogicalTruthCondition{SyntaxTree}(¬(formula(antecedent(m)))),
+                LogicalTruthCondition[
+                    LogicalTruthCondition(¬(formula(antecedent(m)))),
                     antecedents(rule)...
                 ],
                 consequent(rule),
@@ -259,8 +259,8 @@ end
 unroll_rules_cascade(m::DecisionList) = [
     [unroll_rules_cascade(rule) for rule in rules(m)]...,
     RuleCascade(
-        LogicalTruthCondition{SyntaxTree}[
-            LogicalTruthCondition{SyntaxTree}(SyntaxTree(⊤))],
+        LogicalTruthCondition[
+            LogicalTruthCondition(SyntaxTree(⊤))],
         unroll_rules_cascade(default_consequent(m))...,
     ),
 ]

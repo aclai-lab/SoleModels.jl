@@ -88,8 +88,8 @@ io = @test_nowarn IOBuffer()
 @test unroll_rules_cascade(r1_string) isa Vector{<:RuleCascade}
 print_model(io,unroll_rules_cascade(r1_string))
 @test String(take!(io)) == """
-1-element Vector{RuleCascade{String, LogicalTruthCondition{SyntaxTree{Union{NamedOperator{:∧}, Proposition{String}}, NamedOperator{:∧}}}, ConstantModel{String}}}
-RuleCascade{String, LogicalTruthCondition{SyntaxTree{Union{NamedOperator{:∧}, Proposition{String}}, NamedOperator{:∧}}}, ConstantModel{String}}
+1-element Vector{RuleCascade{String, LogicalTruthCondition, ConstantModel{String}}}
+RuleCascade{String, LogicalTruthCondition, ConstantModel{String}}
 ┐⩚(r ∧ s ∧ t)
 └ ✔ true
 """
@@ -97,8 +97,8 @@ RuleCascade{String, LogicalTruthCondition{SyntaxTree{Union{NamedOperator{:∧}, 
 @test unroll_rules_cascade(r2_string) isa Vector{<:RuleCascade}
 print_model(io,unroll_rules_cascade(r2_string))
 @test String(take!(io)) == """
-1-element Vector{RuleCascade{String, LogicalTruthCondition{SyntaxTree{Union{NamedOperator{:¬}, Proposition{String}}, NamedOperator{:¬}}}, ConstantModel{String}}}
-RuleCascade{String, LogicalTruthCondition{SyntaxTree{Union{NamedOperator{:¬}, Proposition{String}}, NamedOperator{:¬}}}, ConstantModel{String}}
+1-element Vector{RuleCascade{String, LogicalTruthCondition, ConstantModel{String}}}
+RuleCascade{String, LogicalTruthCondition, ConstantModel{String}}
 ┐⩚(¬(r))
 └ ✔ true
 """
@@ -119,36 +119,36 @@ RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
 
 print_model(io,unroll_rules_cascade(b_nsx))
 @test String(take!(io)) == """
-2-element Vector{RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}}
-RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+2-element Vector{RuleCascade{String, LogicalTruthCondition, ConstantModel{String}}}
+RuleCascade{String, LogicalTruthCondition, ConstantModel{String}}
 ┐⩚(q)
 └ ✔ true
-RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+RuleCascade{String, LogicalTruthCondition, ConstantModel{String}}
 ┐⩚(¬(q))
 └ ✔ false
 """
 
 print_model(io,unroll_rules_cascade(b_fsx))
 @test String(take!(io)) == """
-2-element Vector{RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}}
-RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+2-element Vector{RuleCascade{String, LogicalTruthCondition, ConstantModel{String}}}
+RuleCascade{String, LogicalTruthCondition, ConstantModel{String}}
 ┐⩚(s)
 └ ✔ true
-RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+RuleCascade{String, LogicalTruthCondition, ConstantModel{String}}
 ┐⩚(¬(s))
 └ ✔ false
 """
 
 print_model(io,unroll_rules_cascade(b_fdx))
 @test String(take!(io)) == """
-3-element Vector{RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}}
-RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+3-element Vector{RuleCascade{String, LogicalTruthCondition, ConstantModel{String}}}
+RuleCascade{String, LogicalTruthCondition, ConstantModel{String}}
 ┐⩚(t AND q)
 └ ✔ true
-RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+RuleCascade{String, LogicalTruthCondition, ConstantModel{String}}
 ┐⩚(t AND ¬(q))
 └ ✔ false
-RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+RuleCascade{String, LogicalTruthCondition, ConstantModel{String}}
 ┐⩚(¬(t))
 └ ✔ true
 """
@@ -156,20 +156,20 @@ RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
 
 print_model(io,unroll_rules_cascade(b_p))
 @test String(take!(io)) == """
-5-element Vector{RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}}
-RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+5-element Vector{RuleCascade{String, LogicalTruthCondition, ConstantModel{String}}}
+RuleCascade{String, LogicalTruthCondition, ConstantModel{String}}
 ┐⩚(r AND s)
 └ ✔ true
-RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+RuleCascade{String, LogicalTruthCondition, ConstantModel{String}}
 ┐⩚(r AND ¬(s))
 └ ✔ false
-RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+RuleCascade{String, LogicalTruthCondition, ConstantModel{String}}
 ┐⩚(¬(r) AND t AND q)
 └ ✔ true
-RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+RuleCascade{String, LogicalTruthCondition, ConstantModel{String}}
 ┐⩚(¬(r) AND t AND ¬(q))
 └ ✔ false
-RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+RuleCascade{String, LogicalTruthCondition, ConstantModel{String}}
 ┐⩚(¬(r) AND ¬(t))
 └ ✔ true
 """
@@ -179,20 +179,20 @@ RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
 @test unroll_rules_cascade(dt1) isa Vector{<:RuleCascade}
 print_model(io,unroll_rules_cascade(dt1))
 @test String(take!(io)) == """
-5-element Vector{RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}}
-RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+5-element Vector{RuleCascade{String, LogicalTruthCondition, ConstantModel{String}}}
+RuleCascade{String, LogicalTruthCondition, ConstantModel{String}}
 ┐⩚(r AND s)
 └ ✔ true
-RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+RuleCascade{String, LogicalTruthCondition, ConstantModel{String}}
 ┐⩚(r AND ¬(s))
 └ ✔ false
-RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+RuleCascade{String, LogicalTruthCondition, ConstantModel{String}}
 ┐⩚(¬(r) AND t AND q)
 └ ✔ true
-RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+RuleCascade{String, LogicalTruthCondition, ConstantModel{String}}
 ┐⩚(¬(r) AND t AND ¬(q))
 └ ✔ false
-RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+RuleCascade{String, LogicalTruthCondition, ConstantModel{String}}
 ┐⩚(¬(r) AND ¬(t))
 └ ✔ true
 """
@@ -200,14 +200,14 @@ RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
 @test unroll_rules_cascade(dt2) isa Vector{<:RuleCascade}
 print_model(io,unroll_rules_cascade(dt2))
 @test String(take!(io)) == """
-3-element Vector{RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}}
-RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+3-element Vector{RuleCascade{String, LogicalTruthCondition, ConstantModel{String}}}
+RuleCascade{String, LogicalTruthCondition, ConstantModel{String}}
 ┐⩚(t AND q)
 └ ✔ true
-RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+RuleCascade{String, LogicalTruthCondition, ConstantModel{String}}
 ┐⩚(t AND ¬(q))
 └ ✔ false
-RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+RuleCascade{String, LogicalTruthCondition, ConstantModel{String}}
 ┐⩚(¬(t))
 └ ✔ true
 """
@@ -282,7 +282,7 @@ Rule{String, LogicalTruthCondition{SyntaxTree{Union{NamedOperator{:¬}, Proposit
 ┐¬(r)
 └ ✔ true
 Rule{String, LogicalTruthCondition{SyntaxTree{SoleLogics.TopOperator, SoleLogics.TopOperator}}, ConstantModel{String}}
-┐SoleLogics.TopOperator()
+┐⊤
 └ ✔ true
 """
 
@@ -292,11 +292,11 @@ Rule{String, LogicalTruthCondition{SyntaxTree{SoleLogics.TopOperator, SoleLogics
 @test unroll_rules(b_nsx) isa Vector{<:Rule}
 print_model(io,unroll_rules(b_nsx))
 @test String(take!(io)) == """
-2-element Vector{Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}}
+2-element Vector{Rule{String, C, ConstantModel{String}} where C<:AbstractBooleanCondition}
 Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
 ┐q
 └ ✔ true
-Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+Rule{String, LogicalTruthCondition{SyntaxTree{Union{NamedOperator{:¬}, Proposition{String}}, NamedOperator{:¬}}}, ConstantModel{String}}
 ┐¬(q)
 └ ✔ false
 """
@@ -304,11 +304,11 @@ Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
 @test unroll_rules(b_fsx) isa Vector{<:Rule}
 print_model(io,unroll_rules(b_fsx))
 @test String(take!(io)) == """
-2-element Vector{Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}}
+2-element Vector{Rule{String, C, ConstantModel{String}} where C<:AbstractBooleanCondition}
 Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
 ┐s
 └ ✔ true
-Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+Rule{String, LogicalTruthCondition{SyntaxTree{Union{NamedOperator{:¬}, Proposition{String}}, NamedOperator{:¬}}}, ConstantModel{String}}
 ┐¬(s)
 └ ✔ false
 """
@@ -316,14 +316,14 @@ Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
 @test unroll_rules(b_fdx) isa Vector{<:Rule}
 print_model(io,unroll_rules(b_fdx))
 @test String(take!(io)) == """
-3-element Vector{Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}}
-Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+3-element Vector{Rule{String, C, ConstantModel{String}} where C<:AbstractBooleanCondition}
+Rule{String, LogicalTruthCondition{SyntaxTree{Union{NamedOperator{:∧}, Proposition{String}}, NamedOperator{:∧}}}, ConstantModel{String}}
 ┐t ∧ q
 └ ✔ true
-Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+Rule{String, LogicalTruthCondition{SyntaxTree{Union{NamedOperator{:∧}, NamedOperator{:¬}, Proposition{String}}, NamedOperator{:∧}}}, ConstantModel{String}}
 ┐t ∧ ¬(q)
 └ ✔ false
-Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+Rule{String, LogicalTruthCondition{SyntaxTree{Union{NamedOperator{:¬}, Proposition{String}}, NamedOperator{:¬}}}, ConstantModel{String}}
 ┐¬(t)
 └ ✔ true
 """
@@ -331,20 +331,20 @@ Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
 @test unroll_rules(b_p) isa Vector{<:Rule}
 print_model(io,unroll_rules(b_p))
 @test String(take!(io)) == """
-5-element Vector{Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}}
-Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+5-element Vector{Rule{String, C, ConstantModel{String}} where C<:AbstractBooleanCondition}
+Rule{String, LogicalTruthCondition{SyntaxTree{Union{NamedOperator{:∧}, Proposition{String}}, NamedOperator{:∧}}}, ConstantModel{String}}
 ┐r ∧ s
 └ ✔ true
-Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+Rule{String, LogicalTruthCondition{SyntaxTree{Union{NamedOperator{:∧}, NamedOperator{:¬}, Proposition{String}}, NamedOperator{:∧}}}, ConstantModel{String}}
 ┐r ∧ ¬(s)
 └ ✔ false
-Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+Rule{String, LogicalTruthCondition{SyntaxTree{Union{NamedOperator{:∧}, NamedOperator{:¬}, Proposition{String}}, NamedOperator{:∧}}}, ConstantModel{String}}
 ┐¬(r) ∧ t ∧ q
 └ ✔ true
-Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+Rule{String, LogicalTruthCondition{SyntaxTree{Union{NamedOperator{:∧}, NamedOperator{:¬}, Proposition{String}}, NamedOperator{:∧}}}, ConstantModel{String}}
 ┐¬(r) ∧ t ∧ ¬(q)
 └ ✔ false
-Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+Rule{String, LogicalTruthCondition{SyntaxTree{Union{NamedOperator{:∧}, NamedOperator{:¬}, Proposition{String}}, NamedOperator{:∧}}}, ConstantModel{String}}
 ┐¬(r) ∧ ¬(t)
 └ ✔ true
 """
@@ -352,20 +352,20 @@ Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
 @test unroll_rules(dt1) isa Vector{<:Rule}
 print_model(io,unroll_rules(dt1))
 @test String(take!(io)) == """
-5-element Vector{Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}}
-Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+5-element Vector{Rule{String, C, ConstantModel{String}} where C<:AbstractBooleanCondition}
+Rule{String, LogicalTruthCondition{SyntaxTree{Union{NamedOperator{:∧}, Proposition{String}}, NamedOperator{:∧}}}, ConstantModel{String}}
 ┐r ∧ s
 └ ✔ true
-Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+Rule{String, LogicalTruthCondition{SyntaxTree{Union{NamedOperator{:∧}, NamedOperator{:¬}, Proposition{String}}, NamedOperator{:∧}}}, ConstantModel{String}}
 ┐r ∧ ¬(s)
 └ ✔ false
-Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+Rule{String, LogicalTruthCondition{SyntaxTree{Union{NamedOperator{:∧}, NamedOperator{:¬}, Proposition{String}}, NamedOperator{:∧}}}, ConstantModel{String}}
 ┐¬(r) ∧ t ∧ q
 └ ✔ true
-Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+Rule{String, LogicalTruthCondition{SyntaxTree{Union{NamedOperator{:∧}, NamedOperator{:¬}, Proposition{String}}, NamedOperator{:∧}}}, ConstantModel{String}}
 ┐¬(r) ∧ t ∧ ¬(q)
 └ ✔ false
-Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+Rule{String, LogicalTruthCondition{SyntaxTree{Union{NamedOperator{:∧}, NamedOperator{:¬}, Proposition{String}}, NamedOperator{:∧}}}, ConstantModel{String}}
 ┐¬(r) ∧ ¬(t)
 └ ✔ true
 """
@@ -373,14 +373,14 @@ Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
 @test unroll_rules(dt2) isa Vector{<:Rule}
 print_model(io,unroll_rules(dt2))
 @test String(take!(io)) == """
-3-element Vector{Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}}
-Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+3-element Vector{Rule{String, C, ConstantModel{String}} where C<:AbstractBooleanCondition}
+Rule{String, LogicalTruthCondition{SyntaxTree{Union{NamedOperator{:∧}, Proposition{String}}, NamedOperator{:∧}}}, ConstantModel{String}}
 ┐t ∧ q
 └ ✔ true
-Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+Rule{String, LogicalTruthCondition{SyntaxTree{Union{NamedOperator{:∧}, NamedOperator{:¬}, Proposition{String}}, NamedOperator{:∧}}}, ConstantModel{String}}
 ┐t ∧ ¬(q)
 └ ✔ false
-Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+Rule{String, LogicalTruthCondition{SyntaxTree{Union{NamedOperator{:¬}, Proposition{String}}, NamedOperator{:¬}}}, ConstantModel{String}}
 ┐¬(t)
 └ ✔ true
 """

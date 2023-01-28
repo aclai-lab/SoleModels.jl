@@ -693,12 +693,13 @@ struct RuleCascade{O, C<:AbstractBooleanCondition, FFM<:FinalModel} <: Constrain
     # end
 
     function RuleCascade(
-        antecedents::Vector{<:Union{AbstractBooleanCondition, FormulaOrTree, AbstractTruthOperator}},
+        antecedents::Vector{C},
         consequent::Any,
         info::NamedTuple = (;),
-    ) where {}
-        antecedents = convert.(AbstractBooleanCondition, antecedents)
-        C = Union{typeof.(antecedents)...}
+    ) where {C<:Union{AbstractBooleanCondition, FormulaOrTree, AbstractTruthOperator}}
+        # TODO: check if it is correct
+        #antecedents = convert.(AbstractBooleanCondition, antecedents)
+        #C = Union{typeof.(antecedents)...}
         consequent = wrap(consequent)
         O = outcometype(consequent)
         FFM = typeintersect(propagate_feasiblemodels(consequent), FinalModel{<:O})
