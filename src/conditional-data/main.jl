@@ -6,4 +6,4 @@ using SoleLogics: AbstractWorld, _RelationId
 include("features.jl")
 include("test-operators.jl")
 include("conditions.jl")
-include("accessibles.jl")
+include("representatives.jl")

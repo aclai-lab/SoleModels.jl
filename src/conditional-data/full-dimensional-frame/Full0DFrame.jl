@@ -1,1 +1,1 @@
-accessibles_aggr(fr::Full0DFrame, f::AbstractFeature, a::Aggregator, ::AbstractWorldSet{OneWorld}, ::_RelationGlob) = [OneWorld()]
+representatives(fr::Full0DFrame, ::_RelationGlob, ::AbstractFeature, ::Aggregator) = [OneWorld()]

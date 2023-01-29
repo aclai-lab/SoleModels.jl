@@ -12,12 +12,12 @@ struct FeatMetaCondition{F<:AbstractFeature,O<:TestOperatorFun} <: AbstractCondi
   feature::F
 
   # Test operator (e.g. ≥)
-  operator::O
+  test_operator::O
 
 end
 
 feature(m::FeatMetaCondition) = m.feature
-test_operator(m::FeatMetaCondition) = m.operator
+test_operator(m::FeatMetaCondition) = m.test_operator
 
 ############################################################################################
 
@@ -130,9 +130,9 @@ end
 #   abstract ConditionalKripkeDatasetMemoStructure
 # }
 
-# abstract type AbstractDimensionalFrame{N,W<:AbstractWorld,T<:TruthValue,NR,Rs<:NTuple{NR,<:AbstractRelation}} <: AbstractMultiModalFrame{W,T,NR,Rs} end
+# abstract type AbstractDimensionalFrame{N,W<:AbstractWorld,T<:TruthValue} <: AbstractMultiModalFrame{W,T} end
 
-# struct FullDimensionalFrame{N,W<:AbstractWorld,T<:TruthValue,NR,Rs<:NTuple{NR,<:AbstractRelation}} <: AbstractDimensionalFrame{W,T,NR,Rs}
+# struct FullDimensionalFrame{N,W<:AbstractWorld,T<:TruthValue} <: AbstractDimensionalFrame{W,T}
 #   size::NTuple{N,Int}
 # end
 
