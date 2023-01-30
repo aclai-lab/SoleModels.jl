@@ -54,10 +54,13 @@ struct FeatCondition{U,M<:FeatMetaCondition} <: AbstractCondition
 end
 
 # TODO fix: here, I'm assuming that metacondition isa FeatMetaCondition
-feature(d::FeatCondition) = feature(d.metacond)
-test_operator(d::FeatCondition) = test_operator(d.metacond)
-threshold(d::FeatCondition) = d.a
+feature(c::FeatCondition) = feature(c.metacond)
+test_operator(c::FeatCondition) = test_operator(c.metacond)
+threshold(c::FeatCondition) = c.a
 
+function inverse(c::FeatCondition)
+    FeatCondition(feature(decision), test_operator_inverse(test_operator(decision)), threshold(decision))
+end
 
 # Alphabet of conditions
 abstract type AbstractConditionalAlphabet{M,C<:FeatCondition{M}} <: AbstractAlphabet{C} end
