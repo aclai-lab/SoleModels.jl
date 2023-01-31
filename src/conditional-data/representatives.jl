@@ -17,6 +17,8 @@ representatives(fr::AbstractMultiModalFrame{W}, w::W, r::AbstractRelation, ::Abs
 
 representatives(fr::AbstractMultiModalFrame{W}, w::W, r::_RelationGlob, f::AbstractFeature, a::Aggregator) where {W<:AbstractWorld} = representatives(fr, r, f, a)
 
+representatives(fr::AbstractMultiModalFrame{W}, r::_RelationGlob, f::AbstractFeature, a::Aggregator) where {W<:AbstractWorld} = accessibles(fr, r)
+
 # # TODO remove but probably we need this to stay because of ambiguities!
 # representatives(fr::AbstractMultiModalFrame{W}, w::W, r::_RelationId, ::AbstractFeature, ::Aggregator) where {W<:AbstractWorld} = accessibles(fr, w, r)
 

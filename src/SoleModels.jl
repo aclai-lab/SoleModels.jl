@@ -38,6 +38,9 @@ export evaluate_antecedent, evaluate_rule
 export rule_metrics
 export convert, list_paths
 
+include("util.jl")
+using .util
+
 include("models/base.jl")
 include("models/print.jl")
 include("models/symbolic-utils.jl")
