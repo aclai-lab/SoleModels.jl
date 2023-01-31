@@ -2,7 +2,9 @@ export antecedent, consequent, positive_consequent, negative_consequent, default
 
 import Base: isopen
 
+import SoleLogics: check
 using SoleLogics: Formula, TOP, AbstractTruthOperator, ⊤, ¬, ∧
+
 const FormulaOrTree = Union{Formula,SyntaxTree}
 
 ############################################################################################
