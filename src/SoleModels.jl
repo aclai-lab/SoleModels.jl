@@ -38,6 +38,12 @@ export evaluate_antecedent, evaluate_rule
 export rule_metrics
 export convert, list_paths
 
+# TODO move to SoleBase
+_typejoin(S::_S) where {_S} = S
+_typejoin(S::_S, T::_T) where {_S,_T} = typejoin(S, T)
+_typejoin(S::_S, T::_T, args...) where {_S,_T} = typejoin(S, typejoin(T, args...))
+
+
 include("models/base.jl")
 include("models/print.jl")
 include("models/symbolic-utils.jl")

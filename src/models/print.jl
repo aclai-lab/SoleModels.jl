@@ -164,7 +164,7 @@ function print_model(
         pipe = "$(indentation_list_children)"
         # println(io, "$(indentation_str*pipe)⩚("*join(antecedents(m), ", ")*")")
         #println(io, "$(pipe)⩚("*join(antecedents(m), ", ")*")")
-        println(io, "$(pipe)⩚("*join(print_string.(formula.(antecedents(m))), " AND ")*")")
+        println(io, "$(pipe)⩚("*join(print_string.(formula.(antecedents(m))), ", ")*")")
         pad_str = indentation_str*repeat(" ", length(pipe)-length(indentation_last_space)+1)
         print(io, "$(pad_str*indentation_last_first)$("✔ ")")
         ind = pad_str*indentation_last_space*repeat(" ", length("✔ ")+1)
@@ -218,6 +218,8 @@ function print_string(st::SyntaxTree)
         return join([print_string(i) for i in children(st)]," ∧ ")
     end
 end
+
+############################################################################################
 
 function print_model(
     io::IO,

@@ -105,7 +105,7 @@ for many purposes.
 See also [`list_immediate_rules`](@ref), [`unroll_rules_cascade`](@ref),
 [`issymbolic`](@ref), [`AbstractModel`](@ref).
 """
-function unroll_rules(m::AbstractModel, assumed_formula = nothing)
+function unroll_rules(m::AbstractModel)
     # TODO @Michele
     # [advance_formula(rule) for rule in unroll_rules(m)]
     error(begin
@@ -117,70 +117,18 @@ function unroll_rules(m::AbstractModel, assumed_formula = nothing)
     end)
 end
 
-unroll_rules(m::FinalModel) = [m]
-
-unroll_rules(m::Rule) = [m]
-
-function unroll_rules(m::Branch{O,<:LogicalTruthCondition}) where {O}
-    pos_rules = begin
-        r = unroll_rules(positive_consequent(m))
-        r isa Vector{<:FinalModel} ?
-            [Rule(antecedent(m),fm) for fm in r] :
-            [Rule(
-                LogicalTruthCondition(
-                    ∧(formula(antecedent(m)),formula(antecedent(rule)))
-                ),
-                consequent(rule),
-            ) for rule in r]
-    end
-
-    neg_rules = begin
-        r = unroll_rules(negative_consequent(m))
-        r isa Vector{<:FinalModel} ?
-            [Rule(
-                LogicalTruthCondition(¬(formula(antecedent(m))))
-                ,fm) for fm in r] :
-            [Rule(
-                LogicalTruthCondition(
-                    ∧(¬(formula(antecedent(m))),formula(antecedent(rule)))
-                ),
-                consequent(rule),
-            ) for rule in r]
-    end
-
-    return [
-        pos_rules...,
-        neg_rules...,
-    ]
+function unroll_rules(m::AbstractModel)
+    ms = unroll_rules_cascade(m)
+    return map(m->begin
+        if m isa RuleCascade && conditiontype(m) <: LogicalTruthCondition
+            convert(Rule, m)
+        elseif m isa FinalModel
+            m
+        else
+            error("TODO error")
+        end
+    end, ms)
 end
-
-unroll_rules(m::DecisionList) = [
-    rules(m)...,
-    Rule(
-        LogicalTruthCondition(SyntaxTree(⊤)),
-        unroll_rules(default_consequent(m))...,
-    ),
-]
-
-function unroll_rules(m::RuleCascade)
-    rules = begin
-        r = unroll_rules(consequent(m))
-        r isa Vector{<:FinalModel} ?
-            [Rule(antecedent(m),fm) for fm in r] :
-            [Rule(
-                LogicalTruthCondition(
-                    ∧(formula(antecedent(m)),formula(antecedent(rule)))
-                ),
-                consequent(rule),
-            ) for rule in r]
-    end
-
-    return [rules...]
-end
-
-unroll_rules(m::DecisionTree) = unroll_rules(root(m))
-
-unroll_rules(m::MixedSymbolicModel) = unroll_rules(root(m))
 
 ############################################################################################
 ############################################################################################
@@ -195,7 +143,7 @@ vectors, which can be useful for many purposes.
 See also [`list_immediate_rules`](@ref), [`issymbolic`](@ref), [`AbstractModel`](@ref),
 [`unroll_rules`](@ref).
 """
-function unroll_rules_cascade(m::AbstractModel, assumed_formula = nothing)
+function unroll_rules_cascade(m::AbstractModel)
     # TODO @Michele
     # [advance_formula(rule) for rule in unroll_rules(m)]
     error(begin
@@ -209,7 +157,7 @@ end
 
 unroll_rules_cascade(m::FinalModel) = [m]
 
-function unroll_rules_cascade(m::Rule)
+function unroll_rules_cascade(m::Rule{O,<:LogicalTruthCondition}) where {O}
     rules = begin
         r = unroll_rules_cascade(consequent(m))
         r isa Vector{<:FinalModel} ?
@@ -223,7 +171,7 @@ function unroll_rules_cascade(m::Rule)
     return [rules...]
 end
 
-function unroll_rules_cascade(m::Branch{O}) where {O}
+function unroll_rules_cascade(m::Branch{O,<:LogicalTruthCondition}) where {O}
     pos_rules = begin
         r = unroll_rules_cascade(positive_consequent(m))
         r isa Vector{<:FinalModel} ?
@@ -256,14 +204,16 @@ function unroll_rules_cascade(m::Branch{O}) where {O}
     ]
 end
 
-unroll_rules_cascade(m::DecisionList) = [
-    [unroll_rules_cascade(rule) for rule in rules(m)]...,
-    RuleCascade(
-        LogicalTruthCondition[
-            LogicalTruthCondition(SyntaxTree(⊤))],
-        unroll_rules_cascade(default_consequent(m))...,
-    ),
-]
+function unroll_rules_cascade(m::DecisionList{O,<:LogicalTruthCondition}) where {O}
+    [
+        [unroll_rules_cascade(rule) for rule in rules(m)]...,
+        RuleCascade(
+            LogicalTruthCondition[
+                LogicalTruthCondition(SyntaxTree(⊤))],
+            unroll_rules_cascade(default_consequent(m))...,
+        ),
+    ]
+end
 
 unroll_rules_cascade(m::RuleCascade) = [m]
 
