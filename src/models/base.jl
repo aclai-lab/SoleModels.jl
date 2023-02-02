@@ -47,7 +47,29 @@ a logical interpretation.
 Namely, that the formula checks `TOP` on the model.
 """
 struct LogicalTruthCondition{F<:FormulaOrTree} <: AbstractBooleanCondition
+    # formula::_F where _F<:F
     formula::F
+
+    function LogicalTruthCondition{F}(
+        formula::F
+    ) where {F<:FormulaOrTree}
+        new{F}(formula)
+    end
+
+    function LogicalTruthCondition(
+        formula::F
+    ) where {F<:FormulaOrTree}
+        _F = begin
+            if F<:Formula
+                Formula  
+            elseif F<:SyntaxTree
+                SyntaxTree  
+            else
+                error("TODO explain error here")
+            end
+        end
+        LogicalTruthCondition{_F}(formula)
+    end
 end
 
 formula(c::LogicalTruthCondition) = c.formula
@@ -698,9 +720,9 @@ struct RuleCascade{O, C<:AbstractBooleanCondition, FFM<:FinalModel} <: Constrain
         antecedents::Vector{<:Union{AbstractBooleanCondition, FormulaOrTree, AbstractTruthOperator}},
         consequent::Any,
         info::NamedTuple = (;),
-    ) where {}
+    )
         antecedents = convert.(AbstractBooleanCondition, antecedents)
-        C = Union{typeof.(antecedents)...}
+        C = _typejoin(typeof.(antecedents)...)
         consequent = wrap(consequent)
         O = outcometype(consequent)
         FFM = typeintersect(propagate_feasiblemodels(consequent), FinalModel{<:O})
@@ -900,25 +922,18 @@ apply(m::MixedSymbolicModel, i::AbstractInstance) = apply(root(m), i)
 """
     Convert a rule cascade into a rule
 """
-function convert(::Type{Rule}, m::RuleCascade{O, C}) where {O, C<:LogicalTruthCondition}
-    cond = LogicalTruthCondition{SyntaxTree}(_antecedent(antecedents(m)))
-    return Rule(cond, consequent(m), info(m))
-end
-
-function convert(::Type{R}, m::RuleCascade) where {R<:Rule}
+function convert(::Type{R}, m::RuleCascade{O, C}) where {R<:Rule, O, C<:LogicalTruthCondition}
     cond = LogicalTruthCondition(_antecedent(antecedents(m)))
     return R(cond, consequent(m), info(m))
 end
 
-# Note: Assuming the logic is a BaseLogic
-_antecedent(m::Vector{<:AbstractBooleanCondition}) = base_formula(__antecedent)
-function __antecedent(m::Vector{<:AbstractBooleanCondition})
+function _antecedent(m::Vector{<:AbstractBooleanCondition})
     if length(m) == 0
         return SyntaxTree(⊤)
     elseif length(m) == 1
         return formula(m[1])
     else
-        return ∧(formula(m[1]),__antecedent(m[2:end]))
+        return ∧((formula.(m))...)
     end
 end
 
