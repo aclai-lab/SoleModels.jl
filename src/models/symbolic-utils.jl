@@ -105,17 +105,18 @@ for many purposes.
 See also [`list_immediate_rules`](@ref), [`unroll_rules_cascade`](@ref),
 [`issymbolic`](@ref), [`AbstractModel`](@ref).
 """
-function unroll_rules(m::AbstractModel)
-    # TODO @Michele
-    # [advance_formula(rule) for rule in unroll_rules(m)]
-    error(begin
-        if issymbolic(m)
-            "Please, provide method unroll_rules(::$(typeof(m))) ($(typeof(m)) is a symbolic model)."
-        else
-            "Models of type $(typeof(m)) are not symbolic, and thus have no rules associated."
-        end
-    end)
-end
+# TODO remove or merge with unroll_rules_cascade?
+# function unroll_rules(m::AbstractModel)
+#     # TODO @Michele
+#     # [advance_formula(rule) for rule in unroll_rules(m)]
+#     error(begin
+#         if issymbolic(m)
+#             "Please, provide method unroll_rules(::$(typeof(m))) ($(typeof(m)) is a symbolic model)."
+#         else
+#             "Models of type $(typeof(m)) are not symbolic, and thus have no rules associated."
+#         end
+#     end)
+# end
 
 function unroll_rules(m::AbstractModel)
     ms = unroll_rules_cascade(m)

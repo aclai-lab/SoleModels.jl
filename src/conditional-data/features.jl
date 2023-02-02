@@ -118,10 +118,10 @@ struct SingleAttributeSoftMin{U,T<:AbstractFloat} <: SingleAttributeFeature{U}
     end
 end
 alpha(f::SingleAttributeSoftMin) = f.alpha
-display_feature(f::SingleAttributeSoftMin;         attribute_names_map::Union{Nothing,AbstractVector,AbstractDict} = nothing) = "min" * util.subscriptnumber(rstrip(rstrip(string(f.alpha*100), '0'), '.')) * "($(attribute_name(f; attribute_names_map = attribute_names_map)))"
+display_feature(f::SingleAttributeSoftMin;         attribute_names_map::Union{Nothing,AbstractVector,AbstractDict} = nothing) = "min" * utils.subscriptnumber(rstrip(rstrip(string(f.alpha*100), '0'), '.')) * "($(attribute_name(f; attribute_names_map = attribute_names_map)))"
 
 function compute_feature(f::SingleAttributeSoftMin{U}, inst::AbstractDimensionalInstance{T}) where {U<:Real,T}
-    util.softminimum(get_instance_attribute(inst,f.i_attribute), f.alpha)::U
+    utils.softminimum(get_instance_attribute(inst,f.i_attribute), f.alpha)::U
 end
 struct SingleAttributeSoftMax{U,T<:AbstractFloat} <: SingleAttributeFeature{U}
     i_attribute::Integer
@@ -133,10 +133,10 @@ struct SingleAttributeSoftMax{U,T<:AbstractFloat} <: SingleAttributeFeature{U}
     end
 end
 function compute_feature(f::SingleAttributeSoftMax{U}, inst::AbstractDimensionalInstance{T}) where {U<:Real,T}
-    util.softmaximum(get_instance_attribute(inst,f.i_attribute), f.alpha)::U
+    utils.softmaximum(get_instance_attribute(inst,f.i_attribute), f.alpha)::U
 end
 alpha(f::SingleAttributeSoftMax) = f.alpha
-display_feature(f::SingleAttributeSoftMax;         attribute_names_map::Union{Nothing,AbstractVector,AbstractDict} = nothing) = "max" * util.subscriptnumber(rstrip(rstrip(string(f.alpha*100), '0'), '.')) * "($(attribute_name(f; attribute_names_map = attribute_names_map)))"
+display_feature(f::SingleAttributeSoftMax;         attribute_names_map::Union{Nothing,AbstractVector,AbstractDict} = nothing) = "max" * utils.subscriptnumber(rstrip(rstrip(string(f.alpha*100), '0'), '.')) * "($(attribute_name(f; attribute_names_map = attribute_names_map)))"
 
 # TODO simplify OneWorld case:
 # function compute_feature(f::SingleAttributeSoftMin, inst::AbstractDimensionalInstance{T}) where {T}
@@ -156,7 +156,7 @@ struct SingleAttributeGenericFeature{U} <: SingleAttributeFeature{U}
     f::Function
 end
 function compute_feature(f::SingleAttributeGenericFeature{U}, inst::AbstractDimensionalInstance{T}) where {U<:Real,T}
-    (f.f(util.vectorize(get_instance_attribute(inst,f.i_attribute));))::U
+    (f.f(utils.vectorize(get_instance_attribute(inst,f.i_attribute));))::U
 end
 display_feature(f::SingleAttributeGenericFeature;  attribute_names_map::Union{Nothing,AbstractVector,AbstractDict} = nothing) = "$(f.f)($(attribute_name(f; attribute_names_map = attribute_names_map)))"
 

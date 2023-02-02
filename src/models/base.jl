@@ -722,7 +722,7 @@ struct RuleCascade{O, C<:AbstractBooleanCondition, FFM<:FinalModel} <: Constrain
         info::NamedTuple = (;),
     )
         antecedents = convert.(AbstractBooleanCondition, antecedents)
-        C = _typejoin(typeof.(antecedents)...)
+        C = utils._typejoin(typeof.(antecedents)...)
         consequent = wrap(consequent)
         O = outcometype(consequent)
         FFM = typeintersect(propagate_feasiblemodels(consequent), FinalModel{<:O})
