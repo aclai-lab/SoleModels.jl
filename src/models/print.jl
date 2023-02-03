@@ -190,6 +190,20 @@ function print_model(
 end
 
 function print_model(
+    io::IO,
+    m::DecisionForest;
+    header = true,
+    indentation_str="",
+    indentation = default_indentation,
+    depth = 0,
+    kwargs...
+)
+    (indentation_list_children, indentation_any_first, indentation_any_space, indentation_last_first, indentation_last_space) = indentation
+    !header || println(io, "$(indentation_str)$(typeof(m))$(length(info(m)) == 0 ? "" : "\n$(indentation_str)Info: $(info(m))")")
+    print_model.(io, trees(m); kwargs...)
+end
+
+function print_model(
         io::IO,
         m::MixedSymbolicModel;
         header = true,

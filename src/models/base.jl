@@ -61,9 +61,9 @@ struct LogicalTruthCondition{F<:FormulaOrTree} <: AbstractBooleanCondition
     ) where {F<:FormulaOrTree}
         _F = begin
             if F<:Formula
-                Formula  
+                Formula
             elseif F<:SyntaxTree
-                SyntaxTree  
+                SyntaxTree
             else
                 error("TODO explain error here")
             end
@@ -824,7 +824,7 @@ struct DecisionTree{O, C<:AbstractBooleanCondition, FFM<:FinalModel} <: Constrai
         # FM = typeintersect(Union{M, feasiblemodelstype(M)}, AbstractModel{<:O})
         FM = typeintersect(Union{propagate_feasiblemodels(M)}, AbstractModel{<:O})
         FFM = typeintersect(FM, FinalModel{<:O})
-        @assert M <: Union{<:FFM,<:Branch{<:O,<:C,<:Union{Branch,FFM}}} "Cannot instantiate DecisionTree{$(O),$(C),$(FFM),$(M)}(...) with root of type $(typeof(root)). Note that the should be either a FinalNode or a bounded Banch. $(M) <: $(Union{FinalModel,Branch{<:O,<:C,<:Union{Branch,FFM}}}) should hold."
+        @assert M <: Union{<:FFM,<:Branch{<:O,<:C,<:Union{Branch,ConstrainedModel,FFM}}} "Cannot instantiate DecisionTree{$(O),$(C),$(FFM),$(M)}(...) with root of type $(typeof(root)). Note that the should be either a FinalNode or a bounded Banch. $(M) <: $(Union{FinalModel,Branch{<:O,<:C,<:Union{Branch,FFM}}}) should hold."
         check_model_constraints(DecisionTree{O}, typeof(root), FM, O)
         new{O,C,FFM}(root, info)
     end
