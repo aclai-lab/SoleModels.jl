@@ -1,6 +1,6 @@
 export antecedent, consequent, positive_consequent, negative_consequent, default_consequent, rules, root
 
-import Base: isopen
+import Base: isopen, length, getindex
 
 import SoleLogics: check
 using SoleLogics: Formula, TOP, AbstractTruthOperator, ⊤, ¬, ∧
@@ -61,9 +61,9 @@ struct LogicalTruthCondition{F<:FormulaOrTree} <: AbstractBooleanCondition
     ) where {F<:FormulaOrTree}
         _F = begin
             if F<:Formula
-                Formula  
+                Formula
             elseif F<:SyntaxTree
-                SyntaxTree  
+                SyntaxTree
             else
                 error("TODO explain error here")
             end
@@ -749,6 +749,27 @@ function apply(m::RuleCascade, i::AbstractInstance)
 end
 
 """
+    Convert a rule cascade into a rule
+"""
+function convert(::Type{R}, m::RuleCascade{O, C}) where {R<:Rule, O, C<:LogicalTruthCondition}
+    cond = LogicalTruthCondition(_antecedent(antecedents(m)))
+    return R(cond, consequent(m), info(m))
+end
+
+function _antecedent(m::Vector{<:AbstractBooleanCondition})
+    if length(m) == 0
+        return SyntaxTree(⊤)
+    elseif length(m) == 1
+        return formula(m[1])
+    else
+        return ∧((formula.(m))...)
+    end
+end
+
+Base.length(rc::RuleCascade) = length(antecedents(rc))
+Base.getindex(rc::RuleCascade, idxs) = RuleCascade(antecedents(rc)[idxs], consequent(rc))
+
+"""
 A `DecisionTree` is a symbolic model that operates as a nested structure of IF-THEN-ELSE blocks:
 
     IF (antecedent_1) THEN
@@ -852,7 +873,7 @@ end
 trees(forest::DecisionForest) = forest.trees
 info(forest::DecisionForest) = forest.info
 
-issymbolic(::DecisionForest) = true
+issymbolic(::DecisionForest) = false
 
 apply_trees(f::DecisionForest, i::AbstractInstance) = [apply(t,i) for t in trees(f)]
 apply(f::DecisionForest, i::AbstractInstance) = majority_vote(apply_trees(trees(f), i))
@@ -908,314 +929,12 @@ struct MixedSymbolicModel{O, FM<:AbstractModel} <: ConstrainedModel{O, FM}
 end
 root(m::MixedSymbolicModel) = m.root
 
-issymbolic(::MixedSymbolicModel) = true
+issymbolic(::MixedSymbolicModel) = false
 
 isopen(::MixedSymbolicModel) = isopen(root)
 
 apply(m::MixedSymbolicModel, i::AbstractInstance) = apply(root(m), i)
 
-
-############################################################################################
-####################################### UTILS ##############################################
-############################################################################################
-
-"""
-    Convert a rule cascade into a rule
-"""
-function convert(::Type{R}, m::RuleCascade{O, C}) where {R<:Rule, O, C<:LogicalTruthCondition}
-    cond = LogicalTruthCondition(_antecedent(antecedents(m)))
-    return R(cond, consequent(m), info(m))
-end
-
-function _antecedent(m::Vector{<:AbstractBooleanCondition})
-    if length(m) == 0
-        return SyntaxTree(⊤)
-    elseif length(m) == 1
-        return formula(m[1])
-    else
-        return ∧((formula.(m))...)
-    end
-end
-
 ############################################################################################
 ############################################################################################
 ############################################################################################
-
-"""
-Function for evaluating the antecedent of a rule
-"""
-
-function evaluate_antecedent(rule::Rule, X::AbstractDataset)
-    evaluate_antecedent(antecedent(rule), X)
-end
-
-function evaluate_antecedent(antecedent::Formula, X::AbstractDataset)
-    check(antecedent, X)
-end
-
-"""
-Function for evaluating a rule
-"""
-function evaluate_rule(
-    rule::Rule,
-    X::AbstractDataset,
-    Y::AbstractVector{<:FinalModel}
-)
-    # Antecedent satisfaction. For each instances in X:
-    #  - `false` when not satisfiable,
-    #  - `true` when satisfiable.
-    ant_sat = evaluate_antecedent(antecedent(rule),X)
-
-    # Indices of satisfiable instances
-    idxs_sat = findall(ant_sat .== true)
-
-    # Consequent satisfaction. For each instances in X:
-    #  - `false` when not satisfiable,
-    #  - `true` when satisfiable,
-    #  - `nothing` when antecedent does not hold.
-    cons_sat = begin
-        cons_sat = Vector{Union{Bool, Nothing}}(fill(nothing, length(Y)))
-        idxs_true = begin
-            idx_cons = findall(consequent(rule) .== Y)
-            intersect(idxs_sat,idx_cons)
-        end
-        idxs_false = begin
-            idx_cons = findall(consequent(rule) .!= Y)
-            intersect(idxs_sat,idx_cons)
-        end
-        cons_sat[idxs_true]  .= true
-        cons_sat[idxs_false] .= false
-        cons_sat
-    end
-
-    y_pred = begin
-        y_pred = Vector{Union{FinalModel, Nothing}}(fill(nothing, length(Y)))
-        y_pred[idxs_sat] .= consequent(rule)
-        y_pred
-    end
-
-    return (;
-        ant_sat   = ant_sat,
-        idxs_sat  = idxs_sat,
-        cons_sat  = cons_sat,
-        y_pred    = y_pred,
-    )
-end
-
-############################################################################################
-############################################################################################
-############################################################################################
-
-"""
-Length of the rule
-"""
-rule_length(rule::Rule) = condition_length(antecedent(rule))
-
-"""
-Metrics of the rule
-"""
-
-function rule_metrics(
-    rule::Rule,
-    X::AbstractDataset,
-    Y::AbstractVector{<:FinalModel}
-)
-
-    eval_result = evaluate_rule(rule, X, Y)
-    n_instances = Base.size(X,1)
-    n_satisfy = sum(eval_result[:ant_sat])
-
-    # Support of the rule
-    rule_support =  n_satisfy / n_instances
-
-    # Error of the rule
-    rule_error = begin
-        if outcometype(consequent(rule)) <: CLabel
-            # Number of incorrectly classified instances divided by number of instances
-            # satisfying the rule condition.
-            misclassified_instances = length(findall(eval_result[:y_pred] .== Y))
-            misclassified_instances / n_satisfy
-        elseif outcometype(consequent(rule)) <: RLabel
-            # Mean Squared Error (mse)
-            idxs_sat = eval_result[:idxs_sat]
-            mse(eval_result[:y_pred][idxs_sat], Y[idxs_sat])
-        end
-    end
-
-    return (;
-        support   = rule_support,
-        error     = rule_error,
-        length    = rule_length(rule),
-    )
-end
-
-# Evaluation for single decision
-# TODO
-# function evaluate_decision(dec::Decision, X::MultiFrameModalDataset) end
-
-############################################################################################
-# Rule evaluation
-############################################################################################
-
-# # Evaluation for an antecedent
-
-# evaluate_antecedent(antecedent::Formula{L}, X::MultiFrameModalDataset) where {L<:AbstractLogic} =
-#     evaluate_antecedent(extract_decisions(antecedent), X)
-
-# function evaluate_antecedent(decs::AbstractVector{<:Decision}, X::MultiFrameModalDataset)
-#     D = hcat([evaluate_decision(d, X) for d in decs]...)
-#     # If all values in a row is true, then true (and logical)
-#     return map(all, eachrow(D))
-# end
-
-# # Evaluation for a rule
-
-# # From rule to antecedent and consequent
-# evaluate_rule(rule::Rule, X::MultiFrameModalDataset, Y::AbstractVector{<:Consequent}) =
-#     evaluate_rule(antecedent(rule), consequent(rule), X, Y)
-
-# # From antecedent to decision
-# evaluate_rule(
-#     ant::Formula{L},
-#     cons::Consequent,
-#     X::MultiFrameModalDataset,
-#     Y::AbstractVector{<:Consequent}
-# ) where {L<:AbstractLogic} = evaluate_rule(extract_decisions(ant),cons,X,Y)
-
-# # Use decision and consequent
-# function evaluate_rule(
-#     decs::AbstractVector{<:Decision},
-#     cons::Consequent,
-#     X::MultiFrameModalDataset,
-#     Y::AbstractVector{<:Consequent}
-# )
-#     # Antecedent satisfaction. For each instances in X:
-#     #  - `false` when not satisfiable,
-#     #  - `true` when satisfiable.
-#     ant_sat = evaluate_antecedent(decs,X)
-
-#     # Indices of satisfiable instances
-#     idxs_sat = findall(ant_sat .== true)
-
-#     # Consequent satisfaction. For each instances in X:
-#     #  - `false` when not satisfiable,
-#     #  - `true` when satisfiable,
-#     #  - `nothing` when antecedent does not hold.
-#     cons_sat = begin
-#         cons_sat = Vector{Union{Bool, Nothing}}(fill(nothing, length(Y)))
-#         idxs_true = begin
-#             idx_cons = findall(cons .== Y)
-#             intersect(idxs_sat,idx_cons)
-#         end
-#         idxs_false = begin
-#             idx_cons = findall(cons .!= Y)
-#             intersect(idxs_sat,idx_cons)
-#         end
-#         cons_sat[idxs_true]  .= true
-#         cons_sat[idxs_false] .= false
-#     end
-
-#     y_pred = begin
-#         y_pred = Vector{Union{Consequent, Nothing}}(fill(nothing, length(Y)))
-#         y_pred[idxs_sat] .= C
-#         y_pred
-#     end
-
-#     return (;
-#         ant_sat   = ant_sat,
-#         idxs_sat  = idxs_sat,
-#         cons_sat  = cons_sat,
-#         y_pred    = y_pred,
-#     )
-# end
-
-
-#     # """
-#     #     rule_length(node::FNode, operators::Operators) -> Int
-
-#     #     Compute the number of pairs in a rule (length of the rule)
-
-#     # # Arguments
-#     # - `node::FNode`: node on which you refer
-#     # - `operators::Operators`: set of operators of the considered logic
-
-#     # # Returns
-#     # - `Int`: number of pairs
-#     # """
-#     # function rule_length(node::FNode, operators::Operators)
-#     #     left_size = 0
-#     #     right_size = 0
-
-#     #     if !isdefined(node, :leftchild) && !isdefined(node, :rightchild)
-#     #         # Leaf
-#     #         if token(node) in operators
-#     #             return 0
-#     #         else
-#     #             return 1
-#     #         end
-#     #     end
-
-#     #     isdefined(node, :leftchild) && (left_size = rule_length(leftchild(node), operators))
-#     #     isdefined(node, :rightchild) && (right_size = rule_length(rightchild(node), operators))
-
-#     #     if token(node) in operators
-#     #         return left_size + right_size
-#     #     else
-#     #         return 1 + left_size + right_size
-#     #     end
-#     # end
-
-#     rule_metrics(rule::Rule{L,C}, X::MultiFrameModalDataset, Y::AbstractVector{<:Consequent}) =
-#         rule_metrics(extract_decisions(antecedent(rule)),cons,X,Y)
-
-#     """
-#         rule_metrics(args...) -> AbstractVector
-
-#         Compute frequency, error and length of the rule
-
-#     # Arguments
-#     - `decs::AbstractVector{<:Decision}`: vector of decisions
-#     - `cons::Consequent`: rule's consequent
-#     - `X::MultiFrameModalDataset`: dataset
-#     - `Y::AbstractVector{<:Consequent}`: target values of X
-
-#     # Returns
-#     - `AbstractVector`: metrics values vector of the rule
-#     """
-#     function rule_metrics(
-#         decs::AbstractVector{<:Decision},
-#         cons::Consequent,
-#         X::MultiFrameModalDataset,
-#         Y::AbstractVector{<:Consequent}
-#     )
-#         eval_result = evaluate_rule(decs, cons, X, Y)
-#         n_instances = size(X, 1)
-#         n_satisfy = sum(eval_result[:ant_sat])
-
-#         # Support of the rule
-#         rule_support =  n_satisfy / n_instances
-
-#         # Error of the rule
-#         rule_error = begin
-#             if typeof(cons) <: CLabel
-#                 # Number of incorrectly classified instances divided by number of instances
-#                 # satisfying the rule condition.
-#                 misclassified_instances = length(findall(eval_result[:y_pred] .== Y))
-#                 misclassified_instances / n_satisfy
-#             elseif typeof(cons) <: RLabel
-#                 # Mean Squared Error (mse)
-#                 idxs_sat = eval_result[:idxs_sat]
-#                 mse(eval_result[:y_pred][idxs_sat], Y[idxs_sat])
-#             end
-#         end
-
-#         return (;
-#             support   = rule_support,
-#             error     = rule_error,
-#             length    = rule_length(decs,
-#         )
-#     end
-
-# ############################################################################################
-# ############################################################################################
-# ############################################################################################

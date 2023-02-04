@@ -207,7 +207,7 @@ end
 
 function unroll_rules_cascade(m::DecisionList{O,<:LogicalTruthCondition}) where {O}
     [
-        [unroll_rules_cascade(rule) for rule in rules(m)]...,
+        reduce(vcat,[unroll_rules_cascade(rule) for rule in rules(m)])...,
         RuleCascade(
             LogicalTruthCondition[
                 LogicalTruthCondition(SyntaxTree(⊤))],

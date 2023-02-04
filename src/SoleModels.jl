@@ -44,6 +44,7 @@ using .utils
 include("models/base.jl")
 include("models/print.jl")
 include("models/symbolic-utils.jl")
+include("models/rule-evaluation.jl")
 
 include("machine-learning.jl")
 
