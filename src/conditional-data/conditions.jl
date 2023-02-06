@@ -7,7 +7,7 @@ abstract type AbstractCondition end # TODO parametric?
 # TODO add TruthType: T as in:
 #  struct FeatMetaCondition{F<:AbstractFeature,T,O<:TestOperatorFun} <: AbstractCondition
 struct FeatMetaCondition{F<:AbstractFeature,O<:TestOperatorFun} <: AbstractCondition
-  
+
   # Feature: a scalar function that can be computed on a world
   feature::F
 
@@ -19,13 +19,16 @@ end
 feature(m::FeatMetaCondition) = m.feature
 test_operator(m::FeatMetaCondition) = m.test_operator
 
+syntaxstring(m::FeatMetaCondition{F,O}) where{F,O} =
+    "FeatMetaCondition{$(F),$(O)}($(feature(m)),$(test_operator(m)))"
+
 ############################################################################################
 
 struct FeatCondition{U,M<:FeatMetaCondition} <: AbstractCondition
-  
+
   # Metacondition
   metacond::M
- 
+
   # Threshold value
   a::U
 
@@ -61,6 +64,11 @@ threshold(c::FeatCondition) = c.a
 function inverse(c::FeatCondition)
     FeatCondition(feature(decision), test_operator_inverse(test_operator(decision)), threshold(decision))
 end
+
+syntaxstring(m::FeatCondition) =
+    "$(syntaxstring(feature(m), test_operator(m))) $(threshold(m))"
+
+Base.show(io::IO, m::Union{FeatMetaCondition,FeatCondition}) = print(io, "$(syntaxstring(m))")
 
 # Alphabet of conditions
 abstract type AbstractConditionalAlphabet{M,C<:FeatCondition{M}} <: AbstractAlphabet{C} end

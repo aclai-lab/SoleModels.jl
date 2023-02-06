@@ -24,7 +24,7 @@ import Base: convert
 export AbstractModel
 
 export outcometype, output_type
-export print_model
+export display_model
 
 export Consequent
 export Performance

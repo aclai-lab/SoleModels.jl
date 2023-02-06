@@ -29,6 +29,8 @@ A boolean condition is a condition that evaluates to a boolean truth value (`tru
 """
 abstract type AbstractBooleanCondition <: AbstractCondition end
 
+Base.show(io::IO, c::AbstractBooleanCondition) = print(io, "$(syntaxstring(c))")
+
 """
 A true condition is the boolean condition that is always true.
 """
@@ -76,6 +78,8 @@ formula(c::LogicalTruthCondition) = c.formula
 check(c::LogicalTruthCondition, args...) = (check(formula(c), args...) == TOP)
 
 condition_length(c::LogicalTruthCondition) = npropositions(formula(c))
+
+syntaxstring(c::LogicalTruthCondition) = SoleLogics.syntaxstring(formula(c))
 
 # Helper
 convert(::Type{AbstractBooleanCondition}, f::FormulaOrTree) = LogicalTruthCondition(f)
