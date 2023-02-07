@@ -2,6 +2,8 @@ using SoleLogics: AbstractAlphabet
 
 abstract type AbstractCondition end # TODO parametric?
 
+# Base.show(io::IO, m::AbstractCondition) = print(io, "$(syntaxstring(m))")
+
 ############################################################################################
 
 # TODO add TruthType: T as in:
@@ -19,8 +21,8 @@ end
 feature(m::FeatMetaCondition) = m.feature
 test_operator(m::FeatMetaCondition) = m.test_operator
 
-syntaxstring(m::FeatMetaCondition{F,O}) where{F,O} =
-    "FeatMetaCondition{$(F),$(O)}($(feature(m)),$(test_operator(m)))"
+syntaxstring(m::FeatMetaCondition{F,O}; kwargs...) where{F,O} =
+    "TODO FeatMetaCondition{$(F),$(O)}($(feature(m)),$(test_operator(m)))"
 
 ############################################################################################
 
@@ -65,10 +67,8 @@ function inverse(c::FeatCondition)
     FeatCondition(feature(decision), test_operator_inverse(test_operator(decision)), threshold(decision))
 end
 
-syntaxstring(m::FeatCondition) =
-    "$(syntaxstring(feature(m), test_operator(m))) $(threshold(m))"
-
-Base.show(io::IO, m::Union{FeatMetaCondition,FeatCondition}) = print(io, "$(syntaxstring(m))")
+syntaxstring(m::FeatCondition; threshold_decimals = nothing, kwargs...) =
+    "$(_syntaxstring(feature(m), test_operator(m))) $((isnothing(threshold_decimals) ? threshold(m) : round(threshold(m); digits=threshold_decimals)))"
 
 # Alphabet of conditions
 abstract type AbstractConditionalAlphabet{M,C<:FeatCondition{M}} <: AbstractAlphabet{C} end
@@ -77,3 +77,33 @@ abstract type AbstractConditionalAlphabet{M,C<:FeatCondition{M}} <: AbstractAlph
 struct ExplicitConditionalAlphabet{M,C<:FeatCondition{M}} <: AbstractConditionalAlphabet{M,C}
   metaconditions::Vector{M}
 end
+
+############################################################################################
+
+function _syntaxstring(
+    feature::AbstractFeature,
+    test_operator::TestOperatorFun;
+    use_feature_abbreviations::Bool = false,
+    kwargs...,
+)
+    if use_feature_abbreviations
+        _syntaxstring_abbr(feature, test_operator; kwargs...)
+    else
+        "$(syntaxstring(feature; kwargs...)) $(test_operator)"
+    end
+end
+
+_syntaxstring_abbr(feature::SingleAttributeMin,     test_operator::typeof(≥); kwargs...)        = "$(attribute_name(feature; kwargs...)) ⪴"
+_syntaxstring_abbr(feature::SingleAttributeMax,     test_operator::typeof(≤); kwargs...)        = "$(attribute_name(feature; kwargs...)) ⪳"
+_syntaxstring_abbr(feature::SingleAttributeSoftMin, test_operator::typeof(≥); kwargs...)        = "$(attribute_name(feature; kwargs...)) $("⪴" * utils.subscriptnumber(rstrip(rstrip(string(alpha(feature)*100), '0'), '.')))"
+_syntaxstring_abbr(feature::SingleAttributeSoftMax, test_operator::typeof(≤); kwargs...)        = "$(attribute_name(feature; kwargs...)) $("⪳" * utils.subscriptnumber(rstrip(rstrip(string(alpha(feature)*100), '0'), '.')))"
+
+_syntaxstring_abbr(feature::SingleAttributeMin,     test_operator::typeof(<); kwargs...)        = "$(attribute_name(feature; kwargs...)) ⪶"
+_syntaxstring_abbr(feature::SingleAttributeMax,     test_operator::typeof(>); kwargs...)        = "$(attribute_name(feature; kwargs...)) ⪵"
+_syntaxstring_abbr(feature::SingleAttributeSoftMin, test_operator::typeof(<); kwargs...)        = "$(attribute_name(feature; kwargs...)) $("⪶" * utils.subscriptnumber(rstrip(rstrip(string(alpha(feature)*100), '0'), '.')))"
+_syntaxstring_abbr(feature::SingleAttributeSoftMax, test_operator::typeof(>); kwargs...)        = "$(attribute_name(feature; kwargs...)) $("⪵" * utils.subscriptnumber(rstrip(rstrip(string(alpha(feature)*100), '0'), '.')))"
+
+_syntaxstring_abbr(feature::SingleAttributeMin,     test_operator::typeof(≤); kwargs...)        = "$(attribute_name(feature; kwargs...)) ↘"
+_syntaxstring_abbr(feature::SingleAttributeMax,     test_operator::typeof(≥); kwargs...)        = "$(attribute_name(feature; kwargs...)) ↗"
+_syntaxstring_abbr(feature::SingleAttributeSoftMin, test_operator::typeof(≤); kwargs...)        = "$(attribute_name(feature; kwargs...)) $("↘" * utils.subscriptnumber(rstrip(rstrip(string(alpha(feature)*100), '0'), '.')))"
+_syntaxstring_abbr(feature::SingleAttributeSoftMax, test_operator::typeof(≥); kwargs...)        = "$(attribute_name(feature; kwargs...)) $("↗" * utils.subscriptnumber(rstrip(rstrip(string(alpha(feature)*100), '0'), '.')))"

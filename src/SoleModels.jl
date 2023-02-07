@@ -26,7 +26,6 @@ export AbstractModel
 export outcometype, output_type
 export display_model
 
-export Consequent
 export Performance
 
 export Rule, Branch

@@ -305,34 +305,6 @@ const MixedFeature = Union{AbstractFeature,CanonicalFeature,Function,Tuple{TestO
 ############################################################################################
 
 
-function syntaxstring(
-    feature::AbstractFeature,
-    test_operator::TestOperatorFun;
-    use_feature_abbreviations::Bool,
-    kwargs...,
-    )
-    if use_feature_abbreviations
-        syntaxstring(feature, test_operator; kwargs...)
-    else
-        "$(syntaxstring(feature; kwargs...)) $(test_operator)"
-    end
-end
-
-syntaxstring(feature::SingleAttributeMin,     test_operator::typeof(≥); kwargs...)        = "$(syntaxstring(feature; kwargs...)) ⪴"
-syntaxstring(feature::SingleAttributeMax,     test_operator::typeof(≤); kwargs...)        = "$(syntaxstring(feature; kwargs...)) ⪳"
-syntaxstring(feature::SingleAttributeSoftMin, test_operator::typeof(≥); kwargs...)        = "$(syntaxstring(feature; kwargs...)) $("⪴" * utils.subscriptnumber(rstrip(rstrip(string(alpha(feature)*100), '0'), '.')))"
-syntaxstring(feature::SingleAttributeSoftMax, test_operator::typeof(≤); kwargs...)        = "$(syntaxstring(feature; kwargs...)) $("⪳" * utils.subscriptnumber(rstrip(rstrip(string(alpha(feature)*100), '0'), '.')))"
-
-syntaxstring(feature::SingleAttributeMin,     test_operator::typeof(<); kwargs...)        = "$(syntaxstring(feature; kwargs...)) ⪶"
-syntaxstring(feature::SingleAttributeMax,     test_operator::typeof(>); kwargs...)        = "$(syntaxstring(feature; kwargs...)) ⪵"
-syntaxstring(feature::SingleAttributeSoftMin, test_operator::typeof(<); kwargs...)        = "$(syntaxstring(feature; kwargs...)) $("⪶" * utils.subscriptnumber(rstrip(rstrip(string(alpha(feature)*100), '0'), '.')))"
-syntaxstring(feature::SingleAttributeSoftMax, test_operator::typeof(>); kwargs...)        = "$(syntaxstring(feature; kwargs...)) $("⪵" * utils.subscriptnumber(rstrip(rstrip(string(alpha(feature)*100), '0'), '.')))"
-
-syntaxstring(feature::SingleAttributeMin,     test_operator::typeof(≤); kwargs...)        = "$(syntaxstring(feature; kwargs...)) ↘"
-syntaxstring(feature::SingleAttributeMax,     test_operator::typeof(≥); kwargs...)        = "$(syntaxstring(feature; kwargs...)) ↗"
-syntaxstring(feature::SingleAttributeSoftMin, test_operator::typeof(≤); kwargs...)        = "$(syntaxstring(feature; kwargs...)) $("↘" * utils.subscriptnumber(rstrip(rstrip(string(alpha(feature)*100), '0'), '.')))"
-syntaxstring(feature::SingleAttributeSoftMax, test_operator::typeof(≥); kwargs...)        = "$(syntaxstring(feature; kwargs...)) $("↗" * utils.subscriptnumber(rstrip(rstrip(string(alpha(feature)*100), '0'), '.')))"
-
 
 
 
