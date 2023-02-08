@@ -216,18 +216,18 @@ bmodel_mixed_number = @test_nowarn Branch(phi, rmodel_number, dlmodel)
 @test isopen(bmodel_mixed)
 @test output_type(bmodel_mixed) == Union{Nothing,Float64,Int}
 
-@test_nowarn [print_model(io, r) for r in rules];
+@test_nowarn [display_model(io, r) for r in rules];
 String(take!(io))
-@test_nowarn print_model(io, dlmodel);
+@test_nowarn display_model(io, dlmodel);
 String(take!(io))
-@test_nowarn print_model(io, bmodel);
+@test_nowarn display_model(io, bmodel);
 String(take!(io))
 
 @test_nowarn Branch(phi,(bmodel,bmodel))
 @test_nowarn Branch(phi,(bmodel,rfloat_number))
 @test_nowarn Branch(phi,(dlmodel,rmodel_float))
 bmodel_2 = @test_nowarn Branch(phi,(dlmodel,bmodel))
-@test_nowarn print_model(io, bmodel_2);
+@test_nowarn display_model(io, bmodel_2);
 String(take!(io))
 
 branch_q = @test_nowarn Branch(formula_q, ("yes", "no"))
@@ -240,7 +240,7 @@ branch_r = @test_nowarn Branch(formula_r, (branch_r, "yes"))
 
 rule_r = @test_nowarn Rule(formula_r, branch_r)
 rcmodel = RuleCascade([phi,phi,phi], cmodel_integer)
-@test_nowarn print_model(io, Branch(phi, rcmodel, bmodel_2));
+@test_nowarn display_model(io, Branch(phi, rcmodel, bmodel_2));
 String(take!(io))
 
 branch_r_mixed = @test_nowarn Branch(formula_r, (rule_r, "no"))
@@ -257,7 +257,7 @@ dtmodel = @test_nowarn DecisionTree(branch_r)
 df = @test_nowarn DecisionForest([dt1,dt2])
 
 ############################### MixedSymbolicModel #########################################
-b_msm = @test_nowarn Branch(cond_q,dt1,r1_r2_string)
+b_msm = @test_nowarn Branch(cond_q,outcome_int,outcome_float)
 dt_msm = @test_nowarn DecisionTree(b_msm)
 msm = @test_nowarn MixedSymbolicModel(dt_msm)
 
@@ -305,36 +305,32 @@ ms_model = MixedSymbolicModel(ms_model)
 @test unroll_rules_cascade(cmodel_string) isa Vector{<:ConstantModel}
 
 @test unroll_rules_cascade(r1_string) isa Vector{<:RuleCascade}
-print_model(io,unroll_rules_cascade(r1_string))
+display_model.(io,unroll_rules_cascade(r1_string))
 @test String(take!(io)) == """
-1-element Vector{RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}}
 RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
 ┐⩚(r ∧ s ∧ t)
 └ ✔ true
 """
 
 @test unroll_rules_cascade(r2_string) isa Vector{<:RuleCascade}
-print_model(io,unroll_rules_cascade(r2_string))
+display_model.(io,unroll_rules_cascade(r2_string))
 @test String(take!(io)) == """
-1-element Vector{RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}}
 RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
 ┐⩚(¬(r))
 └ ✔ true
 """
 
 @test unroll_rules_cascade(rc1_string) isa Vector{<:RuleCascade}
-print_model(io,unroll_rules_cascade(rc1_string))
+display_model.(io,unroll_rules_cascade(rc1_string))
 @test String(take!(io)) == """
-1-element Vector{RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}}
 RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
 ┐⩚(r, s, t)
 └ ✔ true
 """
 
 @test unroll_rules_cascade(rcmodel) isa Vector{<:RuleCascade}
-print_model(io,unroll_rules_cascade(rcmodel))
+display_model.(io,unroll_rules_cascade(rcmodel))
 @test String(take!(io)) == """
-1-element Vector{RuleCascade{Int64, LogicalTruthCondition{Formula}, ConstantModel{Int64}}}
 RuleCascade{Int64, LogicalTruthCondition{Formula}, ConstantModel{Int64}}
 ┐⩚(p ∧ q ∧ r, p ∧ q ∧ r, p ∧ q ∧ r)
 └ ✔ 1
@@ -345,9 +341,8 @@ RuleCascade{Int64, LogicalTruthCondition{Formula}, ConstantModel{Int64}}
 @test unroll_rules_cascade(b_fdx) isa Vector{<:RuleCascade}
 @test unroll_rules_cascade(b_p) isa Vector{<:RuleCascade}
 
-print_model(io,unroll_rules_cascade(b_nsx))
+display_model.(io,unroll_rules_cascade(b_nsx))
 @test String(take!(io)) == """
-2-element Vector{RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}}
 RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
 ┐⩚(q)
 └ ✔ true
@@ -356,9 +351,8 @@ RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
 └ ✔ false
 """
 
-print_model(io,unroll_rules_cascade(b_fsx))
+display_model.(io,unroll_rules_cascade(b_fsx))
 @test String(take!(io)) == """
-2-element Vector{RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}}
 RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
 ┐⩚(s)
 └ ✔ true
@@ -367,9 +361,8 @@ RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
 └ ✔ false
 """
 
-print_model(io,unroll_rules_cascade(b_fdx))
+display_model.(io,unroll_rules_cascade(b_fdx))
 @test String(take!(io)) == """
-3-element Vector{RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}}
 RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
 ┐⩚(t, q)
 └ ✔ true
@@ -382,9 +375,8 @@ RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
 """
 # [{t, q} => true, {t, ¬q} => false, {¬t} => true]"
 
-print_model(io,unroll_rules_cascade(b_p))
+display_model.(io,unroll_rules_cascade(b_p))
 @test String(take!(io)) == """
-5-element Vector{RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}}
 RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
 ┐⩚(r, s)
 └ ✔ true
@@ -403,9 +395,8 @@ RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
 """
 
 @test unroll_rules_cascade(d1_string) isa Vector{<:RuleCascade}
-print_model(io,unroll_rules_cascade(d1_string))
+display_model.(io,unroll_rules_cascade(d1_string))
 @test String(take!(io)) == """
-3-element Vector{RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}}
 RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
 ┐⩚(r ∧ s ∧ t)
 └ ✔ true
@@ -418,9 +409,8 @@ RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
 """
 
 @test unroll_rules_cascade(dt1) isa Vector{<:RuleCascade}
-print_model(io,unroll_rules_cascade(dt1))
+display_model.(io,unroll_rules_cascade(dt1))
 @test String(take!(io)) == """
-5-element Vector{RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}}
 RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
 ┐⩚(r, s)
 └ ✔ true
@@ -439,9 +429,8 @@ RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
 """
 
 @test unroll_rules_cascade(dt2) isa Vector{<:RuleCascade}
-print_model(io,unroll_rules_cascade(dt2))
+display_model.(io,unroll_rules_cascade(dt2))
 @test String(take!(io)) == """
-3-element Vector{RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}}
 RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
 ┐⩚(t, q)
 └ ✔ true
@@ -454,27 +443,14 @@ RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
 """
 
 @test unroll_rules_cascade(msm) isa Vector{<:RuleCascade}
-print_model(io,unroll_rules_cascade(msm))
+display_model.(io,unroll_rules_cascade(msm))
 @test String(take!(io)) == """
-6-element Vector{RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}}
-RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
-┐⩚(q, r, s)
-└ ✔ true
-RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
-┐⩚(q, r, ¬(s))
-└ ✔ false
-RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
-┐⩚(q, ¬(r), t, q)
-└ ✔ true
-RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
-┐⩚(q, ¬(r), t, ¬(q))
-└ ✔ false
-RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
-┐⩚(q, ¬(r), ¬(t))
-└ ✔ true
-RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
-┐⩚(¬(q), r ∧ s ∧ t, ¬(r))
-└ ✔ true
+RuleCascade{Int64, LogicalTruthCondition{SyntaxTree}, ConstantModel{Int64}}
+┐⩚(q)
+└ ✔ 2
+RuleCascade{Float64, LogicalTruthCondition{SyntaxTree}, ConstantModel{Float64}}
+┐⩚(¬(q))
+└ ✔ 1.5
 """
 
 #=
@@ -499,27 +475,24 @@ unroll_rules_cascade(branch_r)
 @test unroll_rules(cmodel_string) isa Vector{<:ConstantModel}
 
 @test unroll_rules(r1_string) isa Vector{<:Rule}
-print_model(io,unroll_rules(r1_string))
+display_model.(io,unroll_rules(r1_string))
 @test String(take!(io)) == """
-1-element Vector{Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}}
 Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
 ┐r ∧ s ∧ t
 └ ✔ true
 """
 
 @test unroll_rules(r2_string) isa Vector{<:Rule}
-print_model(io,unroll_rules(r2_string))
+display_model.(io,unroll_rules(r2_string))
 @test String(take!(io)) == """
-1-element Vector{Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}}
 Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
 ┐¬(r)
 └ ✔ true
 """
 
 @test unroll_rules(d1_string) isa Vector{<:Rule}
-print_model(io,unroll_rules(d1_string))
+display_model.(io,unroll_rules(d1_string))
 @test String(take!(io)) == """
-3-element Vector{Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}}
 Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
 ┐r ∧ s ∧ t
 └ ✔ true
@@ -532,27 +505,24 @@ Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
 """
 
 @test unroll_rules(rc1_string) isa Vector{<:Rule}
-print_model(io,unroll_rules(rc1_string))
+display_model.(io,unroll_rules(rc1_string))
 @test String(take!(io)) == """
-1-element Vector{Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}}
 Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
 ┐r ∧ s ∧ t
 └ ✔ true
 """
 
 @test unroll_rules(rcmodel) isa Vector{<:Rule}
-print_model(io,unroll_rules(rcmodel))
+display_model.(io,unroll_rules(rcmodel))
 @test String(take!(io)) == """
-1-element Vector{Rule{Int64, LogicalTruthCondition{Formula}, ConstantModel{Int64}}}
 Rule{Int64, LogicalTruthCondition{Formula}, ConstantModel{Int64}}
 ┐p ∧ q ∧ r ∧ p ∧ q ∧ r ∧ p ∧ q ∧ r
 └ ✔ 1
 """
 
 @test unroll_rules(b_nsx) isa Vector{<:Rule}
-print_model(io,unroll_rules(b_nsx))
+display_model.(io,unroll_rules(b_nsx))
 @test String(take!(io)) == """
-2-element Vector{Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}}
 Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
 ┐q
 └ ✔ true
@@ -562,9 +532,8 @@ Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
 """
 
 @test unroll_rules(b_fsx) isa Vector{<:Rule}
-print_model(io,unroll_rules(b_fsx))
+display_model.(io,unroll_rules(b_fsx))
 @test String(take!(io)) == """
-2-element Vector{Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}}
 Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
 ┐s
 └ ✔ true
@@ -574,9 +543,8 @@ Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
 """
 
 @test unroll_rules(b_fdx) isa Vector{<:Rule}
-print_model(io,unroll_rules(b_fdx))
+display_model.(io,unroll_rules(b_fdx))
 @test String(take!(io)) == """
-3-element Vector{Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}}
 Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
 ┐t ∧ q
 └ ✔ true
@@ -589,9 +557,8 @@ Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
 """
 
 @test unroll_rules(b_p) isa Vector{<:Rule}
-print_model(io,unroll_rules(b_p))
+display_model.(io,unroll_rules(b_p))
 @test String(take!(io)) == """
-5-element Vector{Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}}
 Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
 ┐r ∧ s
 └ ✔ true
@@ -610,9 +577,8 @@ Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
 """
 
 @test unroll_rules(dt1) isa Vector{<:Rule}
-print_model(io,unroll_rules(dt1))
+display_model.(io,unroll_rules(dt1))
 @test String(take!(io)) == """
-5-element Vector{Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}}
 Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
 ┐r ∧ s
 └ ✔ true
@@ -631,9 +597,8 @@ Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
 """
 
 @test unroll_rules(dt2) isa Vector{<:Rule}
-print_model(io,unroll_rules(dt2))
+display_model.(io,unroll_rules(dt2))
 @test String(take!(io)) == """
-3-element Vector{Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}}
 Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
 ┐t ∧ q
 └ ✔ true
@@ -646,27 +611,14 @@ Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
 """
 
 @test unroll_rules(msm) isa Vector{<:Rule}
-print_model(io,unroll_rules(msm))
+display_model.(io,unroll_rules(msm))
 @test String(take!(io)) == """
-6-element Vector{Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}}
-Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
-┐q ∧ r ∧ s
-└ ✔ true
-Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
-┐q ∧ r ∧ ¬(s)
-└ ✔ false
-Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
-┐q ∧ ¬(r) ∧ t ∧ q
-└ ✔ true
-Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
-┐q ∧ ¬(r) ∧ t ∧ ¬(q)
-└ ✔ false
-Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
-┐q ∧ ¬(r) ∧ ¬(t)
-└ ✔ true
-Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
-┐¬(q) ∧ r ∧ s ∧ t ∧ ¬(r)
-└ ✔ true
+Rule{Int64, LogicalTruthCondition{SyntaxTree}, ConstantModel{Int64}}
+┐q
+└ ✔ 2
+Rule{Float64, LogicalTruthCondition{SyntaxTree}, ConstantModel{Float64}}
+┐¬(q)
+└ ✔ 1.5
 """
 
 #=
@@ -686,14 +638,14 @@ unroll_rules.([rfloat_number, dlmodel, dlmodel_integer, bmodel_integer, bmodel, 
 
 #=
 @test convert(RuleCascade,r1_string) isa RuleCascade
-print_model(io,convert(RuleCascade,r1_string))
+display_model.(io,convert(RuleCascade,r1_string))
 @test String(take!(io)) == """
 RuleCascade{String, LogicalTruthCondition{SyntaxTree{Union{NamedOperator{:∧}, Proposition{String}}, NamedOperator{:∧}}}, ConstantModel{String}}
 ┐⩚(r ∧ s ∧ t)
 └ ✔ true
 """
 @test_nowarn convert(RuleCascade,r2_string)
-print_model(io,convert(RuleCascade,r2_string))
+display_model.(io,convert(RuleCascade,r2_string))
 @test String(take!(io)) == """
 RuleCascade{String, LogicalTruthCondition{SyntaxTree{Union{NamedOperator{:¬}, Proposition{String}}, NamedOperator{:¬}}}, ConstantModel{String}}
 ┐⩚(¬(r))

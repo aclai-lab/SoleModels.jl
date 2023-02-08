@@ -18,7 +18,7 @@ abstract type AbstractFeature{U<:Real} end
 
 @inline (f::AbstractFeature)(args...) = compute_feature(f, args...)
 
-Base.show(io::IO, f::AbstractFeature, args...; kwargs...) = print(io, display_feature(f, args...; kwargs...))
+Base.show(io::IO, f::AbstractFeature, args...; kwargs...) = print(io, syntaxstring(f, args...; kwargs...))
 
 ################################################################################
 ################################################################################
@@ -46,14 +46,24 @@ end
 function compute_feature(f::MultiAttributeFeature{U}, inst::AbstractDimensionalInstance{T})::U where {U<:Real,T}
     (f.f(inst))
 end
-display_feature(f::MultiAttributeFeature,         args...; kwargs...) = "$(f.f)"
+syntaxstring(f::MultiAttributeFeature, args...; kwargs...) = "$(f.f)"
 
 ############################################################################################
 
 abstract type SingleAttributeFeature{U} <: DimensionalFeature{U} end
 
 i_attribute(f::SingleAttributeFeature) = f.i_attribute
-attribute_name(f::SingleAttributeFeature; attribute_names_map::Union{Nothing,AbstractDict,AbstractVector} = nothing) = (isnothing(attribute_names_map) ? "A$(i_attribute(f))" : "$(attribute_names_map[i_attribute(f)])")
+function attribute_name(
+    f::SingleAttributeFeature;
+    attribute_names_map::Union{Nothing,AbstractDict,AbstractVector} = nothing,
+    kwargs...,
+)
+    if isnothing(attribute_names_map)
+        "A$(i_attribute(f))"
+    else
+        "$(attribute_names_map[i_attribute(f)])"
+    end
+end
 
 
 # A feature can be just a name
@@ -64,7 +74,10 @@ end
 function compute_feature(f::SingleAttributeNamedFeature, inst::AbstractDimensionalInstance{T}) where {T}
     @error "Can't intepret SingleAttributeNamedFeature on any structure at all."
 end
-display_feature(f::SingleAttributeNamedFeature;    attribute_names_map::Union{Nothing,AbstractVector,AbstractDict} = nothing) = (n = attribute_name(f; attribute_names_map = attribute_names_map); (f.name == "" ? "$(n)" : "$(f.name)($n)"))
+function syntaxstring(f::SingleAttributeNamedFeature; kwargs...)
+    n = attribute_name(f; kwargs...)
+    (f.name == "" ? "$(n)" : "$(f.name)($n)")
+end
 
 ############################################################################################
 
@@ -86,7 +99,10 @@ end
 function compute_feature(f::SingleAttributeMin{U}, inst::AbstractDimensionalInstance{T}) where {U<:Real,T}
     (minimum(get_instance_attribute(inst,f.i_attribute)))::U
 end
-display_feature(f::SingleAttributeMin;             attribute_names_map::Union{Nothing,AbstractVector,AbstractDict} = nothing) = "min($(attribute_name(f; attribute_names_map = attribute_names_map)))"
+function syntaxstring(f::SingleAttributeMin; kwargs...)
+    n = attribute_name(f; kwargs...)
+    "min($n)"
+end
 
 struct SingleAttributeMax{U} <: SingleAttributeFeature{U}
     i_attribute::Integer
@@ -102,7 +118,10 @@ end
 function compute_feature(f::SingleAttributeMax{U}, inst::AbstractDimensionalInstance{T}) where {U<:Real,T}
     (maximum(get_instance_attribute(inst,f.i_attribute)))::U
 end
-display_feature(f::SingleAttributeMax;             attribute_names_map::Union{Nothing,AbstractVector,AbstractDict} = nothing) = "max($(attribute_name(f; attribute_names_map = attribute_names_map)))"
+function syntaxstring(f::SingleAttributeMax; kwargs...)
+    n = attribute_name(f; kwargs...)
+    "max($n)"
+end
 
 ############################################################################################
 
@@ -118,7 +137,7 @@ struct SingleAttributeSoftMin{U,T<:AbstractFloat} <: SingleAttributeFeature{U}
     end
 end
 alpha(f::SingleAttributeSoftMin) = f.alpha
-display_feature(f::SingleAttributeSoftMin;         attribute_names_map::Union{Nothing,AbstractVector,AbstractDict} = nothing) = "min" * utils.subscriptnumber(rstrip(rstrip(string(f.alpha*100), '0'), '.')) * "($(attribute_name(f; attribute_names_map = attribute_names_map)))"
+syntaxstring(f::SingleAttributeSoftMin; kwargs...) = "min" * utils.subscriptnumber(rstrip(rstrip(string(f.alpha*100), '0'), '.')) * "($(attribute_name(f; kwargs...)))"
 
 function compute_feature(f::SingleAttributeSoftMin{U}, inst::AbstractDimensionalInstance{T}) where {U<:Real,T}
     utils.softminimum(get_instance_attribute(inst,f.i_attribute), f.alpha)::U
@@ -136,7 +155,7 @@ function compute_feature(f::SingleAttributeSoftMax{U}, inst::AbstractDimensional
     utils.softmaximum(get_instance_attribute(inst,f.i_attribute), f.alpha)::U
 end
 alpha(f::SingleAttributeSoftMax) = f.alpha
-display_feature(f::SingleAttributeSoftMax;         attribute_names_map::Union{Nothing,AbstractVector,AbstractDict} = nothing) = "max" * utils.subscriptnumber(rstrip(rstrip(string(f.alpha*100), '0'), '.')) * "($(attribute_name(f; attribute_names_map = attribute_names_map)))"
+syntaxstring(f::SingleAttributeSoftMax; kwargs...) = "max" * utils.subscriptnumber(rstrip(rstrip(string(f.alpha*100), '0'), '.')) * "($(attribute_name(f; kwargs...)))"
 
 # TODO simplify OneWorld case:
 # function compute_feature(f::SingleAttributeSoftMin, inst::AbstractDimensionalInstance{T}) where {T}
@@ -158,7 +177,7 @@ end
 function compute_feature(f::SingleAttributeGenericFeature{U}, inst::AbstractDimensionalInstance{T}) where {U<:Real,T}
     (f.f(utils.vectorize(get_instance_attribute(inst,f.i_attribute));))::U
 end
-display_feature(f::SingleAttributeGenericFeature;  attribute_names_map::Union{Nothing,AbstractVector,AbstractDict} = nothing) = "$(f.f)($(attribute_name(f; attribute_names_map = attribute_names_map)))"
+syntaxstring(f::SingleAttributeGenericFeature; kwargs...) = "$(f.f)($(attribute_name(f; kwargs...)))"
 
 ############################################################################################
 
@@ -175,7 +194,7 @@ end
 function compute_feature(f::NamedFeature, inst::AbstractDimensionalInstance{T}) where {T}
     @error "Can't intepret NamedFeature on any structure at all."
 end
-display_feature(f::NamedFeature,             args...; kwargs...) = "$(f.name)"
+syntaxstring(f::NamedFeature; kwargs...) = "$(f.name)"
 
 ############################################################################################
 
@@ -188,6 +207,6 @@ end
 function compute_feature(f::ExternalFWDFeature, inst::AbstractDimensionalInstance{T}) where {T}
     @error "Can't intepret ExternalFWDFeature on any structure at all."
 end
-display_feature(f::ExternalFWDFeature,             args...; kwargs...) = "$(f.name)"
+syntaxstring(f::ExternalFWDFeature; kwargs...) = "$(f.name)"
 
 ################################################################################

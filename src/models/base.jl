@@ -2,7 +2,7 @@ export antecedent, consequent, positive_consequent, negative_consequent, default
 
 import Base: isopen, length, getindex
 
-import SoleLogics: check
+import SoleLogics: check, syntaxstring
 using SoleLogics: Formula, TOP, AbstractTruthOperator, ⊤, ¬, ∧
 
 const FormulaOrTree = Union{Formula,SyntaxTree}
@@ -20,14 +20,11 @@ function check(::Formula, ::AbstractDataset) end
 typename(::Type{T}) where T = eval(nameof(T))
 
 """
-A condition is something that can be tested on a piece of data, and giving a truth value.
+A boolean condition is a condition that evaluates to a boolean truth value (`true`/`false`).
 """
-abstract type AbstractCondition end
+abstract type AbstractBooleanCondition end
 
-"""
-A boolean condition is a condition that evaluates to a boolean truth value (`true`/`false`.
-"""
-abstract type AbstractBooleanCondition <: AbstractCondition end
+Base.show(io::IO, c::AbstractBooleanCondition) = print(io, "$(syntaxstring(c))")
 
 """
 A true condition is the boolean condition that is always true.
@@ -40,6 +37,8 @@ condition_length(c::TrueCondition) = 0
 
 # Helper. Mh, what about TOP as a formula?
 convert(::Type{AbstractBooleanCondition}, ::typeof(TOP)) = TrueCondition()
+
+syntaxstring(c::TrueCondition; kwargs...) = syntaxstring(TOP; kwargs...)
 
 """
 A logical truth condition is the boolean condition that a logical formula is true on
@@ -76,6 +75,8 @@ formula(c::LogicalTruthCondition) = c.formula
 check(c::LogicalTruthCondition, args...) = (check(formula(c), args...) == TOP)
 
 condition_length(c::LogicalTruthCondition) = npropositions(formula(c))
+
+syntaxstring(c::LogicalTruthCondition; kwargs...) = syntaxstring(formula(c); kwargs...)
 
 # Helper
 convert(::Type{AbstractBooleanCondition}, f::FormulaOrTree) = LogicalTruthCondition(f)
