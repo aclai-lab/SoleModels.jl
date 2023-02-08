@@ -17,7 +17,7 @@ using SoleModels: unroll_rules, unroll_rules_cascade, formula, root
 #Sostituto di SoleLogics.TOP
 # const TOP = SoleLogics.parseformula("⊤")
 ################################### IOBuffer ###############################################
-io = @test_nowarn IOBuffer()
+io = IOBuffer()
 
 ################################### FinalModel #############################################
 outcome_int =  @test_nowarn ConstantModel(2)

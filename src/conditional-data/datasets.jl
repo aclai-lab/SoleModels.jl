@@ -38,7 +38,7 @@ end
 
 # TODO from here onwards
 
-# active = ha un alphabet. Ci puoi checkare e imparare formule.
+# active = has an alphabet. Ci puoi checkare e imparare formule.
 abstract type ActiveConditionalDataset{
     W<:AbstractWorld,
     A<:FeatCondition,

@@ -358,7 +358,7 @@ display_feature_test_operator_pair_abbr(feature::SingleAttributeSoftMax, test_op
 #   (test_op_partialsort!(test_op,vals) for test_op in test_ops)
 # end
 
-# @inline test_decision(test_operator::CanonicalFeatureGeqSoft, w::AbstractWorld, channel::DimensionalChannel{T,N}, threshold::Real) where {T,N} = begin
+# @inline test_decisioaoeu(test_operator::CanonicalFeatureGeqSoft, w::AbstractWorld, channel::DimensionalChannel{T,N}, threshold::Real) where {T,N} = begin
 #   ys = 0
 #   # TODO write with reduce, and optimize it (e.g. by stopping early if the decision is reached already)
 #   vals = ch_readWorld(w,channel)
@@ -370,7 +370,7 @@ display_feature_test_operator_pair_abbr(feature::SingleAttributeSoftMax, test_op
 #   (ys/length(vals)) >= test_operator.alpha
 # end
 
-# @inline test_decision(test_operator::CanonicalFeatureLeqSoft, w::AbstractWorld, channel::DimensionalChannel{T,N}, threshold::Real) where {T,N} = begin
+# @inline test_decisioaoeu(test_operator::CanonicalFeatureLeqSoft, w::AbstractWorld, channel::DimensionalChannel{T,N}, threshold::Real) where {T,N} = begin
 #   ys = 0
 #   # TODO write with reduce, and optimize it (e.g. by stopping early if the decision is reached already)
 #   vals = ch_readWorld(w,channel)
