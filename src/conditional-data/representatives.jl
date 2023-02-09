@@ -24,7 +24,7 @@ representatives(fr::AbstractMultiModalFrame{W}, r::_RelationGlob, f::AbstractFea
 
 
 # TODO need this?
-# `representatives(fr::AbstractMultiModalFrame{W}, S::AbstractWorldSet{WT}, ::_RelationGlob, ::FeatMetaCondition)`
+# `representatives(fr::AbstractMultiModalFrame{W}, S::AbstractWorldSet{W}, ::_RelationGlob, ::FeatMetaCondition)`
 
 include("full-dimensional-frame/Full0DFrame.jl")
 include("full-dimensional-frame/Full1DFrame.jl")

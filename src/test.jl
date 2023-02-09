@@ -147,18 +147,18 @@ bmodel_mixed_number = @test_nowarn Branch(phi, rmodel_number, dlmodel)
 @test isopen(bmodel_mixed)
 @test output_type(bmodel_mixed) == Union{Nothing,Float64,Int}
 
-@test_nowarn [print_model(buf, r) for r in rules];
-@test_nowarn print_model(buf, dlmodel);
-@test_nowarn print_model(buf, bmodel);
+@test_nowarn [printmodel(buf, r) for r in rules];
+@test_nowarn printmodel(buf, dlmodel);
+@test_nowarn printmodel(buf, bmodel);
 
 @test_nowarn Branch(phi,(bmodel,bmodel))
 @test_nowarn Branch(phi,(bmodel,rfloat_number))
 @test_nowarn Branch(phi,(dlmodel,rmodel_float))
 bmodel_2 = @test_nowarn Branch(phi,(dlmodel,bmodel))
-@test_nowarn print_model(buf, bmodel_2);
+@test_nowarn printmodel(buf, bmodel_2);
 
 rcmodel = RuleCascade([phi,phi,phi], cmodel_integer)
-@test_nowarn print_model(buf, Branch(phi, rcmodel, bmodel_2));
+@test_nowarn printmodel(buf, Branch(phi, rcmodel, bmodel_2));
 
 
 branch_q = @test_nowarn Branch(formula_q, ("yes", "no"))

@@ -5,14 +5,17 @@ import Base: isopen, length, getindex
 import SoleLogics: check, syntaxstring
 using SoleLogics: Formula, TOP, AbstractTruthOperator, ⊤, ¬, ∧
 
+using SoleLogics: AbstractInterpretationSet
+
 const FormulaOrTree = Union{Formula,SyntaxTree}
+
 
 ############################################################################################
 # TODO move this stuff
 ############################################################################################
 
 function check(::Formula, ::AbstractInstance) end
-function check(::Formula, ::AbstractDataset) end
+function check(::Formula, ::AbstractInterpretationSet) end
 
 ############################################################################################
 
@@ -129,10 +132,10 @@ end
 """
 Any `AbstractModel` can be applied to an instance object or a dataset of instance objects.
 
-See also [`AbstractModel`](@ref), [`AbstractInstance`](@ref), [`AbstractDataset`](@ref).
+See also [`AbstractModel`](@ref), [`AbstractInstance`](@ref), [`AbstractInterpretationSet`](@ref).
 """
 apply(m::AbstractModel, i::AbstractInstance)::output_type(m) = error("Please, provide method apply(::$(typeof(m)), ::$(typeof(i))).")
-apply(m::AbstractModel, d::AbstractDataset)::AbstractVector{<:output_type(m)} = map(i->apply(m, i), iterate_instances(d))
+apply(m::AbstractModel, d::AbstractInterpretationSet)::AbstractVector{<:output_type(m)} = map(i->apply(m, i), iterate_instances(d))
 
 
 doc_symbolic = """
@@ -242,7 +245,7 @@ convert(::Type{ConstantModel{O}}, o::O) where {O} = ConstantModel{O}(o)
 convert(::Type{<:AbstractModel{F}}, m::ConstantModel) where {F} = ConstantModel{F}(m)
 
 apply(m::ConstantModel, i::AbstractInstance) = outcome(m)
-apply(m::ConstantModel, d::AbstractDataset) = outcome(m)
+apply(m::ConstantModel, d::AbstractInterpretationSet) = outcome(m)
 
 """
 A `FunctionModel` is a final model (`FinalModel`) that applies a native Julia `Function`
@@ -575,7 +578,7 @@ issymbolic(::Branch) = true
 isopen(m::Branch) = isopen(positive_consequent(m)) || isopen(negative_consequent(m))
 
 check(m::Branch, i::AbstractInstance) = check(antecedent(m), i)
-apply(m::Branch, d::Union{AbstractInstance, AbstractDataset}) = check(antecedent(m), d) ? apply(positive_consequent(m), d) : apply(negative_consequent(m), d)
+apply(m::Branch, d::Union{AbstractInstance, AbstractInterpretationSet}) = check(antecedent(m), d) ? apply(positive_consequent(m), d) : apply(negative_consequent(m), d)
 
 """
     struct DecisionList{O, C<:AbstractBooleanCondition, FM<:AbstractModel} <: ConstrainedModel{O, FM}

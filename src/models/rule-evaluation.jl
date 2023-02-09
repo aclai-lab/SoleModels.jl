@@ -3,7 +3,7 @@
 Function for evaluating the antecedent of a rule
 """
 
-function evaluate_antecedent(rule::Rule, X::AbstractDataset)
+function evaluate_antecedent(rule::Rule, X::AbstractInterpretationSet)
     check(antecedent(rule), X)
 end
 
@@ -12,7 +12,7 @@ Function for evaluating a rule
 """
 function evaluate_rule(
     rule::Rule,
-    X::AbstractDataset,
+    X::AbstractInterpretationSet,
     Y::AbstractVector{<:FinalModel}
 )
     # Antecedent satisfaction. For each instances in X:
@@ -67,7 +67,7 @@ Metrics of the rule
 
 function rule_metrics(
     rule::Rule,
-    X::AbstractDataset,
+    X::AbstractInterpretationSet,
     Y::AbstractVector{<:FinalModel}
 )
 

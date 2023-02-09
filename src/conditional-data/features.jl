@@ -16,6 +16,9 @@ export compute_feature
 # A feature represents a function that can be computed on a world.
 abstract type AbstractFeature{U<:Real} end
 
+featvaltype(::Type{<:AbstractFeature{U}}) where {U} = U
+featvaltype(::AbstractFeature{U}) where {U} = U
+
 @inline (f::AbstractFeature)(args...) = compute_feature(f, args...)
 
 Base.show(io::IO, f::AbstractFeature, args...; kwargs...) = print(io, syntaxstring(f, args...; kwargs...))
