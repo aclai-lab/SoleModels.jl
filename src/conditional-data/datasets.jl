@@ -14,6 +14,9 @@ worldtype(d::AbstractConditionalDataset) = worldtype(typeof(d))
 frametype(::Type{<:AbstractConditionalDataset{W,A,T,FR}}) where {W,A,T,FR} = FR
 frametype(d::AbstractConditionalDataset) = frametype(typeof(d))
 
+truthtype(::Type{<:AbstractConditionalDataset{W,A,T,FR}}) where {W,A,T,FR} = T
+truthtype(d::AbstractConditionalDataset) = truthtype(typeof(d))
+
 function check(
     ::AbstractConditionalDataset{W,AA,T},
     i_sample,
