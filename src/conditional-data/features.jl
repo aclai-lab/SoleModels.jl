@@ -140,7 +140,11 @@ struct SingleAttributeSoftMin{U,T<:AbstractFloat} <: SingleAttributeFeature{U}
     end
 end
 alpha(f::SingleAttributeSoftMin) = f.alpha
-syntaxstring(f::SingleAttributeSoftMin; kwargs...) = "min" * utils.subscriptnumber(rstrip(rstrip(string(f.alpha*100), '0'), '.')) * "($(attribute_name(f; kwargs...)))"
+function syntaxstring(f::SingleAttributeSoftMin; kwargs...)
+    "min" *
+        utils.subscriptnumber(rstrip(rstrip(string(f.alpha*100), '0'), '.')) *
+        "($(attribute_name(f; kwargs...)))"
+end
 
 function compute_feature(f::SingleAttributeSoftMin{U}, inst::AbstractDimensionalInstance{T}) where {U<:Real,T}
     utils.softminimum(get_instance_attribute(inst,f.i_attribute), f.alpha)::U
@@ -158,7 +162,11 @@ function compute_feature(f::SingleAttributeSoftMax{U}, inst::AbstractDimensional
     utils.softmaximum(get_instance_attribute(inst,f.i_attribute), f.alpha)::U
 end
 alpha(f::SingleAttributeSoftMax) = f.alpha
-syntaxstring(f::SingleAttributeSoftMax; kwargs...) = "max" * utils.subscriptnumber(rstrip(rstrip(string(f.alpha*100), '0'), '.')) * "($(attribute_name(f; kwargs...)))"
+function syntaxstring(f::SingleAttributeSoftMax; kwargs...)
+    "max" *
+        utils.subscriptnumber(rstrip(rstrip(string(f.alpha*100), '0'), '.')) *
+        "($(attribute_name(f; kwargs...)))"
+end
 
 # TODO simplify OneWorld case:
 # function compute_feature(f::SingleAttributeSoftMin, inst::AbstractDimensionalInstance{T}) where {T}
@@ -180,7 +188,9 @@ end
 function compute_feature(f::SingleAttributeGenericFeature{U}, inst::AbstractDimensionalInstance{T}) where {U<:Real,T}
     (f.f(utils.vectorize(get_instance_attribute(inst,f.i_attribute));))::U
 end
-syntaxstring(f::SingleAttributeGenericFeature; kwargs...) = "$(f.f)($(attribute_name(f; kwargs...)))"
+function syntaxstring(f::SingleAttributeGenericFeature; kwargs...)
+    "$(f.f)($(attribute_name(f; kwargs...)))"
+end
 
 ############################################################################################
 
@@ -197,7 +207,9 @@ end
 function compute_feature(f::NamedFeature, inst::AbstractDimensionalInstance{T}) where {T}
     @error "Can't intepret NamedFeature on any structure at all."
 end
-syntaxstring(f::NamedFeature; kwargs...) = "$(f.name)"
+function syntaxstring(f::NamedFeature; kwargs...)
+    "$(f.name)"
+end
 
 ############################################################################################
 
@@ -210,6 +222,8 @@ end
 function compute_feature(f::ExternalFWDFeature, inst::AbstractDimensionalInstance{T}) where {T}
     @error "Can't intepret ExternalFWDFeature on any structure at all."
 end
-syntaxstring(f::ExternalFWDFeature; kwargs...) = "$(f.name)"
+function syntaxstring(f::ExternalFWDFeature; kwargs...)
+    "$(f.name)"
+end
 
 ################################################################################

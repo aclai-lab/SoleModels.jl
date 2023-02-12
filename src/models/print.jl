@@ -228,12 +228,18 @@ function displaymodel(
     show_subtree_info = false,
     indentation = default_indentation,
     depth = 0,
+    max_depth = nothing,
+    syntaxstring_kwargs = (),
     kwargs...,
 )
     io = IOBuffer()
     (indentation_list_children, indentation_any_first, indentation_any_space, indentation_last_first, indentation_last_space) = indentation
     !header || println(io, "$(indentation_str)$(typeof(m))$((length(info(m)) == 0) ? "" : "\n$(indentation_str)Info: $(info(m))")")
     displaymodel.(io, trees(m); kwargs...)
+    for tree in trees(m)
+        subm_str = @_display_submodel tree indentation_str indentation depth max_depth show_subtree_info syntaxstring_kwargs kwargs
+        print(io, subm_str)
+    end
     String(take!(io))
 end
 
@@ -244,11 +250,14 @@ function displaymodel(
     show_subtree_info = false,
     indentation = default_indentation,
     depth = 0,
+    max_depth = nothing,
+    syntaxstring_kwargs = (),
     kwargs...,
 )
     io = IOBuffer()
     (indentation_list_children, indentation_any_first, indentation_any_space, indentation_last_first, indentation_last_space) = indentation
     !header || println(io, "$(indentation_str)$(typeof(m))$((length(info(m)) == 0) ? "" : "\n$(indentation_str)Info: $(info(m))")")
-    displaymodel(io, root(m); kwargs...)
+    subm_str = @_display_submodel root(m) indentation_str indentation depth max_depth show_subtree_info syntaxstring_kwargs kwargs
+    print(io, subm_str)
     String(take!(io))
 end
