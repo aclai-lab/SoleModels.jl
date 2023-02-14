@@ -45,8 +45,8 @@ end
 
 function displaymodel(
     m::ConstantModel;
-    indentation_str="",
     header = true,
+    indentation_str="",
     show_subtree_info = false,
     kwargs...,
 )
@@ -58,8 +58,8 @@ end
 
 function displaymodel(
     m::FunctionModel;
-    indentation_str="",
     header = true,
+    indentation_str="",
     show_subtree_info = false,
     kwargs...,
 )
@@ -71,12 +71,12 @@ end
 
 function displaymodel(
     m::Rule;
-    indentation_str="",
     header = true,
-    show_subtree_info = false,
+    indentation_str="",
     indentation = default_indentation,
     depth = 0,
     max_depth = nothing,
+    show_subtree_info = false,
     syntaxstring_kwargs = (),
     kwargs...,
 )
@@ -90,8 +90,8 @@ function displaymodel(
         println(io, "$(pipe)$(syntaxstring(antecedent(m); syntaxstring_kwargs...))")
         pad_str = indentation_str*repeat(" ", length(pipe)-length(indentation_last_space)+1)
         print(io, "$(pad_str*indentation_last_first)$("✔ ")")
-        ind = pad_str*indentation_last_space*repeat(" ", length("✔ ")-length(indentation_last_space)+2)
-        subm_str = @_display_submodel consequent(m) ind indentation depth max_depth show_subtree_info syntaxstring_kwargs kwargs
+        ind_str = pad_str*indentation_last_space*repeat(" ", length("✔ ")-length(indentation_last_space)+2)
+        subm_str = @_display_submodel consequent(m) ind_str indentation depth max_depth show_subtree_info syntaxstring_kwargs kwargs
         print(io, subm_str)
     else
         println(io, "[...]")
@@ -101,12 +101,12 @@ end
 
 function displaymodel(
     m::Branch;
-    indentation_str="",
     header = true,
-    show_subtree_info = false,
+    indentation_str="",
     indentation = default_indentation,
     depth = 0,
     max_depth = nothing,
+    show_subtree_info = false,
     syntaxstring_kwargs = (),
     kwargs...,
 )
@@ -120,8 +120,8 @@ function displaymodel(
             # pad_str = indentation_str*indentation_flag_first**repeat(" ", length(pipe)-length(indentation_flag_first))
             pad_str = "$(indentation_str*indentation_flag_first)$(f)"
             print(io, "$(pad_str)")
-            ind = indentation_str*indentation_flag_space*repeat(" ", length(f))
-            subm_str = @_display_submodel consequent ind indentation depth max_depth show_subtree_info syntaxstring_kwargs kwargs
+            ind_str = indentation_str*indentation_flag_space*repeat(" ", length(f))
+            subm_str = @_display_submodel consequent ind_str indentation depth max_depth show_subtree_info syntaxstring_kwargs kwargs
             print(io, subm_str)
         end
     else
@@ -133,12 +133,12 @@ end
 
 function displaymodel(
     m::DecisionList;
-    indentation_str="",
     header = true,
-    show_subtree_info = false,
+    indentation_str="",
     indentation = default_indentation,
     depth = 0,
     max_depth = nothing,
+    show_subtree_info = false,
     syntaxstring_kwargs = (),
     kwargs...,
 )
@@ -153,16 +153,16 @@ function displaymodel(
             println(io, "$(indentation_str*pipe) $(syntaxstring(antecedent(rule); syntaxstring_kwargs...))")
             pad_str = indentation_str*indentation_any_space*repeat(" ", length(pipe)-length(indentation_any_space)-1)
             print(io, "$(pad_str*indentation_last_first)")
-            ind = pad_str*indentation_last_space
-            subm_str = @_display_submodel consequent(rule) ind indentation depth max_depth show_subtree_info syntaxstring_kwargs kwargs
+            ind_str = pad_str*indentation_last_space
+            subm_str = @_display_submodel consequent(rule) ind_str indentation depth max_depth show_subtree_info syntaxstring_kwargs kwargs
             print(io, subm_str)
         end
         pipe = indentation_last_first*"$("✘ ")"
         print(io, "$(indentation_str*pipe)")
         # print(io, "$(indentation_str*indentation_last_space*repeat(" ", length(pipe)-length(indentation_last_space)-1)*indentation_last_space)")
-        ind = indentation_str*indentation_last_space*repeat(" ", length(pipe)-length(indentation_last_space)-1)*indentation_last_space
-        # ind = indentation_str*indentation_last_space,
-        subm_str = @_display_submodel default_consequent(m) ind indentation depth max_depth show_subtree_info syntaxstring_kwargs kwargs
+        ind_str = indentation_str*indentation_last_space*repeat(" ", length(pipe)-length(indentation_last_space)-1)*indentation_last_space
+        # ind_str = indentation_str*indentation_last_space,
+        subm_str = @_display_submodel default_consequent(m) ind_str indentation depth max_depth show_subtree_info syntaxstring_kwargs kwargs
         print(io, subm_str)
     else
         println(io, "[...]")
@@ -173,12 +173,12 @@ end
 
 function displaymodel(
     m::RuleCascade;
-    indentation_str="",
     header = true,
-    show_subtree_info = false,
+    indentation_str="",
     indentation = default_indentation,
     depth = 0,
     max_depth = nothing,
+    show_subtree_info = false,
     syntaxstring_kwargs = (),
     kwargs...,
 )
@@ -192,8 +192,8 @@ function displaymodel(
         println(io, "$(pipe)⩚("*join(map(a->syntaxstring(a; syntaxstring_kwargs...), antecedents(m)), ", ")*")")
         pad_str = indentation_str*repeat(" ", length(pipe)-length(indentation_last_space)+1)
         print(io, "$(pad_str*indentation_last_first)$("✔ ")")
-        ind = pad_str*indentation_last_space*repeat(" ", length("✔ ")+1)
-        subm_str = @_display_submodel consequent(m) ind indentation depth max_depth show_subtree_info syntaxstring_kwargs kwargs
+        ind_str = pad_str*indentation_last_space*repeat(" ", length("✔ ")+1)
+        subm_str = @_display_submodel consequent(m) ind_str indentation depth max_depth show_subtree_info syntaxstring_kwargs kwargs
         print(io, subm_str)
     else
         println(io, "[...]")
@@ -204,12 +204,12 @@ end
 
 function displaymodel(
     m::DecisionTree;
-    indentation_str="",
     header = true,
-    show_subtree_info = false,
+    indentation_str="",
     indentation = default_indentation,
     depth = 0,
     max_depth = nothing,
+    show_subtree_info = false,
     syntaxstring_kwargs = (),
     kwargs...,
 )
@@ -223,19 +223,18 @@ end
 
 function displaymodel(
     m::DecisionForest;
-    indentation_str="",
     header = true,
-    show_subtree_info = false,
+    indentation_str="",
     indentation = default_indentation,
     depth = 0,
     max_depth = nothing,
+    show_subtree_info = false,
     syntaxstring_kwargs = (),
     kwargs...,
 )
     io = IOBuffer()
     (indentation_list_children, indentation_any_first, indentation_any_space, indentation_last_first, indentation_last_space) = indentation
     !header || println(io, "$(indentation_str)$(typeof(m))$((length(info(m)) == 0) ? "" : "\n$(indentation_str)Info: $(info(m))")")
-    displaymodel.(io, trees(m); kwargs...)
     for tree in trees(m)
         subm_str = @_display_submodel tree indentation_str indentation depth max_depth show_subtree_info syntaxstring_kwargs kwargs
         print(io, subm_str)
@@ -245,12 +244,12 @@ end
 
 function displaymodel(
     m::MixedSymbolicModel;
-    indentation_str="",
     header = true,
-    show_subtree_info = false,
+    indentation_str="",
     indentation = default_indentation,
     depth = 0,
     max_depth = nothing,
+    show_subtree_info = false,
     syntaxstring_kwargs = (),
     kwargs...,
 )

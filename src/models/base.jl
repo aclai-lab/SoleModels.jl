@@ -27,7 +27,11 @@ A boolean condition is a condition that evaluates to a boolean truth value (`tru
 """
 abstract type AbstractBooleanCondition end
 
-Base.show(io::IO, c::AbstractBooleanCondition) = print(io, "$(syntaxstring(c))")
+Base.show(io::IO, c::AbstractBooleanCondition) = print(io, "$(typeof(c))($(syntaxstring(c)))")
+
+function syntaxstring(c::AbstractBooleanCondition; kwargs...)
+    error("Please, provide method syntaxstring(::$(typeof(c)); kwargs...).")
+end
 
 """
 A true condition is the boolean condition that is always true.

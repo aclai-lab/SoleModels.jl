@@ -21,7 +21,9 @@ featvaltype(::AbstractFeature{U}) where {U} = U
 
 @inline (f::AbstractFeature)(args...) = compute_feature(f, args...)
 
-Base.show(io::IO, f::AbstractFeature, args...; kwargs...) = print(io, syntaxstring(f, args...; kwargs...))
+function syntaxstring(f::AbstractFeature; kwargs...)
+    error("Please, provide method syntaxstring(::$(typeof(f)); kwargs...).")
+end
 
 ################################################################################
 ################################################################################

@@ -2,7 +2,9 @@ using SoleLogics: AbstractAlphabet
 
 abstract type AbstractCondition end # TODO parametric?
 
-# Base.show(io::IO, m::AbstractCondition) = print(io, "$(syntaxstring(m))")
+function syntaxstring(c::AbstractCondition; kwargs...)
+    error("Please, provide method syntaxstring(::$(typeof(c)); kwargs...).")
+end
 
 ############################################################################################
 
@@ -22,7 +24,7 @@ feature(m::FeatMetaCondition) = m.feature
 test_operator(m::FeatMetaCondition) = m.test_operator
 
 syntaxstring(m::FeatMetaCondition; kwargs...) =
-    "$(_syntaxstring_feature_test_operator_pair(feature(m),test_operator(m))) ⍰"
+    "$(_syntaxstring_feature_test_operator_pair(feature(m),test_operator(m); kwargs...)) ⍰"
 
 ############################################################################################
 
