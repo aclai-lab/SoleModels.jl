@@ -4,7 +4,10 @@ Function for evaluating the antecedent of a rule
 """
 
 function evaluate_antecedent(rule::Rule, X::AbstractInterpretationSet)
-    check(antecedent(rule), X)
+    # TODO
+    x = check(antecedent(rule), X)
+    @show
+    x
 end
 
 """

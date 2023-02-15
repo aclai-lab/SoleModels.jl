@@ -1,4 +1,5 @@
 using SoleLogics: AbstractAlphabet
+import SoleLogics: inverse
 
 abstract type AbstractCondition end # TODO parametric?
 
@@ -66,7 +67,7 @@ test_operator(c::FeatCondition) = test_operator(c.metacond)
 threshold(c::FeatCondition) = c.a
 
 function inverse(c::FeatCondition)
-    FeatCondition(feature(decision), test_operator_inverse(test_operator(decision)), threshold(decision))
+    FeatCondition(feature(c), test_operator_inverse(test_operator(c)), threshold(c))
 end
 
 syntaxstring(m::FeatCondition; threshold_decimals = nothing, kwargs...) =

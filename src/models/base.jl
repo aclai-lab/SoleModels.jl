@@ -9,14 +9,6 @@ using SoleLogics: AbstractInterpretationSet
 
 const FormulaOrTree = Union{Formula,SyntaxTree}
 
-
-############################################################################################
-# TODO move this stuff
-############################################################################################
-
-function check(::Formula, ::AbstractInstance) end
-function check(::Formula, ::AbstractInterpretationSet) end
-
 ############################################################################################
 
 # Util

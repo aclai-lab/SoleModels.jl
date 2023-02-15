@@ -9,6 +9,8 @@ export AbstractFeature,
 
 export compute_feature
 
+import Base: isequal
+
 ############################################################################################
 ############################################################################################
 ############################################################################################
@@ -21,9 +23,12 @@ featvaltype(::AbstractFeature{U}) where {U} = U
 
 @inline (f::AbstractFeature)(args...) = compute_feature(f, args...)
 
+# TODO explain that it must be unique.
 function syntaxstring(f::AbstractFeature; kwargs...)
-    error("Please, provide method syntaxstring(::$(typeof(f)); kwargs...).")
+    error("Please, provide method syntaxstring(::$(typeof(f)); kwargs...). Remember that it must be unique.")
 end
+
+Base.isequal(a::AbstractFeature, b::AbstractFeature) = syntaxstring(a) == syntaxstring(b) # nameof(x) == nameof(feature)
 
 ################################################################################
 ################################################################################

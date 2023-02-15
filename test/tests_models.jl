@@ -614,14 +614,14 @@ unroll_rules.([rfloat_number, dlmodel, dlmodel_integer, bmodel_integer, bmodel, 
 
 #=
 @test convert(RuleCascade,r1_string) isa RuleCascade
-display_model.(io,convert(RuleCascade,r1_string))
+displaymodel.(io,convert(RuleCascade,r1_string))
 @test String(take!(io)) == """
 RuleCascade{String, LogicalTruthCondition{SyntaxTree{Union{NamedOperator{:∧}, Proposition{String}}, NamedOperator{:∧}}}, ConstantModel{String}}
 ┐⩚(r ∧ s ∧ t)
 └ ✔ true
 """
 @test_nowarn convert(RuleCascade,r2_string)
-display_model.(io,convert(RuleCascade,r2_string))
+displaymodel.(io,convert(RuleCascade,r2_string))
 @test String(take!(io)) == """
 RuleCascade{String, LogicalTruthCondition{SyntaxTree{Union{NamedOperator{:¬}, Proposition{String}}, NamedOperator{:¬}}}, ConstantModel{String}}
 ┐⩚(¬(r))

@@ -15,27 +15,6 @@ worldtype(d::AbstractConditionalDataset) = worldtype(typeof(d))
 frametype(::Type{<:AbstractConditionalDataset{W,A,T,FR}}) where {W,A,T,FR} = FR
 frametype(d::AbstractConditionalDataset) = frametype(typeof(d))
 
-truthtype(::Type{<:AbstractConditionalDataset{W,A,T,FR}}) where {W,A,T,FR} = T
-truthtype(d::AbstractConditionalDataset) = truthtype(typeof(d))
-
-function check(
-    p::Proposition{A},
-    X::AbstractConditionalDataset{W,AA,T},
-    i_sample,
-    w::W,
-)::T where {W<:AbstractWorld,AA<:AbstractCondition,T<:TruthValue,A<:AA}
-    error("Please, provide method check(p::$(typeof(p)), X::$(typeof(X)), i_sample::$(typeof(i_sample)), w::$(typeof(w))).")
-end
-
-function check(
-    f::Formula,
-    X::AbstractConditionalDataset{W,A,T},
-    i_sample,
-    w::W,
-)::T where {W<:AbstractWorld,A<:AbstractCondition,T<:TruthValue}
-    error("Please, provide method check(f::$(typeof(f)), X::$(typeof(X)), i_sample::$(typeof(i_sample)), w::$(typeof(w))).")
-end
-
 function frame(
     X::AbstractConditionalDataset{W,A,T},
     i_sample
@@ -48,6 +27,24 @@ representatives(X::AbstractConditionalDataset, i_sample, args...) = representati
 allworlds(X::AbstractConditionalDataset, i_sample, args...) = allworlds(frame(X, i_sample), args...)
 
 # TODO from here onwards
+
+# function check(
+#     p::Proposition{A},
+#     X::AbstractConditionalDataset{W,AA,T},
+#     i_sample,
+#     w::W,
+# )::T where {W<:AbstractWorld,AA<:AbstractCondition,T<:TruthValue,A<:AA}
+#     error("Please, provide method check(p::$(typeof(p)), X::$(typeof(X)), i_sample::$(typeof(i_sample)), w::$(typeof(w))).")
+# end
+
+# function check(
+#     f::Formula,
+#     X::AbstractConditionalDataset{W,A,T},
+#     i_sample,
+#     w::W,
+# )::T where {W<:AbstractWorld,A<:AbstractCondition,T<:TruthValue}
+#     error("Please, provide method check(f::$(typeof(f)), X::$(typeof(X)), i_sample::$(typeof(i_sample)), w::$(typeof(w))).")
+# end
 
 # # active = has an alphabet. Ci puoi checkare e imparare formule.
 # abstract type ActiveConditionalDataset{
