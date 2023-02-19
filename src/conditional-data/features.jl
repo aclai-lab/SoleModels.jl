@@ -9,7 +9,7 @@ export AbstractFeature,
 
 export compute_feature
 
-import Base: isequal
+import Base: isequal, hash
 
 ############################################################################################
 ############################################################################################
@@ -25,10 +25,11 @@ featvaltype(::AbstractFeature{U}) where {U} = U
 
 # TODO explain that it must be unique.
 function syntaxstring(f::AbstractFeature; kwargs...)
-    error("Please, provide method syntaxstring(::$(typeof(f)); kwargs...). Remember that it must be unique.")
+    error("Please, provide method syntaxstring(::$(typeof(f)); kwargs...). Note that this value must be unique.")
 end
 
 Base.isequal(a::AbstractFeature, b::AbstractFeature) = syntaxstring(a) == syntaxstring(b) # nameof(x) == nameof(feature)
+Base.hash(a::AbstractFeature) = Base.hash(syntaxstring(a))
 
 ################################################################################
 ################################################################################

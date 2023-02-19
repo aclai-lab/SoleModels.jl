@@ -1,1 +1,1 @@
-representatives(fr::Full0DFrame, ::_RelationGlob, ::AbstractFeature, ::Aggregator) = [OneWorld()]
+representatives(fr::Full0DFrame, ::GlobalRel, ::AbstractFeature, ::Aggregator) = [OneWorld()]

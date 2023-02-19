@@ -80,6 +80,12 @@ existential_aggregator(::typeof(<))  = minimum
 existential_aggregator(::typeof(≥))  = maximum
 existential_aggregator(::typeof(≤))  = minimum
 
+universal_aggregator(::typeof(==)) = ∩
+universal_aggregator(::typeof(>))  = minimum
+universal_aggregator(::typeof(<))  = maximum
+universal_aggregator(::typeof(≥))  = minimum
+universal_aggregator(::typeof(≤))  = maximum
+
 aggregator_bottom(::typeof(maximum), T::Type) = typemin(T)
 aggregator_bottom(::typeof(minimum), T::Type) = typemax(T)
 

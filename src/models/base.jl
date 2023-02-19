@@ -71,7 +71,7 @@ struct LogicalTruthCondition{F<:FormulaOrTree} <: AbstractBooleanCondition
 end
 
 formula(c::LogicalTruthCondition) = c.formula
-check(c::LogicalTruthCondition, args...) = (check(formula(c), args...) == TOP)
+check(c::LogicalTruthCondition, args...) = tops(check(formula(c), args...))
 
 condition_length(c::LogicalTruthCondition) = npropositions(formula(c))
 

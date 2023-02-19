@@ -1,11 +1,16 @@
 using SoleLogics: AbstractAlphabet
 import SoleLogics: inverse
 
+import Base: isequal, hash
+
 abstract type AbstractCondition end # TODO parametric?
 
 function syntaxstring(c::AbstractCondition; kwargs...)
-    error("Please, provide method syntaxstring(::$(typeof(c)); kwargs...).")
+    error("Please, provide method syntaxstring(::$(typeof(c)); kwargs...). Note that this value must be unique.")
 end
+
+Base.isequal(a::AbstractCondition, b::AbstractCondition) = syntaxstring(a) == syntaxstring(b) # nameof(x) == nameof(feature)
+Base.hash(a::AbstractCondition) = Base.hash(syntaxstring(a))
 
 ############################################################################################
 

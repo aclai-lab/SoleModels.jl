@@ -1,4 +1,4 @@
-using SoleLogics: AbstractMultiModalFrame, AbstractRelation, _RelationGlob, _RelationId, accessibles
+using SoleLogics: AbstractMultiModalFrame, AbstractRelation, GlobalRel, IdentityRel, accessibles
 
 #
 
@@ -15,16 +15,16 @@ representatives(fr::AbstractMultiModalFrame{W}, w::W, r::AbstractRelation, mc::F
     representatives(fr, w, r, feature(mc), existential_aggregator(test_operator(mc)))
 representatives(fr::AbstractMultiModalFrame{W}, w::W, r::AbstractRelation, ::AbstractFeature, ::Aggregator) where {W<:AbstractWorld} = accessibles(fr, w, r)
 
-representatives(fr::AbstractMultiModalFrame{W}, w::W, r::_RelationGlob, f::AbstractFeature, a::Aggregator) where {W<:AbstractWorld} = representatives(fr, r, f, a)
+representatives(fr::AbstractMultiModalFrame{W}, w::W, r::GlobalRel, f::AbstractFeature, a::Aggregator) where {W<:AbstractWorld} = representatives(fr, r, f, a)
 
-representatives(fr::AbstractMultiModalFrame{W}, r::_RelationGlob, f::AbstractFeature, a::Aggregator) where {W<:AbstractWorld} = accessibles(fr, r)
+representatives(fr::AbstractMultiModalFrame{W}, r::GlobalRel, f::AbstractFeature, a::Aggregator) where {W<:AbstractWorld} = accessibles(fr, r)
 
 # # TODO remove but probably we need this to stay because of ambiguities!
-# representatives(fr::AbstractMultiModalFrame{W}, w::W, r::_RelationId, ::AbstractFeature, ::Aggregator) where {W<:AbstractWorld} = accessibles(fr, w, r)
+# representatives(fr::AbstractMultiModalFrame{W}, w::W, r::IdentityRel, ::AbstractFeature, ::Aggregator) where {W<:AbstractWorld} = accessibles(fr, w, r)
 
 
 # TODO need this?
-# `representatives(fr::AbstractMultiModalFrame{W}, S::AbstractWorldSet{W}, ::_RelationGlob, ::FeatMetaCondition)`
+# `representatives(fr::AbstractMultiModalFrame{W}, S::AbstractWorldSet{W}, ::GlobalRel, ::FeatMetaCondition)`
 
 include("full-dimensional-frame/Full0DFrame.jl")
 include("full-dimensional-frame/Full1DFrame.jl")
