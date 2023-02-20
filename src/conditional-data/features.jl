@@ -1,15 +1,9 @@
 
-export AbstractFeature,
-        DimensionalFeature, SingleAttributeFeature,
-        SingleAttributeNamedFeature,
-        SingleAttributeMin, SingleAttributeMax,
-        SingleAttributeSoftMin, SingleAttributeSoftMax,
-        SingleAttributeGenericFeature, MultiAttributeFeature,
-        NamedFeature, ExternalFWDFeature
-
-export compute_feature
+using SoleData: AbstractDimensionalInstance, get_instance_attribute
 
 import Base: isequal, hash
+
+import SoleLogics: syntaxstring
 
 ############################################################################################
 ############################################################################################

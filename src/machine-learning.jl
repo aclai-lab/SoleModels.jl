@@ -9,7 +9,7 @@ const _CLabel = Integer # (classification labels are internally represented as i
 const _Label  = Union{_CLabel,RLabel}
 
 
-const AssociationRule{L<:AbstractLogic} = Rule{L, Formula{L}} #NOTE: maybe where {L<:AbstractLogic}
+# const AssociationRule{L<:AbstractLogic} = Rule{L, Formula{L}} #NOTE: maybe where {L<:AbstractLogic}
 
 # const ClassificationRule = Rule{L,CLabel} where {L<:AbstractLogic}
 # const RegressionRule = Rule{L,RLabel} where {L<:AbstractLogic}

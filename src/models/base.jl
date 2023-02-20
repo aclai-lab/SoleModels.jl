@@ -1,4 +1,9 @@
 
+using SoleLogics: AbstractTruthOperator
+
+import Base: convert, length, getindex, isopen
+import SoleLogics: check, syntaxstring
+
 typename(::Type{T}) where T = eval(nameof(T))
 
 """
@@ -124,13 +129,13 @@ isopen(::AbstractModel) = true
 
 """
 $(doc_open_model)
-`output_type` leverages the `isopen` trait to provide the type for the outcome of a model:
+`outputtype` leverages the `isopen` trait to provide the type for the outcome of a model:
 
-    output_type(M::AbstractModel{O}) = isopen(M) ? Union{Nothing,O} : O
+    outputtype(M::AbstractModel{O}) = isopen(M) ? Union{Nothing,O} : O
 
 See also [`isopen`](@ref), [`AbstractModel`](@ref).
 """
-function output_type(m::AbstractModel{O}) where {O}
+function outputtype(m::AbstractModel{O}) where {O}
     isopen(m) ? Union{Nothing,outcometype(m)} : outcometype(m)
 end
 
@@ -140,10 +145,10 @@ Any `AbstractModel` can be applied to an instance object or a dataset of instanc
 See also [`AbstractModel`](@ref), [`AbstractInterpretation`](@ref),
 [`AbstractInterpretationSet`](@ref).
 """
-function apply(m::AbstractModel, i::AbstractInterpretation)::output_type(m)
+function apply(m::AbstractModel, i::AbstractInterpretation)::outputtype(m)
     error("Please, provide method apply(::$(typeof(m)), ::$(typeof(i))).")
 end
-function apply(m::AbstractModel, d::AbstractInterpretationSet)::AbstractVector{<:output_type(m)}
+function apply(m::AbstractModel, d::AbstractInterpretationSet)::AbstractVector{<:outputtype(m)}
     map(i->apply(m, i), iterate_instances(d))
 end
 
@@ -169,7 +174,7 @@ issymbolic(::AbstractModel) = false
 # TODO remove
 # See also [`issymbolic`](@ref), [`AbstractModel`](@ref).
 # """
-# function logic(m::AbstractModel)::AbstractLogic
+# function logic(m::AbstractModel)::SoleLogics.AbstractLogic
 #     if issymbolic(m)
 #         error("Please, provide method logic(::$(typeof(m))), or define issymbolic(::$(typeof(m))) = false.")
 #     else
@@ -419,7 +424,7 @@ end
 doc_symbolic_basics = """
 Symbolic modeling builds onto two basic building blocks, which are `AbstractModel`s themselves:
 - `Rule`: IF (antecedent) THEN (consequent) END
-- `Branch`: IF (antecedent) THEN (positive_consequent) ELSE (negative_consequent) END
+- `Branch`: IF (antecedent) THEN (posconsequent) ELSE (negconsequent) END
 The *antecedent* is a formula of a certain logic, that can typically evaluate to true or false
 when the model is applied on an instance object;
 the *consequent*s are `AbstractModel`s themselves, that are to be applied to the instance object
@@ -531,8 +536,8 @@ apply(m::Rule, i::AbstractInterpretation) = check(antecedent(m), i) ? apply(cons
 """
     struct Branch{O,C<:AbstractBooleanCondition,FM<:AbstractModel} <: ConstrainedModel{O,FM}
         antecedent::C
-        positive_consequent::FM
-        negative_consequent::FM
+        posconsequent::FM
+        negconsequent::FM
         info::NamedTuple
     end
 
@@ -549,71 +554,71 @@ See also [`Rule`](@ref), [`ConstrainedModel`](@ref), [`AbstractModel`](@ref).
 """
 struct Branch{O,C<:AbstractBooleanCondition,FM<:AbstractModel} <: ConstrainedModel{O,FM}
     antecedent::C
-    positive_consequent::FM
-    negative_consequent::FM
+    posconsequent::FM
+    negconsequent::FM
     info::NamedTuple
 
     # function Branch{O,C,_FM}(
     #     antecedent::Union{AbstractBooleanCondition,FormulaOrTree,AbstractTruthOperator},
-    #     positive_consequent::Any,
-    #     negative_consequent::Any,
+    #     posconsequent::Any,
+    #     negconsequent::Any,
     #     info::NamedTuple = (;),
     # ) where {O,C<:AbstractBooleanCondition,_FM<:AbstractModel}
     #     antecedent = convert(C, antecedent)
-    #     positive_consequent = wrap(positive_consequent, AbstractModel{O})
-    #     negative_consequent = wrap(negative_consequent, AbstractModel{O})
-    #     FM = typeintersect(Union{_FM,propagate_feasiblemodels(positive_consequent),propagate_feasiblemodels(negative_consequent)}, AbstractModel{<:O})
-    #     check_model_constraints(Branch{O}, typeof(positive_consequent), FM, O)
-    #     check_model_constraints(Branch{O}, typeof(negative_consequent), FM, O)
-    #     new{O,C,FM}(antecedent, positive_consequent, negative_consequent, info)
+    #     posconsequent = wrap(posconsequent, AbstractModel{O})
+    #     negconsequent = wrap(negconsequent, AbstractModel{O})
+    #     FM = typeintersect(Union{_FM,propagate_feasiblemodels(posconsequent),propagate_feasiblemodels(negconsequent)}, AbstractModel{<:O})
+    #     check_model_constraints(Branch{O}, typeof(posconsequent), FM, O)
+    #     check_model_constraints(Branch{O}, typeof(negconsequent), FM, O)
+    #     new{O,C,FM}(antecedent, posconsequent, negconsequent, info)
     # end
 
     function Branch(
         antecedent::Union{AbstractBooleanCondition,FormulaOrTree,AbstractTruthOperator},
-        positive_consequent::Any,
-        negative_consequent::Any,
+        posconsequent::Any,
+        negconsequent::Any,
         info::NamedTuple = (;),
     )
         antecedent = convert(AbstractBooleanCondition, antecedent)
         C = typeof(antecedent)
-        positive_consequent = wrap(positive_consequent)
-        negative_consequent = wrap(negative_consequent)
-        O = Union{outcometype(positive_consequent),outcometype(negative_consequent)}
-        FM = typeintersect(Union{propagate_feasiblemodels(positive_consequent),propagate_feasiblemodels(negative_consequent)}, AbstractModel{<:O})
-        check_model_constraints(Branch{O}, typeof(positive_consequent), FM, O)
-        check_model_constraints(Branch{O}, typeof(negative_consequent), FM, O)
-        new{O,C,FM}(antecedent, positive_consequent, negative_consequent, info)
+        posconsequent = wrap(posconsequent)
+        negconsequent = wrap(negconsequent)
+        O = Union{outcometype(posconsequent),outcometype(negconsequent)}
+        FM = typeintersect(Union{propagate_feasiblemodels(posconsequent),propagate_feasiblemodels(negconsequent)}, AbstractModel{<:O})
+        check_model_constraints(Branch{O}, typeof(posconsequent), FM, O)
+        check_model_constraints(Branch{O}, typeof(negconsequent), FM, O)
+        new{O,C,FM}(antecedent, posconsequent, negconsequent, info)
     end
 
     function Branch(
         antecedent::Union{AbstractBooleanCondition,FormulaOrTree,AbstractTruthOperator},
-        (positive_consequent, negative_consequent)::Tuple{Any,Any},
+        (posconsequent, negconsequent)::Tuple{Any,Any},
         info::NamedTuple = (;),
     )
-        Branch(antecedent, positive_consequent, negative_consequent, info)
+        Branch(antecedent, posconsequent, negconsequent, info)
     end
 
 end
 
 antecedent(m::Branch) = m.antecedent
-positive_consequent(m::Branch) = m.positive_consequent
-negative_consequent(m::Branch) = m.negative_consequent
+posconsequent(m::Branch) = m.posconsequent
+negconsequent(m::Branch) = m.negconsequent
 
 conditiontype(::Type{M}) where {M<:Branch{O,C}} where {O,C} = C
 conditiontype(m::Branch) = conditiontype(typeof(m))
 
 issymbolic(::Branch) = true
 
-isopen(m::Branch) = isopen(positive_consequent(m)) || isopen(negative_consequent(m))
+isopen(m::Branch) = isopen(posconsequent(m)) || isopen(negconsequent(m))
 
-apply(m::Branch, i::AbstractInterpretation) = check(antecedent(m), i) ? apply(positive_consequent(m), i) : apply(negative_consequent(m), i)
+apply(m::Branch, i::AbstractInterpretation) = check(antecedent(m), i) ? apply(posconsequent(m), i) : apply(negconsequent(m), i)
 function apply(m::Branch{O,<:LogicalTruthCondition}, d::AbstractInterpretationSet) where {O}
     cs = check(antecedent(m), d)
     cpos = findall((c)->c==true, cs)
     cneg = findall((c)->c==false, cs)
     out = fill(true, length(cs))
-    out[cpos] = apply(positive_consequent(m), slice_dataset(d, cpos))
-    out[cneg] = apply(positive_consequent(m), slice_dataset(d, cneg))
+    out[cpos] = apply(posconsequent(m), slice_dataset(d, cpos))
+    out[cneg] = apply(posconsequent(m), slice_dataset(d, cneg))
     out
 end
 
@@ -622,7 +627,7 @@ end
 """
     struct DecisionList{O,C<:AbstractBooleanCondition,FM<:AbstractModel} <: ConstrainedModel{O,FM}
         rules::Vector{Rule{_O,_C,_FM} where {_O<:O,_C<:C,_FM<:FM}}
-        default_consequent::FM
+        defaultconsequent::FM
         info::NamedTuple
     end
 
@@ -647,63 +652,63 @@ See also [`Rule`](@ref), [`ConstrainedModel`](@ref), [`DecisionTree`](@ref), [`A
 """
 struct DecisionList{O,C<:AbstractBooleanCondition,FM<:AbstractModel} <: ConstrainedModel{O,FM}
     rules::Vector{Rule{_O,_C,_FM} where {_O<:O,_C<:C,_FM<:FM}}
-    default_consequent::FM
+    defaultconsequent::FM
     info::NamedTuple
 
     # function DecisionList{O,C,_FM}(
     #     rules::Vector{<:Rule{<:O,<:C,<:_FM}},
-    #     default_consequent::Any,
+    #     defaultconsequent::Any,
     #     info::NamedTuple = (;),
     # ) where {O,C<:AbstractBooleanCondition,_FM<:AbstractModel}
-    #     default_consequent = wrap(default_consequent, AbstractModel{O})
-    #     FM = typeintersect(Union{_FM,propagate_feasiblemodels(default_consequent),propagate_feasiblemodels.(rules)...}, AbstractModel{<:O})
-    #     # FM = typeintersect(Union{propagate_feasiblemodels(default_consequent),propagate_feasiblemodels.(rules)...}, AbstractModel{O})
-    #     # FM = Union{propagate_feasiblemodels(default_consequent),propagate_feasiblemodels.(rules)...}
+    #     defaultconsequent = wrap(defaultconsequent, AbstractModel{O})
+    #     FM = typeintersect(Union{_FM,propagate_feasiblemodels(defaultconsequent),propagate_feasiblemodels.(rules)...}, AbstractModel{<:O})
+    #     # FM = typeintersect(Union{propagate_feasiblemodels(defaultconsequent),propagate_feasiblemodels.(rules)...}, AbstractModel{O})
+    #     # FM = Union{propagate_feasiblemodels(defaultconsequent),propagate_feasiblemodels.(rules)...}
     #     check_model_constraints.(DecisionList{O}, typeof.(rules), FM, O)
-    #     check_model_constraints(DecisionList{O}, typeof(default_consequent), FM)
-    #     new{O,C,FM}(rules, default_consequent, info)
+    #     check_model_constraints(DecisionList{O}, typeof(defaultconsequent), FM)
+    #     new{O,C,FM}(rules, defaultconsequent, info)
     # end
 
     # function DecisionList{O}(
     #     rules::Vector{<:Rule{OO,<:C,<:FM}},
-    #     default_consequent::Any,
+    #     defaultconsequent::Any,
     #     info::NamedTuple = (;),
     # ) where {O,OO<:O}
-    #     default_consequent = wrap(default_consequent, AbstractModel{O})
-    #     FM = typeintersect(Union{propagate_feasiblemodels(default_consequent),propagate_feasiblemodels.(rules)...}, AbstractModel{<:O})
-    #     # FM = typeintersect(Union{propagate_feasiblemodels(default_consequent),propagate_feasiblemodels.(rules)...}, AbstractModel{O})
-    #     # FM = Union{propagate_feasiblemodels(default_consequent),propagate_feasiblemodels.(rules)...}
+    #     defaultconsequent = wrap(defaultconsequent, AbstractModel{O})
+    #     FM = typeintersect(Union{propagate_feasiblemodels(defaultconsequent),propagate_feasiblemodels.(rules)...}, AbstractModel{<:O})
+    #     # FM = typeintersect(Union{propagate_feasiblemodels(defaultconsequent),propagate_feasiblemodels.(rules)...}, AbstractModel{O})
+    #     # FM = Union{propagate_feasiblemodels(defaultconsequent),propagate_feasiblemodels.(rules)...}
     #     check_model_constraints.(DecisionList{O}, typeof.(rules), FM, O)
-    #     check_model_constraints(DecisionList{O}, typeof(default_consequent), FM, O)
-    #     new{O,C,FM}(rules, default_consequent, info)
+    #     check_model_constraints(DecisionList{O}, typeof(defaultconsequent), FM, O)
+    #     new{O,C,FM}(rules, defaultconsequent, info)
     # end
 
     function DecisionList(
         rules::Vector{<:Rule},
-        default_consequent::Any,
+        defaultconsequent::Any,
         info::NamedTuple = (;),
     ) where {}
-        default_consequent = wrap(default_consequent)
-        O = Union{outcometype(default_consequent),outcometype.(rules)...}
+        defaultconsequent = wrap(defaultconsequent)
+        O = Union{outcometype(defaultconsequent),outcometype.(rules)...}
         C = Union{conditiontype.(rules)...}
-        FM = typeintersect(Union{propagate_feasiblemodels(default_consequent),propagate_feasiblemodels.(rules)...}, AbstractModel{<:O})
-        # FM = typeintersect(Union{propagate_feasiblemodels(default_consequent),propagate_feasiblemodels.(rules)...}, AbstractModel{O})
-        # FM = Union{propagate_feasiblemodels(default_consequent),propagate_feasiblemodels.(rules)...}
+        FM = typeintersect(Union{propagate_feasiblemodels(defaultconsequent),propagate_feasiblemodels.(rules)...}, AbstractModel{<:O})
+        # FM = typeintersect(Union{propagate_feasiblemodels(defaultconsequent),propagate_feasiblemodels.(rules)...}, AbstractModel{O})
+        # FM = Union{propagate_feasiblemodels(defaultconsequent),propagate_feasiblemodels.(rules)...}
         check_model_constraints.(DecisionList{O}, typeof.(rules), FM, O)
-        check_model_constraints(DecisionList{O}, typeof(default_consequent), FM, O)
-        new{O,C,FM}(rules, default_consequent, info)
+        check_model_constraints(DecisionList{O}, typeof(defaultconsequent), FM, O)
+        new{O,C,FM}(rules, defaultconsequent, info)
     end
 end
 
 rules(m::DecisionList) = m.rules
-default_consequent(m::DecisionList) = m.default_consequent
+defaultconsequent(m::DecisionList) = m.defaultconsequent
 
 conditiontype(::Type{M}) where {M<:DecisionList{O,C}} where {O,C} = C
 conditiontype(m::DecisionList) = conditiontype(typeof(m))
 
 issymbolic(::DecisionList) = true
 
-isopen(m::DecisionList) = isopen(default_consequent(m))
+isopen(m::DecisionList) = isopen(defaultconsequent(m))
 
 function apply(m::DecisionList, i::AbstractInterpretation)
     for rule in rules(m)
@@ -711,7 +716,7 @@ function apply(m::DecisionList, i::AbstractInterpretation)
             return consequent(rule)
         end
     end
-    default_consequent(m)
+    defaultconsequent(m)
 end
 
 ############################################################################################

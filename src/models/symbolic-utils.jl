@@ -1,4 +1,3 @@
-export immediate_submodels, unroll_rules, list_immediate_rules, unroll_rules_cascade, list_paths
 
 ############################################################################################
 # Symbolic modeling utils
@@ -15,7 +14,7 @@ immediate_submodels(m::AbstractModel{O} where {O})::Vector{<:{AbstractModel{<:O}
 
 immediate_submodels(m::FinalModel{O}) where {O} = Vector{<:AbstractModel{<:O}}[]
 immediate_submodels(m::Rule) = [consequent(m)]
-immediate_submodels(m::Branch) = [positive_consequent(m), negative_consequent(m)]
+immediate_submodels(m::Branch) = [posconsequent(m), negconsequent(m)]
 immediate_submodels(m::DecisionList) = [rules(m)..., consequent(m)]
 immediate_submodels(m::RuleCascade) = [consequent(m)]
 immediate_submodels(m::DecisionTree) = immediate_submodels(root(m))
@@ -69,8 +68,8 @@ list_immediate_rules(m::FinalModel) = [Rule(TOP, m)]
 list_immediate_rules(m::Rule) = [m]
 
 list_immediate_rules(m::Branch{O,FM}) where {O,FM} = [
-    Rule{O,FM}(antecedent(m), positive_consequent(m)),
-    Rule{O,FM}(SoleLogics.NEGATION(antecedent(m)), negative_consequent(m)),
+    Rule{O,FM}(antecedent(m), posconsequent(m)),
+    Rule{O,FM}(SoleLogics.NEGATION(antecedent(m)), negconsequent(m)),
 ]
 
 function list_immediate_rules(m::DecisionList{O,FM}) where {O,FM}
@@ -81,7 +80,7 @@ function list_immediate_rules(m::DecisionList{O,FM}) where {O,FM}
         assumed_formula = advance_formula(SoleLogics.NEGATION(antecedent(rule)), assumed_formula)
     end
     default_antecedent = isnothing(assumed_formula) ? TOP : assumed_formula
-    push!(normalized_rules, Rule{O,FM}(default_antecedent, default_consequent(m)))
+    push!(normalized_rules, Rule{O,FM}(default_antecedent, defaultconsequent(m)))
     normalized_rules
 end
 
@@ -174,7 +173,7 @@ end
 
 function unroll_rules_cascade(m::Branch{O,<:LogicalTruthCondition}) where {O}
     pos_rules = begin
-        r = unroll_rules_cascade(positive_consequent(m))
+        r = unroll_rules_cascade(posconsequent(m))
         r isa Vector{<:FinalModel} ?
             [RuleCascade(LogicalTruthCondition[antecedent(m)],fm) for fm in r] :
             [RuleCascade(
@@ -184,7 +183,7 @@ function unroll_rules_cascade(m::Branch{O,<:LogicalTruthCondition}) where {O}
     end
 
     neg_rules = begin
-        r = unroll_rules_cascade(negative_consequent(m))
+        r = unroll_rules_cascade(negconsequent(m))
         r isa Vector{<:FinalModel} ?
             [RuleCascade(
                 LogicalTruthCondition[
@@ -211,7 +210,7 @@ function unroll_rules_cascade(m::DecisionList{O,<:LogicalTruthCondition}) where 
         RuleCascade(
             LogicalTruthCondition[
                 LogicalTruthCondition(SyntaxTree(⊤))],
-            unroll_rules_cascade(default_consequent(m))...,
+            unroll_rules_cascade(defaultconsequent(m))...,
         ),
     ]
 end
@@ -252,8 +251,8 @@ function list_paths(node::Branch)
     positive_path  = [antecedent(node)]
     negative_path = [NEGATION(tree(formula(antecedent(node))))]
     return [
-        list_paths(positive_consequent(node),  positive_path)...,
-        list_paths(negative_consequent(node), negative_path)...,
+        list_paths(posconsequent(node),  positive_path)...,
+        list_paths(negconsequent(node), negative_path)...,
     ]
 end
 
@@ -266,8 +265,8 @@ function list_paths(node::Branch, this_path::AbstractVector)
     positive_path  = [this_path..., antecedent(node)]
     negative_path = [this_path..., NEGATION(tree(formula(antecedent(node))))]
     return [
-        list_paths(positive_consequent(node),  positive_path)...,
-        list_paths(negative_consequent(node), negative_path)...,
+        list_paths(posconsequent(node),  positive_path)...,
+        list_paths(negconsequent(node), negative_path)...,
     ]
 end
 

@@ -6,7 +6,7 @@ using FunctionWrappers: FunctionWrapper
 using Base
 using Test
 using SoleLogics
-using SoleLogics: Proposition, SyntaxTree, ¬, ∧, ⊤, AbstractLogic
+using SoleLogics: Proposition, SyntaxTree, ¬, ∧, ⊤
 using SoleModels
 using SoleModels: FormulaOrTree, ConstantModel, FinalModel, LogicalTruthCondition
 using SoleModels: ConstrainedModel, check_model_constraints
@@ -175,10 +175,10 @@ rfloat_number = @test_nowarn Rule{Number}(phi,rfloat_number)
 @test typeof(rfloat_number0) == typeof(rfloat_number)
 
 @test outcometype(rfloat_number) == Number
-@test output_type(rfloat_number) == Union{Nothing,Number}
+@test outputtype(rfloat_number) == Union{Nothing,Number}
 
 
-default_consequent = cmodel_integer
+defaultconsequent = cmodel_integer
 
 # rmodel_bounded_float = @test_nowarn Rule{Float64,Union{Rule{Float64},ConstantModel{Float64}}}(phi,Rule{Float64,Union{Rule{Float64},ConstantModel{Float64}}}(phi,cmodel_float))
 
@@ -186,12 +186,12 @@ default_consequent = cmodel_integer
 d1_string = @test_nowarn DecisionList([r1_string,r2_string],outcome_string)
 
 rules = @test_nowarn [rmodel_number, rmodel_integer, Rule(phi, cmodel_float), rfloat_number] # , rmodel_bounded_float]
-dlmodel = @test_nowarn DecisionList(rules, default_consequent)
-@test output_type(dlmodel) == Union{outcometype(default_consequent),outcometype.(rules)...}
+dlmodel = @test_nowarn DecisionList(rules, defaultconsequent)
+@test outputtype(dlmodel) == Union{outcometype(defaultconsequent),outcometype.(rules)...}
 
 rules_integer = @test_nowarn [Rule(phi, cmodel_integer), Rule(phi, cmodel_integer)]
-dlmodel_integer = @test_nowarn DecisionList(rules_integer, default_consequent)
-@test output_type(dlmodel_integer) == Union{outcometype(default_consequent),outcometype.(rules_integer)...}
+dlmodel_integer = @test_nowarn DecisionList(rules_integer, defaultconsequent)
+@test outputtype(dlmodel_integer) == Union{outcometype(defaultconsequent),outcometype.(rules_integer)...}
 
 ################################## RuleCascade #############################################
 rc1_string = @test_nowarn RuleCascade([cond_r,cond_s,cond_t],outcome_string)
@@ -204,9 +204,9 @@ b_fdx = @test_nowarn Branch(cond_t,b_nsx,outcome_string)
 b_p = @test_nowarn Branch(cond_r,b_fsx,b_fdx)
 
 bmodel_integer = @test_nowarn Branch(phi, dlmodel_integer, dlmodel_integer)
-@test output_type(bmodel_integer) == Int
+@test outputtype(bmodel_integer) == Int
 bmodel = @test_nowarn Branch(phi, dlmodel_integer, dlmodel)
-@test output_type(bmodel) == Union{outcometype.([dlmodel_integer,dlmodel])...}
+@test outputtype(bmodel) == Union{outcometype.([dlmodel_integer,dlmodel])...}
 @test !isopen(bmodel)
 
 bmodel_mixed = @test_nowarn Branch(phi, rmodel_float, dlmodel_integer)
@@ -214,7 +214,7 @@ bmodel_mixed = @test_nowarn Branch(phi, rmodel_float, dlmodel_integer)
 bmodel_mixed_number = @test_nowarn Branch(phi, rmodel_number, dlmodel)
 @test Branch(phi, rmodel_number, dlmodel) isa Branch{Number}
 @test isopen(bmodel_mixed)
-@test output_type(bmodel_mixed) == Union{Nothing,Float64,Int}
+@test outputtype(bmodel_mixed) == Union{Nothing,Float64,Int}
 
 @test_nowarn [displaymodel(r) for r in rules];
 String(take!(io))

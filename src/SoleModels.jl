@@ -1,71 +1,65 @@
 module SoleModels
 
-using SoleLogics
 using SoleData
-
+using SoleLogics
 using SoleLogics: AbstractInterpretation, AbstractInterpretationSet
-using SoleLogics: AbstractTruthOperator
+using SoleLogics: Formula
+using SoleLogics: TOP, ¬, ∧
+
+# Move to SoleLogics? Or make SyntaxTree <: AbstractFormula and use AbstractFormula
+const FormulaOrTree = Union{Formula,SyntaxTree}
 
 using FunctionWrappers: FunctionWrapper
 
-import Base: convert, length, getindex, isopen
-import SoleLogics: check, syntaxstring
+using StatsBase
+
+using Reexport # TODO remove
 
 export AbstractInterpretation, AbstractInterpretationSet
 
 include("utils.jl")
 
-# Move to SoleLogics?
-# using SoleLogics: FormulaOrTree
-const FormulaOrTree = Union{Formula,SyntaxTree}
+export AbstractModel
+export outcometype, outputtype
+
+export Rule, Branch
+export DecisionList, RuleCascade
+export DecisionTree, MixedSymbolicModel
+export evaluate_antecedent, evaluate_rule # TODO need to export?
+export rule_metrics # TODO need to export?
+
+export antecedent, consequent, posconsequent, negconsequent, defaultconsequent
+export rules, root
 
 include("models/base.jl")
 
 export printmodel, displaymodel
+
 include("models/print.jl")
 
-# TODO from here onwards
+export list_paths # TODO fix this
 
-using SoleData: AbstractDimensionalInstance, get_instance_attribute
-
-using Reexport
-
-using SoleLogics: AbstractLogic, Formula
-
-
-using Logging: LogLevel, @logmsg
-
-using StatsBase
-
-
-export AbstractModel
-
-export outcometype, output_type
-export displaymodel, printmodel
-
-export Performance
-
-export Rule, Branch
-
-export DecisionList, RuleCascade
-export DecisionTree, MixedSymbolicModel
-export evaluate_antecedent, evaluate_rule
-export rule_metrics
-export convert, list_paths
-########################################################################
-
-export antecedent, consequent, positive_consequent, negative_consequent, default_consequent, rules, root
-
-
-using SoleLogics: Formula, TOP, ⊤, ¬, ∧
-
+# TODO export?
+export immediate_submodels, unroll_rules, list_immediate_rules, unroll_rules_cascade
 
 include("models/symbolic-utils.jl")
+
 include("models/rule-evaluation.jl")
 
 include("machine-learning.jl")
 
 include("confusion-matrix.jl")
+
+# TODO avoid?
+export AbstractFeature,
+        DimensionalFeature, SingleAttributeFeature,
+        SingleAttributeNamedFeature,
+        SingleAttributeMin, SingleAttributeMax,
+        SingleAttributeSoftMin, SingleAttributeSoftMax,
+        SingleAttributeGenericFeature, MultiAttributeFeature,
+        NamedFeature, ExternalFWDFeature
+
+export compute_feature
 
 include("conditional-data/main.jl")
 
