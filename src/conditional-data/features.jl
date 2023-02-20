@@ -194,7 +194,7 @@ struct SingleAttributeGenericFeature{U} <: SingleAttributeFeature{U}
     f::Function
 end
 function compute_feature(f::SingleAttributeGenericFeature{U}, inst::AbstractDimensionalInstance{T}) where {U<:Real,T}
-    (f.f(utils.vectorize(get_instance_attribute(inst,f.i_attribute));))::U
+    (f.f(SoleBase.vectorize(get_instance_attribute(inst,f.i_attribute));))::U
 end
 function syntaxstring(f::SingleAttributeGenericFeature; kwargs...)
     "$(f.f)($(attribute_name(f; kwargs...)))"
@@ -203,7 +203,7 @@ end
 ############################################################################################
 
 # These features collapse to a single value; this can be useful to know
-is_collapsing_single_attribute_feature(f::Union{SingleAttributeMin, SingleAttributeMax, SingleAttributeSoftMin, SingleAttributeSoftMax}) = true
+is_collapsing_single_attribute_feature(f::Union{SingleAttributeMin,SingleAttributeMax,SingleAttributeSoftMin,SingleAttributeSoftMax}) = true
 is_collapsing_single_attribute_feature(f::SingleAttributeGenericFeature) = (f.f in [minimum, maximum, mean])
 
 ############################################################################################

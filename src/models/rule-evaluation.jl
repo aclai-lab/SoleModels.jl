@@ -31,7 +31,7 @@ function evaluate_rule(
     #  - `true` when satisfiable,
     #  - `nothing` when antecedent does not hold.
     cons_sat = begin
-        cons_sat = Vector{Union{Bool, Nothing}}(fill(nothing, length(Y)))
+        cons_sat = Vector{Union{Bool,Nothing}}(fill(nothing, length(Y)))
         idxs_true = begin
             idx_cons = findall(consequent(rule) .== Y)
             intersect(idxs_sat,idx_cons)
@@ -46,7 +46,7 @@ function evaluate_rule(
     end
 
     y_pred = begin
-        y_pred = Vector{Union{FinalModel, Nothing}}(fill(nothing, length(Y)))
+        y_pred = Vector{Union{FinalModel,Nothing}}(fill(nothing, length(Y)))
         y_pred[idxs_sat] .= consequent(rule)
         y_pred
     end
@@ -62,7 +62,9 @@ end
 """
 Length of the rule
 """
-rule_length(rule::Rule) = condition_length(antecedent(rule))
+function rule_length(rule::Rule{O,C}) where {O,C<:LogicalTruthCondition}
+    npropositions(formula(antecedent(rule)))
+end
 
 """
 Metrics of the rule
@@ -153,7 +155,7 @@ end
 #     #  - `true` when satisfiable,
 #     #  - `nothing` when antecedent does not hold.
 #     cons_sat = begin
-#         cons_sat = Vector{Union{Bool, Nothing}}(fill(nothing, length(Y)))
+#         cons_sat = Vector{Union{Bool,Nothing}}(fill(nothing, length(Y)))
 #         idxs_true = begin
 #             idx_cons = findall(cons .== Y)
 #             intersect(idxs_sat,idx_cons)
@@ -167,7 +169,7 @@ end
 #     end
 
 #     y_pred = begin
-#         y_pred = Vector{Union{Consequent, Nothing}}(fill(nothing, length(Y)))
+#         y_pred = Vector{Union{Consequent,Nothing}}(fill(nothing, length(Y)))
 #         y_pred[idxs_sat] .= C
 #         y_pred
 #     end

@@ -5,6 +5,8 @@ using SoleLogics: AbstractWorld, IdentityRel
 import SoleLogics: syntaxstring
 import SoleLogics: frame
 
+include("minify.jl")
+
 include("features.jl")
 include("test-operators.jl")
 include("conditions.jl")

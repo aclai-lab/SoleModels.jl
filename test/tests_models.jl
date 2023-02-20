@@ -33,7 +33,7 @@ const_string = "Wow!"
 const_float = 1.0
 const_integer = 1
 const_fun = sum
-const_funwrap = FunctionWrapper{Float64, Tuple{Float64, Float64}}(sum)
+const_funwrap = FunctionWrapper{Float64, Tuple{Float64,Float64}}(sum)
 
 consts = @test_nowarn [const_string, const_float, const_integer, const_funwrap]
 
@@ -127,14 +127,14 @@ rmodel_integer = @test_nowarn Rule(phi, cmodel_integer)
 @test_nowarn [Rule(phi, c) for c in cmodels]
 
 @test_nowarn Rule{Float64}(phi,const_float)
-# @test_nowarn Rule{Float64,Union{Rule, ConstantModel}}(phi,const_float)
+# @test_nowarn Rule{Float64,Union{Rule,ConstantModel}}(phi,const_float)
 rmodel_float0 = @test_nowarn Rule{Float64}(phi,const_float)
 rmodel_float = @test_nowarn Rule{Float64}(phi,rmodel_float0)
 rmodel_float2 = @test_nowarn Rule{Float64}(phi,rmodel_float)
 @test typeof(rmodel_float2) == typeof(rmodel_float)
 # @test typeof(rmodel_float) == typeof(Rule{Float64,Union{Rule{Float64},ConstantModel{Float64}}}(phi,rmodel_float0))
 # @test typeof(rmodel_float) != typeof(Rule{Float64,Union{Rule{Float64},FinalModel{Float64}}}(phi,rmodel_float0))
-# @test typeof(rmodel_float) == typeof(Rule{Float64,Union{Rule, ConstantModel}}(phi,rmodel_float0))
+# @test typeof(rmodel_float) == typeof(Rule{Float64,Union{Rule,ConstantModel}}(phi,rmodel_float0))
 
 rmodel2_float = @test_nowarn Rule(phi2, rmodel_float)
 
@@ -175,7 +175,7 @@ rfloat_number = @test_nowarn Rule{Number}(phi,rfloat_number)
 @test typeof(rfloat_number0) == typeof(rfloat_number)
 
 @test outcometype(rfloat_number) == Number
-@test output_type(rfloat_number) == Union{Nothing, Number}
+@test output_type(rfloat_number) == Union{Nothing,Number}
 
 
 default_consequent = cmodel_integer
@@ -206,7 +206,7 @@ b_p = @test_nowarn Branch(cond_r,b_fsx,b_fdx)
 bmodel_integer = @test_nowarn Branch(phi, dlmodel_integer, dlmodel_integer)
 @test output_type(bmodel_integer) == Int
 bmodel = @test_nowarn Branch(phi, dlmodel_integer, dlmodel)
-@test output_type(bmodel) == Union{outcometype.([dlmodel_integer, dlmodel])...}
+@test output_type(bmodel) == Union{outcometype.([dlmodel_integer,dlmodel])...}
 @test !isopen(bmodel)
 
 bmodel_mixed = @test_nowarn Branch(phi, rmodel_float, dlmodel_integer)
@@ -366,7 +366,7 @@ RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
 ┐⩚(¬(t))
 └ ✔ true
 """
-# [{t, q} => true, {t, ¬q} => false, {¬t} => true]"
+# [{t,q} => true, {t,¬q} => false, {¬t} => true]"
 
 @test join(displaymodel.(unroll_rules_cascade(b_p))) == """
 RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}

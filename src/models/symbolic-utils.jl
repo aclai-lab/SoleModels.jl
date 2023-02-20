@@ -68,7 +68,7 @@ list_immediate_rules(m::FinalModel) = [Rule(TOP, m)]
 
 list_immediate_rules(m::Rule) = [m]
 
-list_immediate_rules(m::Branch{O, FM}) where {O, FM} = [
+list_immediate_rules(m::Branch{O,FM}) where {O,FM} = [
     Rule{O,FM}(antecedent(m), positive_consequent(m)),
     Rule{O,FM}(SoleLogics.NEGATION(antecedent(m)), negative_consequent(m)),
 ]
@@ -234,7 +234,7 @@ List all paths of a decision tree by performing a tree traversal
 # List all paths of a decision tree by performing a tree traversal
 # TODO @Michele
 # """
-# function list_paths(tree::DecisionTree{L<:AbstractLogic, O})::AbstractVector{<:AbstractVector{Union{Any,Rule{L,O}}}}
+# function list_paths(tree::DecisionTree{L<:AbstractLogic,O})::AbstractVector{<:AbstractVector{Union{Any,Rule{L,O}}}}
 #     return list_immediate_rules(root(tree))
 # end
 #=

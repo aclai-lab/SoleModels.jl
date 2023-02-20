@@ -24,7 +24,7 @@ const AssociationRule{L<:AbstractLogic} = Rule{L, Formula{L}} #NOTE: maybe where
 Base.@propagate_inbounds @inline function get_categorical_form(Y :: AbstractVector{T}) where {T}
     class_names = unique(Y)
 
-    dict = Dict{T, Int64}()
+    dict = Dict{T,Int64}()
     @simd for i in 1:length(class_names)
         @inbounds dict[class_names[i]] = i
     end

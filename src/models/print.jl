@@ -1,23 +1,5 @@
 import Base: display
 
-"""
-Any `M<:AbstractModel` must provide a `printmodel(m::M; kwargs...)` method
-that is used for rendering the model in text. See print.jl.
-
-See also [`AbstractModel`](@ref).
-"""
-Base.show(io::IO, m::AbstractModel) = print(io, displaymodel(m))
-Base.show(io::IO, ::MIME"text/plain", m::AbstractModel) = printmodel(io, m)
-
-function printmodel(io::IO, m::AbstractModel; kwargs...)
-    println(io, displaymodel(m; kwargs...))
-end
-printmodel(m::AbstractModel; kwargs...) = printmodel(stdout, m; kwargs...)
-
-# display(m::AbstractModel; kwargs...) = displaymodel(m; kwargs...)
-
-############################################################################################
-# Printing utils
 ############################################################################################
 
 default_indentation_list_children = "┐"
@@ -27,6 +9,59 @@ default_indentation_last_first = "└ " # "╰✘ "
 default_indentation_last_space = "  "
 
 default_indentation = (default_indentation_list_children, default_indentation_any_first, default_indentation_any_space, default_indentation_last_first, default_indentation_last_space)
+
+############################################################################################
+
+Base.show(io::IO, m::AbstractModel) = print(io, displaymodel(m))
+Base.show(io::IO, ::MIME"text/plain", m::AbstractModel) = printmodel(io, m)
+
+
+doc_printdisplay_model = """
+    printmodel(io::IO, m::AbstractModel; kwargs...)
+    displaymodel(m::AbstractModel; kwargs...)
+
+prints or returns a string representation of model `m`.
+
+# Arguments (TODO write)
+- `header::Bool = true`: when set to `true`, a header is printed with
+ the info for `m`; 
+- `show_subtree_info::Bool = false`: when set to `true`, the header is printed for 
+models in the sub-tree of `m`; 
+- `max_depth::Union{Nothing,Int} = nothing`: when it is an `Int`, models in the sub-tree
+with a depth higher than `max_depth` are ellipsed with "...";
+- `syntaxstring_kwargs::NamedTuple = (;)`: kwargs to be passed to `syntaxstring` for
+formatting logical formulas.
+
+See also [`SoleLogics.syntaxstring`](@ref), [`AbstractModel`](@ref).
+"""
+
+"""$(doc_printdisplay_model)"""
+function printmodel(io::IO, m::AbstractModel; kwargs...)
+    println(io, displaymodel(m; kwargs...))
+end
+printmodel(m::AbstractModel; kwargs...) = printmodel(stdout, m; kwargs...)
+
+"""$(doc_printdisplay_model)"""
+function displaymodel(
+    m::AbstractModel;
+    header = true,
+    indentation_str = "",
+    indentation = default_indentation,
+    depth = 0,
+    max_depth = nothing,
+    show_subtree_info = false,
+    syntaxstring_kwargs = (;),
+)
+    println("Please, provide method displaymodel(::$(typeof(m)); kwargs...)." *
+        " See help for displaymodel.")
+end
+
+# TODO remove?
+# display(m::AbstractModel; kwargs...) = displaymodel(m; kwargs...)
+
+############################################################################################
+############################################################################################
+############################################################################################
 
 macro _display_submodel(submodel, indentation_str, indentation, depth, max_depth, show_subtree_info, syntaxstring_kwargs, kwargs)
     quote
@@ -46,7 +81,7 @@ end
 function displaymodel(
     m::ConstantModel;
     header = true,
-    indentation_str="",
+    indentation_str = "",
     show_subtree_info = false,
     kwargs...,
 )
@@ -59,7 +94,7 @@ end
 function displaymodel(
     m::FunctionModel;
     header = true,
-    indentation_str="",
+    indentation_str = "",
     show_subtree_info = false,
     kwargs...,
 )
@@ -72,12 +107,12 @@ end
 function displaymodel(
     m::Rule;
     header = true,
-    indentation_str="",
+    indentation_str = "",
     indentation = default_indentation,
     depth = 0,
     max_depth = nothing,
     show_subtree_info = false,
-    syntaxstring_kwargs = (),
+    syntaxstring_kwargs = (;),
     kwargs...,
 )
     io = IOBuffer()
@@ -102,12 +137,12 @@ end
 function displaymodel(
     m::Branch;
     header = true,
-    indentation_str="",
+    indentation_str = "",
     indentation = default_indentation,
     depth = 0,
     max_depth = nothing,
     show_subtree_info = false,
-    syntaxstring_kwargs = (),
+    syntaxstring_kwargs = (;),
     kwargs...,
 )
     io = IOBuffer()
@@ -134,12 +169,12 @@ end
 function displaymodel(
     m::DecisionList;
     header = true,
-    indentation_str="",
+    indentation_str = "",
     indentation = default_indentation,
     depth = 0,
     max_depth = nothing,
     show_subtree_info = false,
-    syntaxstring_kwargs = (),
+    syntaxstring_kwargs = (;),
     kwargs...,
 )
     io = IOBuffer()
@@ -174,12 +209,12 @@ end
 function displaymodel(
     m::RuleCascade;
     header = true,
-    indentation_str="",
+    indentation_str = "",
     indentation = default_indentation,
     depth = 0,
     max_depth = nothing,
     show_subtree_info = false,
-    syntaxstring_kwargs = (),
+    syntaxstring_kwargs = (;),
     kwargs...,
 )
     io = IOBuffer()
@@ -205,12 +240,12 @@ end
 function displaymodel(
     m::DecisionTree;
     header = true,
-    indentation_str="",
+    indentation_str = "",
     indentation = default_indentation,
     depth = 0,
     max_depth = nothing,
     show_subtree_info = false,
-    syntaxstring_kwargs = (),
+    syntaxstring_kwargs = (;),
     kwargs...,
 )
     io = IOBuffer()
@@ -224,12 +259,12 @@ end
 function displaymodel(
     m::DecisionForest;
     header = true,
-    indentation_str="",
+    indentation_str = "",
     indentation = default_indentation,
     depth = 0,
     max_depth = nothing,
     show_subtree_info = false,
-    syntaxstring_kwargs = (),
+    syntaxstring_kwargs = (;),
     kwargs...,
 )
     io = IOBuffer()
@@ -245,12 +280,12 @@ end
 function displaymodel(
     m::MixedSymbolicModel;
     header = true,
-    indentation_str="",
+    indentation_str = "",
     indentation = default_indentation,
     depth = 0,
     max_depth = nothing,
     show_subtree_info = false,
-    syntaxstring_kwargs = (),
+    syntaxstring_kwargs = (;),
     kwargs...,
 )
     io = IOBuffer()
