@@ -1,5 +1,6 @@
 module SoleModels
 
+using SoleBase
 using SoleData
 using SoleLogics
 using SoleLogics: AbstractInterpretation, AbstractInterpretationSet

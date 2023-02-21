@@ -1,5 +1,7 @@
 module utils
 
+using SoleBase
+
 @inline function softminimum(vals, alpha)
     _vals = SoleBase.vectorize(vals);
     partialsort!(_vals,ceil(Int, alpha*length(_vals)); rev=true)
