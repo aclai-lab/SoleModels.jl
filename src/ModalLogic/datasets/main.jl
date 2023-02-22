@@ -138,7 +138,12 @@ include("generic-supporting-datasets.jl")
 ############################################################################################
 
 
-@inline function check(p::Proposition{C}, X::Union{PassiveDimensionalDataset{N,W} where N,ActiveFeaturedDataset{<:Number,W}}, i_sample::Integer, w::W) where {C<:FeatCondition,W<:AbstractWorld}
+@inline function check(
+    p::Proposition{<:FeatCondition},
+    X::AbstractConditionalDataset{W},
+    i_sample::Integer,
+    w::W,
+) where {W<:AbstractWorld}
     c = atom(p)
     evaluate_thresh_decision(SoleModels.test_operator(c), X[i_sample, w, SoleModels.feature(c)], SoleModels.threshold(c))
 end
@@ -153,8 +158,8 @@ hasformula(memo_structure::AbstractDict{SyntaxTree}, φ::Formula) = haskey(memo_
 
 function check(
     φ::Union{SyntaxTree,SoleLogics.AbstractFormula},
-    X::Union{PassiveDimensionalDataset{N,W} where N,ActiveFeaturedDataset{<:Number,W,FR}}, # AbstractConditionalDataset{W,C,T,FR},
-    i_sample;
+    X::AbstractConditionalDataset{W,<:AbstractCondition,<:Number,FR},
+    i_sample::Integer;
     use_memo::Union{Nothing,AbstractVector{<:AbstractDict{F,T}}} = nothing,
     # memo_max_height = Inf,
 ) where {W<:AbstractWorld,T<:Bool,FR<:AbstractMultiModalFrame{W,T},F<:Union{SyntaxTree,SoleLogics.AbstractFormula}}

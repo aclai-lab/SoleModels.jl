@@ -81,7 +81,8 @@ struct LogicalTruthCondition{F<:FormulaOrTree} <: AbstractBooleanCondition
 end
 
 formula(c::LogicalTruthCondition) = c.formula
-check(c::LogicalTruthCondition, args...) = tops(check(formula(c), args...))
+check(c::LogicalTruthCondition, i::AbstractInterpretation, args...) = tops(check(formula(c), i, args...))
+check(c::LogicalTruthCondition, d::AbstractInterpretationSet, args...) = tops.(check(formula(c), d, args...))
 
 doc_syntaxstring = """
     syntaxstring(c::LogicalTruthCondition; kwargs...)::String
@@ -776,6 +777,7 @@ struct RuleCascade{O,C<:AbstractBooleanCondition,FFM<:FinalModel} <: Constrained
 
     function RuleCascade(
         antecedents::Vector{<:Union{AbstractBooleanCondition,FormulaOrTree,AbstractTruthOperator}},
+        # antecedents::Vector, # TODO use this instead? More elastic
         consequent::Any,
         info::NamedTuple = (;),
     )

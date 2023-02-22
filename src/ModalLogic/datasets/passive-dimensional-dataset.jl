@@ -31,14 +31,14 @@ struct PassiveDimensionalDataset{
     N,
     W<:AbstractWorld,
     DOM<:AbstractDimensionalDataset,
-    FR<:AbstractDimensionalFrame{N,W,TruthValue}
-} <: AbstractConditionalDataset{W,AbstractCondition,TruthValue,FR}
+    FR<:AbstractDimensionalFrame{N,W},
+} <: AbstractConditionalDataset{W,AbstractCondition,Bool,FR} # TODO remove AbstractCondition. Note: truth value could by different
     
     d::DOM
 
     function PassiveDimensionalDataset{N,W,DOM,FR}(
         d::DOM,
-    ) where {N,W<:AbstractWorld,DOM<:AbstractDimensionalDataset,FR<:AbstractDimensionalFrame{N,W,TruthValue}}
+    ) where {N,W<:AbstractWorld,DOM<:AbstractDimensionalDataset,FR<:AbstractDimensionalFrame{N,W}}
         ty = "PassiveDimensionalDataset{$(N),$(W),$(DOM),$(FR)}"
         @assert N == dimensionality(d) "ERROR! Dimensionality mismatch: can't instantiate $(ty) with underlying structure $(DOM). $(N) == $(dimensionality(d)) should hold."
         @assert SoleLogics.goeswithdim(W, N) "ERROR! Dimensionality mismatch: can't interpret worldtype $(W) on PassiveDimensionalDataset of dimensionality = $(N)"
@@ -48,7 +48,7 @@ struct PassiveDimensionalDataset{
     function PassiveDimensionalDataset{N,W,DOM}(
         d::DOM,
     ) where {N,W<:AbstractWorld,DOM<:AbstractDimensionalDataset}
-        PassiveDimensionalDataset{N,W,DOM,AbstractDimensionalFrame{N,W,TruthValue}}(d)
+        PassiveDimensionalDataset{N,W,DOM,_frametype(d)}(d)
     end
 
     function PassiveDimensionalDataset{N,W}(
@@ -59,10 +59,10 @@ struct PassiveDimensionalDataset{
 
     function PassiveDimensionalDataset(
         d::AbstractDimensionalDataset,
-        worldtype::Type{<:AbstractWorld},
-        # worldtype = get_interval_worldtype(D-1-1) TODO default?
+        # worldtype::Type{<:AbstractWorld},
     )
-        PassiveDimensionalDataset{dimensionality(d),worldtype}(d)
+        W = worldtype(_frametype(d))
+        PassiveDimensionalDataset{dimensionality(d),W}(d)
     end
 end
 
@@ -99,4 +99,5 @@ frame(X::PassiveDimensionalDataset, i_sample) = _frame(X.d, i_sample)
 
 ############################################################################################
 
+_frametype(X::UniformDimensionalDataset) = typeof(FullDimensionalFrame(channel_size(X)))
 _frame(X::UniformDimensionalDataset, i_sample) = FullDimensionalFrame(channel_size(X))

@@ -214,7 +214,7 @@ function display_structure(X::OneStepFeaturedSupportingDataset; indent_str = "")
     out = "$(typeof(X))\t$((Base.summarysize(X)) / 1024 / 1024 |> x->round(x, digits=2)) MBs\n"
     out *= indent_str * "├ fwd_rs\t$(Base.summarysize(fwd_rs(X)) / 1024 / 1024 |> x->round(x, digits=2)) MBs\t"
     if usesmodalmemo(X)
-        out *= "(shape $(Base.size(fwd_rs(X))), $(round(nmemoizedvalues(fwd_rs(X)))) values, $(round(nonnothingshare(fwd_rs(X))*100, digits=2))% memoized)\n"
+        out *= "(shape $(Base.size(fwd_rs(X))), $(nmemoizedvalues(fwd_rs(X))) values, $(round(nonnothingshare(fwd_rs(X))*100, digits=2))% memoized)\n"
     else
         out *= "(shape $(Base.size(fwd_rs(X))))\n"
     end
@@ -222,7 +222,7 @@ function display_structure(X::OneStepFeaturedSupportingDataset; indent_str = "")
     if !isnothing(fwd_gs(X))
         out *= "$(Base.summarysize(fwd_gs(X)) / 1024 / 1024 |> x->round(x, digits=2)) MBs\t"
         if usesglobalmemo(X)
-            out *= "(shape $(Base.size(fwd_gs(X))), $(round(nmemoizedvalues(fwd_gs(X)))) values, $(round(nonnothingshare(fwd_gs(X))*100, digits=2))% memoized)\n"
+            out *= "(shape $(Base.size(fwd_gs(X))), $(nmemoizedvalues(fwd_gs(X))) values, $(round(nonnothingshare(fwd_gs(X))*100, digits=2))% memoized)\n"
         else
             out *= "(shape $(Base.size(fwd_gs(X))))\n"
         end

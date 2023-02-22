@@ -2,8 +2,8 @@ using SoleLogics: AbstractRelation
 
 world2frametype = Dict([
     OneWorld => FullDimensionalFrame{0,OneWorld,Bool},
-    Interval => FullDimensionalFrame{1,Interval,Bool},
-    Interval2D => FullDimensionalFrame{2,Interval2D,Bool},
+    Interval => FullDimensionalFrame{1,Interval{Int},Bool},
+    Interval2D => FullDimensionalFrame{2,Interval2D{Int},Bool},
 ])
 
 # An ontology is a pair `world type` + `set of relations`, and represents the kind of

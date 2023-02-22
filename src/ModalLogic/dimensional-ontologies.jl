@@ -21,7 +21,7 @@ function get_ontology(::Val{1}, world = :interval, relations::Union{Symbol,Abstr
         error("TODO point-based ontologies not implemented yet")
     elseif world in [:interval, :rectangle, :hyperrectangle]
         if relations isa AbstractVector{<:AbstractRelation}
-            Ontology{Interval}(relations)
+            Ontology{Interval{Int}}(relations)
         elseif relations == :IA   IntervalOntology
         elseif relations == :IA3  Interval3Ontology
         elseif relations == :IA7  Interval7Ontology
@@ -45,7 +45,7 @@ function get_ontology(::Val{2}, world = :interval, relations::Union{Symbol,Abstr
         error("TODO point-based ontologies not implemented yet")
     elseif world in [:interval, :rectangle, :hyperrectangle]
         if relations isa AbstractVector{<:AbstractRelation}
-            Ontology{Interval2D}(relations)
+            Ontology{Interval2D{Int}}(relations)
         elseif relations == :IA   Interval2DOntology
         elseif relations == :RCC8 Interval2DRCC8Ontology
         elseif relations == :RCC5 Interval2DRCC5Ontology
@@ -87,12 +87,12 @@ const OneWorldOntology   = Ontology{OneWorld}(AbstractRelation[])
 # Dimensional world type: it can be interpreted on dimensional instances.
 interpret_world(w::Interval2D, instance::DimensionalInstance{T,3}) where {T} = instance[w.x.x:w.x.y-1,w.y.x:w.y.y-1,:]
 
-const IntervalOntology       = Ontology{Interval}(IARelations)
+const IntervalOntology       = Ontology{Interval{Int}}(IARelations)
 const Interval3Ontology      = Ontology{ModalLogic.Interval}(SoleLogics.IA3Relations)
 const Interval7Ontology      = Ontology{ModalLogic.Interval}(SoleLogics.IA7Relations)
 
-const IntervalRCC8Ontology   = Ontology{Interval}(RCC8Relations)
-const IntervalRCC5Ontology   = Ontology{Interval}(RCC5Relations)
+const IntervalRCC8Ontology   = Ontology{Interval{Int}}(RCC8Relations)
+const IntervalRCC5Ontology   = Ontology{Interval{Int}}(RCC5Relations)
 
 ############################################################################################
 # Dimensionality: 2
@@ -100,16 +100,11 @@ const IntervalRCC5Ontology   = Ontology{Interval}(RCC5Relations)
 # Dimensional world type: it can be interpreted on dimensional instances.
 interpret_world(w::Interval, instance::DimensionalInstance{T,2}) where {T} = instance[w.x:w.y-1,:]
 
-const Interval2DOntology     = Ontology{Interval2D}(IA2DRelations)
-const Interval2DRCC8Ontology = Ontology{Interval2D}(RCC8Relations)
-const Interval2DRCC5Ontology = Ontology{Interval2D}(RCC5Relations)
+const Interval2DOntology     = Ontology{Interval2D{Int}}(IA2DRelations)
+const Interval2DRCC8Ontology = Ontology{Interval2D{Int}}(RCC8Relations)
+const Interval2DRCC5Ontology = Ontology{Interval2D{Int}}(RCC5Relations)
 
 ############################################################################################
-
-# Default
-const WorldType0D = Union{OneWorld}
-const WorldType1D = Union{Interval}
-const WorldType2D = Union{Interval2D}
 
 # get_ontology(::AbstractDimensionalDataset{T,D}, args...) where {T,D} = get_ontology(Val(D-2), args...)
 # get_interval_ontology(::AbstractDimensionalDataset{T,D}, args...) where {T,D} = get_interval_ontology(Val(D-2), args...)

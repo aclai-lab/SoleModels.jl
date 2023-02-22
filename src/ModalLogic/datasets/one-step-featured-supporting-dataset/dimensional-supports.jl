@@ -13,8 +13,8 @@ usesmemo(fwd_rs::AbstractUniformFullDimensionalRelationalSupport) = Nothing <: B
 capacity(fwd_rs::AbstractUniformFullDimensionalRelationalSupport) =
     error("Please, provide method capacity(...).")
 nmemoizedvalues(support::AbstractUniformFullDimensionalRelationalSupport) = (capacity(support) - count(isnothing, support.d))
-function nonnothingshare(fwd_rs::AbstractUniformFullDimensionalRelationalSupport)
-    (isinf(capacity(fwd_rs)) ? (0/Inf) : nmemoizedvalues(fwd_rs)/capacity(fwd_rs))
+function nonnothingshare(support::AbstractUniformFullDimensionalRelationalSupport)
+    (isinf(capacity(support)) ? NaN : nmemoizedvalues(support)/capacity(support))
 end
 
 ############################################################################################
@@ -111,7 +111,7 @@ nrelations(support::UniformFullDimensionalRelationalSupport)   = size(support, n
 function capacity(support::UniformFullDimensionalRelationalSupport{T,OneWorld}) where {T}
     prod(size(support))
 end
-function capacity(support::UniformFullDimensionalRelationalSupport{T,Interval}) where {T}
+function capacity(support::UniformFullDimensionalRelationalSupport{T,<:Interval}) where {T}
     prod([
         nsamples(support),
         nfeatsnaggrs(support),
@@ -119,7 +119,7 @@ function capacity(support::UniformFullDimensionalRelationalSupport{T,Interval}) 
         div(size(support, 1)*(size(support, 2)),2),
     ])
 end
-function capacity(support::UniformFullDimensionalRelationalSupport{T,Interval2D}) where {T}
+function capacity(support::UniformFullDimensionalRelationalSupport{T,<:Interval2D}) where {T}
     prod([
         nsamples(support),
         nfeatsnaggrs(support),
@@ -134,11 +134,11 @@ end
 function hasnans(support::UniformFullDimensionalRelationalSupport{T,OneWorld}) where {T}
     any(_isnan.(support.d))
 end
-function hasnans(support::UniformFullDimensionalRelationalSupport{T,Interval}) where {T}
+function hasnans(support::UniformFullDimensionalRelationalSupport{T,<:Interval}) where {T}
     any([hasnans(support.d[x,y,:,:,:])
         for x in 1:size(support, 1) for y in (x+1):size(support, 2)])
 end
-function hasnans(support::UniformFullDimensionalRelationalSupport{T,Interval2D}) where {T}
+function hasnans(support::UniformFullDimensionalRelationalSupport{T,<:Interval2D}) where {T}
     any([hasnans(support.d[xx,xy,yx,yy,:,:,:])
         for xx in 1:size(support, 1) for xy in (xx+1):size(support, 2)
         for yx in 1:size(support, 3) for yy in (yx+1):size(support, 4)])
@@ -201,7 +201,7 @@ Base.@propagate_inbounds @inline function Base.setindex!(
 end
 
 Base.@propagate_inbounds @inline function Base.setindex!(
-    support::UniformFullDimensionalRelationalSupport{T,Interval},
+    support::UniformFullDimensionalRelationalSupport{T,<:Interval},
     threshold::T,
     i_sample::Integer,
     w::Interval,
@@ -212,7 +212,7 @@ Base.@propagate_inbounds @inline function Base.setindex!(
 end
 
 Base.@propagate_inbounds @inline function Base.setindex!(
-    support::UniformFullDimensionalRelationalSupport{T,Interval2D},
+    support::UniformFullDimensionalRelationalSupport{T,<:Interval2D},
     threshold::T,
     i_sample::Integer,
     w::Interval2D,
@@ -291,7 +291,7 @@ end
 ############################################################################################
 
 
-# struct IntervalFWD_RS{T} <: AbstractUniformFullDimensionalRelationalSupport{T,Interval}
+# struct IntervalFWD_RS{T} <: AbstractUniformFullDimensionalRelationalSupport{T,<:Interval}
 #     d :: Array{T,5}
 # end
 
@@ -315,7 +315,7 @@ end
 #     any([hasnans(support.d[x,y,:,:,:]) for x in 1:size(support.d, 1) for y in (x+1):size(support.d, 2)])
 # end
 
-# function fwd_rs_init(emd::FeaturedDataset{T,Interval}, nfeatsnaggrs::Integer, nrelations::Integer, perform_initialization::Bool) where {T}
+# function fwd_rs_init(emd::FeaturedDataset{T,<:Interval}, nfeatsnaggrs::Integer, nrelations::Integer, perform_initialization::Bool) where {T}
 #     _fwd = emd.fwd
 #     if perform_initialization
 #         _fwd_rs = fill!(Array{Union{T,Nothing}, 5}(undef, size(_fwd, 1), size(_fwd, 2), nsamples(emd), nfeatsnaggrs, nrelations), nothing)
@@ -337,7 +337,7 @@ end
 # FWD support, Interval2D: 7D array (x.x × x.y × y.x × y.y × nsamples × nfeatsnaggrs × nrelations)
 ############################################################################################
 
-# struct Interval2DFWD_RS{T} <: AbstractUniformFullDimensionalRelationalSupport{T,Interval2D}
+# struct Interval2DFWD_RS{T} <: AbstractUniformFullDimensionalRelationalSupport{T,<:Interval2D}
 #   d :: Array{T,7}
 # end
 
@@ -355,7 +355,7 @@ end
 # TODO... hasnans(support::Interval2DFWD_RS) = any(_isnan.(support.d))
 # TODO...? hasnans(support::Interval2DFWD_RS) = any([hasnans(support.d[xx,xy,yx,yy,:,:,:]) for xx in 1:size(support.d, 1) for xy in (xx+1):size(support.d, 2) for yx in 1:size(support.d, 3) for yy in (yx+1):size(support.d, 4)])
 
-# fwd_rs_init(emd::FeaturedDataset{T,Interval2D}, nfeatsnaggrs::Integer, nrelations::Integer, perform_initialization::Bool) where {T} = begin
+# fwd_rs_init(emd::FeaturedDataset{T,<:Interval2D}, nfeatsnaggrs::Integer, nrelations::Integer, perform_initialization::Bool) where {T} = begin
 #   _fwd = emd.fwd
 #   if perform_initialization
 #       _fwd_rs = fill!(Array{Union{T,Nothing}, 7}(undef, size(_fwd, 1), size(_fwd, 2), size(_fwd, 3), size(_fwd, 4), nsamples(emd), nfeatsnaggrs, nrelations), nothing)
@@ -380,7 +380,7 @@ end
 
 # # TODO rewrite
 
-# struct Interval2DFWD_RS{T} <: AbstractUniformFullDimensionalRelationalSupport{T,Interval2D}
+# struct Interval2DFWD_RS{T} <: AbstractUniformFullDimensionalRelationalSupport{T,<:Interval2D}
 #     d :: Array{T,5}
 # end
 
@@ -399,7 +399,7 @@ end
 
 # hasnans(support::Interval2DFWD_RS) = any(_isnan.(support.d))
 
-# function fwd_rs_init(emd::FeaturedDataset{T,Interval2D}, nfeatsnaggrs::Integer, nrelations::Integer, perform_initialization::Bool) where {T}
+# function fwd_rs_init(emd::FeaturedDataset{T,<:Interval2D}, nfeatsnaggrs::Integer, nrelations::Integer, perform_initialization::Bool) where {T}
 #     _fwd = emd.fwd
 #     if perform_initialization
 #         _fwd_rs = fill!(Array{Union{T,Nothing}, 5}(undef, div(size(_fwd, 1)*size(_fwd, 2),2), div(size(_fwd, 3)*size(_fwd, 4),2), nsamples(emd), nfeatsnaggrs, nrelations), nothing)
