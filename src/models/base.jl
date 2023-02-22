@@ -12,7 +12,7 @@ typename(::Type{T}) where T = eval(nameof(T))
 A boolean condition is a condition that evaluates to a boolean truth value (`true`/`false`),
 when checked on a logical interpretation.
 
-See also 
+See also
 [`TrueCondition`](@ref), [`LogicalTruthCondition`](@ref),
 [`SoleLogics.TruthValue`](@ref).
 """
@@ -29,13 +29,18 @@ Base.show(io::IO, c::AbstractBooleanCondition) = print(io, "$(typeof(c))($(synta
 
 A true condition is the boolean condition that is always true.
 
-See also 
+See also
 [`LogicalTruthCondition`](@ref).
 """
 struct TrueCondition <: AbstractBooleanCondition end
 
 check(::TrueCondition, args...) = true
 
+doc_syntaxstring = """
+    syntaxstring(c::TrueCondition; kwargs...)::String
+
+    Returns true condition as a string
+"""
 syntaxstring(c::TrueCondition; kwargs...) = syntaxstring(TOP; kwargs...)
 
 """
@@ -46,7 +51,7 @@ syntaxstring(c::TrueCondition; kwargs...) = syntaxstring(TOP; kwargs...)
 A boolean condition that, on a given logical interpretation,
 a logical formula evaluates to the `top` of the logic's algebra.
 
-See also 
+See also
 [`AbstractBooleanCondition`](@ref).
 """
 struct LogicalTruthCondition{F<:FormulaOrTree} <: AbstractBooleanCondition
@@ -78,6 +83,11 @@ end
 formula(c::LogicalTruthCondition) = c.formula
 check(c::LogicalTruthCondition, args...) = tops(check(formula(c), args...))
 
+doc_syntaxstring = """
+    syntaxstring(c::LogicalTruthCondition; kwargs...)::String
+
+    Returns corresponding logical truth condition as a string
+"""
 syntaxstring(c::LogicalTruthCondition; kwargs...) = syntaxstring(formula(c); kwargs...)
 
 # Helper
@@ -93,10 +103,10 @@ given an instance object (i.e., a piece of data), output an
 outcome of type `O`.
 
 See also
-[`isopen`](@ref), 
-[`apply`](@ref), 
-[`issymbolic`](@ref), 
-[`info`](@ref), 
+[`isopen`](@ref),
+[`apply`](@ref),
+[`issymbolic`](@ref),
+[`info`](@ref),
 [`outcometype`](@ref).
 """
 abstract type AbstractModel{O} end

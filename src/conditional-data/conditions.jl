@@ -29,6 +29,11 @@ end
 feature(m::FeatMetaCondition) = m.feature
 test_operator(m::FeatMetaCondition) = m.test_operator
 
+doc_syntaxstring = """
+    syntaxstring(m::FeatMetaCondition; kwargs...)::String
+
+    Returns corresponding feat meta condition as a string
+"""
 syntaxstring(m::FeatMetaCondition; kwargs...) =
     "$(_syntaxstring_feature_test_operator_pair(feature(m),test_operator(m); kwargs...)) ⍰"
 
@@ -75,6 +80,11 @@ function inverse(c::FeatCondition)
     FeatCondition(feature(c), test_operator_inverse(test_operator(c)), threshold(c))
 end
 
+doc_syntaxstring = """
+    syntaxstring(m::FeatCondition; kwargs...)::String
+
+    Returns corresponding feat condition as a string
+"""
 syntaxstring(m::FeatCondition; threshold_decimals = nothing, kwargs...) =
     "$(_syntaxstring_feature_test_operator_pair(feature(m), test_operator(m))) $((isnothing(threshold_decimals) ? threshold(m) : round(threshold(m); digits=threshold_decimals)))"
 
