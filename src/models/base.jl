@@ -36,11 +36,6 @@ struct TrueCondition <: AbstractBooleanCondition end
 
 check(::TrueCondition, args...) = true
 
-doc_syntaxstring = """
-    syntaxstring(c::TrueCondition; kwargs...)::String
-
-    Returns true condition as a string
-"""
 syntaxstring(c::TrueCondition; kwargs...) = syntaxstring(TOP; kwargs...)
 
 """
@@ -84,11 +79,6 @@ formula(c::LogicalTruthCondition) = c.formula
 check(c::LogicalTruthCondition, i::AbstractInterpretation, args...) = tops(check(formula(c), i, args...))
 check(c::LogicalTruthCondition, d::AbstractInterpretationSet, args...) = tops.(check(formula(c), d, args...))
 
-doc_syntaxstring = """
-    syntaxstring(c::LogicalTruthCondition; kwargs...)::String
-
-    Returns corresponding logical truth condition as a string
-"""
 syntaxstring(c::LogicalTruthCondition; kwargs...) = syntaxstring(formula(c); kwargs...)
 
 # Helper
