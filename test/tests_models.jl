@@ -8,7 +8,8 @@ using Test
 using SoleLogics
 using SoleLogics: Proposition, SyntaxTree, ¬, ∧, ⊤
 using SoleModels
-using SoleModels: FormulaOrTree, ConstantModel, FinalModel, LogicalTruthCondition
+using SoleModels: FormulaOrTree, ConstantModel, FinalModel
+using SoleModels: LogicalTruthCondition, TrueCondition
 using SoleModels: ConstrainedModel, check_model_constraints
 using SoleModels: DecisionForest, DecisionList, DecisionTree, Branch
 using SoleModels: Rule, RuleCascade, AbstractBooleanCondition
@@ -235,6 +236,8 @@ branch_s = @test_nowarn Branch(formula_s, ("yes", "no"))
 branch_r0 = @test_nowarn Branch(formula_r, (branch_s, "yes"))
 branch_r = @test_nowarn Branch(formula_r, (branch_r0, "yes"))
 branch_r = @test_nowarn Branch(formula_r, (branch_r, "yes"))
+
+branch_true = @test_nowarn Branch(TrueCondition(), (branch_r, "yes"))
 
 @test typeof(branch_r0) == typeof(branch_r)
 

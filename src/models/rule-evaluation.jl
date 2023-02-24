@@ -1,3 +1,6 @@
+using SoleModels
+using SoleModels: FinalModel
+using SoleLogics: npropositions
 
 """
 Function for evaluating the antecedent of a rule
@@ -5,7 +8,7 @@ Function for evaluating the antecedent of a rule
 
 function evaluate_antecedent(rule::Rule, X::AbstractInterpretationSet)
     # TODO
-    x = check(antecedent(rule), X)
+    x = check(antecedent(rule), X) #rand([true,false],nsamples(X))
     @show
     x
 end
@@ -16,7 +19,7 @@ Function for evaluating a rule
 function evaluate_rule(
     rule::Rule,
     X::AbstractInterpretationSet,
-    Y::AbstractVector{<:FinalModel}
+    Y::AbstractVector{<:Label}
 )
     # Antecedent satisfaction. For each instances in X:
     #  - `false` when not satisfiable,
@@ -33,11 +36,11 @@ function evaluate_rule(
     cons_sat = begin
         cons_sat = Vector{Union{Bool,Nothing}}(fill(nothing, length(Y)))
         idxs_true = begin
-            idx_cons = findall(consequent(rule) .== Y)
+            idx_cons = findall(outcome(consequent(rule)) .== Y)
             intersect(idxs_sat,idx_cons)
         end
         idxs_false = begin
-            idx_cons = findall(consequent(rule) .!= Y)
+            idx_cons = findall(outcome(consequent(rule)) .!= Y)
             intersect(idxs_sat,idx_cons)
         end
         cons_sat[idxs_true]  .= true
@@ -46,8 +49,8 @@ function evaluate_rule(
     end
 
     y_pred = begin
-        y_pred = Vector{Union{FinalModel,Nothing}}(fill(nothing, length(Y)))
-        y_pred[idxs_sat] .= consequent(rule)
+        y_pred = Vector{Union{Label,Nothing}}(fill(nothing, length(Y)))
+        y_pred[idxs_sat] .= outcome(consequent(rule))
         y_pred
     end
 
@@ -62,6 +65,7 @@ end
 """
 Length of the rule
 """
+rule_length(rule::Rule{O,<:TrueCondition}) where {O} = 1
 function rule_length(rule::Rule{O,C}) where {O,C<:LogicalTruthCondition}
     npropositions(formula(antecedent(rule)))
 end
@@ -73,11 +77,10 @@ Metrics of the rule
 function rule_metrics(
     rule::Rule,
     X::AbstractInterpretationSet,
-    Y::AbstractVector{<:FinalModel}
+    Y::AbstractVector{<:Label}
 )
-
     eval_result = evaluate_rule(rule, X, Y)
-    n_instances = Base.size(X,1)
+    n_instances = nsamples(X)
     n_satisfy = sum(eval_result[:ant_sat])
 
     # Support of the rule
@@ -95,6 +98,9 @@ function rule_metrics(
             idxs_sat = eval_result[:idxs_sat]
             mse(eval_result[:y_pred][idxs_sat], Y[idxs_sat])
         end
+    end
+    if isnan(rule_error)
+        rule_error = 0.0
     end
 
     return (;

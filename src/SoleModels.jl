@@ -45,9 +45,9 @@ export immediate_submodels, unroll_rules, list_immediate_rules, unroll_rules_cas
 
 include("models/symbolic-utils.jl")
 
-include("models/rule-evaluation.jl")
-
 include("machine-learning.jl")
+
+include("models/rule-evaluation.jl")
 
 include("confusion-matrix.jl")
 

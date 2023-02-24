@@ -520,6 +520,19 @@ struct Rule{O,C<:AbstractBooleanCondition,FM<:AbstractModel} <: ConstrainedModel
         check_model_constraints(Rule{O}, typeof(consequent), FM, O)
         new{O,C,FM}(antecedent, consequent, info)
     end
+
+    function Rule(
+        consequent::Any,
+        info::NamedTuple = (;),
+    )
+        antecedent = TrueCondition() #LogicalTruthCondition(SyntaxTree(⊤))
+        C = typeof(antecedent)
+        consequent = wrap(consequent)
+        O = outcometype(consequent)
+        FM = typeintersect(propagate_feasiblemodels(consequent), AbstractModel{<:O})
+        check_model_constraints(Rule{O}, typeof(consequent), FM, O)
+        new{O,C,FM}(antecedent, consequent, info)
+    end
 end
 
 antecedent(m::Rule) = m.antecedent
@@ -779,6 +792,19 @@ struct RuleCascade{O,C<:AbstractBooleanCondition,FFM<:FinalModel} <: Constrained
         check_model_constraints(RuleCascade{O}, typeof(consequent), FFM, O)
         new{O,C,FFM}(antecedents, consequent, info)
     end
+
+    function RuleCascade(
+        consequent::Any,
+        info::NamedTuple = (;),
+    )
+        antecedents = [TrueCondition()]
+        C = SoleBase._typejoin(typeof.(antecedents)...)
+        consequent = wrap(consequent)
+        O = outcometype(consequent)
+        FFM = typeintersect(propagate_feasiblemodels(consequent), FinalModel{<:O})
+        check_model_constraints(RuleCascade{O}, typeof(consequent), FFM, O)
+        new{O,C,FFM}(antecedents, consequent, info)
+    end
 end
 
 antecedents(m::RuleCascade) = m.antecedents
@@ -799,7 +825,7 @@ function apply(m::RuleCascade, i::AbstractInterpretation)
 end
 
 # Convert a rule cascade into a rule by joining the antecedents.
-function convert(::Type{R}, m::RuleCascade{O,C}) where {R<:Rule,O,C<:LogicalTruthCondition}
+#=function convert(::Type{R}, m::RuleCascade{O,C}) where {R<:Rule,O,C<:LogicalTruthCondition}
     function _antecedent(m::Vector{<:AbstractBooleanCondition})
         if length(m) == 0
             return SyntaxTree(⊤)
@@ -811,6 +837,24 @@ function convert(::Type{R}, m::RuleCascade{O,C}) where {R<:Rule,O,C<:LogicalTrut
     end
     cond = LogicalTruthCondition(_antecedent(antecedents(m)))
     return R(cond, consequent(m), info(m))
+end=#
+function convert(::Type{R}, m::RuleCascade{O,C}) where {R<:Rule,O,C<:Union{TrueCondition,LogicalTruthCondition}}
+    function _antecedent(m::Vector{<:AbstractBooleanCondition})
+        if length(m) == 0
+            return SyntaxTree(⊤)
+        elseif length(m) == 1
+            return formula(m[1])
+        else
+            return ∧((formula.(m))...)
+        end
+    end
+
+    if C isa TrueCondition
+        return R(consequent(m), info(m))
+    else
+        cond = LogicalTruthCondition(_antecedent(antecedents(m)))
+        return R(cond, consequent(m), info(m))
+    end
 end
 
 Base.length(rc::RuleCascade) = length(antecedents(rc))
