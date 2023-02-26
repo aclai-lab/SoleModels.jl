@@ -205,7 +205,7 @@ function unroll_rules_cascade(
                 [RuleCascade(fm) for fm in r] :
                 [RuleCascade(antecedents(rule), consequent(rule)) for rule in r]
         elseif antecedent(m) isa LogicalTruthCondition
-            ant = LogicalTruthCondition(¬(Proposition(formula(antecedent(m)))))
+            ant = LogicalTruthCondition(¬(formula(antecedent(m))))
 
             r isa Vector{<:FinalModel} ?
                 [RuleCascade([ant], fm) for fm in r] :
