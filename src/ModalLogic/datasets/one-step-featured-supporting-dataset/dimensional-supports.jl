@@ -81,10 +81,10 @@ struct UniformFullDimensionalRelationalSupport{
     ) where {T,W<:Interval2D}
         _fwd_rs = begin
             if perform_initialization
-                _fwd_rs = Array{Union{T,Nothing}, 5}(undef, size(fwd, 1), size(fwd, 2), size(fwd, 3), size(fwd, 4), nsamples(fwd), nfeatsnaggrs, nrelations)
+                _fwd_rs = Array{Union{T,Nothing}, 7}(undef, size(fwd, 1), size(fwd, 2), size(fwd, 3), size(fwd, 4), nsamples(fwd), nfeatsnaggrs, nrelations)
                 fill!(_fwd_rs, nothing)
             else
-                Array{T,5}(undef, size(fwd, 1), size(fwd, 2), size(fwd, 3), size(fwd, 4), nsamples(fwd), nfeatsnaggrs, nrelations)
+                Array{T,7}(undef, size(fwd, 1), size(fwd, 2), size(fwd, 3), size(fwd, 4), nsamples(fwd), nfeatsnaggrs, nrelations)
             end
         end
         UniformFullDimensionalRelationalSupport{T,W,2,typeof(_fwd_rs)}(_fwd_rs)
