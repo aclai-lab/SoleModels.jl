@@ -4,11 +4,8 @@ using SoleBase
 using SoleData
 using SoleLogics
 using SoleLogics: AbstractInterpretation, AbstractInterpretationSet
-using SoleLogics: Formula
+using SoleLogics: AbstractFormula, Formula
 using SoleLogics: TOP, ¬, ∧
-
-# Move to SoleLogics? Or make SyntaxTree <: AbstractFormula and use AbstractFormula
-const FormulaOrTree = Union{Formula,SyntaxTree}
 
 using FunctionWrappers: FunctionWrapper
 

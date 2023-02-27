@@ -1,6 +1,7 @@
 using ProgressMeter
 
 using SoleLogics: AbstractRelation
+using SoleLogics: AbstractFormula
 
 using SoleModels: CanonicalFeatureGeq, CanonicalFeatureGeqSoft, CanonicalFeatureLeq, CanonicalFeatureLeqSoft
 using SoleModels: evaluate_thresh_decision, existential_aggregator, aggregator_bottom, aggregator_to_binary
@@ -153,21 +154,21 @@ end
 # getindex(::AbstractDictionary{I, T}, ::I) --> T
 # keys(::AbstractDictionary{I, T}) --> AbstractIndices{I}
 # isassigned(::AbstractDictionary{I, T}, ::I) --> Bool
-hasformula(memo_structure::AbstractDict{F}, φ::SyntaxTree) where {F<:Union{SyntaxTree,Formula}} = haskey(memo_structure, φ)
-hasformula(memo_structure::AbstractDict{SyntaxTree}, φ::Formula) = haskey(memo_structure, φ)
+# TODO fix?
+# hasformula(memo_structure::AbstractDict{F}, φ::SyntaxTree) where {F<:AbstractFormula} = haskey(memo_structure, SoleLogics.tree(φ))
+hasformula(memo_structure::AbstractDict{F}, φ::AbstractFormula) where {F<:AbstractFormula} = haskey(memo_structure, φ)
+hasformula(memo_structure::AbstractDict{SyntaxTree}, φ::AbstractFormula) = haskey(memo_structure, SoleLogics.tree(φ))
 
 function check(
-    φ::Union{SyntaxTree,SoleLogics.AbstractFormula},
+    φ::SoleLogics.AbstractFormula,
     X::AbstractConditionalDataset{W,<:AbstractCondition,<:Number,FR},
     i_sample::Integer;
     use_memo::Union{Nothing,AbstractVector{<:AbstractDict{F,T}}} = nothing,
     # memo_max_height = Inf,
-) where {W<:AbstractWorld,T<:Bool,FR<:AbstractMultiModalFrame{W,T},F<:Union{SyntaxTree,SoleLogics.AbstractFormula}}
+) where {W<:AbstractWorld,T<:Bool,FR<:AbstractMultiModalFrame{W,T},F<:SoleLogics.AbstractFormula}
     
     @assert SoleLogics.isglobal(φ) "TODO expand code to specifying a world, defaulted to an initialworld. Cannot check non-global formula: $(syntaxstring(φ))."
     
-    # φ = φ isa SoleLogics.AbstractFormula ? tree(φ) : φ
-
     memo_structure = begin
         if isnothing(use_memo)
             Dict{SyntaxTree,WorldSet{W}}()
@@ -225,11 +226,11 @@ end
 ############################################################################################
 
 function compute_chained_threshold(
-    φ::Union{SyntaxTree,SoleLogics.AbstractFormula},
+    φ::SoleLogics.AbstractFormula,
     X::SupportedFeaturedDataset{V,W,FR},
     i_sample;
     use_memo::Union{Nothing,AbstractVector{<:AbstractDict{F,T}}} = nothing,
-) where {V<:Number,W<:AbstractWorld,T<:Bool,FR<:AbstractMultiModalFrame{W,T},F<:Union{SyntaxTree,SoleLogics.AbstractFormula}}
+) where {V<:Number,W<:AbstractWorld,T<:Bool,FR<:AbstractMultiModalFrame{W,T},F<:SoleLogics.AbstractFormula}
     
     @assert SoleLogics.isglobal(φ) "TODO expand code to specifying a world, defaulted to an initialworld. Cannot check non-global formula: $(syntaxstring(φ))."
 

@@ -36,10 +36,10 @@ _all_submodels(m::AbstractModel) = [m, Iterators.flatten(_all_submodels.(immedia
 """
 When `assumed_formula` is assumed, and `f` is known to be true, their conjuction holds.
 """
-advance_formula(f::Formula, assumed_formula::Union{Nothing,Formula}) =
+advance_formula(f::AbstractFormula, assumed_formula::Union{Nothing,AbstractFormula}) =
     isnothing(assumed_formula) ? f : SoleLogics.CONJUNCTION(assumed_formula, f)
 
-advance_formula(r::R where {R<:Rule}, assumed_formula::Union{Nothing,Formula}) =
+advance_formula(r::R where {R<:Rule}, assumed_formula::Union{Nothing,AbstractFormula}) =
     R(advance_formula(antecedent(r), assumed_formula), consequent(r), info(r))
 
 ############################################################################################
@@ -251,7 +251,7 @@ List all paths of a decision tree by performing a tree traversal
 # end
 #=
 function list_paths(tree::DecisionTree)
-    # tree(f) [where f is a Formula object] is used to
+    # tree(f) [where f is a AbstractFormula object] is used to
     # retrieve the root FNode of the formula(syntax) tree
     pathset = list_paths(root(tree))
 

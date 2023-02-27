@@ -1,5 +1,5 @@
 
-using SoleLogics: AbstractTruthOperator
+using SoleLogics: AbstractSyntaxToken
 
 import Base: convert, length, getindex, isopen
 import SoleLogics: check, syntaxstring
@@ -39,7 +39,7 @@ check(::TrueCondition, args...) = true
 syntaxstring(c::TrueCondition; kwargs...) = syntaxstring(TOP; kwargs...)
 
 """
-    struct LogicalTruthCondition{F<:FormulaOrTree} <: AbstractBooleanCondition
+    struct LogicalTruthCondition{F<:AbstractFormula} <: AbstractBooleanCondition
         formula::F
     end
 
@@ -49,29 +49,19 @@ a logical formula evaluates to the `top` of the logic's algebra.
 See also
 [`AbstractBooleanCondition`](@ref).
 """
-struct LogicalTruthCondition{F<:FormulaOrTree} <: AbstractBooleanCondition
-    # formula::_F where _F<:F
+struct LogicalTruthCondition{F<:AbstractFormula} <: AbstractBooleanCondition
     formula::F
 
     function LogicalTruthCondition{F}(
         formula::F
-    ) where {F<:FormulaOrTree}
+    ) where {F<:AbstractFormula}
         new{F}(formula)
     end
 
     function LogicalTruthCondition(
         formula::F
-    ) where {F<:FormulaOrTree}
-        _F = begin
-            if F<:Formula
-                Formula
-            elseif F<:SyntaxTree
-                SyntaxTree
-            else
-                error("TODO explain error here")
-            end
-        end
-        LogicalTruthCondition{_F}(formula)
+    ) where {F<:AbstractFormula}
+        LogicalTruthCondition{F}(formula)
     end
 end
 
@@ -82,7 +72,8 @@ check(c::LogicalTruthCondition, d::AbstractInterpretationSet, args...) = tops.(c
 syntaxstring(c::LogicalTruthCondition; kwargs...) = syntaxstring(formula(c); kwargs...)
 
 # Helper
-convert(::Type{AbstractBooleanCondition}, f::FormulaOrTree) = LogicalTruthCondition(f)
+convert(::Type{AbstractBooleanCondition}, f::AbstractFormula) = LogicalTruthCondition(f)
+convert(::Type{AbstractBooleanCondition}, tok::AbstractSyntaxToken) = LogicalTruthCondition(SyntaxTree(tok))
 
 ############################################################################################
 
@@ -455,7 +446,7 @@ struct Rule{O,C<:AbstractBooleanCondition,FM<:AbstractModel} <: ConstrainedModel
     info::NamedTuple
 
     # function Rule{O,C,_FM,_M}(
-    #     antecedent::Union{AbstractBooleanCondition,FormulaOrTree,AbstractTruthOperator},
+    #     antecedent::Union{AbstractSyntaxToken,AbstractFormula,AbstractBooleanCondition},
     #     consequent::Any,
     #     info::NamedTuple = (;),
     # ) where {O,C<:AbstractBooleanCondition,_FM<:AbstractModel,_M<:AbstractModel}
@@ -470,7 +461,7 @@ struct Rule{O,C<:AbstractBooleanCondition,FM<:AbstractModel} <: ConstrainedModel
     # end
 
     # function Rule{O,C,_FM}(
-    #     antecedent::Union{AbstractBooleanCondition,FormulaOrTree,AbstractTruthOperator},
+    #     antecedent::Union{AbstractSyntaxToken,AbstractFormula,AbstractBooleanCondition},
     #     consequent::Any,
     #     info::NamedTuple = (;),
     # ) where {O,C<:AbstractBooleanCondition,_FM<:AbstractModel}
@@ -482,7 +473,7 @@ struct Rule{O,C<:AbstractBooleanCondition,FM<:AbstractModel} <: ConstrainedModel
     # end
 
     # function Rule{O,_FM}(
-    #     antecedent::Union{AbstractBooleanCondition,FormulaOrTree,AbstractTruthOperator},
+    #     antecedent::Union{AbstractSyntaxToken,AbstractFormula,AbstractBooleanCondition},
     #     consequent::Any,
     #     info::NamedTuple = (;),
     # ) where {O,_FM<:AbstractModel}
@@ -495,7 +486,7 @@ struct Rule{O,C<:AbstractBooleanCondition,FM<:AbstractModel} <: ConstrainedModel
     # end
 
     function Rule{O}(
-        antecedent::Union{AbstractBooleanCondition,FormulaOrTree,AbstractTruthOperator},
+        antecedent::Union{AbstractSyntaxToken,AbstractFormula,AbstractBooleanCondition},
         consequent::Any,
         info::NamedTuple = (;),
     ) where {O}
@@ -508,7 +499,7 @@ struct Rule{O,C<:AbstractBooleanCondition,FM<:AbstractModel} <: ConstrainedModel
     end
 
     function Rule(
-        antecedent::Union{AbstractBooleanCondition,FormulaOrTree,AbstractTruthOperator},
+        antecedent::Union{AbstractSyntaxToken,AbstractFormula,AbstractBooleanCondition},
         consequent::Any,
         info::NamedTuple = (;),
     )
@@ -525,7 +516,7 @@ struct Rule{O,C<:AbstractBooleanCondition,FM<:AbstractModel} <: ConstrainedModel
         consequent::Any,
         info::NamedTuple = (;),
     )
-        antecedent = TrueCondition() #LogicalTruthCondition(SyntaxTree(⊤))
+        antecedent = TrueCondition()
         C = typeof(antecedent)
         consequent = wrap(consequent)
         O = outcometype(consequent)
@@ -573,7 +564,7 @@ struct Branch{O,C<:AbstractBooleanCondition,FM<:AbstractModel} <: ConstrainedMod
     info::NamedTuple
 
     # function Branch{O,C,_FM}(
-    #     antecedent::Union{AbstractBooleanCondition,FormulaOrTree,AbstractTruthOperator},
+    #     antecedent::Union{AbstractSyntaxToken,AbstractFormula,AbstractBooleanCondition},
     #     posconsequent::Any,
     #     negconsequent::Any,
     #     info::NamedTuple = (;),
@@ -588,7 +579,7 @@ struct Branch{O,C<:AbstractBooleanCondition,FM<:AbstractModel} <: ConstrainedMod
     # end
 
     function Branch(
-        antecedent::Union{AbstractBooleanCondition,FormulaOrTree,AbstractTruthOperator},
+        antecedent::Union{AbstractSyntaxToken,AbstractFormula,AbstractBooleanCondition},
         posconsequent::Any,
         negconsequent::Any,
         info::NamedTuple = (;),
@@ -605,7 +596,7 @@ struct Branch{O,C<:AbstractBooleanCondition,FM<:AbstractModel} <: ConstrainedMod
     end
 
     function Branch(
-        antecedent::Union{AbstractBooleanCondition,FormulaOrTree,AbstractTruthOperator},
+        antecedent::Union{AbstractSyntaxToken,AbstractFormula,AbstractBooleanCondition},
         (posconsequent, negconsequent)::Tuple{Any,Any},
         info::NamedTuple = (;),
     )
@@ -779,7 +770,7 @@ struct RuleCascade{O,C<:AbstractBooleanCondition,FFM<:FinalModel} <: Constrained
     # end
 
     function RuleCascade(
-        antecedents::Vector{<:Union{AbstractBooleanCondition,FormulaOrTree,AbstractTruthOperator}},
+        antecedents::Vector{<:Union{AbstractSyntaxToken,AbstractFormula,AbstractBooleanCondition}},
         # antecedents::Vector, # TODO use this instead? More elastic
         consequent::Any,
         info::NamedTuple = (;),

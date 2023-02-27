@@ -118,7 +118,7 @@ end
 
 # # Evaluation for an antecedent
 
-# evaluate_antecedent(antecedent::Formula, X::MultiFrameModalDataset) =
+# evaluate_antecedent(antecedent::AbstractFormula, X::MultiFrameModalDataset) =
 #     evaluate_antecedent(extract_decisions(antecedent), X)
 
 # function evaluate_antecedent(decs::AbstractVector{<:Decision}, X::MultiFrameModalDataset)
@@ -135,7 +135,7 @@ end
 
 # # From antecedent to decision
 # evaluate_rule(
-#     ant::Formula,
+#     ant::AbstractFormula,
 #     cons::Consequent,
 #     X::MultiFrameModalDataset,
 #     Y::AbstractVector{<:Consequent}

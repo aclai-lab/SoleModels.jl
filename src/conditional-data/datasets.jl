@@ -38,7 +38,7 @@ allworlds(X::AbstractConditionalDataset, i_sample, args...) = allworlds(frame(X,
 # end
 
 # function check(
-#     f::Formula,
+#     f::AbstractFormula...,
 #     X::AbstractConditionalDataset{W,A,T},
 #     i_sample,
 #     w::W,

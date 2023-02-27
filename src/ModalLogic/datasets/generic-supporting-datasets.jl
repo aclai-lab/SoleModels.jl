@@ -2,23 +2,23 @@
 struct GenericSupportingDataset{
     W<:AbstractWorld,
     FR<:AbstractFrame{W,Bool},
-    M<:AbstractVector{<:AbstractDict{Formula,Vector{W}}},
+    M<:AbstractVector{<:AbstractDict{<:AbstractFormula,Vector{W}}},
 } <: SupportingDataset{W,FR}
     
     memo::M
 
     function GenericSupportingDataset{W,FR,M}(
         memo :: M,
-    ) where {W<:AbstractWorld,FR<:AbstractFrame{W,Bool},M<:AbstractVector{<:AbstractDict{Formula,Vector{W}}}}
+    ) where {W<:AbstractWorld,FR<:AbstractFrame{W,Bool},M<:AbstractVector{<:AbstractDict{<:AbstractFormula,Vector{W}}}}
         new{W,FR,M}(memo)
     end
 
     function GenericSupportingDataset(
         emd :: FeaturedDataset{V,W,FR},
     ) where {V,W<:AbstractWorld,FR<:AbstractFrame{W,Bool}}
-        memo = Vector{Dict{Formula,Vector{W}}}(undef, nsamples(emd))
+        memo = Vector{Dict{AbstractFormula,Vector{W}}}(undef, nsamples(emd))
         for i_sample in 1:nsamples(emd)
-            memo[i_sample] = Dict{Formula,Vector{W}}()
+            memo[i_sample] = Dict{AbstractFormula,Vector{W}}()
         end
         GenericSupportingDataset{W,FR,typeof(memo)}(memo)
     end
@@ -42,7 +42,7 @@ struct ChainedFeaturedSupportingDataset{
     V<:Number,
     W<:AbstractWorld,
     FR<:AbstractFrame{W,Bool},
-    M<:AbstractVector{<:AbstractDict{Formula,V}},
+    M<:AbstractVector{<:AbstractDict{<:AbstractFormula,V}},
 } <: SupportingDataset{W,FR}
     
     w0::W
@@ -51,16 +51,16 @@ struct ChainedFeaturedSupportingDataset{
 
     function ChainedFeaturedSupportingDataset{V,W,FR,M}(
         memo :: M,
-    ) where {V,W<:AbstractWorld,FR<:AbstractFrame{W,Bool},M<:AbstractVector{<:AbstractDict{Formula,V}}}
+    ) where {V,W<:AbstractWorld,FR<:AbstractFrame{W,Bool},M<:AbstractVector{<:AbstractDict{<:AbstractFormula,V}}}
         new{V,W,FR,M}(memo)
     end
 
     function ChainedFeaturedSupportingDataset(
         emd :: FeaturedDataset{V,W,FR},
     ) where {V,W<:AbstractWorld,FR<:AbstractFrame{W,Bool}}
-        memo = Vector{Dict{Formula,Vector{W}}}(undef, nsamples(emd))
+        memo = Vector{Dict{AbstractFormula,Vector{W}}}(undef, nsamples(emd))
         for i_sample in 1:nsamples(emd)
-            memo[i_sample] = Dict{Formula,Vector{W}}()
+            memo[i_sample] = Dict{AbstractFormula,Vector{W}}()
         end
         ChainedFeaturedSupportingDataset{V,W,FR,typeof(memo)}(memo)
     end

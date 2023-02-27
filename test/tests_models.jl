@@ -8,7 +8,7 @@ using Test
 using SoleLogics
 using SoleLogics: Proposition, SyntaxTree, ¬, ∧, ⊤
 using SoleModels
-using SoleModels: FormulaOrTree, ConstantModel, FinalModel
+using SoleModels: ConstantModel, FinalModel
 using SoleModels: LogicalTruthCondition, TrueCondition
 using SoleModels: ConstrainedModel, check_model_constraints
 using SoleModels: DecisionForest, DecisionList, DecisionTree, Branch
