@@ -16,14 +16,14 @@ struct GenericRelationalSupport{
         new{V,W,FR,D}(d)
     end
 
-    function GenericRelationalSupport(emd::FeaturedDataset{V,W,FR}, perform_initialization = false) where {V,W,FR<:AbstractFrame{W,Bool}}
-        _nfeatsnaggrs = nfeatsnaggrs(emd)
+    function GenericRelationalSupport(fd::FeaturedDataset{V,W,FR}, perform_initialization = false) where {V,W,FR<:AbstractFrame{W,Bool}}
+        _nfeatsnaggrs = nfeatsnaggrs(fd)
         _fwd_rs = begin
             if perform_initialization
-                _fwd_rs = Array{Dict{W,Union{V,Nothing}}, 3}(undef, nsamples(emd), _nfeatsnaggrs, nrelations(emd))
+                _fwd_rs = Array{Dict{W,Union{V,Nothing}}, 3}(undef, nsamples(fd), _nfeatsnaggrs, nrelations(fd))
                 fill!(_fwd_rs, nothing)
             else
-                Array{Dict{W,V}, 3}(undef, nsamples(emd), _nfeatsnaggrs, nrelations(emd))
+                Array{Dict{W,V}, 3}(undef, nsamples(fd), _nfeatsnaggrs, nrelations(fd))
             end
         end
         GenericRelationalSupport{V,W,FR}(_fwd_rs)
@@ -76,10 +76,10 @@ struct GenericGlobalSupport{V,D<:AbstractArray{V,2}} <: AbstractGlobalSupport{V}
         GenericGlobalSupport{V,D}(d)
     end
 
-    function GenericGlobalSupport(emd::FeaturedDataset{V}) where {V}
-        @assert worldtype(emd) != OneWorld "TODO adjust this note: note that you should not use a global support when not using global decisions"
-        _nfeatsnaggrs = nfeatsnaggrs(emd)
-        GenericGlobalSupport{V}(Array{V,2}(undef, nsamples(emd), _nfeatsnaggrs))
+    function GenericGlobalSupport(fd::FeaturedDataset{V}) where {V}
+        @assert worldtype(fd) != OneWorld "TODO adjust this note: note that you should not use a global support when not using global decisions"
+        _nfeatsnaggrs = nfeatsnaggrs(fd)
+        GenericGlobalSupport{V}(Array{V,2}(undef, nsamples(fd), _nfeatsnaggrs))
     end
 end
 

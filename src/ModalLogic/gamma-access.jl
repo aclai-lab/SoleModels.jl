@@ -45,7 +45,7 @@ function onestep_accessible_aggregation(
     i_featsnaggr::Union{Nothing,Integer} = nothing,
     i_relation::Integer = find_relation_id(X, relation),
 ) where {VV,V<:VV,W<:AbstractWorld}
-    compute_modal_gamma(support(X), emd(X), i_sample, w, relation, feature, aggregator, i_featsnaggr, i_relation)
+    compute_modal_gamma(support(X), fd(X), i_sample, w, relation, feature, aggregator, i_featsnaggr, i_relation)
 end
 
 @inline function onestep_accessible_aggregation(
@@ -56,42 +56,42 @@ end
     aggr::Aggregator,
     args...
 ) where {VV,V<:VV,W<:AbstractWorld}
-    compute_global_gamma(support(X), emd(X), i_sample, f, aggr, args...)
+    compute_global_gamma(support(X), fd(X), i_sample, f, aggr, args...)
 end
 
 ############################################################################################
 
-function fwdslice_onestep_accessible_aggregation(emd::FeaturedDataset, fwdslice::FWDFeatureSlice, i_sample, r::GlobalRel, f, aggr, args...)
-    # accessible_worlds = allworlds(emd, i_sample)
-    accessible_worlds = representatives(emd, i_sample, r, f, aggr)
+function fwdslice_onestep_accessible_aggregation(fd::FeaturedDataset, fwdslice::FWDFeatureSlice, i_sample, r::GlobalRel, f, aggr, args...)
+    # accessible_worlds = allworlds(fd, i_sample)
+    accessible_worlds = representatives(fd, i_sample, r, f, aggr)
     gamma = apply_aggregator(fwdslice, accessible_worlds, aggr)
 end
 
-function fwdslice_onestep_accessible_aggregation(emd::FeaturedDataset, fwdslice::FWDFeatureSlice, i_sample, w, r::AbstractRelation, f, aggr, args...)
-    # accessible_worlds = accessibles(emd, i_sample, w, r)
-    accessible_worlds = representatives(emd, i_sample, w, r, f, aggr)
+function fwdslice_onestep_accessible_aggregation(fd::FeaturedDataset, fwdslice::FWDFeatureSlice, i_sample, w, r::AbstractRelation, f, aggr, args...)
+    # accessible_worlds = accessibles(fd, i_sample, w, r)
+    accessible_worlds = representatives(fd, i_sample, w, r, f, aggr)
     gamma = apply_aggregator(fwdslice, accessible_worlds, aggr)
 end
 
 # TODO remove
-# function fwdslice_onestep_accessible_aggregation(emd::SupportedFeaturedDataset, fwdslice::FWDFeatureSlice, i_sample, args...)
-#     fwdslice_onestep_accessible_aggregation(support(X), emd(X), fwdslice, i_sample, args...)
+# function fwdslice_onestep_accessible_aggregation(fd::SupportedFeaturedDataset, fwdslice::FWDFeatureSlice, i_sample, args...)
+#     fwdslice_onestep_accessible_aggregation(support(X), fd(X), fwdslice, i_sample, args...)
 # end
 
 
 function fwdslice_onestep_accessible_aggregation(X::SupportedFeaturedDataset, fwdslice::FWDFeatureSlice, i_sample, r::GlobalRel, f, aggr, args...)
-    fwdslice_onestep_accessible_aggregation(support(X), emd(X), fwdslice, i_sample, r, f, aggr, args...)
+    fwdslice_onestep_accessible_aggregation(support(X), fd(X), fwdslice, i_sample, r, f, aggr, args...)
 end
 
 function fwdslice_onestep_accessible_aggregation(X::SupportedFeaturedDataset, fwdslice::FWDFeatureSlice, i_sample, w, r::AbstractRelation, f, aggr, args...)
-    fwdslice_onestep_accessible_aggregation(support(X), emd(X), fwdslice, i_sample, w, r, f, aggr, args...)
+    fwdslice_onestep_accessible_aggregation(support(X), fd(X), fwdslice, i_sample, w, r, f, aggr, args...)
 end
 
 ############################################################################################
 
 function fwdslice_onestep_accessible_aggregation(
     X::OneStepFeaturedSupportingDataset{V,W},
-    emd::FeaturedDataset{V,W},
+    fd::FeaturedDataset{V,W},
     fwdslice::FWDFeatureSlice,
     i_sample::Integer,
     r::GlobalRel,
@@ -101,7 +101,7 @@ function fwdslice_onestep_accessible_aggregation(
 ) where {V,W<:AbstractWorld}
     _fwd_gs = fwd_gs(X)
     if isnothing(_fwd_gs[i_sample, i_featsnaggr])
-        gamma = fwdslice_onestep_accessible_aggregation(emd, fwdslice, i_sample, r, feature, aggr)
+        gamma = fwdslice_onestep_accessible_aggregation(fd, fwdslice, i_sample, r, feature, aggr)
         _fwd_gs[i_sample, i_featsnaggr] = gamma
     end
     _fwd_gs[i_sample, i_featsnaggr]
@@ -109,7 +109,7 @@ end
 
 function fwdslice_onestep_accessible_aggregation(
     X::OneStepFeaturedSupportingDataset{V,W},
-    emd::FeaturedDataset{V,W},
+    fd::FeaturedDataset{V,W},
     fwdslice::FWDFeatureSlice,
     i_sample::Integer,
     w::W,
@@ -121,7 +121,7 @@ function fwdslice_onestep_accessible_aggregation(
 )::V where {V,W<:AbstractWorld}
     _fwd_rs = fwd_rs(X)
     if isnothing(_fwd_rs[i_sample, w, i_featsnaggr, i_relation])
-        gamma = fwdslice_onestep_accessible_aggregation(emd, fwdslice, i_sample, w, r, feature, aggr)
+        gamma = fwdslice_onestep_accessible_aggregation(fd, fwdslice, i_sample, w, r, feature, aggr)
         _fwd_rs[i_sample, w, i_featsnaggr, i_relation] = gamma
     end
     _fwd_rs[i_sample, w, i_featsnaggr, i_relation]

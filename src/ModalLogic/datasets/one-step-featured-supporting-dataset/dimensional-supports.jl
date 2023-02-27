@@ -91,10 +91,10 @@ struct UniformFullDimensionalRelationalSupport{
     end
 
     function UniformFullDimensionalRelationalSupport(
-        emd::FeaturedDataset,
+        fd::FeaturedDataset,
         perform_initialization::Bool = false,
     )
-        UniformFullDimensionalRelationalSupport(fwd(emd), nfeatsnaggrs(emd), nrelations(emd), perform_initialization)
+        UniformFullDimensionalRelationalSupport(fwd(fd), nfeatsnaggrs(fd), nrelations(fd), perform_initialization)
     end
 
 end
@@ -269,12 +269,12 @@ end
 
 # hasnans(support::OneWorldFWD_RS) = any(_isnan.(support.d))
 
-# function fwd_rs_init(emd::FeaturedDataset{T,OneWorld}, nfeatsnaggrs::Integer, nrelations::Integer, perform_initialization::Bool) where {T}
+# function fwd_rs_init(fd::FeaturedDataset{T,OneWorld}, nfeatsnaggrs::Integer, nrelations::Integer, perform_initialization::Bool) where {T}
 #     if perform_initialization
-#         _fwd_rs = fill!(Array{Union{T,Nothing}, 3}(undef, nsamples(emd), nfeatsnaggrs, nrelations), nothing)
+#         _fwd_rs = fill!(Array{Union{T,Nothing}, 3}(undef, nsamples(fd), nfeatsnaggrs, nrelations), nothing)
 #         OneWorldFWD_RS{Union{T,Nothing}}(_fwd_rs)
 #     else
-#         _fwd_rs = Array{T,3}(undef, nsamples(emd), nfeatsnaggrs, nrelations)
+#         _fwd_rs = Array{T,3}(undef, nsamples(fd), nfeatsnaggrs, nrelations)
 #         OneWorldFWD_RS{T}(_fwd_rs)
 #     end
 # end
@@ -315,13 +315,13 @@ end
 #     any([hasnans(support.d[x,y,:,:,:]) for x in 1:size(support.d, 1) for y in (x+1):size(support.d, 2)])
 # end
 
-# function fwd_rs_init(emd::FeaturedDataset{T,<:Interval}, nfeatsnaggrs::Integer, nrelations::Integer, perform_initialization::Bool) where {T}
-#     _fwd = emd.fwd
+# function fwd_rs_init(fd::FeaturedDataset{T,<:Interval}, nfeatsnaggrs::Integer, nrelations::Integer, perform_initialization::Bool) where {T}
+#     _fwd = fd.fwd
 #     if perform_initialization
-#         _fwd_rs = fill!(Array{Union{T,Nothing}, 5}(undef, size(_fwd, 1), size(_fwd, 2), nsamples(emd), nfeatsnaggrs, nrelations), nothing)
+#         _fwd_rs = fill!(Array{Union{T,Nothing}, 5}(undef, size(_fwd, 1), size(_fwd, 2), nsamples(fd), nfeatsnaggrs, nrelations), nothing)
 #         IntervalFWD_RS{Union{T,Nothing}}(_fwd_rs)
 #     else
-#         _fwd_rs = Array{T,5}(undef, size(_fwd, 1), size(_fwd, 2), nsamples(emd), nfeatsnaggrs, nrelations)
+#         _fwd_rs = Array{T,5}(undef, size(_fwd, 1), size(_fwd, 2), nsamples(fd), nfeatsnaggrs, nrelations)
 #         IntervalFWD_RS{T}(_fwd_rs)
 #     end
 # end
@@ -355,13 +355,13 @@ end
 # TODO... hasnans(support::Interval2DFWD_RS) = any(_isnan.(support.d))
 # TODO...? hasnans(support::Interval2DFWD_RS) = any([hasnans(support.d[xx,xy,yx,yy,:,:,:]) for xx in 1:size(support.d, 1) for xy in (xx+1):size(support.d, 2) for yx in 1:size(support.d, 3) for yy in (yx+1):size(support.d, 4)])
 
-# fwd_rs_init(emd::FeaturedDataset{T,<:Interval2D}, nfeatsnaggrs::Integer, nrelations::Integer, perform_initialization::Bool) where {T} = begin
-#   _fwd = emd.fwd
+# fwd_rs_init(fd::FeaturedDataset{T,<:Interval2D}, nfeatsnaggrs::Integer, nrelations::Integer, perform_initialization::Bool) where {T} = begin
+#   _fwd = fd.fwd
 #   if perform_initialization
-#       _fwd_rs = fill!(Array{Union{T,Nothing}, 7}(undef, size(_fwd, 1), size(_fwd, 2), size(_fwd, 3), size(_fwd, 4), nsamples(emd), nfeatsnaggrs, nrelations), nothing)
+#       _fwd_rs = fill!(Array{Union{T,Nothing}, 7}(undef, size(_fwd, 1), size(_fwd, 2), size(_fwd, 3), size(_fwd, 4), nsamples(fd), nfeatsnaggrs, nrelations), nothing)
 #       Interval2DFWD_RS{Union{T,Nothing}}(_fwd_rs)
 #   else
-#       _fwd_rs = Array{T,7}(undef, size(_fwd, 1), size(_fwd, 2), size(_fwd, 3), size(_fwd, 4), nsamples(emd), nfeatsnaggrs, nrelations)
+#       _fwd_rs = Array{T,7}(undef, size(_fwd, 1), size(_fwd, 2), size(_fwd, 3), size(_fwd, 4), nsamples(fd), nfeatsnaggrs, nrelations)
 #       Interval2DFWD_RS{T}(_fwd_rs)
 #   end
 # end
@@ -399,13 +399,13 @@ end
 
 # hasnans(support::Interval2DFWD_RS) = any(_isnan.(support.d))
 
-# function fwd_rs_init(emd::FeaturedDataset{T,<:Interval2D}, nfeatsnaggrs::Integer, nrelations::Integer, perform_initialization::Bool) where {T}
-#     _fwd = emd.fwd
+# function fwd_rs_init(fd::FeaturedDataset{T,<:Interval2D}, nfeatsnaggrs::Integer, nrelations::Integer, perform_initialization::Bool) where {T}
+#     _fwd = fd.fwd
 #     if perform_initialization
-#         _fwd_rs = fill!(Array{Union{T,Nothing}, 5}(undef, div(size(_fwd, 1)*size(_fwd, 2),2), div(size(_fwd, 3)*size(_fwd, 4),2), nsamples(emd), nfeatsnaggrs, nrelations), nothing)
+#         _fwd_rs = fill!(Array{Union{T,Nothing}, 5}(undef, div(size(_fwd, 1)*size(_fwd, 2),2), div(size(_fwd, 3)*size(_fwd, 4),2), nsamples(fd), nfeatsnaggrs, nrelations), nothing)
 #         Interval2DFWD_RS{Union{T,Nothing}}(_fwd_rs)
 #     else
-#         _fwd_rs = Array{T,5}(undef, div(size(_fwd, 1)*size(_fwd, 2),2), div(size(_fwd, 3)*size(_fwd, 4),2), nsamples(emd), nfeatsnaggrs, nrelations)
+#         _fwd_rs = Array{T,5}(undef, div(size(_fwd, 1)*size(_fwd, 2),2), div(size(_fwd, 3)*size(_fwd, 4),2), nsamples(fd), nfeatsnaggrs, nrelations)
 #         Interval2DFWD_RS{T}(_fwd_rs)
 #     end
 # end

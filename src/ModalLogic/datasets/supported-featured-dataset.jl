@@ -67,7 +67,7 @@ struct SupportedFeaturedDataset{
 } <: ActiveFeaturedDataset{V,W,FR,FT}
 
     # Core dataset
-    emd                 :: FeaturedDataset{V,W,FR,FT}
+    fd                 :: FeaturedDataset{V,W,FR,FT}
 
     # Support structure
     support             :: S
@@ -75,51 +75,51 @@ struct SupportedFeaturedDataset{
     ########################################################################################
     
     function SupportedFeaturedDataset{V,W,FR,FT,S}(
-        emd                 :: FeaturedDataset{V,W,FR,FT},
+        fd                 :: FeaturedDataset{V,W,FR,FT},
         support             :: S;
         allow_no_instances = false,
     ) where {V,W<:AbstractWorld,FR<:AbstractFrame{W,Bool},FT<:AbstractFeature{V},S<:FeaturedSupportingDataset{V,W,FR}}
         ty = "SupportedFeaturedDataset{$(V),$(W),$(FR),$(FT),$(S)}"
-        @assert allow_no_instances || nsamples(emd) > 0  "Can't instantiate $(ty) with no instance."
-        @assert checksupportconsistency(emd, support)    "Can't instantiate $(ty) with an inconsistent support:\n\nemd:\n$(display_structure(emd))\n\nsupport:\n$(display_structure(support))"
-        new{V,W,FR,FT,S}(emd, support)
+        @assert allow_no_instances || nsamples(fd) > 0  "Can't instantiate $(ty) with no instance."
+        @assert checksupportconsistency(fd, support)    "Can't instantiate $(ty) with an inconsistent support:\n\nemd:\n$(display_structure(fd))\n\nsupport:\n$(display_structure(support))"
+        new{V,W,FR,FT,S}(fd, support)
     end
 
-    function SupportedFeaturedDataset{V,W,FR,FT}(emd::FeaturedDataset{V,W}, support::S, args...; kwargs...) where {V,W<:AbstractWorld,FR<:AbstractFrame{W,Bool},FT<:AbstractFeature{V},S<:FeaturedSupportingDataset{V,W,FR}}
-        SupportedFeaturedDataset{V,W,FR,FT,S}(emd, support, args...; kwargs...)
+    function SupportedFeaturedDataset{V,W,FR,FT}(fd::FeaturedDataset{V,W}, support::S, args...; kwargs...) where {V,W<:AbstractWorld,FR<:AbstractFrame{W,Bool},FT<:AbstractFeature{V},S<:FeaturedSupportingDataset{V,W,FR}}
+        SupportedFeaturedDataset{V,W,FR,FT,S}(fd, support, args...; kwargs...)
     end
 
-    function SupportedFeaturedDataset{V,W,FR}(emd::FeaturedDataset{V,W,FR,FT}, args...; kwargs...) where {V,W<:AbstractWorld,FR<:AbstractFrame{W,Bool},FT<:AbstractFeature{V}}
-        SupportedFeaturedDataset{V,W,FR,FT}(emd, args...; kwargs...)
+    function SupportedFeaturedDataset{V,W,FR}(fd::FeaturedDataset{V,W,FR,FT}, args...; kwargs...) where {V,W<:AbstractWorld,FR<:AbstractFrame{W,Bool},FT<:AbstractFeature{V}}
+        SupportedFeaturedDataset{V,W,FR,FT}(fd, args...; kwargs...)
     end
 
-    function SupportedFeaturedDataset{V,W}(emd::FeaturedDataset{V,W,FR}, args...; kwargs...) where {V,W<:AbstractWorld,FR<:AbstractFrame{W,Bool}}
-        SupportedFeaturedDataset{V,W,FR}(emd, args...; kwargs...)
+    function SupportedFeaturedDataset{V,W}(fd::FeaturedDataset{V,W,FR}, args...; kwargs...) where {V,W<:AbstractWorld,FR<:AbstractFrame{W,Bool}}
+        SupportedFeaturedDataset{V,W,FR}(fd, args...; kwargs...)
     end
 
-    function SupportedFeaturedDataset{V}(emd::FeaturedDataset{V,W,FR}, args...; kwargs...) where {V,W<:AbstractWorld,FR<:AbstractFrame{W,Bool}}
-        SupportedFeaturedDataset{V,W}(emd, args...; kwargs...)
+    function SupportedFeaturedDataset{V}(fd::FeaturedDataset{V,W,FR}, args...; kwargs...) where {V,W<:AbstractWorld,FR<:AbstractFrame{W,Bool}}
+        SupportedFeaturedDataset{V,W}(fd, args...; kwargs...)
     end
 
-    function SupportedFeaturedDataset(emd::FeaturedDataset{V,W,FR}, args...; kwargs...) where {V,W<:AbstractWorld,FR<:AbstractFrame{W,Bool}}
-        SupportedFeaturedDataset{V}(emd, args...; kwargs...)
+    function SupportedFeaturedDataset(fd::FeaturedDataset{V,W,FR}, args...; kwargs...) where {V,W<:AbstractWorld,FR<:AbstractFrame{W,Bool}}
+        SupportedFeaturedDataset{V}(fd, args...; kwargs...)
     end
     
     ########################################################################################
     
     function SupportedFeaturedDataset(
-        emd                   :: FeaturedDataset{V,W,FR};
+        fd                   :: FeaturedDataset{V,W,FR};
         compute_relation_glob :: Bool = true,
         use_memoization       :: Bool = true,
     ) where {V,W<:AbstractWorld,FR<:AbstractFrame{W,Bool}}
         
         support = OneStepFeaturedSupportingDataset(
-            emd,
+            fd,
             compute_relation_glob = compute_relation_glob,
             use_memoization = use_memoization
         );
 
-        SupportedFeaturedDataset(emd, support)
+        SupportedFeaturedDataset(fd, support)
     end
 
     ########################################################################################
@@ -133,40 +133,40 @@ struct SupportedFeaturedDataset{
 
 end
 
-emd(X::SupportedFeaturedDataset)                        = X.emd
+fd(X::SupportedFeaturedDataset)                        = X.fd
 support(X::SupportedFeaturedDataset)                    = X.support
 
-Base.getindex(X::SupportedFeaturedDataset, args...)     = Base.getindex(emd(X), args...)::featvaltype(X)
-Base.size(X::SupportedFeaturedDataset)                  = (size(emd(X)), size(support(X)))
-features(X::SupportedFeaturedDataset)                   = features(emd(X))
-grouped_featsaggrsnops(X::SupportedFeaturedDataset)     = grouped_featsaggrsnops(emd(X))
-grouped_featsnaggrs(X::SupportedFeaturedDataset)        = grouped_featsnaggrs(emd(X))
-nfeatures(X::SupportedFeaturedDataset)                  = nfeatures(emd(X))
-nrelations(X::SupportedFeaturedDataset)                 = nrelations(emd(X))
-nsamples(X::SupportedFeaturedDataset)                   = nsamples(emd(X))
-relations(X::SupportedFeaturedDataset)                  = relations(emd(X))
-fwd(X::SupportedFeaturedDataset)                        = fwd(emd(X))
+Base.getindex(X::SupportedFeaturedDataset, args...)     = Base.getindex(fd(X), args...)::featvaltype(X)
+Base.size(X::SupportedFeaturedDataset)                  = (size(fd(X)), size(support(X)))
+features(X::SupportedFeaturedDataset)                   = features(fd(X))
+grouped_featsaggrsnops(X::SupportedFeaturedDataset)     = grouped_featsaggrsnops(fd(X))
+grouped_featsnaggrs(X::SupportedFeaturedDataset)        = grouped_featsnaggrs(fd(X))
+nfeatures(X::SupportedFeaturedDataset)                  = nfeatures(fd(X))
+nrelations(X::SupportedFeaturedDataset)                 = nrelations(fd(X))
+nsamples(X::SupportedFeaturedDataset)                   = nsamples(fd(X))
+relations(X::SupportedFeaturedDataset)                  = relations(fd(X))
+fwd(X::SupportedFeaturedDataset)                        = fwd(fd(X))
 worldtype(X::SupportedFeaturedDataset{V,W}) where {V,W} = W
 
 usesmemo(X::SupportedFeaturedDataset) = usesmemo(support(X))
 
-frame(X::SupportedFeaturedDataset, i_sample) = frame(emd(X), i_sample)
+frame(X::SupportedFeaturedDataset, i_sample) = frame(fd(X), i_sample)
 
 function _slice_dataset(X::SupportedFeaturedDataset, inds::AbstractVector{<:Integer}, args...; kwargs...)
     SupportedFeaturedDataset(
-        _slice_dataset(emd(X), inds, args...; kwargs...),
+        _slice_dataset(fd(X), inds, args...; kwargs...),
         _slice_dataset(support(X), inds, args...; kwargs...),
     )
 end
 
-hasnans(X::SupportedFeaturedDataset) = hasnans(emd(X)) || hasnans(support(X))
+hasnans(X::SupportedFeaturedDataset) = hasnans(fd(X)) || hasnans(support(X))
 
-isminifiable(X::SupportedFeaturedDataset) = isminifiable(emd(X)) && isminifiable(emd(X))
+isminifiable(X::SupportedFeaturedDataset) = isminifiable(fd(X)) && isminifiable(fd(X))
 
 function minify(X::EMD) where {EMD<:SupportedFeaturedDataset}
     (new_emd, new_support), backmap =
         minify([
-            emd(X),
+            fd(X),
             support(X),
         ])
 
@@ -178,10 +178,10 @@ function minify(X::EMD) where {EMD<:SupportedFeaturedDataset}
 end
 
 function display_structure(X::SupportedFeaturedDataset; indent_str = "")
-    out = "$(typeof(X))\t$((Base.summarysize(emd(X)) + Base.summarysize(support(X))) / 1024 / 1024 |> x->round(x, digits=2)) MBs\n"
-    out *= indent_str * "├ relations: \t$((length(relations(emd(X)))))\t$(relations(emd(X)))\n"
-    out *= indent_str * "├ emd\t$(Base.summarysize(emd(X)) / 1024 / 1024 |> x->round(x, digits=2)) MBs"
-        out *= "\t(shape $(Base.size(emd(X))))\n"
+    out = "$(typeof(X))\t$((Base.summarysize(fd(X)) + Base.summarysize(support(X))) / 1024 / 1024 |> x->round(x, digits=2)) MBs\n"
+    out *= indent_str * "├ relations: \t$((length(relations(fd(X)))))\t$(relations(fd(X)))\n"
+    out *= indent_str * "├ fd\t$(Base.summarysize(fd(X)) / 1024 / 1024 |> x->round(x, digits=2)) MBs"
+        out *= "\t(shape $(Base.size(fd(X))))\n"
     out *= indent_str * "└ support: $(display_structure(support(X); indent_str = "  "))"
     out
 end

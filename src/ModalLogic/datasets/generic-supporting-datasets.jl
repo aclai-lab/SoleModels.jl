@@ -14,10 +14,10 @@ struct GenericSupportingDataset{
     end
 
     function GenericSupportingDataset(
-        emd :: FeaturedDataset{V,W,FR},
+        fd :: FeaturedDataset{V,W,FR},
     ) where {V,W<:AbstractWorld,FR<:AbstractFrame{W,Bool}}
-        memo = Vector{Dict{AbstractFormula,Vector{W}}}(undef, nsamples(emd))
-        for i_sample in 1:nsamples(emd)
+        memo = Vector{Dict{AbstractFormula,Vector{W}}}(undef, nsamples(fd))
+        for i_sample in 1:nsamples(fd)
             memo[i_sample] = Dict{AbstractFormula,Vector{W}}()
         end
         GenericSupportingDataset{W,FR,typeof(memo)}(memo)
@@ -56,10 +56,10 @@ struct ChainedFeaturedSupportingDataset{
     end
 
     function ChainedFeaturedSupportingDataset(
-        emd :: FeaturedDataset{V,W,FR},
+        fd :: FeaturedDataset{V,W,FR},
     ) where {V,W<:AbstractWorld,FR<:AbstractFrame{W,Bool}}
-        memo = Vector{Dict{AbstractFormula,Vector{W}}}(undef, nsamples(emd))
-        for i_sample in 1:nsamples(emd)
+        memo = Vector{Dict{AbstractFormula,Vector{W}}}(undef, nsamples(fd))
+        for i_sample in 1:nsamples(fd)
             memo[i_sample] = Dict{AbstractFormula,Vector{W}}()
         end
         ChainedFeaturedSupportingDataset{V,W,FR,typeof(memo)}(memo)

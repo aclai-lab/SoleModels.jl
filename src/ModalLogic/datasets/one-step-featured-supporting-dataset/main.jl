@@ -45,7 +45,7 @@ struct OneStepFeaturedSupportingDataset{
 
     # A function that computes the support from an explicit modal dataset
     Base.@propagate_inbounds function OneStepFeaturedSupportingDataset(
-        emd                     :: FeaturedDataset{V,W},
+        fd                     :: FeaturedDataset{V,W},
         relational_support_type :: Type{<:AbstractRelationalSupport} = _default_rs_type(W);
         compute_relation_glob = false,
         use_memoization = false,
@@ -53,11 +53,11 @@ struct OneStepFeaturedSupportingDataset{
 
         # @logmsg LogOverview "FeaturedDataset -> SupportedFeaturedDataset "
 
-        _fwd = fwd(emd)
-        _features = features(emd)
-        _relations = relations(emd)
-        _grouped_featsnaggrs =  grouped_featsnaggrs(emd)
-        featsnaggrs = features_grouped_featsaggrsnops2featsnaggrs(features(emd), grouped_featsaggrsnops(emd))
+        _fwd = fwd(fd)
+        _features = features(fd)
+        _relations = relations(fd)
+        _grouped_featsnaggrs =  grouped_featsnaggrs(fd)
+        featsnaggrs = features_grouped_featsaggrsnops2featsnaggrs(features(fd), grouped_featsaggrsnops(fd))
     
         compute_fwd_gs = begin
             if globalrel in _relations
@@ -71,17 +71,17 @@ struct OneStepFeaturedSupportingDataset{
             end
         end
 
-        _n_samples = nsamples(emd)
+        _n_samples = nsamples(fd)
         nrelations = length(_relations)
         nfeatsnaggrs = sum(length.(_grouped_featsnaggrs))
 
         # Prepare fwd_rs
-        fwd_rs = relational_support_type(emd, use_memoization)
+        fwd_rs = relational_support_type(fd, use_memoization)
 
         # Prepare fwd_gs
         fwd_gs = begin
             if compute_fwd_gs
-                GenericGlobalSupport(emd)
+                GenericGlobalSupport(fd)
             else
                 nothing
             end
@@ -111,7 +111,7 @@ struct OneStepFeaturedSupportingDataset{
                     for (i_featsnaggr,aggr) in aggregators
                     # Threads.@threads for (i_featsnaggr,aggr) in aggregators
                         
-                        gamma = fwdslice_onestep_accessible_aggregation(emd, fwdslice, i_sample, globalrel, feature, aggr)
+                        gamma = fwdslice_onestep_accessible_aggregation(fd, fwdslice, i_sample, globalrel, feature, aggr)
 
                         # @logmsg LogDebug "Aggregator[$(i_featsnaggr)]=$(aggr)  -->  $(gamma)"
 
@@ -129,14 +129,14 @@ struct OneStepFeaturedSupportingDataset{
                             fwd_rs_init_world_slice(fwd_rs, i_sample, i_featsnaggr, i_relation)
                         end
 
-                        for w in allworlds(emd, i_sample)
+                        for w in allworlds(fd, i_sample)
 
                             # @logmsg LogDebug "World" w
 
                             # TODO optimize: all aggregators are likely reading the same raw values.
                             for (i_featsnaggr,aggr) in aggregators
                                 
-                                gamma = fwdslice_onestep_accessible_aggregation(emd, fwdslice, i_sample, w, relation, feature, aggr)
+                                gamma = fwdslice_onestep_accessible_aggregation(fd, fwdslice, i_sample, w, relation, feature, aggr)
 
                                 # @logmsg LogDebug "Aggregator" aggr gamma
 
@@ -161,14 +161,14 @@ nsamples(X::OneStepFeaturedSupportingDataset) = nsamples(fwd_rs(X))
 
 # TODO delegate to the two components...
 function checksupportconsistency(
-    emd::FeaturedDataset{V,W},
+    fd::FeaturedDataset{V,W},
     X::OneStepFeaturedSupportingDataset{V,W},
 ) where {V,W<:AbstractWorld}
-    @assert nsamples(emd) == nsamples(X)                "Consistency check failed! Unmatching nsamples for emd and support: $(nsamples(emd)) and $(nsamples(X))"
-    # @assert nrelations(emd) == (nrelations(fwd_rs(X)) + (isnothing(fwd_gs(X)) ? 0 : 1))            "Consistency check failed! Unmatching nrelations for emd and support: $(nrelations(emd)) and $(nrelations(fwd_rs(X)))+$((isnothing(fwd_gs(X)) ? 0 : 1))"
-    @assert nrelations(emd) >= nrelations(fwd_rs(X))            "Consistency check failed! Inconsistent nrelations for emd and support: $(nrelations(emd)) < $(nrelations(fwd_rs(X)))"
-    _nfeatsnaggrs = nfeatsnaggrs(emd)
-    @assert _nfeatsnaggrs == length(featsnaggrs(X))  "Consistency check failed! Unmatching featsnaggrs for emd and support: $(featsnaggrs(emd)) and $(featsnaggrs(X))"
+    @assert nsamples(fd) == nsamples(X)                "Consistency check failed! Unmatching nsamples for fd and support: $(nsamples(fd)) and $(nsamples(X))"
+    # @assert nrelations(fd) == (nrelations(fwd_rs(X)) + (isnothing(fwd_gs(X)) ? 0 : 1))            "Consistency check failed! Unmatching nrelations for fd and support: $(nrelations(fd)) and $(nrelations(fwd_rs(X)))+$((isnothing(fwd_gs(X)) ? 0 : 1))"
+    @assert nrelations(fd) >= nrelations(fwd_rs(X))            "Consistency check failed! Inconsistent nrelations for fd and support: $(nrelations(fd)) < $(nrelations(fwd_rs(X)))"
+    _nfeatsnaggrs = nfeatsnaggrs(fd)
+    @assert _nfeatsnaggrs == length(featsnaggrs(X))  "Consistency check failed! Unmatching featsnaggrs for fd and support: $(featsnaggrs(fd)) and $(featsnaggrs(X))"
     return true
 end
 
@@ -237,7 +237,7 @@ end
 
 function compute_global_gamma(
     X::OneStepFeaturedSupportingDataset{V,W},
-    emd::FeaturedDataset{V,W},
+    fd::FeaturedDataset{V,W},
     i_sample::Integer,
     feature::AbstractFeature,
     aggregator::Aggregator,
@@ -248,8 +248,8 @@ function compute_global_gamma(
     if usesglobalmemo(X) && isnothing(_fwd_gs[i_sample, i_featsnaggr])
         error("TODO finish this: memoization on the global table")
         # gamma = TODO...
-        # i_feature = find_feature_id(emd, feature)
-        # fwdslice = fwdread_channel(fwd(emd), i_sample, i_feature)
+        # i_feature = find_feature_id(fd, feature)
+        # fwdslice = fwdread_channel(fwd(fd), i_sample, i_feature)
         _fwd_gs[i_sample, i_featsnaggr] = gamma
     end
     _fwd_gs[i_sample, i_featsnaggr]
@@ -257,7 +257,7 @@ end
 
 function compute_modal_gamma(
     X::OneStepFeaturedSupportingDataset{V,W},
-    emd::FeaturedDataset{V,W},
+    fd::FeaturedDataset{V,W},
     i_sample::Integer,
     w::W,
     r::AbstractRelation,
@@ -268,9 +268,9 @@ function compute_modal_gamma(
 )::V where {V,W<:AbstractWorld}
     _fwd_rs = fwd_rs(X)
     if usesmodalmemo(X) && isnothing(_fwd_rs[i_sample, w, i_featsnaggr, i_relation])
-        i_feature = find_feature_id(emd, feature)
-        fwdslice = fwdread_channel(fwd(emd), i_sample, i_feature)
-        gamma = fwdslice_onestep_accessible_aggregation(emd, fwdslice, i_sample, w, r, feature, aggregator)
+        i_feature = find_feature_id(fd, feature)
+        fwdslice = fwdread_channel(fwd(fd), i_sample, i_feature)
+        gamma = fwdslice_onestep_accessible_aggregation(fd, fwdslice, i_sample, w, r, feature, aggregator)
         fwd_rs[i_sample, w, i_featsnaggr, i_relation, gamma]
     end
     _fwd_rs[i_sample, w, i_featsnaggr, i_relation]
