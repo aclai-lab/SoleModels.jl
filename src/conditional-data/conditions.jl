@@ -1,5 +1,5 @@
 using SoleLogics: AbstractAlphabet
-import SoleLogics: inverse
+import SoleLogics: negation
 
 import Base: isequal, hash
 
@@ -71,7 +71,7 @@ feature(c::FeatCondition) = feature(c.metacond)
 test_operator(c::FeatCondition) = test_operator(c.metacond)
 threshold(c::FeatCondition) = c.a
 
-function inverse(c::FeatCondition)
+function negation(c::FeatCondition)
     FeatCondition(feature(c), test_operator_inverse(test_operator(c)), threshold(c))
 end
 
