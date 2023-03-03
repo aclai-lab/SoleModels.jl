@@ -99,9 +99,6 @@ function rule_metrics(
             mse(eval_result[:y_pred][idxs_sat], Y[idxs_sat])
         end
     end
-    if isnan(rule_error)
-        rule_error = 0.0
-    end
 
     return (;
         support   = rule_support,
