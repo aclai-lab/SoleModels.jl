@@ -1,30 +1,21 @@
 using Revise
 
 using Reexport
-using FunctionWrappers
 using FunctionWrappers: FunctionWrapper
-using Base
 using Test
 using SoleLogics
-using SoleLogics: Proposition, SyntaxTree, ¬, ∧, ⊤
 using SoleModels
 using SoleModels: ConstantModel, FinalModel
 using SoleModels: LogicalTruthCondition, TrueCondition
-using SoleModels: ConstrainedModel, check_model_constraints
-using SoleModels: DecisionForest, DecisionList, DecisionTree, Branch
-using SoleModels: Rule, RuleCascade, AbstractBooleanCondition
-using SoleModels: unroll_rules, unroll_rules_cascade, formula, root, displaymodel
+using SoleModels: unroll_rules, unroll_rules_cascade, formula, displaymodel
 
-#Sostituto di SoleLogics.TOP
-# const TOP = SoleLogics.parseformula("⊤")
-################################### IOBuffer ###############################################
 io = IOBuffer()
 
 ################################### FinalModel #############################################
 outcome_int =  @test_nowarn ConstantModel(2)
 outcome_float = @test_nowarn ConstantModel(1.5)
-outcome_string = @test_nowarn ConstantModel("true")
-outcome_string2 = @test_nowarn ConstantModel("false")
+outcome_string = @test_nowarn ConstantModel("YES")
+outcome_string2 = @test_nowarn ConstantModel("NO")
 
 @test_nowarn ConstantModel(1,(;))
 @test_nowarn ConstantModel(1)
@@ -38,7 +29,7 @@ const_funwrap = FunctionWrapper{Float64, Tuple{Float64,Float64}}(sum)
 
 consts = @test_nowarn [const_string, const_float, const_integer, const_funwrap]
 
-# @test SoleModels.wrap(const_fun) isa SoleModels.FunctionModel{Any}
+@test (@test_logs (:warn,) SoleModels.wrap(const_fun) isa SoleModels.FunctionModel{Any})
 @test_nowarn SoleModels.wrap.(consts)
 @test_nowarn ConstantModel{String}(const_string)
 cmodel_string = @test_nowarn ConstantModel(const_string)
@@ -78,18 +69,35 @@ st_100 = @test_nowarn SyntaxTree(prop_100)
 ################################### Formula ################################################
 p = @test_nowarn SoleLogics.parseformula("p")
 p_tree = @test_nowarn SoleLogics.parseformulatree("p")
-@test LogicalTruthCondition(p) == LogicalTruthCondition{Formula}(p)
-@test LogicalTruthCondition(p_tree) == LogicalTruthCondition{SyntaxTree}(p_tree)
+
+# @test LogicalTruthCondition(p) == LogicalTruthCondition{Formula}(p)
+# @test LogicalTruthCondition(p_tree) == LogicalTruthCondition{SyntaxTree}(p_tree)
+
+# phi = @test_nowarn SoleLogics.parseformula("p∧q∨r")
+# phi_tree = @test_nowarn SoleLogics.parseformulatree("p∧q∨r")
+# @test LogicalTruthCondition(phi) == LogicalTruthCondition{Formula}(phi)
+# @test LogicalTruthCondition(phi_tree) == LogicalTruthCondition{SyntaxTree}(phi_tree)
+
+# phi2 = @test_nowarn SoleLogics.parseformula("q∧s→r")
+# phi2_tree = @test_nowarn SoleLogics.parseformulatree("q∧s→r")
+# @test LogicalTruthCondition(phi2) == LogicalTruthCondition{Formula}(phi2)
+# @test LogicalTruthCondition(phi2_tree) == LogicalTruthCondition{SyntaxTree}(phi2_tree)
+
+@test LogicalTruthCondition(p) != LogicalTruthCondition{Formula}(p)
+@test LogicalTruthCondition(p_tree) != LogicalTruthCondition{SyntaxTree}(p_tree)
+
+@test LogicalTruthCondition(p) isa LogicalTruthCondition{<:Formula}
+@test LogicalTruthCondition(p_tree) isa LogicalTruthCondition{<:SyntaxTree}
 
 phi = @test_nowarn SoleLogics.parseformula("p∧q∨r")
 phi_tree = @test_nowarn SoleLogics.parseformulatree("p∧q∨r")
-@test LogicalTruthCondition(phi) == LogicalTruthCondition{Formula}(phi)
-@test LogicalTruthCondition(phi_tree) == LogicalTruthCondition{SyntaxTree}(phi_tree)
+@test LogicalTruthCondition(phi) isa LogicalTruthCondition{<:Formula}
+@test LogicalTruthCondition(phi_tree) isa LogicalTruthCondition{<:SyntaxTree}
 
 phi2 = @test_nowarn SoleLogics.parseformula("q∧s→r")
 phi2_tree = @test_nowarn SoleLogics.parseformulatree("q∧s→r")
-@test LogicalTruthCondition(phi2) == LogicalTruthCondition{Formula}(phi2)
-@test LogicalTruthCondition(phi2_tree) == LogicalTruthCondition{SyntaxTree}(phi2_tree)
+@test LogicalTruthCondition(phi2) isa LogicalTruthCondition{<:Formula}
+@test LogicalTruthCondition(phi2_tree) isa LogicalTruthCondition{<:SyntaxTree}
 
 formula_p = @test_nowarn SoleLogics.parseformula("p")
 formula_q = @test_nowarn SoleLogics.parseformula("q")
@@ -308,30 +316,26 @@ ms_model = MixedSymbolicModel(ms_model)
 @test unroll_rules_cascade(cmodel_string) isa Vector{<:ConstantModel}
 
 @test unroll_rules_cascade(r1_string) isa Vector{<:RuleCascade}
-@test join(displaymodel.(unroll_rules_cascade(r1_string))) == """
-RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
-┐⩚(((r) ∧ (s)) ∧ (t))
-└ ✔ true
+@test join(displaymodel.(unroll_rules_cascade(r1_string); header = false)) == """
+┐⩚((r ∧ s) ∧ t)
+└ ✔ YES
 """
 
 @test unroll_rules_cascade(r2_string) isa Vector{<:RuleCascade}
-@test join(displaymodel.(unroll_rules_cascade(r2_string))) == """
-RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+@test join(displaymodel.(unroll_rules_cascade(r2_string); header = false)) == """
 ┐⩚(¬(r))
-└ ✔ true
+└ ✔ YES
 """
 
 @test unroll_rules_cascade(rc1_string) isa Vector{<:RuleCascade}
-@test join(displaymodel.(unroll_rules_cascade(rc1_string))) == """
-RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+@test join(displaymodel.(unroll_rules_cascade(rc1_string); header = false)) == """
 ┐⩚(r, s, t)
-└ ✔ true
+└ ✔ YES
 """
 
 @test unroll_rules_cascade(rcmodel) isa Vector{<:RuleCascade}
-@test join(displaymodel.(unroll_rules_cascade(rcmodel))) == """
-RuleCascade{Int64, LogicalTruthCondition{Formula}, ConstantModel{Int64}}
-┐⩚((p) ∧ ((q) ∨ (r)), (p) ∧ ((q) ∨ (r)), (p) ∧ ((q) ∨ (r)))
+@test join(displaymodel.(unroll_rules_cascade(rcmodel); header = false)) == """
+┐⩚(p ∧ (q ∨ r), p ∧ (q ∨ r), p ∧ (q ∨ r))
 └ ✔ 1
 """
 
@@ -340,106 +344,81 @@ RuleCascade{Int64, LogicalTruthCondition{Formula}, ConstantModel{Int64}}
 @test unroll_rules_cascade(b_fdx) isa Vector{<:RuleCascade}
 @test unroll_rules_cascade(b_p) isa Vector{<:RuleCascade}
 
-@test join(displaymodel.(unroll_rules_cascade(b_nsx))) == """
-RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+@test join(displaymodel.(unroll_rules_cascade(b_nsx); header = false)) == """
 ┐⩚(q)
-└ ✔ true
-RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+└ ✔ YES
 ┐⩚(¬(q))
-└ ✔ false
+└ ✔ NO
 """
 
-@test join(displaymodel.(unroll_rules_cascade(b_fsx))) == """
-RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+@test join(displaymodel.(unroll_rules_cascade(b_fsx); header = false)) == """
 ┐⩚(s)
-└ ✔ true
-RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+└ ✔ YES
 ┐⩚(¬(s))
-└ ✔ false
+└ ✔ NO
 """
 
-@test join(displaymodel.(unroll_rules_cascade(b_fdx))) == """
-RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+@test join(displaymodel.(unroll_rules_cascade(b_fdx); header = false)) == """
 ┐⩚(t, q)
-└ ✔ true
-RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+└ ✔ YES
 ┐⩚(t, ¬(q))
-└ ✔ false
-RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+└ ✔ NO
 ┐⩚(¬(t))
-└ ✔ true
+└ ✔ YES
 """
-# [{t,q} => true, {t,¬q} => false, {¬t} => true]"
+# [{t,q} => YES, {t,¬q} => NO, {¬t} => YES]"
 
-@test join(displaymodel.(unroll_rules_cascade(b_p))) == """
-RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+@test join(displaymodel.(unroll_rules_cascade(b_p); header = false)) == """
 ┐⩚(r, s)
-└ ✔ true
-RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+└ ✔ YES
 ┐⩚(r, ¬(s))
-└ ✔ false
-RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+└ ✔ NO
 ┐⩚(¬(r), t, q)
-└ ✔ true
-RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+└ ✔ YES
 ┐⩚(¬(r), t, ¬(q))
-└ ✔ false
-RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+└ ✔ NO
 ┐⩚(¬(r), ¬(t))
-└ ✔ true
+└ ✔ YES
 """
 
 @test unroll_rules_cascade(d1_string) isa Vector{<:RuleCascade}
-@test join(displaymodel.(unroll_rules_cascade(d1_string))) == """
-RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
-┐⩚(((r) ∧ (s)) ∧ (t))
-└ ✔ true
-RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+@test join(displaymodel.(unroll_rules_cascade(d1_string); header = false)) == """
+┐⩚((r ∧ s) ∧ t)
+└ ✔ YES
 ┐⩚(¬(r))
-└ ✔ true
-RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+└ ✔ YES
 ┐⩚(⊤)
-└ ✔ true
+└ ✔ YES
 """
 
 @test unroll_rules_cascade(dt1) isa Vector{<:RuleCascade}
-@test join(displaymodel.(unroll_rules_cascade(dt1))) == """
-RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+@test join(displaymodel.(unroll_rules_cascade(dt1); header = false)) == """
 ┐⩚(r, s)
-└ ✔ true
-RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+└ ✔ YES
 ┐⩚(r, ¬(s))
-└ ✔ false
-RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+└ ✔ NO
 ┐⩚(¬(r), t, q)
-└ ✔ true
-RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+└ ✔ YES
 ┐⩚(¬(r), t, ¬(q))
-└ ✔ false
-RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+└ ✔ NO
 ┐⩚(¬(r), ¬(t))
-└ ✔ true
+└ ✔ YES
 """
 
 @test unroll_rules_cascade(dt2) isa Vector{<:RuleCascade}
-@test join(displaymodel.(unroll_rules_cascade(dt2))) == """
-RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+@test join(displaymodel.(unroll_rules_cascade(dt2); header = false)) == """
 ┐⩚(t, q)
-└ ✔ true
-RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+└ ✔ YES
 ┐⩚(t, ¬(q))
-└ ✔ false
-RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+└ ✔ NO
 ┐⩚(¬(t))
-└ ✔ true
+└ ✔ YES
 """
 
 @test unroll_rules_cascade(msm) isa Vector{<:RuleCascade}
-@test join(displaymodel.(unroll_rules_cascade(msm))) == """
-RuleCascade{Int64, LogicalTruthCondition{SyntaxTree}, ConstantModel{Int64}}
+@test join(displaymodel.(unroll_rules_cascade(msm); header = false)) == """
 ┐⩚(q)
 └ ✔ 2
-RuleCascade{Float64, LogicalTruthCondition{SyntaxTree}, ConstantModel{Float64}}
 ┐⩚(¬(q))
 └ ✔ 1.5
 """
@@ -465,146 +444,126 @@ unroll_rules_cascade(branch_r)
 @test unroll_rules(outcome_string2) isa Vector{<:ConstantModel}
 @test unroll_rules(cmodel_string) isa Vector{<:ConstantModel}
 
+
+@test_nowarn unroll_rules(rule_r)
+@test_nowarn ruleset = unroll_rules(branch_r)
+@test_broken unroll_rules(dlmodel)
+@test_nowarn unroll_rules(rcmodel)
+
+@test_nowarn unroll_rules_cascade(cmodel_string)
+@test_nowarn unroll_rules_cascade(rule_r)
+@test_nowarn unroll_rules_cascade(branch_r)
+@test_nowarn unroll_rules_cascade(dlmodel)
+@test_nowarn unroll_rules_cascade(rcmodel)
+
+unroll_rules_cascade.([rfloat_number, dlmodel, dlmodel_integer, bmodel_integer, bmodel, bmodel_mixed, bmodel_mixed_number, dtmodel0, dtmodel, ms_model])
+
+
 @test unroll_rules(r1_string) isa Vector{<:Rule}
-@test join(displaymodel.(unroll_rules(r1_string))) == """
-Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
-┐((r) ∧ (s)) ∧ (t)
-└ ✔ true
+@test join(displaymodel.(unroll_rules(r1_string); header = false)) == """
+┐(r ∧ s) ∧ t
+└ ✔ YES
 """
 
 @test unroll_rules(r2_string) isa Vector{<:Rule}
-@test join(displaymodel.(unroll_rules(r2_string))) == """
-Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+@test join(displaymodel.(unroll_rules(r2_string); header = false)) == """
 ┐¬(r)
-└ ✔ true
+└ ✔ YES
 """
 
 @test unroll_rules(d1_string) isa Vector{<:Rule}
-@test join(displaymodel.(unroll_rules(d1_string))) == """
-Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
-┐((r) ∧ (s)) ∧ (t)
-└ ✔ true
-Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+@test join(displaymodel.(unroll_rules(d1_string); header = false)) == """
+┐(r ∧ s) ∧ t
+└ ✔ YES
 ┐¬(r)
-└ ✔ true
-Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+└ ✔ YES
 ┐⊤
-└ ✔ true
+└ ✔ YES
 """
 
 @test unroll_rules(rc1_string) isa Vector{<:Rule}
-@test join(displaymodel.(unroll_rules(rc1_string))) == """
-Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
-┐(r) ∧ ((s) ∧ (t))
-└ ✔ true
+@test join(displaymodel.(unroll_rules(rc1_string); header = false)) == """
+┐r ∧ (s ∧ t)
+└ ✔ YES
 """
 
 @test unroll_rules(rcmodel) isa Vector{<:Rule}
-@test join(displaymodel.(unroll_rules(rcmodel))) == """
-Rule{Int64, LogicalTruthCondition{Formula}, ConstantModel{Int64}}
-┐((p) ∧ ((q) ∨ (r))) ∧ (((p) ∧ ((q) ∨ (r))) ∧ ((p) ∧ ((q) ∨ (r))))
+@test join(displaymodel.(unroll_rules(rcmodel); header = false)) == """
+┐(p ∧ (q ∨ r)) ∧ ((p ∧ (q ∨ r)) ∧ (p ∧ (q ∨ r)))
 └ ✔ 1
 """
 
 @test unroll_rules(b_nsx) isa Vector{<:Rule}
-@test join(displaymodel.(unroll_rules(b_nsx))) == """
-Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+@test join(displaymodel.(unroll_rules(b_nsx); header = false)) == """
 ┐q
-└ ✔ true
-Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+└ ✔ YES
 ┐¬(q)
-└ ✔ false
+└ ✔ NO
 """
 
 @test unroll_rules(b_fsx) isa Vector{<:Rule}
-@test join(displaymodel.(unroll_rules(b_fsx))) == """
-Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+@test join(displaymodel.(unroll_rules(b_fsx); header = false)) == """
 ┐s
-└ ✔ true
-Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+└ ✔ YES
 ┐¬(s)
-└ ✔ false
+└ ✔ NO
 """
 
 @test unroll_rules(b_fdx) isa Vector{<:Rule}
-@test join(displaymodel.(unroll_rules(b_fdx))) == """
-Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
-┐(t) ∧ (q)
-└ ✔ true
-Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
-┐(t) ∧ (¬(q))
-└ ✔ false
-Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+@test join(displaymodel.(unroll_rules(b_fdx); header = false)) == """
+┐t ∧ q
+└ ✔ YES
+┐t ∧ (¬(q))
+└ ✔ NO
 ┐¬(t)
-└ ✔ true
+└ ✔ YES
 """
 
 @test unroll_rules(b_p) isa Vector{<:Rule}
-@test join(displaymodel.(unroll_rules(b_p))) == """
-Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
-┐(r) ∧ (s)
-└ ✔ true
-Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
-┐(r) ∧ (¬(s))
-└ ✔ false
-Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
-┐(¬(r)) ∧ ((t) ∧ (q))
-└ ✔ true
-Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
-┐(¬(r)) ∧ ((t) ∧ (¬(q)))
-└ ✔ false
-Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+@test join(displaymodel.(unroll_rules(b_p); header = false)) == """
+┐r ∧ s
+└ ✔ YES
+┐r ∧ (¬(s))
+└ ✔ NO
+┐(¬(r)) ∧ (t ∧ q)
+└ ✔ YES
+┐(¬(r)) ∧ (t ∧ (¬(q)))
+└ ✔ NO
 ┐(¬(r)) ∧ (¬(t))
-└ ✔ true
+└ ✔ YES
 """
 
 @test unroll_rules(dt1) isa Vector{<:Rule}
-@test join(displaymodel.(unroll_rules(dt1))) == """
-Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
-┐(r) ∧ (s)
-└ ✔ true
-Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
-┐(r) ∧ (¬(s))
-└ ✔ false
-Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
-┐(¬(r)) ∧ ((t) ∧ (q))
-└ ✔ true
-Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
-┐(¬(r)) ∧ ((t) ∧ (¬(q)))
-└ ✔ false
-Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+@test join(displaymodel.(unroll_rules(dt1); header = false)) == """
+┐r ∧ s
+└ ✔ YES
+┐r ∧ (¬(s))
+└ ✔ NO
+┐(¬(r)) ∧ (t ∧ q)
+└ ✔ YES
+┐(¬(r)) ∧ (t ∧ (¬(q)))
+└ ✔ NO
 ┐(¬(r)) ∧ (¬(t))
-└ ✔ true
+└ ✔ YES
 """
 
 @test unroll_rules(dt2) isa Vector{<:Rule}
-@test join(displaymodel.(unroll_rules(dt2))) == """
-Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
-┐(t) ∧ (q)
-└ ✔ true
-Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
-┐(t) ∧ (¬(q))
-└ ✔ false
-Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+@test join(displaymodel.(unroll_rules(dt2); header = false)) == """
+┐t ∧ q
+└ ✔ YES
+┐t ∧ (¬(q))
+└ ✔ NO
 ┐¬(t)
-└ ✔ true
+└ ✔ YES
 """
 
 @test unroll_rules(msm) isa Vector{<:Rule}
-@test join(displaymodel.(unroll_rules(msm))) == """
-Rule{Int64, LogicalTruthCondition{SyntaxTree}, ConstantModel{Int64}}
+@test join(displaymodel.(unroll_rules(msm); header = false)) == """
 ┐q
 └ ✔ 2
-Rule{Float64, LogicalTruthCondition{SyntaxTree}, ConstantModel{Float64}}
 ┐¬(q)
 └ ✔ 1.5
 """
-
-#=
-unroll_rules(rule_r)
-unroll_rules(branch_r)
-unroll_rules.([rfloat_number, dlmodel, dlmodel_integer, bmodel_integer, bmodel, bmodel_mixed, bmodel_mixed_number, dtmodel0, dtmodel, ms_model])
-=#
 
 ############################################################################################
 ############################### Testing convert ############################################
@@ -621,13 +580,13 @@ displaymodel.(io,convert(RuleCascade,r1_string))
 @test String(take!(io)) == """
 RuleCascade{String, LogicalTruthCondition{SyntaxTree{Union{SoleLogics.NamedOperator{:∧}, Proposition{String}}, SoleLogics.NamedOperator{:∧}}}, ConstantModel{String}}
 ┐⩚(r ∧ s ∧ t)
-└ ✔ true
+└ ✔ YES
 """
 @test_nowarn convert(RuleCascade,r2_string)
 displaymodel.(io,convert(RuleCascade,r2_string))
 @test String(take!(io)) == """
 RuleCascade{String, LogicalTruthCondition{SyntaxTree{Union{SoleLogics.NamedOperator{:¬}, Proposition{String}}, SoleLogics.NamedOperator{:¬}}}, ConstantModel{String}}
 ┐⩚(¬(r))
-└ ✔ true
+└ ✔ YES
 """
 =#

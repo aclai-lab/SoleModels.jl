@@ -120,12 +120,12 @@ See also [`list_immediate_rules`](@ref), [`unroll_rules_cascade`](@ref),
 function unroll_rules(m::AbstractModel)
     ms = unroll_rules_cascade(m)
     return map(m->begin
-        if m isa RuleCascade && conditiontype(m) <: LogicalTruthCondition
+        if m isa RuleCascade && conditiontype(m) <: Union{TrueCondition,LogicalTruthCondition}
             convert(Rule, m)
         elseif m isa FinalModel
             m
         else
-            error("TODO error")
+            error("Unknown model type encountered in unroll_rules: $(typeof(m))")
         end
     end, ms)
 end

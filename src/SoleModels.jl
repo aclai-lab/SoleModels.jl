@@ -22,7 +22,7 @@ export outcometype, outputtype
 
 export Rule, Branch
 export DecisionList, RuleCascade
-export DecisionTree, MixedSymbolicModel
+export DecisionTree, MixedSymbolicModel, DecisionForest
 export evaluate_antecedent, evaluate_rule # TODO need to export?
 export rule_metrics # TODO need to export?
 

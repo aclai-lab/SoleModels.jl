@@ -834,7 +834,11 @@ function convert(::Type{R}, m::RuleCascade{O,C}) where {R<:Rule,O,C<:Union{TrueC
         if length(m) == 0
             return SyntaxTree(⊤)
         elseif length(m) == 1
-            return formula(m[1])
+            if m[1] isa TrueCondition # TODO ugly. fix
+                return SyntaxTree(⊤)
+            else
+                return formula(m[1])
+            end
         else
             return ∧((formula.(m))...)
         end

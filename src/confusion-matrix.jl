@@ -41,10 +41,10 @@ using SoleBase: nat_sort
 ### Classification ###
 
 function compute_metrics(
-        actual::AbstractVector{L},
-        predicted::AbstractVector{L},
-        weights = nothing,
-    ) where {L<:CLabel}
+    actual::AbstractVector{L},
+    predicted::AbstractVector{L},
+    weights = nothing,
+) where {L<:CLabel}
     @assert length(actual) == length(predicted) "Can't compute_metrics with uneven number of actual $(length(actual)) and predicted $(length(predicted)) labels."
     (;
         # n_inst = length(actual),
@@ -60,10 +60,10 @@ end
 ### Regression ###
 
 function compute_metrics(
-        actual::AbstractVector{L},
-        predicted::AbstractVector, # TODO: AbstractVector{L}
-        weights = nothing,
-    ) where {L<:RLabel}
+    actual::AbstractVector{L},
+    predicted::AbstractVector, # TODO: AbstractVector{L}
+    weights = nothing,
+) where {L<:RLabel}
     @assert isnothing(weights) || weights isa Ones "TODO Expand code: Non-nothing weights encountered in compute_metrics()"
     @assert length(actual) == length(predicted) "Can't compute_metrics with uneven number of actual $(length(actual)) and predicted $(length(predicted)) labels."
     predicted = Vector{eltype(actual)}(predicted)
