@@ -4,18 +4,26 @@
 ############################################################################################
 
 """
-This function provides access to the list of immediate child models;
-the list is empty for `FinalModel`s.
+    immediate_submodels(m::AbstractModel)
 
-See also [`all_submodels`](@ref), [`ConstrainedModel`](@ref), [`FinalModel`](@ref).
+Returns a list of immediate child models.
+Note: if the model is final, then the list is empty.
+
+See also
+[`submodels`](@ref),
+[`FinalModel`](@ref),
+[`AbstractModel`](@ref).
 """
-immediate_submodels(m::AbstractModel{O} where {O})::Vector{<:{AbstractModel{<:O}}} =
+function immediate_submodels(
+    m::AbstractModel{O}
+)::Vector{<:{AbstractModel{<:O}}} where {O}
     error("Please, provide method immediate_submodels(::$(typeof(m))).")
+end
 
 immediate_submodels(m::FinalModel{O}) where {O} = Vector{<:AbstractModel{<:O}}[]
 immediate_submodels(m::Rule) = [consequent(m)]
 immediate_submodels(m::Branch) = [posconsequent(m), negconsequent(m)]
-immediate_submodels(m::DecisionList) = [rules(m)..., consequent(m)]
+immediate_submodels(m::DecisionList) = [rulebase(m)..., consequent(m)]
 immediate_submodels(m::RuleCascade) = [consequent(m)]
 immediate_submodels(m::DecisionTree) = immediate_submodels(root(m))
 immediate_submodels(m::MixedSymbolicModel) = immediate_submodels(root(m))
@@ -23,21 +31,22 @@ immediate_submodels(m::MixedSymbolicModel) = immediate_submodels(root(m))
 """
 This function provides access to the list of all child models in the sub-tree.
 
-See also [`immediate_submodels`](@ref), [`ConstrainedModel`](@ref), [`FinalModel`](@ref).
+See also
+[`immediate_submodels`](@ref),
+[`FinalModel`](@ref),
+[`AbstractModel`](@ref).
 """
-all_submodels(m::AbstractModel) = [Iterators.flatten(_all_submodels.(immediate_submodels(m)))...]
-_all_submodels(m::AbstractModel) = [m, Iterators.flatten(_all_submodels.(immediate_submodels(m)))...]
+submodels(m::AbstractModel) = [Iterators.flatten(_submodels.(immediate_submodels(m)))...]
+_submodels(m::AbstractModel) = [m, Iterators.flatten(_submodels.(immediate_submodels(m)))...]
 
 
 ############################################################################################
 ############################################################################################
 ############################################################################################
 
-"""
-When `assumed_formula` is assumed, and `f` is known to be true, their conjuction holds.
-"""
+# When `assumed_formula` is assumed, and `f` is known to be true, their conjuction holds.
 advance_formula(f::AbstractFormula, assumed_formula::Union{Nothing,AbstractFormula}) =
-    isnothing(assumed_formula) ? f : SoleLogics.CONJUNCTION(assumed_formula, f)
+    isnothing(assumed_formula) ? f : ∧(assumed_formula, f)
 
 advance_formula(r::R where {R<:Rule}, assumed_formula::Union{Nothing,AbstractFormula}) =
     R(advance_formula(antecedent(r), assumed_formula), consequent(r), info(r))
@@ -47,61 +56,60 @@ advance_formula(r::R where {R<:Rule}, assumed_formula::Union{Nothing,AbstractFor
 ############################################################################################
 
 """
-$(doc_symbolic)
-Every symbolic model must provide access to its corresponding immediate rules via the
-`list_immediate_rules` trait.
+    immediate_rules(m::AbstractModel{O} where {O})::Rule{<:O}
+
+Returns the immediate rules equivalent to a model. TODO explain
 
 See also [`unroll_rules`](@ref), [`unroll_rules_cascade`](@ref), [`issymbolic`](@ref),
 [`AbstractModel`](@ref).
 """
-list_immediate_rules(m::AbstractModel{O} where {O})::Rule{<:O} =
+immediate_rules(m::AbstractModel{O} where {O})::Rule{<:O} =
     error(begin
         if issymbolic(m)
-            "Please, provide method list_immediate_rules(::$(typeof(m))) ($(typeof(m)) is a symbolic model)."
+            "Please, provide method immediate_rules(::$(typeof(m))) ($(typeof(m)) is a symbolic model)."
         else
             "Models of type $(typeof(m)) are not symbolic, and thus have no rules associated."
         end
     end)
 
-list_immediate_rules(m::FinalModel) = [Rule(TOP, m)]
+immediate_rules(m::FinalModel) = [Rule(⊤, m)]
 
-list_immediate_rules(m::Rule) = [m]
+immediate_rules(m::Rule) = [m]
 
-list_immediate_rules(m::Branch{O,FM}) where {O,FM} = [
+immediate_rules(m::Branch{O,FM}) where {O,FM} = [
     Rule{O,FM}(antecedent(m), posconsequent(m)),
     Rule{O,FM}(SoleLogics.NEGATION(antecedent(m)), negconsequent(m)),
 ]
 
-function list_immediate_rules(m::DecisionList{O,FM}) where {O,FM}
+function immediate_rules(m::DecisionList{O,FM}) where {O,FM}
     assumed_formula = nothing
-    normalized_rules = Vector{eltype(rules(m))}[]
-    for rule in rules(m)
+    normalized_rules = Vector{eltype(rulebase(m))}[]
+    for rule in rulebase(m)
         rule = advance_formula(rule, assumed_formula)
         assumed_formula = advance_formula(SoleLogics.NEGATION(antecedent(rule)), assumed_formula)
     end
-    default_antecedent = isnothing(assumed_formula) ? TOP : assumed_formula
+    default_antecedent = isnothing(assumed_formula) ? ⊤ : assumed_formula
     push!(normalized_rules, Rule{O,FM}(default_antecedent, defaultconsequent(m)))
     normalized_rules
 end
 
-list_immediate_rules(m::RuleCascade) = [convert(Rule, m)]
+immediate_rules(m::RuleCascade) = [convert(Rule, m)]
 
-list_immediate_rules(m::DecisionTree) = list_immediate_rules(root(m))
+immediate_rules(m::DecisionTree) = immediate_rules(root(m))
 
-list_immediate_rules(m::MixedSymbolicModel) = list_immediate_rules(root(m))
+immediate_rules(m::MixedSymbolicModel) = immediate_rules(root(m))
 
 ############################################################################################
 ############################################################################################
 ############################################################################################
 
 """
-$(doc_symbolic)
 This function extracts the behavior of a symbolic model and represents it as a
 set of mutually exclusive (and jointly exaustive, if the model is closed) rules,
 which can be useful
 for many purposes.
 
-See also [`list_immediate_rules`](@ref), [`unroll_rules_cascade`](@ref),
+See also [`immediate_rules`](@ref), [`unroll_rules_cascade`](@ref),
 [`issymbolic`](@ref), [`AbstractModel`](@ref).
 """
 # TODO remove or merge with unroll_rules_cascade?
@@ -135,12 +143,11 @@ end
 ############################################################################################
 
 """
-$(doc_symbolic)
 This function extracts the behavior of a symbolic model and represents it as a
 set of mutually exclusive (and jointly exaustive, if the model is closed) rules cascade
 vectors, which can be useful for many purposes.
 
-See also [`list_immediate_rules`](@ref), [`issymbolic`](@ref), [`AbstractModel`](@ref),
+See also [`immediate_rules`](@ref), [`issymbolic`](@ref), [`AbstractModel`](@ref),
 [`unroll_rules`](@ref).
 """
 function unroll_rules_cascade(m::AbstractModel)
@@ -223,7 +230,7 @@ function unroll_rules_cascade(
     m::DecisionList{O,<:Union{TrueCondition,LogicalTruthCondition}}
 ) where {O}
     [
-        reduce(vcat,[unroll_rules_cascade(rule) for rule in rules(m)])...,
+        reduce(vcat,[unroll_rules_cascade(rule) for rule in rulebase(m)])...,
         RuleCascade(unroll_rules_cascade(defaultconsequent(m))...),
     ]
 end
@@ -239,7 +246,6 @@ unroll_rules_cascade(m::MixedSymbolicModel) = unroll_rules_cascade(root(m))
 ############################################################################################
 
 """
-$(doc_symbolic)
 List all paths of a decision tree by performing a tree traversal
 """
 # """
@@ -247,7 +253,7 @@ List all paths of a decision tree by performing a tree traversal
 # TODO @Michele
 # """
 # function list_paths(tree::DecisionTree{L<:AbstractLogic,O})::AbstractVector{<:AbstractVector{Union{Any,Rule{L,O}}}}
-#     return list_immediate_rules(root(tree))
+#     return immediate_rules(root(tree))
 # end
 #=
 function list_paths(tree::DecisionTree)
@@ -255,7 +261,7 @@ function list_paths(tree::DecisionTree)
     # retrieve the root FNode of the formula(syntax) tree
     pathset = list_paths(root(tree))
 
-    (length(pathset) == 1) && (return [RuleCascade(TOP,pathset[1])])
+    (length(pathset) == 1) && (return [RuleCascade(⊤,pathset[1])])
 
     return [RuleCascade(path[1:end-1],path[end]) for path in pathset]
 end

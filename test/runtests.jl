@@ -1,9 +1,5 @@
 # using Revise
-using SoleLogics
 using SoleModels
-using SoleModels: ConstantModel
-using Test
-
 using SoleLogics
 using Test
 using Random
@@ -20,7 +16,7 @@ println("Julia version: ", VERSION)
 
 test_suites = [
     ("Base", ["base.jl", ]),
-    ("Misc", ["misc.jl", ]),
+    ("Miscellaneous", ["misc.jl", ]),
 ]
 
 @testset "SoleModels.jl" begin

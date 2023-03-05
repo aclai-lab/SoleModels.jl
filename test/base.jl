@@ -1,6 +1,7 @@
 using SoleModels
 using SoleLogics
 using FunctionWrappers: FunctionWrapper
+using SoleModels: AbstractModel
 using SoleModels: ConstantModel, FinalModel
 using SoleModels: ConstrainedModel, check_model_constraints
 using Test
@@ -40,6 +41,8 @@ cmodel_string = @test_nowarn ConstantModel(const_string)
 cmodel_float = @test_nowarn ConstantModel{Float64}(const_float)
 cmodel_number = @test_nowarn ConstantModel{Number}(const_integer)
 cmodel_integer = @test_nowarn ConstantModel{Int}(const_integer)
+
+@test (@test_logs (:warn,) SoleModels.FunctionModel{Int}(const_fun)) isa SoleModels.FunctionModel{Int}
 
 cmodels = @test_nowarn [cmodel_string, cmodel_float, cmodel_number, cmodel_integer]
 cmodels_num = @test_nowarn [cmodel_float, cmodel_number, cmodel_integer]

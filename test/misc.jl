@@ -5,6 +5,7 @@ using FunctionWrappers: FunctionWrapper
 using Test
 using SoleLogics
 using SoleModels
+using SoleModels: AbstractModel
 using SoleModels: ConstantModel, FinalModel
 using SoleModels: LogicalTruthCondition, TrueCondition
 using SoleModels: unroll_rules, unroll_rules_cascade, formula, displaymodel
