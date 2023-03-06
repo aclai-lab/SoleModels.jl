@@ -120,7 +120,8 @@ See also [`list_immediate_rules`](@ref), [`unroll_rules_cascade`](@ref),
 function unroll_rules(m::AbstractModel)
     ms = unroll_rules_cascade(m)
     return map(m->begin
-        if m isa RuleCascade && conditiontype(m) <: LogicalTruthCondition
+        if m isa RuleCascade &&
+                conditiontype(m) <: Union{<:LogicalTruthCondition,TrueCondition}
             convert(Rule, m)
         elseif m isa FinalModel
             m

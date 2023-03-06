@@ -9,8 +9,8 @@ Function for evaluating the antecedent of a rule
 function evaluate_antecedent(rule::Rule, X::AbstractInterpretationSet)
     # TODO
     x = check(antecedent(rule), X) #rand([true,false],nsamples(X))
-    @show
-    x
+    #@show
+    return x
 end
 
 """
@@ -33,6 +33,7 @@ function evaluate_rule(
     #  - `false` when not satisfiable,
     #  - `true` when satisfiable,
     #  - `nothing` when antecedent does not hold.
+    #=
     cons_sat = begin
         cons_sat = Vector{Union{Bool,Nothing}}(fill(nothing, length(Y)))
         idxs_true = begin
@@ -47,6 +48,7 @@ function evaluate_rule(
         cons_sat[idxs_false] .= false
         cons_sat
     end
+    =#
 
     y_pred = begin
         y_pred = Vector{Union{Label,Nothing}}(fill(nothing, length(Y)))
@@ -57,7 +59,7 @@ function evaluate_rule(
     return (;
         ant_sat   = ant_sat,
         idxs_sat  = idxs_sat,
-        cons_sat  = cons_sat,
+        #cons_sat  = cons_sat,
         y_pred    = y_pred,
     )
 end

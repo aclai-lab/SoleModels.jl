@@ -78,18 +78,18 @@ st_100 = @test_nowarn SyntaxTree(prop_100)
 ################################### Formula ################################################
 p = @test_nowarn SoleLogics.parseformula("p")
 p_tree = @test_nowarn SoleLogics.parseformulatree("p")
-@test LogicalTruthCondition(p) == LogicalTruthCondition{Formula}(p)
-@test LogicalTruthCondition(p_tree) == LogicalTruthCondition{SyntaxTree}(p_tree)
+@test LogicalTruthCondition(p) == LogicalTruthCondition{Formula{BaseLogic{SoleLogics.CompleteFlatGrammar{AlphabetOfAny{String}, Union{}}, SoleLogics.BooleanAlgebra}}}(p)
+@test LogicalTruthCondition(p_tree) == LogicalTruthCondition{SyntaxTree{Proposition{String}, Proposition{String}}}(p_tree)
 
 phi = @test_nowarn SoleLogics.parseformula("p∧q∨r")
 phi_tree = @test_nowarn SoleLogics.parseformulatree("p∧q∨r")
-@test LogicalTruthCondition(phi) == LogicalTruthCondition{Formula}(phi)
-@test LogicalTruthCondition(phi_tree) == LogicalTruthCondition{SyntaxTree}(phi_tree)
+@test LogicalTruthCondition(phi) == LogicalTruthCondition{Formula{BaseLogic{SoleLogics.CompleteFlatGrammar{AlphabetOfAny{String}, Union{SoleLogics.NamedOperator{:∨}, SoleLogics.NamedOperator{:∧}}}, SoleLogics.BooleanAlgebra}}}(phi)
+@test LogicalTruthCondition(phi_tree) == LogicalTruthCondition{SyntaxTree{Union{SoleLogics.NamedOperator{:∧}, SoleLogics.NamedOperator{:∨}, Proposition{String}}, SoleLogics.NamedOperator{:∧}}}(phi_tree)
 
 phi2 = @test_nowarn SoleLogics.parseformula("q∧s→r")
 phi2_tree = @test_nowarn SoleLogics.parseformulatree("q∧s→r")
-@test LogicalTruthCondition(phi2) == LogicalTruthCondition{Formula}(phi2)
-@test LogicalTruthCondition(phi2_tree) == LogicalTruthCondition{SyntaxTree}(phi2_tree)
+@test LogicalTruthCondition(phi2) == LogicalTruthCondition{Formula{BaseLogic{SoleLogics.CompleteFlatGrammar{AlphabetOfAny{String}, Union{SoleLogics.NamedOperator{:∧}, SoleLogics.NamedOperator{:→}}}, SoleLogics.BooleanAlgebra}}}(phi2)
+@test LogicalTruthCondition(phi2_tree) == LogicalTruthCondition{SyntaxTree{Union{SoleLogics.NamedOperator{:→}, SoleLogics.NamedOperator{:∧}, Proposition{String}}, SoleLogics.NamedOperator{:→}}}(phi2_tree)
 
 formula_p = @test_nowarn SoleLogics.parseformula("p")
 formula_q = @test_nowarn SoleLogics.parseformula("q")
@@ -111,6 +111,9 @@ cond_100 = @test_nowarn LogicalTruthCondition(st_100)
 ##################################### Rule #################################################
 r1_string = @test_nowarn Rule(LogicalTruthCondition(∧(∧(prop_r,prop_s),prop_t)),outcome_string)
 r2_string = @test_nowarn Rule(LogicalTruthCondition(¬(prop_r)),outcome_string)
+
+r_true_string = @test_nowarn Rule(outcome_string)
+r_true_number = @test_nowarn Rule(cmodel_number)
 
 r1_r2_string = @test_nowarn Rule(LogicalTruthCondition(∧(∧(prop_r,prop_s),prop_t)), r2_string)
 
@@ -309,29 +312,29 @@ ms_model = MixedSymbolicModel(ms_model)
 
 @test unroll_rules_cascade(r1_string) isa Vector{<:RuleCascade}
 @test join(displaymodel.(unroll_rules_cascade(r1_string))) == """
-RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
-┐⩚(((r) ∧ (s)) ∧ (t))
+RuleCascade{String, LogicalTruthCondition{SyntaxTree{Union{SoleLogics.NamedOperator{:∧}, Proposition{String}}, SoleLogics.NamedOperator{:∧}}}, ConstantModel{String}}
+┐⩚((r ∧ s) ∧ t)
 └ ✔ true
 """
 
 @test unroll_rules_cascade(r2_string) isa Vector{<:RuleCascade}
 @test join(displaymodel.(unroll_rules_cascade(r2_string))) == """
-RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+RuleCascade{String, LogicalTruthCondition{SyntaxTree{Union{SoleLogics.NamedOperator{:¬}, Proposition{String}}, SoleLogics.NamedOperator{:¬}}}, ConstantModel{String}}
 ┐⩚(¬(r))
 └ ✔ true
 """
 
 @test unroll_rules_cascade(rc1_string) isa Vector{<:RuleCascade}
 @test join(displaymodel.(unroll_rules_cascade(rc1_string))) == """
-RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+RuleCascade{String, LogicalTruthCondition{SyntaxTree{Proposition{String}, Proposition{String}}}, ConstantModel{String}}
 ┐⩚(r, s, t)
 └ ✔ true
 """
 
 @test unroll_rules_cascade(rcmodel) isa Vector{<:RuleCascade}
 @test join(displaymodel.(unroll_rules_cascade(rcmodel))) == """
-RuleCascade{Int64, LogicalTruthCondition{Formula}, ConstantModel{Int64}}
-┐⩚((p) ∧ ((q) ∨ (r)), (p) ∧ ((q) ∨ (r)), (p) ∧ ((q) ∨ (r)))
+RuleCascade{Int64, LogicalTruthCondition{Formula{BaseLogic{SoleLogics.CompleteFlatGrammar{AlphabetOfAny{String}, Union{SoleLogics.NamedOperator{:∨}, SoleLogics.NamedOperator{:∧}}}, SoleLogics.BooleanAlgebra}}}, ConstantModel{Int64}}
+┐⩚(p ∧ (q ∨ r), p ∧ (q ∨ r), p ∧ (q ∨ r))
 └ ✔ 1
 """
 
@@ -341,105 +344,105 @@ RuleCascade{Int64, LogicalTruthCondition{Formula}, ConstantModel{Int64}}
 @test unroll_rules_cascade(b_p) isa Vector{<:RuleCascade}
 
 @test join(displaymodel.(unroll_rules_cascade(b_nsx))) == """
-RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+RuleCascade{String, LogicalTruthCondition{SyntaxTree{Proposition{String}, Proposition{String}}}, ConstantModel{String}}
 ┐⩚(q)
 └ ✔ true
-RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+RuleCascade{String, LogicalTruthCondition{SyntaxTree{Union{SoleLogics.NamedOperator{:¬}, Proposition{String}}, SoleLogics.NamedOperator{:¬}}}, ConstantModel{String}}
 ┐⩚(¬(q))
 └ ✔ false
 """
 
 @test join(displaymodel.(unroll_rules_cascade(b_fsx))) == """
-RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+RuleCascade{String, LogicalTruthCondition{SyntaxTree{Proposition{String}, Proposition{String}}}, ConstantModel{String}}
 ┐⩚(s)
 └ ✔ true
-RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+RuleCascade{String, LogicalTruthCondition{SyntaxTree{Union{SoleLogics.NamedOperator{:¬}, Proposition{String}}, SoleLogics.NamedOperator{:¬}}}, ConstantModel{String}}
 ┐⩚(¬(s))
 └ ✔ false
 """
 
 @test join(displaymodel.(unroll_rules_cascade(b_fdx))) == """
-RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+RuleCascade{String, LogicalTruthCondition{SyntaxTree{Proposition{String}, Proposition{String}}}, ConstantModel{String}}
 ┐⩚(t, q)
 └ ✔ true
-RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+RuleCascade{String, LogicalTruthCondition, ConstantModel{String}}
 ┐⩚(t, ¬(q))
 └ ✔ false
-RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+RuleCascade{String, LogicalTruthCondition{SyntaxTree{Union{SoleLogics.NamedOperator{:¬}, Proposition{String}}, SoleLogics.NamedOperator{:¬}}}, ConstantModel{String}}
 ┐⩚(¬(t))
 └ ✔ true
 """
 # [{t,q} => true, {t,¬q} => false, {¬t} => true]"
 
 @test join(displaymodel.(unroll_rules_cascade(b_p))) == """
-RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+RuleCascade{String, LogicalTruthCondition{SyntaxTree{Proposition{String}, Proposition{String}}}, ConstantModel{String}}
 ┐⩚(r, s)
 └ ✔ true
-RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+RuleCascade{String, LogicalTruthCondition, ConstantModel{String}}
 ┐⩚(r, ¬(s))
 └ ✔ false
-RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+RuleCascade{String, LogicalTruthCondition, ConstantModel{String}}
 ┐⩚(¬(r), t, q)
 └ ✔ true
-RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+RuleCascade{String, LogicalTruthCondition, ConstantModel{String}}
 ┐⩚(¬(r), t, ¬(q))
 └ ✔ false
-RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+RuleCascade{String, LogicalTruthCondition{SyntaxTree{Union{SoleLogics.NamedOperator{:¬}, Proposition{String}}, SoleLogics.NamedOperator{:¬}}}, ConstantModel{String}}
 ┐⩚(¬(r), ¬(t))
 └ ✔ true
 """
 
 @test unroll_rules_cascade(d1_string) isa Vector{<:RuleCascade}
 @test join(displaymodel.(unroll_rules_cascade(d1_string))) == """
-RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
-┐⩚(((r) ∧ (s)) ∧ (t))
+RuleCascade{String, LogicalTruthCondition{SyntaxTree{Union{SoleLogics.NamedOperator{:∧}, Proposition{String}}, SoleLogics.NamedOperator{:∧}}}, ConstantModel{String}}
+┐⩚((r ∧ s) ∧ t)
 └ ✔ true
-RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+RuleCascade{String, LogicalTruthCondition{SyntaxTree{Union{SoleLogics.NamedOperator{:¬}, Proposition{String}}, SoleLogics.NamedOperator{:¬}}}, ConstantModel{String}}
 ┐⩚(¬(r))
 └ ✔ true
-RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+RuleCascade{String, TrueCondition, ConstantModel{String}}
 ┐⩚(⊤)
 └ ✔ true
 """
 
 @test unroll_rules_cascade(dt1) isa Vector{<:RuleCascade}
 @test join(displaymodel.(unroll_rules_cascade(dt1))) == """
-RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+RuleCascade{String, LogicalTruthCondition{SyntaxTree{Proposition{String}, Proposition{String}}}, ConstantModel{String}}
 ┐⩚(r, s)
 └ ✔ true
-RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+RuleCascade{String, LogicalTruthCondition, ConstantModel{String}}
 ┐⩚(r, ¬(s))
 └ ✔ false
-RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+RuleCascade{String, LogicalTruthCondition, ConstantModel{String}}
 ┐⩚(¬(r), t, q)
 └ ✔ true
-RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+RuleCascade{String, LogicalTruthCondition, ConstantModel{String}}
 ┐⩚(¬(r), t, ¬(q))
 └ ✔ false
-RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+RuleCascade{String, LogicalTruthCondition{SyntaxTree{Union{SoleLogics.NamedOperator{:¬}, Proposition{String}}, SoleLogics.NamedOperator{:¬}}}, ConstantModel{String}}
 ┐⩚(¬(r), ¬(t))
 └ ✔ true
 """
 
 @test unroll_rules_cascade(dt2) isa Vector{<:RuleCascade}
 @test join(displaymodel.(unroll_rules_cascade(dt2))) == """
-RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+RuleCascade{String, LogicalTruthCondition{SyntaxTree{Proposition{String}, Proposition{String}}}, ConstantModel{String}}
 ┐⩚(t, q)
 └ ✔ true
-RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+RuleCascade{String, LogicalTruthCondition, ConstantModel{String}}
 ┐⩚(t, ¬(q))
 └ ✔ false
-RuleCascade{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+RuleCascade{String, LogicalTruthCondition{SyntaxTree{Union{SoleLogics.NamedOperator{:¬}, Proposition{String}}, SoleLogics.NamedOperator{:¬}}}, ConstantModel{String}}
 ┐⩚(¬(t))
 └ ✔ true
 """
 
 @test unroll_rules_cascade(msm) isa Vector{<:RuleCascade}
 @test join(displaymodel.(unroll_rules_cascade(msm))) == """
-RuleCascade{Int64, LogicalTruthCondition{SyntaxTree}, ConstantModel{Int64}}
+RuleCascade{Int64, LogicalTruthCondition{SyntaxTree{Proposition{String}, Proposition{String}}}, ConstantModel{Int64}}
 ┐⩚(q)
 └ ✔ 2
-RuleCascade{Float64, LogicalTruthCondition{SyntaxTree}, ConstantModel{Float64}}
+RuleCascade{Float64, LogicalTruthCondition{SyntaxTree{Union{SoleLogics.NamedOperator{:¬}, Proposition{String}}, SoleLogics.NamedOperator{:¬}}}, ConstantModel{Float64}}
 ┐⩚(¬(q))
 └ ✔ 1.5
 """
@@ -467,135 +470,135 @@ unroll_rules_cascade(branch_r)
 
 @test unroll_rules(r1_string) isa Vector{<:Rule}
 @test join(displaymodel.(unroll_rules(r1_string))) == """
-Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
-┐((r) ∧ (s)) ∧ (t)
+Rule{String, LogicalTruthCondition{SyntaxTree{Union{SoleLogics.NamedOperator{:∧}, Proposition{String}}, SoleLogics.NamedOperator{:∧}}}, ConstantModel{String}}
+┐(r ∧ s) ∧ t
 └ ✔ true
 """
 
 @test unroll_rules(r2_string) isa Vector{<:Rule}
 @test join(displaymodel.(unroll_rules(r2_string))) == """
-Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+Rule{String, LogicalTruthCondition{SyntaxTree{Union{SoleLogics.NamedOperator{:¬}, Proposition{String}}, SoleLogics.NamedOperator{:¬}}}, ConstantModel{String}}
 ┐¬(r)
 └ ✔ true
 """
 
 @test unroll_rules(d1_string) isa Vector{<:Rule}
 @test join(displaymodel.(unroll_rules(d1_string))) == """
-Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
-┐((r) ∧ (s)) ∧ (t)
+Rule{String, LogicalTruthCondition{SyntaxTree{Union{SoleLogics.NamedOperator{:∧}, Proposition{String}}, SoleLogics.NamedOperator{:∧}}}, ConstantModel{String}}
+┐(r ∧ s) ∧ t
 └ ✔ true
-Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+Rule{String, LogicalTruthCondition{SyntaxTree{Union{SoleLogics.NamedOperator{:¬}, Proposition{String}}, SoleLogics.NamedOperator{:¬}}}, ConstantModel{String}}
 ┐¬(r)
 └ ✔ true
-Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+Rule{String, LogicalTruthCondition{SyntaxTree{SoleLogics.TopOperator, SoleLogics.TopOperator}}, ConstantModel{String}}
 ┐⊤
 └ ✔ true
 """
 
 @test unroll_rules(rc1_string) isa Vector{<:Rule}
 @test join(displaymodel.(unroll_rules(rc1_string))) == """
-Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
-┐(r) ∧ ((s) ∧ (t))
+Rule{String, LogicalTruthCondition{SyntaxTree{Union{SoleLogics.NamedOperator{:∧}, Proposition{String}}, SoleLogics.NamedOperator{:∧}}}, ConstantModel{String}}
+┐r ∧ (s ∧ t)
 └ ✔ true
 """
 
 @test unroll_rules(rcmodel) isa Vector{<:Rule}
 @test join(displaymodel.(unroll_rules(rcmodel))) == """
-Rule{Int64, LogicalTruthCondition{Formula}, ConstantModel{Int64}}
-┐((p) ∧ ((q) ∨ (r))) ∧ (((p) ∧ ((q) ∨ (r))) ∧ ((p) ∧ ((q) ∨ (r))))
+Rule{Int64, LogicalTruthCondition{Formula{BaseLogic{SoleLogics.CompleteFlatGrammar{AlphabetOfAny{String}, Union{SoleLogics.NamedOperator{:∨}, SoleLogics.NamedOperator{:∧}}}, SoleLogics.BooleanAlgebra}}}, ConstantModel{Int64}}
+┐(p ∧ (q ∨ r)) ∧ ((p ∧ (q ∨ r)) ∧ (p ∧ (q ∨ r)))
 └ ✔ 1
 """
 
 @test unroll_rules(b_nsx) isa Vector{<:Rule}
 @test join(displaymodel.(unroll_rules(b_nsx))) == """
-Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+Rule{String, LogicalTruthCondition{SyntaxTree{Proposition{String}, Proposition{String}}}, ConstantModel{String}}
 ┐q
 └ ✔ true
-Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+Rule{String, LogicalTruthCondition{SyntaxTree{Union{SoleLogics.NamedOperator{:¬}, Proposition{String}}, SoleLogics.NamedOperator{:¬}}}, ConstantModel{String}}
 ┐¬(q)
 └ ✔ false
 """
 
 @test unroll_rules(b_fsx) isa Vector{<:Rule}
 @test join(displaymodel.(unroll_rules(b_fsx))) == """
-Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+Rule{String, LogicalTruthCondition{SyntaxTree{Proposition{String}, Proposition{String}}}, ConstantModel{String}}
 ┐s
 └ ✔ true
-Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+Rule{String, LogicalTruthCondition{SyntaxTree{Union{SoleLogics.NamedOperator{:¬}, Proposition{String}}, SoleLogics.NamedOperator{:¬}}}, ConstantModel{String}}
 ┐¬(s)
 └ ✔ false
 """
 
 @test unroll_rules(b_fdx) isa Vector{<:Rule}
 @test join(displaymodel.(unroll_rules(b_fdx))) == """
-Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
-┐(t) ∧ (q)
+Rule{String, LogicalTruthCondition{SyntaxTree{Union{SoleLogics.NamedOperator{:∧}, Proposition{String}}, SoleLogics.NamedOperator{:∧}}}, ConstantModel{String}}
+┐t ∧ q
 └ ✔ true
-Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
-┐(t) ∧ (¬(q))
+Rule{String, LogicalTruthCondition{SyntaxTree{Union{SoleLogics.NamedOperator{:∧}, SoleLogics.NamedOperator{:¬}, Proposition{String}}, SoleLogics.NamedOperator{:∧}}}, ConstantModel{String}}
+┐t ∧ (¬(q))
 └ ✔ false
-Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+Rule{String, LogicalTruthCondition{SyntaxTree{Union{SoleLogics.NamedOperator{:¬}, Proposition{String}}, SoleLogics.NamedOperator{:¬}}}, ConstantModel{String}}
 ┐¬(t)
 └ ✔ true
 """
 
 @test unroll_rules(b_p) isa Vector{<:Rule}
 @test join(displaymodel.(unroll_rules(b_p))) == """
-Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
-┐(r) ∧ (s)
+Rule{String, LogicalTruthCondition{SyntaxTree{Union{SoleLogics.NamedOperator{:∧}, Proposition{String}}, SoleLogics.NamedOperator{:∧}}}, ConstantModel{String}}
+┐r ∧ s
 └ ✔ true
-Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
-┐(r) ∧ (¬(s))
+Rule{String, LogicalTruthCondition{SyntaxTree{Union{SoleLogics.NamedOperator{:∧}, SoleLogics.NamedOperator{:¬}, Proposition{String}}, SoleLogics.NamedOperator{:∧}}}, ConstantModel{String}}
+┐r ∧ (¬(s))
 └ ✔ false
-Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
-┐(¬(r)) ∧ ((t) ∧ (q))
+Rule{String, LogicalTruthCondition{SyntaxTree{Union{SoleLogics.NamedOperator{:∧}, SoleLogics.NamedOperator{:¬}, Proposition{String}}, SoleLogics.NamedOperator{:∧}}}, ConstantModel{String}}
+┐(¬(r)) ∧ (t ∧ q)
 └ ✔ true
-Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
-┐(¬(r)) ∧ ((t) ∧ (¬(q)))
+Rule{String, LogicalTruthCondition{SyntaxTree{Union{SoleLogics.NamedOperator{:∧}, SoleLogics.NamedOperator{:¬}, Proposition{String}}, SoleLogics.NamedOperator{:∧}}}, ConstantModel{String}}
+┐(¬(r)) ∧ (t ∧ (¬(q)))
 └ ✔ false
-Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+Rule{String, LogicalTruthCondition{SyntaxTree{Union{SoleLogics.NamedOperator{:∧}, SoleLogics.NamedOperator{:¬}, Proposition{String}}, SoleLogics.NamedOperator{:∧}}}, ConstantModel{String}}
 ┐(¬(r)) ∧ (¬(t))
 └ ✔ true
 """
 
 @test unroll_rules(dt1) isa Vector{<:Rule}
 @test join(displaymodel.(unroll_rules(dt1))) == """
-Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
-┐(r) ∧ (s)
+Rule{String, LogicalTruthCondition{SyntaxTree{Union{SoleLogics.NamedOperator{:∧}, Proposition{String}}, SoleLogics.NamedOperator{:∧}}}, ConstantModel{String}}
+┐r ∧ s
 └ ✔ true
-Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
-┐(r) ∧ (¬(s))
+Rule{String, LogicalTruthCondition{SyntaxTree{Union{SoleLogics.NamedOperator{:∧}, SoleLogics.NamedOperator{:¬}, Proposition{String}}, SoleLogics.NamedOperator{:∧}}}, ConstantModel{String}}
+┐r ∧ (¬(s))
 └ ✔ false
-Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
-┐(¬(r)) ∧ ((t) ∧ (q))
+Rule{String, LogicalTruthCondition{SyntaxTree{Union{SoleLogics.NamedOperator{:∧}, SoleLogics.NamedOperator{:¬}, Proposition{String}}, SoleLogics.NamedOperator{:∧}}}, ConstantModel{String}}
+┐(¬(r)) ∧ (t ∧ q)
 └ ✔ true
-Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
-┐(¬(r)) ∧ ((t) ∧ (¬(q)))
+Rule{String, LogicalTruthCondition{SyntaxTree{Union{SoleLogics.NamedOperator{:∧}, SoleLogics.NamedOperator{:¬}, Proposition{String}}, SoleLogics.NamedOperator{:∧}}}, ConstantModel{String}}
+┐(¬(r)) ∧ (t ∧ (¬(q)))
 └ ✔ false
-Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+Rule{String, LogicalTruthCondition{SyntaxTree{Union{SoleLogics.NamedOperator{:∧}, SoleLogics.NamedOperator{:¬}, Proposition{String}}, SoleLogics.NamedOperator{:∧}}}, ConstantModel{String}}
 ┐(¬(r)) ∧ (¬(t))
 └ ✔ true
 """
 
 @test unroll_rules(dt2) isa Vector{<:Rule}
 @test join(displaymodel.(unroll_rules(dt2))) == """
-Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
-┐(t) ∧ (q)
+Rule{String, LogicalTruthCondition{SyntaxTree{Union{SoleLogics.NamedOperator{:∧}, Proposition{String}}, SoleLogics.NamedOperator{:∧}}}, ConstantModel{String}}
+┐t ∧ q
 └ ✔ true
-Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
-┐(t) ∧ (¬(q))
+Rule{String, LogicalTruthCondition{SyntaxTree{Union{SoleLogics.NamedOperator{:∧}, SoleLogics.NamedOperator{:¬}, Proposition{String}}, SoleLogics.NamedOperator{:∧}}}, ConstantModel{String}}
+┐t ∧ (¬(q))
 └ ✔ false
-Rule{String, LogicalTruthCondition{SyntaxTree}, ConstantModel{String}}
+Rule{String, LogicalTruthCondition{SyntaxTree{Union{SoleLogics.NamedOperator{:¬}, Proposition{String}}, SoleLogics.NamedOperator{:¬}}}, ConstantModel{String}}
 ┐¬(t)
 └ ✔ true
 """
 
 @test unroll_rules(msm) isa Vector{<:Rule}
 @test join(displaymodel.(unroll_rules(msm))) == """
-Rule{Int64, LogicalTruthCondition{SyntaxTree}, ConstantModel{Int64}}
+Rule{Int64, LogicalTruthCondition{SyntaxTree{Proposition{String}, Proposition{String}}}, ConstantModel{Int64}}
 ┐q
 └ ✔ 2
-Rule{Float64, LogicalTruthCondition{SyntaxTree}, ConstantModel{Float64}}
+Rule{Float64, LogicalTruthCondition{SyntaxTree{Union{SoleLogics.NamedOperator{:¬}, Proposition{String}}, SoleLogics.NamedOperator{:¬}}}, ConstantModel{Float64}}
 ┐¬(q)
 └ ✔ 1.5
 """

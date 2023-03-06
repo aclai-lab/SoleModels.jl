@@ -34,6 +34,7 @@ See also
 """
 struct TrueCondition <: AbstractBooleanCondition end
 
+formula(::TrueCondition) = SyntaxTree(⊤)
 check(::TrueCondition, args...) = true
 
 syntaxstring(c::TrueCondition; kwargs...) = syntaxstring(TOP; kwargs...)
@@ -503,13 +504,9 @@ struct Rule{O,C<:AbstractBooleanCondition,FM<:AbstractModel} <: ConstrainedModel
         consequent::Any,
         info::NamedTuple = (;),
     )
-        antecedent = convert(AbstractBooleanCondition, antecedent)
-        C = typeof(antecedent)
         consequent = wrap(consequent)
         O = outcometype(consequent)
-        FM = typeintersect(propagate_feasiblemodels(consequent), AbstractModel{<:O})
-        check_model_constraints(Rule{O}, typeof(consequent), FM, O)
-        new{O,C,FM}(antecedent, consequent, info)
+        Rule{O}(antecedent, consequent, info)
     end
 
     function Rule(
@@ -517,12 +514,9 @@ struct Rule{O,C<:AbstractBooleanCondition,FM<:AbstractModel} <: ConstrainedModel
         info::NamedTuple = (;),
     )
         antecedent = TrueCondition()
-        C = typeof(antecedent)
         consequent = wrap(consequent)
         O = outcometype(consequent)
-        FM = typeintersect(propagate_feasiblemodels(consequent), AbstractModel{<:O})
-        check_model_constraints(Rule{O}, typeof(consequent), FM, O)
-        new{O,C,FM}(antecedent, consequent, info)
+        Rule{O}(antecedent, consequent, info)
     end
 end
 
@@ -722,6 +716,25 @@ function apply(m::DecisionList, i::AbstractInterpretation)
         end
     end
     defaultconsequent(m)
+end
+
+function apply(m::DecisionList{O}, X::AbstractInterpretationSet) where {O}
+    n_samples = nsamples(X)
+    pred = Vector{O}(undef, n_samples)
+    idxs = 1:n_samples
+
+    for rule in rules(m)
+        length(idxs) == 0 && break
+
+        idxs_sat = findall(check(antecedent(rule),X) .== true)
+        idxs = setdiff(idxs,idxs_sat)
+
+        map((i)->(pred[i] = outcome(consequent(rule))), idxs_sat)
+    end
+
+    length(idxs) != 0 && map((i)->(pred[i] = outcome(defaultconsequent(m))), idxs)
+
+    return pred
 end
 
 ############################################################################################
