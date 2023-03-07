@@ -45,7 +45,8 @@ include("machine-learning.jl")
 
 include("models/rule-evaluation.jl")
 
-include("confusion-matrix.jl")
+# TODO remove from SoleModels
+include("metrics.jl")
 
 # TODO avoid?
 export AbstractFeature,

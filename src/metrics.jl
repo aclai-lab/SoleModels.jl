@@ -1,5 +1,7 @@
+module metrics
 
 using LinearAlgebra
+using StatsBase
 
 ############################################################################################
 ############################################################################################
@@ -31,9 +33,6 @@ export compute_metrics,
         safe_macro_PPV,
         safe_macro_NPV
 
-
-using SoleBase: nat_sort
-
 ############################################################################################
 ############################################################################################
 ############################################################################################
@@ -61,7 +60,7 @@ end
 
 function compute_metrics(
     actual::AbstractVector{L},
-    predicted::AbstractVector, # TODO: AbstractVector{L}
+    predicted::AbstractVector,
     weights = nothing,
 ) where {L<:RLabel}
     @assert isnothing(weights) || weights isa Ones "TODO Expand code: Non-nothing weights encountered in compute_metrics()"
@@ -74,12 +73,12 @@ function compute_metrics(
         # predicted = predicted,
         # weights = weights,
         #
-        cor   = cor(actual, predicted),
+        cor   = StatsBase.cor(actual, predicted),
         MAE   = sum(abs.(actual .- predicted)) / length(predicted),
-        # MSE   = mean((actual - predicted).^2)
+        MSE   = mean((actual - predicted).^2),
         RMSE  = StatsBase.rmsd(actual, predicted),
         R2    = R2(actual, predicted),
-        # TODO add MAPE, MSE
+        MAPE  = mean((abs.(actual - predicted))./actual),
     )
 end
 
@@ -97,26 +96,28 @@ end
 ############################################################################################
 
 struct ConfusionMatrix{T<:Number}
-    ############################################################################
-    class_names::Vector{String}
+    ########################################################################################
+    class_names::Vector
     matrix::Matrix{T}
-    ############################################################################
+    ########################################################################################
     overall_accuracy::Float64
     kappa::Float64
     mean_accuracy::Float64
-    ############################################################################
     accuracies::Vector{Float64}
     F1s::Vector{Float64}
     sensitivities::Vector{Float64}
     specificities::Vector{Float64}
     PPVs::Vector{Float64}
     NPVs::Vector{Float64}
-    ############################################################################
+    ########################################################################################
 
     function ConfusionMatrix(matrix::AbstractMatrix)
-        ConfusionMatrix(string.(1:size(matrix, 1)), matrix)
+        ConfusionMatrix(Symbol.(1:size(matrix, 1)), matrix)
     end
-    function ConfusionMatrix(class_names::Vector, matrix::AbstractMatrix{T}) where {T<:Number}
+    function ConfusionMatrix(
+        class_names::Vector,
+        matrix::AbstractMatrix{T},
+    ) where {T<:Number}
 
         @assert size(matrix,1) == size(matrix,2) "Can't instantiate ConfusionMatrix with matrix of size ($(size(matrix))"
         n_classes = size(matrix,1)
@@ -130,7 +131,7 @@ struct ConfusionMatrix{T<:Number}
         prob_chance = (sum(matrix,dims=1) * sum(matrix,dims=2))[1] / ALL^2
         kappa = (overall_accuracy - prob_chance) / (1.0 - prob_chance)
 
-        ########################################################################
+        ####################################################################################
         TPs = Vector{Float64}(undef, n_classes)
         TNs = Vector{Float64}(undef, n_classes)
         FPs = Vector{Float64}(undef, n_classes)
@@ -144,7 +145,7 @@ struct ConfusionMatrix{T<:Number}
             FNs[i] = sum(matrix[class,other_classes])
             FPs[i] = sum(matrix[other_classes,class])
         end
-        ########################################################################
+        ####################################################################################
 
         # https://en.m.wikipedia.org/wiki/Accuracy_and_precision#In_binary_classification
         accuracies = (TPs .+ TNs)./ALL
@@ -189,7 +190,7 @@ struct ConfusionMatrix{T<:Number}
         class_labels = begin
             class_labels = unique([actual; predicted])
             if isnothing(force_class_order)
-                class_labels = sort(class_labels, lt=nat_sort)
+                class_labels = sort(class_labels, lt=SoleBase.nat_sort)
             else
                 @assert length(setdiff(force_class_order, class_labels)) == 0
                 class_labels = force_class_order
@@ -293,7 +294,7 @@ function Base.show(io::IO, cm::ConfusionMatrix)
         for val in row
             print(io, lpad(val,max_num_digits+1," "))
         end
-        println(io, "\t\t\t$(round(100*sensitivity, digits=2))%\t\t" * class_name)
+        println(io, "\t\t\t$(round(100*sensitivity, digits=2))%\t\t$(class_name)")
     end
 
     ############################################################################
@@ -314,3 +315,5 @@ end
 ############################################################################################
 ############################################################################################
 ############################################################################################
+
+end
