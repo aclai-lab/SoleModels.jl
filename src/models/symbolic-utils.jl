@@ -3,6 +3,8 @@
 # Symbolic modeling utils
 ############################################################################################
 
+# TODO @Michele clean this file and document
+
 """
     immediate_submodels(m::AbstractModel)
 

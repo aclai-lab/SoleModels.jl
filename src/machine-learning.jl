@@ -1,30 +1,38 @@
 using FillArrays
 
-# Classification and regression labels
+doc_supervised_ml = """
+    const CLabel  = Union{String,Integer}
+    const RLabel  = AbstractFloat
+    const Label   = Union{CLabel,RLabel}
+
+Types for supervised machine learning labels: classification and regression.
+"""
+
+"""$(doc_supervised_ml)"""
 const CLabel  = Union{String,Integer}
+"""$(doc_supervised_ml)"""
 const RLabel  = AbstractFloat
+"""$(doc_supervised_ml)"""
 const Label   = Union{CLabel,RLabel}
+
 # Raw labels
 const _CLabel = Integer # (classification labels are internally represented as integers)
 const _Label  = Union{_CLabel,RLabel}
 
+const AssociationRule{F} = Rule{F} where {F<:AbstractFormula}
+const ClassificationRule = Rule{CLabel}
+const RegressionRule = Rule{RLabel}
 
-# const AssociationRule{L<:AbstractLogic} = Rule{L, formulaofsomekind...{L}} #NOTE: maybe where {L<:AbstractLogic}
+# const ClassificationRule{C} = Rule{C} where {C<:CLabel}
+# const RegressionRule{C} = Rule{C} where {C<:CLabel}
 
-# const ClassificationRule = Rule{L,CLabel} where {L<:AbstractLogic}
-# const RegressionRule = Rule{L,RLabel} where {L<:AbstractLogic}
+############################################################################################
 
-
-# const ClassificationDL = DecisionList{L,CLabel} where {L<:AbstractLogic}
-# const RegressionDL = DecisionList{L,RLabel} where {L<:AbstractLogic}
-
-
-
-# Translate a list of labels into categorical form
-Base.@propagate_inbounds @inline function get_categorical_form(Y :: AbstractVector{T}) where {T}
+# Convert a list of labels to categorical form
+Base.@propagate_inbounds @inline function get_categorical_form(Y::AbstractVector)
     class_names = unique(Y)
 
-    dict = Dict{T,Int64}()
+    dict = Dict{eltype(Y),Int64}()
     @simd for i in 1:length(class_names)
         @inbounds dict[class_names[i]] = i
     end
@@ -37,16 +45,31 @@ Base.@propagate_inbounds @inline function get_categorical_form(Y :: AbstractVect
     return class_names, _Y
 end
 
+############################################################################################
 
-average_label(labels::AbstractVector{<:CLabel}) = majority_vote(labels; suppress_parity_warning = false) # argmax(countmap(labels))
-average_label(labels::AbstractVector{<:RLabel}) = majority_vote(labels; suppress_parity_warning = false) # StatsBase.mean(labels)
-
-function majority_vote(
-        labels::AbstractVector{L},
+"""
+    best_guess(
+        labels::AbstractVector{<:Label},
         weights::Union{Nothing,AbstractVector} = nothing;
         suppress_parity_warning = false,
-    ) where {L<:CLabel}
+    )
 
+Computes the best guess for a set of labels; that is, the label that best approximates the
+labels provided. For classification labels, this returns the majority class; for
+regression labels, the average value.
+If no labels are provided, `nothing` is returned.
+The computation can be weighted.
+
+See also
+[`CLabel`](@ref),
+[`RLabel`](@ref),
+[`Label`](@ref).
+"""
+function best_guess(
+    labels::AbstractVector{<:CLabel},
+    weights::Union{Nothing,AbstractVector} = nothing;
+    suppress_parity_warning = false,
+)
     if length(labels) == 0
         return nothing
     end
@@ -55,13 +78,15 @@ function majority_vote(
         if isnothing(weights)
             countmap(labels)
         else
-            @assert length(labels) === length(weights) "Can't compute majority_vote with uneven number of votes $(length(labels)) and weights $(length(weights))."
+            @assert length(labels) === length(weights) "Can't compute" *
+             " best guess with uneven number of votes" *
+             " $(length(labels)) and weights $(length(weights))."
             countmap(labels, weights)
         end
     end
 
     if !suppress_parity_warning && sum(counts[argmax(counts)] .== values(counts)) > 1
-        println("Warning: parity encountered in majority_vote.")
+        println("Warning: parity encountered in best_guess.")
         println("Counts ($(length(labels)) elements): $(counts)")
         println("Argmax: $(argmax(counts))")
         println("Max: $(counts[argmax(counts)]) (sum = $(sum(values(counts))))")
@@ -69,24 +94,28 @@ function majority_vote(
     argmax(counts)
 end
 
-function majority_vote(
-        labels::AbstractVector{L},
-        weights::Union{Nothing,AbstractVector} = nothing;
-        suppress_parity_warning = false,
-    ) where {L<:RLabel}
+function best_guess(
+    labels::AbstractVector{<:RLabel},
+    weights::Union{Nothing,AbstractVector} = nothing;
+    suppress_parity_warning = false,
+)
     if length(labels) == 0
         return nothing
     end
 
-    (isnothing(weights) ? mean(labels) : sum(labels .* weights)/sum(weights))
+    (isnothing(weights) ? StatsBase.mean(labels) : sum(labels .* weights)/sum(weights))
 end
 
+############################################################################################
 
 # Default weights are optimized using FillArrays
 function default_weights(n::Integer)
     Ones{Int64}(n)
 end
-function default_weights_rebalance(Y::AbstractVector{L}) where {L<:CLabel}
+default_weights(Y::AbstractVector) = default_weights(length(Y))
+
+# Returns class rebalancing weights (classification case)
+function balanced_weights(Y::AbstractVector{L}) where {L<:CLabel}
     class_counts_dict = countmap(Y)
     if length(unique(values(class_counts)_dict)) == 1 # balanced case
         default_weights(length(Y))
@@ -94,11 +123,13 @@ function default_weights_rebalance(Y::AbstractVector{L}) where {L<:CLabel}
         # Assign weights in such a way that the dataset becomes balanced
         tot = sum(values(class_counts_dict))
         balanced_tot_per_class = tot/length(class_counts_dict)
-        weights_map = Dict{L,Float64}([class => (balanced_tot_per_class/n_instances) for (class,n_instances) in class_counts_dict])
+        weights_map = Dict{L,Float64}([class => (balanced_tot_per_class/n_instances)
+            for (class,n_instances) in class_counts_dict])
         W = [weights_map[y] for y in Y]
         W ./ sum(W)
     end
 end
+
 slice_weights(W::Ones{Int64}, inds::AbstractVector) = default_weights(length(inds))
 slice_weights(W::Any,         inds::AbstractVector) = @view W[inds]
 slice_weights(W::Ones{Int64}, i::Integer) = 1

@@ -2,6 +2,8 @@ using SoleModels
 using SoleModels: FinalModel
 using SoleLogics: npropositions
 
+# TODO @Michele clean this file and document
+
 """
 Function for evaluating a rule
 """

@@ -937,8 +937,8 @@ end
 function convert(
     ::Type{R},
     m::RuleCascade{O,C}
-) where {R<:Rule,O,C<:AbstractLogicalBooleanCondition}
-    function _antecedent(m::Vector{<:AbstractBooleanCondition})
+) where {R<:Rule,O,C<:Union{TrueCondition,LogicalTruthCondition}}
+    function _antecedent(m::Vector{<:AbstractLogicalBooleanCondition})
         if length(m) == 0
             return SyntaxTree(⊤)
         elseif length(m) == 1
@@ -1078,7 +1078,7 @@ trees(forest::DecisionForest) = forest.trees
 issymbolic(::DecisionForest) = false
 
 function apply(f::DecisionForest, id::Union{AbstractInterpretation,AbstractInterpretationSet})
-    majority_vote([apply(t, id) for t in trees(f)])
+    best_guess([apply(t, id) for t in trees(f)])
 end
 
 ############################################################################################
