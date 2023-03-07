@@ -58,8 +58,4 @@ export compute_feature
 
 include("conditional-data/main.jl")
 
-using BenchmarkTools
-
-include("ModalLogic/main.jl")
-
 end

@@ -12,3 +12,5 @@ include("test-operators.jl")
 include("conditions.jl")
 include("representatives.jl")
 include("datasets.jl")
+
+include("dimensional-datasets/main.jl")

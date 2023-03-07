@@ -5,6 +5,10 @@
 
 # TODO @Michele clean this file and document
 
+# TODO add tests for:
+# immediate_submodels
+# submodels
+
 """
     immediate_submodels(m::AbstractModel)
 
