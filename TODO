@@ -1,5 +1,2 @@
 - struct EnsambleModel (with parametrized aggregation) and DecisionForest
 -	PatchModel, a closed model providing a default consequent to an open model
-
-- TODO patch _FIM so that one can avoid specifying the final outcome: FIM = typeintersect(AbstractModel{F},_FIM)
-- TODO patch _FIM so that one can avoid specifying the type of final model: FIM = typeintersect(FinalModel{F},_FIM) == Union{} ? Union{FinalModel{F},_FIM} : _FIM

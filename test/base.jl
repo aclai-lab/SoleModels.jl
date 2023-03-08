@@ -1,17 +1,14 @@
-using Revise
-
-using FunctionWrappers: FunctionWrapper
-using SoleLogics
-using SoleLogics: AbstractLogic
 using SoleModels
+using SoleLogics
+using FunctionWrappers: FunctionWrapper
+using SoleModels: AbstractModel
 using SoleModels: ConstantModel, FinalModel
 using SoleModels: ConstrainedModel, check_model_constraints
 using Test
 
-
 # base.jl
 
-buf = IOBuffer()
+io = IOBuffer()
 
 p = SoleLogics.parseformula("p")
 phi = SoleLogics.parseformula("p∧q∨r")
@@ -21,6 +18,8 @@ formula_p = SoleLogics.parseformula("p")
 formula_q = SoleLogics.parseformula("q")
 formula_r = SoleLogics.parseformula("r")
 formula_s = SoleLogics.parseformula("s")
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Final models ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 @test_nowarn ConstantModel(1,(;))
 @test_nowarn ConstantModel(1)
@@ -34,7 +33,7 @@ const_funwrap = FunctionWrapper{Float64, Tuple{Float64,Float64}}(sum)
 
 consts = @test_nowarn [const_string, const_float, const_integer, const_funwrap]
 
-# @test SoleModels.wrap(const_fun) isa SoleModels.FunctionModel{Any}
+@test (@test_logs (:warn,) SoleModels.wrap(const_fun) isa SoleModels.FunctionModel{Any})
 @test_nowarn SoleModels.wrap.(consts)
 @test_nowarn ConstantModel{String}(const_string)
 cmodel_string = @test_nowarn ConstantModel(const_string)
@@ -42,6 +41,8 @@ cmodel_string = @test_nowarn ConstantModel(const_string)
 cmodel_float = @test_nowarn ConstantModel{Float64}(const_float)
 cmodel_number = @test_nowarn ConstantModel{Number}(const_integer)
 cmodel_integer = @test_nowarn ConstantModel{Int}(const_integer)
+
+@test (@test_logs (:warn,) SoleModels.FunctionModel{Int}(const_fun)) isa SoleModels.FunctionModel{Int}
 
 cmodels = @test_nowarn [cmodel_string, cmodel_float, cmodel_number, cmodel_integer]
 cmodels_num = @test_nowarn [cmodel_float, cmodel_number, cmodel_integer]
@@ -54,6 +55,8 @@ cmodels_num = @test_nowarn [cmodel_float, cmodel_number, cmodel_integer]
 
 @test convert(AbstractModel{Int}, cmodel_number) isa AbstractModel{Int}
 @test_throws MethodError convert(AbstractModel{<:Int}, cmodel_number)
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Rules ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 rmodel_number = @test_nowarn Rule(phi, cmodel_number)
 rmodel_integer = @test_nowarn Rule(phi, cmodel_integer)
@@ -124,7 +127,7 @@ defaultconsequent = cmodel_integer
 
 # rmodel_bounded_float = @test_nowarn Rule{Float64,Union{Rule{Float64},ConstantModel{Float64}}}(phi,Rule{Float64,Union{Rule{Float64},ConstantModel{Float64}}}(phi,cmodel_float))
 
-# TODO from here
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Other models ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 rules = @test_nowarn [rmodel_number, rmodel_integer, Rule(phi, cmodel_float), rfloat_number] # , rmodel_bounded_float]
 dlmodel = @test_nowarn DecisionList(rules, defaultconsequent)
@@ -147,18 +150,18 @@ bmodel_mixed_number = @test_nowarn Branch(phi, rmodel_number, dlmodel)
 @test isopen(bmodel_mixed)
 @test outputtype(bmodel_mixed) == Union{Nothing,Float64,Int}
 
-@test_nowarn [printmodel(buf, r) for r in rules];
-@test_nowarn printmodel(buf, dlmodel);
-@test_nowarn printmodel(buf, bmodel);
+@test_nowarn [printmodel(io, r) for r in rules];
+@test_nowarn printmodel(io, dlmodel);
+@test_nowarn printmodel(io, bmodel);
 
 @test_nowarn Branch(phi,(bmodel,bmodel))
 @test_nowarn Branch(phi,(bmodel,rfloat_number))
 @test_nowarn Branch(phi,(dlmodel,rmodel_float))
 bmodel_2 = @test_nowarn Branch(phi,(dlmodel,bmodel))
-@test_nowarn printmodel(buf, bmodel_2);
+@test_nowarn printmodel(io, bmodel_2);
 
 rcmodel = RuleCascade([phi,phi,phi], cmodel_integer)
-@test_nowarn printmodel(buf, Branch(phi, rcmodel, bmodel_2));
+@test_nowarn printmodel(io, Branch(phi, rcmodel, bmodel_2));
 
 
 branch_q = @test_nowarn Branch(formula_q, ("yes", "no"))
@@ -194,33 +197,3 @@ ms_model = MixedSymbolicModel(ms_model)
 ms_model = MixedSymbolicModel(ms_model)
 
 @test typeof(ms_model1) == typeof(ms_model)
-
-
-# symbolic-utils.jl
-
-unroll_rules(cmodel_string)
-unroll_rules(rule_r)
-ruleset = unroll_rules(branch_r)
-unroll_rules(dl_model)
-unroll_rules(rcmodel)
-
-# Testing unroll_rules_cascade ---- COMPLETED
-unroll_rules_cascade(cmodel_string)
-unroll_rules_cascade(rule_r)
-unroll_rules_cascade(branch_r)
-unroll_rules_cascade(dl_model)
-unroll_rules_cascade(rcmodel)
-
-# Testing list_paths
-list_paths(branch_r)
-
-# Testing convert function --- COMPLETED
-convert(Rule, rcmodel)
-convert(RuleCascade, ruleset[1])
-
-# Testing rule_length ---- COMPLETED
-rule_length(rule_r)
-rule_length(ruleset[1])
-
-
-unroll_rules.([rfloat_number, dlmodel, dlmodel_integer, bmodel_integer, bmodel, bmodel_mixed, bmodel_mixed_number, dtmodel0, dtmodel, ms_model])

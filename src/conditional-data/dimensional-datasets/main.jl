@@ -1,48 +1,5 @@
 module ModalLogic
 
-using SoleBase: LogOverview, LogDebug, LogDetail, throw_n_log
-
-using BenchmarkTools
-using ComputedFieldTypes
-using DataStructures
-using Logging: @logmsg
-
-using SoleLogics
-using SoleLogics: AbstractRelation, AbstractWorld
-
-using SoleModels
-
-import Base: size, show, getindex, iterate, length, push!
-
-# Reexport from SoleLogics:
-export AbstractWorld, AbstractRelation
-export AbstractWorldSet, WorldSet
-export globalrel, identityrel
-
-export Ontology, worldtype, world_types
-
-using SoleLogics: AbstractFrame, AbstractDimensionalFrame, FullDimensionalFrame
-using SoleModels: AbstractConditionalDataset, AbstractCondition
-
-import SoleLogics: accessibles, allworlds
-import SoleModels: representatives, FeatMetaCondition, FeatCondition
-import SoleModels: minify
-
-using SoleModels: AbstractMultiModalFrame
-
-using SoleData: _isnan
-import SoleData: hasnans
-
-# import SoleLogics: goeswith
-import SoleLogics: initialworldset
-using SoleLogics: InitCondition
-import SoleLogics: worldtype
-
-import SoleData: nsamples
-import SoleData: nattributes, max_channel_size, get_instance,
-       instance_channel_size
-
-
 export nfeatures, nrelations,
        nframes, frames, get_frame,
        display_structure,
@@ -56,6 +13,44 @@ export nfeatures, nrelations,
        DimensionalFeaturedDataset,
        FeaturedDataset,
        SupportedFeaturedDataset
+
+# Reexport from SoleLogics:
+export AbstractWorld, AbstractRelation
+export AbstractWorldSet, WorldSet
+
+export Ontology, worldtype, world_types
+
+import Base: size, show, getindex, iterate, length, push!
+
+using BenchmarkTools
+using ComputedFieldTypes
+using DataStructures
+
+using Logging: @logmsg
+using SoleBase: LogOverview, LogDebug, LogDetail, throw_n_log
+
+using SoleLogics
+using SoleLogics: AbstractRelation, AbstractWorld
+import SoleLogics: worldtype
+
+using SoleData: _isnan
+import SoleData: hasnans
+
+import SoleData: nsamples
+import SoleData: nattributes, max_channel_size, get_instance,
+       instance_channel_size
+
+using SoleModels
+
+using SoleLogics: AbstractFrame, AbstractDimensionalFrame, FullDimensionalFrame
+using SoleModels: AbstractConditionalDataset, AbstractCondition
+
+import SoleLogics: accessibles, allworlds
+import SoleModels: representatives, FeatMetaCondition, FeatCondition
+import SoleModels: minify
+
+using SoleModels: AbstractMultiModalFrame
+
 
 # Concrete type for ontologies
 include("ontology.jl")

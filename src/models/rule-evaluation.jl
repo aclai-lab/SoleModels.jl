@@ -2,16 +2,7 @@ using SoleModels
 using SoleModels: FinalModel
 using SoleLogics: npropositions
 
-"""
-Function for evaluating the antecedent of a rule
-"""
-
-function evaluate_antecedent(rule::Rule, X::AbstractInterpretationSet)
-    # TODO
-    x = check(antecedent(rule), X) #rand([true,false],nsamples(X))
-    #@show
-    return x
-end
+# TODO @Michele clean this file and document
 
 """
 Function for evaluating a rule
@@ -24,7 +15,7 @@ function evaluate_rule(
     # Antecedent satisfaction. For each instances in X:
     #  - `false` when not satisfiable,
     #  - `true` when satisfiable.
-    ant_sat = evaluate_antecedent(rule,X)
+    ant_sat = check_antecedent(rule,X)
 
     # Indices of satisfiable instances
     idxs_sat = findall(ant_sat .== true)
@@ -117,10 +108,10 @@ end
 
 # # Evaluation for an antecedent
 
-# evaluate_antecedent(antecedent::AbstractFormula, X::MultiFrameModalDataset) =
-#     evaluate_antecedent(extract_decisions(antecedent), X)
+# check_antecedent(antecedent::AbstractFormula, X::MultiFrameModalDataset) =
+#     check_antecedent(extract_decisions(antecedent), X)
 
-# function evaluate_antecedent(decs::AbstractVector{<:Decision}, X::MultiFrameModalDataset)
+# function check_antecedent(decs::AbstractVector{<:Decision}, X::MultiFrameModalDataset)
 #     D = hcat([evaluate_decision(d, X) for d in decs]...)
 #     # If all values in a row is true, then true (and logical)
 #     return map(all, eachrow(D))
@@ -150,7 +141,7 @@ end
 #     # Antecedent satisfaction. For each instances in X:
 #     #  - `false` when not satisfiable,
 #     #  - `true` when satisfiable.
-#     ant_sat = evaluate_antecedent(decs,X)
+#     ant_sat = check_antecedent(decs,X)
 
 #     # Indices of satisfiable instances
 #     idxs_sat = findall(ant_sat .== true)

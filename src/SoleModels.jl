@@ -4,30 +4,31 @@ using SoleBase
 using SoleData
 using SoleLogics
 using SoleLogics: AbstractInterpretation, AbstractInterpretationSet
+using SoleLogics: AbstractSyntaxToken
 using SoleLogics: AbstractFormula, Formula
-using SoleLogics: TOP, ¬, ∧
+using SoleLogics: ⊤, ¬, ∧
 
 using FunctionWrappers: FunctionWrapper
-
 using StatsBase
-
-using Reexport # TODO remove
-
-export AbstractInterpretation, AbstractInterpretationSet
 
 include("utils.jl")
 
-export AbstractModel
 export outcometype, outputtype
 
 export Rule, Branch
-export DecisionList, RuleCascade
-export DecisionTree, MixedSymbolicModel
-export evaluate_antecedent, evaluate_rule # TODO need to export?
-export rule_metrics # TODO need to export?
+export check_antecedent
+export antecedent, consequent
+export posconsequent, negconsequent
 
-export antecedent, consequent, posconsequent, negconsequent, defaultconsequent
-export rules, root
+export DecisionList
+export rulebase, defaultconsequent
+
+export RuleCascade # TODO remove
+
+export DecisionTree
+export root
+
+export MixedSymbolicModel, DecisionForest
 
 include("models/base.jl")
 
@@ -35,18 +36,14 @@ export printmodel, displaymodel
 
 include("models/print.jl")
 
-export list_paths # TODO fix this
-
 # TODO export?
-export immediate_submodels, unroll_rules, list_immediate_rules, unroll_rules_cascade
+export immediate_submodels, unroll_rules, immediate_rules, unroll_rules_cascade
 
 include("models/symbolic-utils.jl")
 
 include("machine-learning.jl")
 
 include("models/rule-evaluation.jl")
-
-include("confusion-matrix.jl")
 
 # TODO avoid?
 export AbstractFeature,
@@ -60,9 +57,5 @@ export AbstractFeature,
 export compute_feature
 
 include("conditional-data/main.jl")
-
-using BenchmarkTools
-
-include("ModalLogic/main.jl")
 
 end
