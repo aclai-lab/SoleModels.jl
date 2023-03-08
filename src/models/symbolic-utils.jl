@@ -118,30 +118,29 @@ for many purposes.
 See also [`immediate_rules`](@ref), [`unroll_rules_cascade`](@ref),
 [`issymbolic`](@ref), [`AbstractModel`](@ref).
 """
-# TODO remove or merge with unroll_rules_cascade?
-# function unroll_rules(m::AbstractModel)
-#     # TODO @Michele
-#     # [advance_formula(rule) for rule in unroll_rules(m)]
-#     error(begin
-#         if issymbolic(m)
-#             "Please, provide method unroll_rules(::$(typeof(m))) ($(typeof(m)) is a symbolic model)."
-#         else
-#             "Models of type $(typeof(m)) are not symbolic, and thus have no rules associated."
-#         end
-#     end)
-# end
-
 function unroll_rules(m::AbstractModel)
-    ms = unroll_rules_cascade(m)
-    return map(m->begin
-        if m isa RuleCascade && conditiontype(m) <: Union{TrueCondition,LogicalTruthCondition}
-            convert(Rule, m)
-        elseif m isa FinalModel
-            m
-        else
-            error("Unknown model type encountered in unroll_rules: $(typeof(m))")
+    try
+        ms = unroll_rules_cascade(m)
+        return map(m->begin
+            if m isa RuleCascade && conditiontype(m) <: Union{TrueCondition,LogicalTruthCondition}
+                convert(Rule, m)
+            elseif m isa FinalModel
+                m
+            else
+                error("Unknown model type encountered in unroll_rules: $(typeof(m))")
+            end
+        end, ms)
+    catch err
+        if err isa ErrorException
+            error(begin
+                if issymbolic(m)
+                    "Please, provide method unroll_rules(::$(typeof(m))) ($(typeof(m)) is a symbolic model)."
+                else
+                    "Models of type $(typeof(m)) are not symbolic, and thus have no rules associated."
+                end
+            end)
         end
-    end, ms)
+    end
 end
 
 ############################################################################################
@@ -157,8 +156,6 @@ See also [`immediate_rules`](@ref), [`issymbolic`](@ref), [`AbstractModel`](@ref
 [`unroll_rules`](@ref).
 """
 function unroll_rules_cascade(m::AbstractModel)
-    # TODO @Michele
-    # [advance_formula(rule) for rule in unroll_rules(m)]
     error(begin
         if issymbolic(m)
             "Please, provide method unroll_rules_cascade(::$(typeof(m))) ($(typeof(m)) is a symbolic model)."
@@ -246,59 +243,6 @@ unroll_rules_cascade(m::RuleCascade) = [m]
 unroll_rules_cascade(m::DecisionTree) = unroll_rules_cascade(root(m))
 
 unroll_rules_cascade(m::MixedSymbolicModel) = unroll_rules_cascade(root(m))
-
-############################################################################################
-############################################################################################
-############################################################################################
-
-"""
-List all paths of a decision tree by performing a tree traversal
-"""
-# """
-# List all paths of a decision tree by performing a tree traversal
-# TODO @Michele
-# """
-# function list_paths(tree::DecisionTree{L<:AbstractLogic,O})::AbstractVector{<:AbstractVector{Union{Any,Rule{L,O}}}}
-#     return immediate_rules(root(tree))
-# end
-#=
-function list_paths(tree::DecisionTree)
-    # tree(f) [where f is a AbstractFormula object] is used to
-    # retrieve the root FNode of the formula(syntax) tree
-    pathset = list_paths(root(tree))
-
-    (length(pathset) == 1) && (return [RuleCascade(⊤,pathset[1])])
-
-    return [RuleCascade(path[1:end-1],path[end]) for path in pathset]
-end
-
-function list_paths(node::Branch)
-    positive_path  = [antecedent(node)]
-    negative_path = [NEGATION(tree(formula(antecedent(node))))]
-    return [
-        list_paths(posconsequent(node),  positive_path)...,
-        list_paths(negconsequent(node), negative_path)...,
-    ]
-end
-
-function list_paths(node::AbstractModel)
-    return [node]
-end
-
-function list_paths(node::Branch, this_path::AbstractVector)
-    # NOTE: antecedent(node) or tree(formula(antecedent(node))) to obtain a FNode?
-    positive_path  = [this_path..., antecedent(node)]
-    negative_path = [this_path..., NEGATION(tree(formula(antecedent(node))))]
-    return [
-        list_paths(posconsequent(node),  positive_path)...,
-        list_paths(negconsequent(node), negative_path)...,
-    ]
-end
-
-function list_paths(node::AbstractModel,this_path::AbstractVector)
-    return [[this_path..., node], ]
-end
-=#
 
 ############################################################################################
 ############################################################################################
