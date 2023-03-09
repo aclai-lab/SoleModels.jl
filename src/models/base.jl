@@ -841,7 +841,7 @@ function apply(m::DecisionList{O}, X::AbstractInterpretationSet) where {O}
     pred = Vector{O}(undef, n_samples)
     idxs = 1:n_samples
 
-    for rule in rules(m)
+    for rule in rulebase(m)
         length(idxs) == 0 && break
 
         idxs_sat = findall(check(antecedent(rule),X) .== true)

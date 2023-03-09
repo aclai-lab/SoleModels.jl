@@ -2,28 +2,48 @@ using SoleModels
 using SoleModels: FinalModel
 using SoleLogics: npropositions
 
-# TODO @Michele clean this file and document
-
 """
-Function for evaluating a rule
+    evaluate_rule(rule::Rule,X::AbstractInterpretationSet,Y::AbstractVector{<:Label})
+
+Let X dataset and Y vector of labels, evaluate_rule evaluates the input rule and
+returns a NamedTuple consisting of:
+ - :ant_sat
+    Antecedent satisfaction. For each instances in X:
+     - `false` when not satisfiable,
+     - `true` when satisfiable.
+ - :idxs_sat
+    Indices of satisfiable instances
+ - :cons_sat
+    Consequent satisfaction. For each instances in X:
+     - `false` when not satisfiable,
+     - `true` when satisfiable,
+     - `nothing` when antecedent does not hold.
+ - :y_pred
+    Consequent prediction. For each instances in X:
+     - `consequent of input rule` when satisfiable,
+     - `nothing` when not satisfiable.
+
+# Examples
+```julia-repl
+julia> evaluate_rule(rule,X,Y)
+...
+```
+
+See also
+[`Rule`](@ref),
+[`AbstractInterpretationSet`](@ref),
+[`Label`](@ref),
+[`check_antecedent`](@ref).
 """
 function evaluate_rule(
     rule::Rule,
     X::AbstractInterpretationSet,
     Y::AbstractVector{<:Label}
 )
-    # Antecedent satisfaction. For each instances in X:
-    #  - `false` when not satisfiable,
-    #  - `true` when satisfiable.
     ant_sat = check_antecedent(rule,X)
 
-    # Indices of satisfiable instances
     idxs_sat = findall(ant_sat .== true)
 
-    # Consequent satisfaction. For each instances in X:
-    #  - `false` when not satisfiable,
-    #  - `true` when satisfiable,
-    #  - `nothing` when antecedent does not hold.
     #=
     cons_sat = begin
         cons_sat = Vector{Union{Bool,Nothing}}(fill(nothing, length(Y)))
@@ -56,7 +76,19 @@ function evaluate_rule(
 end
 
 """
-Length of the rule
+    rule_length(rule::Rule{O,<:TrueCondition}) where {O}
+    rule_length(rule::Rule{O,C}) where {O,C<:LogicalTruthCondition}
+
+Calculates the length of the input rule, that is counts the number of conjuncts of
+the input rule
+
+See also
+[`Rule`](@ref),
+[`TrueCondition`](@ref),
+[`LogicalTruthCondition`](@ref),
+[`antecedent`](@ref),
+[`formula`](@ref),
+[`n_propositions`](@ref).
 """
 rule_length(rule::Rule{O,<:TrueCondition}) where {O} = 1
 function rule_length(rule::Rule{O,C}) where {O,C<:LogicalTruthCondition}
@@ -64,7 +96,30 @@ function rule_length(rule::Rule{O,C}) where {O,C<:LogicalTruthCondition}
 end
 
 """
-Metrics of the rule
+    rule_metrics(rule::Rule,X::AbstractInterpretationSet,Y::AbstractVector{<:Label})
+
+Calculates metrics of the rule and returns a NamedTuple consisting of:
+ - :support
+    Number of samples of the true response that lies in each class of target values
+ - :error
+ - :length
+    Number of conjuncts of the input rule
+
+# Examples
+```julia-repl
+julia> rule_metrics(rule,X,Y)
+...
+```
+
+See also
+[`Rule`](@ref),
+[`AbstractInterpretationSet`](@ref),
+[`Label`](@ref),
+[`evaluate_rule`](@ref),
+[`nsamples`](@ref),
+[`outcometype`](@ref),
+[`consequent`](@ref),
+[`rule_length`](@ref).
 """
 function rule_metrics(
     rule::Rule,
@@ -89,6 +144,8 @@ function rule_metrics(
             # Mean Squared Error (mse)
             idxs_sat = eval_result[:idxs_sat]
             mse(eval_result[:y_pred][idxs_sat], Y[idxs_sat])
+        else
+            error("The outcome type of the consequent of the input rule $(outcometype(consequent(rule))) is not among those accepted")
         end
     end
 
