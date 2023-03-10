@@ -9,6 +9,42 @@
 Returns a list of immediate child models.
 Note: if the model is final, then the list is empty.
 
+# Examples
+```julia-repl
+julia> print(join(displaymodel.(immediate_submodels(rule); header = false)))
+YES
+
+julia> print(join(displaymodel.(immediate_submodels(rcmodel); header = false)))
+1
+
+julia> print(join(displaymodel.(immediate_submodels(branch); header = false)))
+┐ q
+├ ✔ YES
+└ ✘ NO
+YES
+
+julia> print(join(displaymodel.(immediate_submodels(decision_list); header = false)))
+┐(r ∧ s) ∧ t
+└ ✔ YES
+┐¬(r)
+└ ✔ YES
+YES
+
+julia> print(join(displaymodel.(immediate_submodels(decision_tree); header = false)))
+┐ s
+├ ✔ YES
+└ ✘ NO
+┐ t
+├ ✔ ┐ q
+│   ├ ✔ YES
+│   └ ✘ NO
+└ ✘ YES
+
+julia> print(join(displaymodel.(immediate_submodels(mixed_symbolic_model); header = false)))
+2
+1.5
+```
+
 See also
 [`submodels`](@ref),
 [`FinalModel`](@ref),
@@ -32,6 +68,55 @@ immediate_submodels(m::MixedSymbolicModel) = immediate_submodels(root(m))
     submodels(m::AbstractModel)
 
 This function provides access to the list of all child models in the sub-tree.
+
+# Examples
+```julia-repl
+julia> print(join(displaymodel.(submodels(rule); header = false)))
+YES
+
+@test submodels(rc1_string) isa Vector{<:AbstractModel}
+julia> print(join(displaymodel.(submodels(rule_cascade); header = false)))
+YES
+
+julia> print(join(displaymodel.(submodels(branch); header = false)))
+┐ s
+├ ✔ YES
+└ ✘ NO
+YES
+NO
+┐ t
+├ ✔ ┐ q
+│   ├ ✔ YES
+│   └ ✘ NO
+└ ✘ YES
+┐ q
+├ ✔ YES
+└ ✘ NO
+YES
+NO
+YES
+
+julia> print(join(displaymodel.(submodels(decision_list); header = false)))
+┐(r ∧ s) ∧ t
+└ ✔ YES
+YES
+┐¬(r)
+└ ✔ YES
+YES
+YES
+
+julia> print(join(displaymodel.(submodels(decision_tree); header = false)))
+┐ q
+├ ✔ YES
+└ ✘ NO
+YES
+NO
+YES
+
+julia> print(join(displaymodel.(submodels(mixed_symbolic_model); header = false)))
+2
+1.5
+```
 
 See also
 [`immediate_submodels`](@ref),
@@ -112,83 +197,55 @@ This function extracts the behavior of a symbolic model and represents it as a
 set of mutually exclusive (and jointly exaustive, if the model is closed) rules,
 which can be useful for many purposes.
 
-    # Examples
+# Examples
 ```julia-repl
-julia> unroll_rules(outcome_int) isa Vector{<:ConstantModel}
-true
-
-julia> unroll_rules(rule)
-1-element Vector{Rule{String, LogicalTruthCondition{SyntaxTree{Union{SoleLogics.NamedOperator{:¬}, Proposition{String}}, SoleLogics.NamedOperator{:¬}}}, ConstantModel{String}}}:
- Rule{String, LogicalTruthCondition{SyntaxTree{Union{SoleLogics.NamedOperator{:¬}, Proposition{String}}, SoleLogics.NamedOperator{:¬}}}, ConstantModel{String}}
+@test unroll_rules(r2_string) isa Vector{<:Rule}
+julia> print(join(displaymodel.(unroll_rules(rule); header = false)))
 ┐¬(r)
 └ ✔ YES
 
-julia> unroll_rules(decision_list)
-3-element Vector{Rule{String, C, ConstantModel{String}} where C<:SoleModels.AbstractBooleanCondition}:
- Rule{String, LogicalTruthCondition{SyntaxTree{Union{SoleLogics.NamedOperator{:∧}, Proposition{String}}, SoleLogics.NamedOperator{:∧}}}, ConstantModel{String}}
+julia> print(join(displaymodel.(unroll_rules(decision_list); header = false)))
 ┐(r ∧ s) ∧ t
 └ ✔ YES
-
- Rule{String, LogicalTruthCondition{SyntaxTree{Union{SoleLogics.NamedOperator{:¬}, Proposition{String}}, SoleLogics.NamedOperator{:¬}}}, ConstantModel{String}}
 ┐¬(r)
 └ ✔ YES
-
- Rule{String, LogicalTruthCondition{SyntaxTree{SoleLogics.TopOperator, SoleLogics.TopOperator}}, ConstantModel{String}}
 ┐⊤
 └ ✔ YES
 
-julia> unroll_rules(rcmodel)
-1-element Vector{Rule{Int64, LogicalTruthCondition{Formula{BaseLogic{SoleLogics.CompleteFlatGrammar{AlphabetOfAny{String}, Union{SoleLogics.NamedOperator{:∨}, SoleLogics.NamedOperator{:∧}}}, SoleLogics.BooleanAlgebra}}}, ConstantModel{Int64}}}:
- Rule{Int64, LogicalTruthCondition{Formula{BaseLogic{SoleLogics.CompleteFlatGrammar{AlphabetOfAny{String}, Union{SoleLogics.NamedOperator{:∨}, SoleLogics.NamedOperator{:∧}}}, SoleLogics.BooleanAlgebra}}}, ConstantModel{Int64}}
+@test unroll_rules(rcmodel) isa Vector{<:Rule}
+julia> print(join(displaymodel.(unroll_rules(rule_cascade); header = false)))
 ┐(p ∧ (q ∨ r)) ∧ ((p ∧ (q ∨ r)) ∧ (p ∧ (q ∨ r)))
 └ ✔ 1
 
-julia> unroll_rules(branch)
-3-element Vector{Rule{String, C, ConstantModel{String}} where C<:SoleModels.AbstractBooleanCondition}:
- Rule{String, LogicalTruthCondition{SyntaxTree{Union{SoleLogics.NamedOperator{:∧}, Proposition{String}}, SoleLogics.NamedOperator{:∧}}}, ConstantModel{String}}
-┐t ∧ q
-└ ✔ YES
-
- Rule{String, LogicalTruthCondition{SyntaxTree{Union{SoleLogics.NamedOperator{:∧}, SoleLogics.NamedOperator{:¬}, Proposition{String}}, SoleLogics.NamedOperator{:∧}}}, ConstantModel{String}}
-┐t ∧ (¬(q))
-└ ✔ NO
-
- Rule{String, LogicalTruthCondition{SyntaxTree{Union{SoleLogics.NamedOperator{:¬}, Proposition{String}}, SoleLogics.NamedOperator{:¬}}}, ConstantModel{String}}
-┐¬(t)
-└ ✔ YES
-
-julia> unroll_rules(decision_tree)
-5-element Vector{Rule{String, C, ConstantModel{String}} where C<:SoleModels.AbstractBooleanCondition}:
- Rule{String, LogicalTruthCondition{SyntaxTree{Union{SoleLogics.NamedOperator{:∧}, Proposition{String}}, SoleLogics.NamedOperator{:∧}}}, ConstantModel{String}}
+julia> print(join(displaymodel.(unroll_rules(branch); header = false)))
 ┐r ∧ s
 └ ✔ YES
-
- Rule{String, LogicalTruthCondition{SyntaxTree{Union{SoleLogics.NamedOperator{:∧}, SoleLogics.NamedOperator{:¬}, Proposition{String}}, SoleLogics.NamedOperator{:∧}}}, ConstantModel{String}}
 ┐r ∧ (¬(s))
 └ ✔ NO
-
- Rule{String, LogicalTruthCondition{SyntaxTree{Union{SoleLogics.NamedOperator{:∧}, SoleLogics.NamedOperator{:¬}, Proposition{String}}, SoleLogics.NamedOperator{:∧}}}, ConstantModel{String}}
 ┐(¬(r)) ∧ (t ∧ q)
 └ ✔ YES
-
- Rule{String, LogicalTruthCondition{SyntaxTree{Union{SoleLogics.NamedOperator{:∧}, SoleLogics.NamedOperator{:¬}, Proposition{String}}, SoleLogics.NamedOperator{:∧}}}, ConstantModel{String}}
 ┐(¬(r)) ∧ (t ∧ (¬(q)))
 └ ✔ NO
-
- Rule{String, LogicalTruthCondition{SyntaxTree{Union{SoleLogics.NamedOperator{:∧}, SoleLogics.NamedOperator{:¬}, Proposition{String}}, SoleLogics.NamedOperator{:∧}}}, ConstantModel{String}}
 ┐(¬(r)) ∧ (¬(t))
 └ ✔ YES
 
-julia> unroll_rules(mixed_symbolic_model)
-2-element Vector{Rule}:
- Rule{Int64, LogicalTruthCondition{SyntaxTree{Proposition{String}, Proposition{String}}}, ConstantModel{Int64}}
+julia> print(join(displaymodel.(unroll_rules(decision_tree); header = false)))
+┐r ∧ s
+└ ✔ YES
+┐r ∧ (¬(s))
+└ ✔ NO
+┐(¬(r)) ∧ (t ∧ q)
+└ ✔ YES
+┐(¬(r)) ∧ (t ∧ (¬(q)))
+└ ✔ NO
+┐(¬(r)) ∧ (¬(t))
+└ ✔ YES
+
+julia> print(join(displaymodel.(unroll_rules(mixed_symbolic_model); header = false)))
 ┐q
 └ ✔ 2
-
- Rule{Float64, LogicalTruthCondition{SyntaxTree{Union{SoleLogics.NamedOperator{:¬}, Proposition{String}}, SoleLogics.NamedOperator{:¬}}}, ConstantModel{Float64}}
 ┐¬(q)
 └ ✔ 1.5
-
 ```
 
 See also [`immediate_rules`](@ref), [`unroll_rules_cascade`](@ref),
@@ -232,70 +289,52 @@ vectors, which can be useful for many purposes.
 
 # Examples
 ```julia-repl
-julia> unroll_rules_cascade(outcome_int) isa Vector{<:ConstantModel}
-true
-
-julia> unroll_rules_cascade(rule)
-1-element Vector{RuleCascade{String, LogicalTruthCondition{SyntaxTree{Union{SoleLogics.NamedOperator{:∧}, Proposition{String}}, SoleLogics.NamedOperator{:∧}}}, ConstantModel{String}}}:
- RuleCascade{String, LogicalTruthCondition{SyntaxTree{Union{SoleLogics.NamedOperator{:∧}, Proposition{String}}, SoleLogics.NamedOperator{:∧}}}, ConstantModel{String}}
+julia> print(join(displaymodel.(unroll_rules_cascade(rule); header = false)))
 ┐⩚((r ∧ s) ∧ t)
 └ ✔ YES
 
-julia> unroll_rules_cascade(rule_cascade)
-1-element Vector{RuleCascade{String, LogicalTruthCondition{SyntaxTree{Proposition{String}, Proposition{String}}}, ConstantModel{String}}}:
- RuleCascade{String, LogicalTruthCondition{SyntaxTree{Proposition{String}, Proposition{String}}}, ConstantModel{String}}
+julia> print(join(displaymodel.(unroll_rules_cascade(rule_cascade); header = false)))
 ┐⩚(r, s, t)
 └ ✔ YES
 
-julia> unroll_rules_cascade(branch)
-2-element Vector{RuleCascade{String, C, ConstantModel{String}} where C<:SoleModels.AbstractBooleanCondition}:
- RuleCascade{String, LogicalTruthCondition{SyntaxTree{Proposition{String}, Proposition{String}}}, ConstantModel{String}}
-┐⩚(s)
+julia> print(join(displaymodel.(unroll_rules_cascade(branch); header = false)))
+┐⩚(r, s)
+└ ✔ YES
+┐⩚(r, ¬(s))
+└ ✔ NO
+┐⩚(¬(r), t, q)
+└ ✔ YES
+┐⩚(¬(r), t, ¬(q))
+└ ✔ NO
+┐⩚(¬(r), ¬(t))
 └ ✔ YES
 
- RuleCascade{String, LogicalTruthCondition{SyntaxTree{Union{SoleLogics.NamedOperator{:¬}, Proposition{String}}, SoleLogics.NamedOperator{:¬}}}, ConstantModel{String}}
-┐⩚(¬(s))
-└ ✔ NO
-
-julia> unroll_rules_cascade(decision_list)
-3-element Vector{RuleCascade{String, C, ConstantModel{String}} where C<:SoleModels.AbstractBooleanCondition}:
- RuleCascade{String, LogicalTruthCondition{SyntaxTree{Union{SoleLogics.NamedOperator{:∧}, Proposition{String}}, SoleLogics.NamedOperator{:∧}}}, ConstantModel{String}}
+julia> print(join(displaymodel.(unroll_rules_cascade(decision_list); header = false)))
 ┐⩚((r ∧ s) ∧ t)
 └ ✔ YES
-
- RuleCascade{String, LogicalTruthCondition{SyntaxTree{Union{SoleLogics.NamedOperator{:¬}, Proposition{String}}, SoleLogics.NamedOperator{:¬}}}, ConstantModel{String}}
 ┐⩚(¬(r))
 └ ✔ YES
-
- RuleCascade{String, TrueCondition, ConstantModel{String}}
 ┐⩚(⊤)
 └ ✔ YES
 
-julia> unroll_rules_cascade(decision_tree)
-3-element Vector{RuleCascade{String, C, ConstantModel{String}} where C<:SoleModels.AbstractBooleanCondition}:
- RuleCascade{String, LogicalTruthCondition{SyntaxTree{Proposition{String}, Proposition{String}}}, ConstantModel{String}}
-┐⩚(t, q)
+julia> print(join(displaymodel.(unroll_rules_cascade(decision_tree); header = false)))
+┐⩚(r, s)
 └ ✔ YES
-
- RuleCascade{String, LogicalTruthCondition, ConstantModel{String}}
-┐⩚(t, ¬(q))
+┐⩚(r, ¬(s))
 └ ✔ NO
-
- RuleCascade{String, LogicalTruthCondition{SyntaxTree{Union{SoleLogics.NamedOperator{:¬}, Proposition{String}}, SoleLogics.NamedOperator{:¬}}}, ConstantModel{String}}
-┐⩚(¬(t))
+┐⩚(¬(r), t, q)
+└ ✔ YES
+┐⩚(¬(r), t, ¬(q))
+└ ✔ NO
+┐⩚(¬(r), ¬(t))
 └ ✔ YES
 
-julia> unroll_rules_cascade(mixed_symbolic_model)
-2-element Vector{RuleCascade}:
- RuleCascade{Int64, LogicalTruthCondition{SyntaxTree{Proposition{String}, Proposition{String}}}, ConstantModel{Int64}}
+julia> print(join(displaymodel.(unroll_rules_cascade(mixed_symbolic_model); header = false)))
 ┐⩚(q)
 └ ✔ 2
-
- RuleCascade{Float64, LogicalTruthCondition{SyntaxTree{Union{SoleLogics.NamedOperator{:¬}, Proposition{String}}, SoleLogics.NamedOperator{:¬}}}, ConstantModel{Float64}}
 ┐⩚(¬(q))
 └ ✔ 1.5
 ```
-
 
 See also [`immediate_rules`](@ref), [`issymbolic`](@ref), [`AbstractModel`](@ref),
 [`unroll_rules`](@ref).

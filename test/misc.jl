@@ -360,7 +360,6 @@ NO
 └ ✘ NO
 YES
 """
-# [{t,q} => YES, {t,¬q} => NO, {¬t} => YES]"
 
 @test join(displaymodel.(immediate_submodels(b_p); header = false)) == """
 ┐ s
@@ -467,7 +466,6 @@ YES
 NO
 YES
 """
-# [{t,q} => YES, {t,¬q} => NO, {¬t} => YES]"
 
 @test join(displaymodel.(submodels(b_p); header = false)) == """
 ┐ s
