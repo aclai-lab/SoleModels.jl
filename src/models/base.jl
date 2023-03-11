@@ -506,7 +506,11 @@ in order to obtain an outcome.
 """
 
 """
-    struct Rule{O,C<:AbstractBooleanCondition,FM<:AbstractModel} <: ConstrainedModel{O,FM}
+    struct Rule{
+        O,
+        C<:AbstractBooleanCondition,
+        FM<:AbstractModel
+    } <: ConstrainedModel{O,FM}
         antecedent::C
         consequent::FM
         info::NamedTuple
@@ -528,7 +532,11 @@ See also
 [`ConstrainedModel`](@ref),
 [`AbstractModel`](@ref).
 """
-struct Rule{O,C<:AbstractBooleanCondition,FM<:AbstractModel} <: ConstrainedModel{O,FM}
+struct Rule{
+    O,
+    C<:AbstractBooleanCondition,
+    FM<:AbstractModel
+} <: ConstrainedModel{O,FM}
     antecedent::C
     consequent::FM
     info::NamedTuple
@@ -627,7 +635,11 @@ end
 ############################################################################################
 
 """
-    struct Branch{O,C<:AbstractBooleanCondition,FM<:AbstractModel} <: ConstrainedModel{O,FM}
+    struct Branch{
+        O,
+        C<:AbstractBooleanCondition,
+        FM<:AbstractModel
+    } <: ConstrainedModel{O,FM}
         antecedent::C
         posconsequent::FM
         negconsequent::FM
@@ -652,7 +664,11 @@ See also
 [`Rule`](@ref),
 [`ConstrainedModel`](@ref), [`AbstractModel`](@ref).
 """
-struct Branch{O,C<:AbstractBooleanCondition,FM<:AbstractModel} <: ConstrainedModel{O,FM}
+struct Branch{
+    O,
+    C<:AbstractBooleanCondition,
+    FM<:AbstractModel
+} <: ConstrainedModel{O,FM}
     antecedent::C
     posconsequent::FM
     negconsequent::FM
@@ -741,7 +757,11 @@ end
 ############################################################################################
 
 """
-    struct DecisionList{O,C<:AbstractBooleanCondition,FM<:AbstractModel} <: ConstrainedModel{O,FM}
+    struct DecisionList{
+        O,
+        C<:AbstractBooleanCondition,
+        FM<:AbstractModel
+    } <: ConstrainedModel{O,FM}
         rulebase::Vector{Rule{_O,_C,_FM} where {_O<:O,_C<:C,_FM<:FM}}
         defaultconsequent::FM
         info::NamedTuple
@@ -770,38 +790,14 @@ See also
 [`DecisionTree`](@ref),
 [`AbstractModel`](@ref).
 """
-struct DecisionList{O,C<:AbstractBooleanCondition,FM<:AbstractModel} <: ConstrainedModel{O,FM}
+struct DecisionList{
+    O,
+    C<:AbstractBooleanCondition,
+    FM<:AbstractModel
+} <: ConstrainedModel{O,FM}
     rulebase::Vector{Rule{_O,_C,_FM} where {_O<:O,_C<:C,_FM<:FM}}
     defaultconsequent::FM
     info::NamedTuple
-
-    # function DecisionList{O,C,_FM}(
-    #     rulebase::Vector{<:Rule{<:O,<:C,<:_FM}},
-    #     defaultconsequent::Any,
-    #     info::NamedTuple = (;),
-    # ) where {O,C<:AbstractBooleanCondition,_FM<:AbstractModel}
-    #     defaultconsequent = wrap(defaultconsequent, AbstractModel{O})
-    #     FM = typeintersect(Union{_FM,propagate_feasiblemodels(defaultconsequent),propagate_feasiblemodels.(rulebase)...}, AbstractModel{<:O})
-    #     # FM = typeintersect(Union{propagate_feasiblemodels(defaultconsequent),propagate_feasiblemodels.(rulebase)...}, AbstractModel{O})
-    #     # FM = Union{propagate_feasiblemodels(defaultconsequent),propagate_feasiblemodels.(rulebase)...}
-    #     check_model_constraints.(DecisionList{O}, typeof.(rulebase), FM, O)
-    #     check_model_constraints(DecisionList{O}, typeof(defaultconsequent), FM)
-    #     new{O,C,FM}(rulebase, defaultconsequent, info)
-    # end
-
-    # function DecisionList{O}(
-    #     rulebase::Vector{<:Rule{OO,<:C,<:FM}},
-    #     defaultconsequent::Any,
-    #     info::NamedTuple = (;),
-    # ) where {O,OO<:O}
-    #     defaultconsequent = wrap(defaultconsequent, AbstractModel{O})
-    #     FM = typeintersect(Union{propagate_feasiblemodels(defaultconsequent),propagate_feasiblemodels.(rulebase)...}, AbstractModel{<:O})
-    #     # FM = typeintersect(Union{propagate_feasiblemodels(defaultconsequent),propagate_feasiblemodels.(rulebase)...}, AbstractModel{O})
-    #     # FM = Union{propagate_feasiblemodels(defaultconsequent),propagate_feasiblemodels.(rulebase)...}
-    #     check_model_constraints.(DecisionList{O}, typeof.(rulebase), FM, O)
-    #     check_model_constraints(DecisionList{O}, typeof(defaultconsequent), FM, O)
-    #     new{O,C,FM}(rulebase, defaultconsequent, info)
-    # end
 
     function DecisionList(
         rulebase::Vector{<:Rule},
@@ -861,7 +857,11 @@ end
 ############################################################################################
 
 """
-    struct RuleCascade{O,C<:AbstractBooleanCondition,FFM<:FinalModel} <: ConstrainedModel{O,FFM}
+    struct RuleCascade{
+        O,
+        C<:AbstractBooleanCondition,
+        FFM<:FinalModel
+    } <: ConstrainedModel{O,FFM}
         antecedents::Vector{<:C}
         consequent::FFM
         info::NamedTuple
@@ -886,22 +886,14 @@ Note that `FM` refers to the Feasible Models (`FM`) allowed in the model's sub-t
 
 See also [`Rule`](@ref), [`ConstrainedModel`](@ref), [`DecisionList`](@ref), [`AbstractModel`](@ref).
 """
-struct RuleCascade{O,C<:AbstractBooleanCondition,FFM<:FinalModel} <: ConstrainedModel{O,FFM}
+struct RuleCascade{
+    O,
+    C<:AbstractBooleanCondition,
+    FFM<:FinalModel
+} <: ConstrainedModel{O,FFM}
     antecedents::Vector{<:C}
     consequent::FFM
     info::NamedTuple
-
-    # function RuleCascade{O,C,_FFM}(
-    #     antecedents::Vector{<:C},
-    #     consequent::Any,
-    #     info::NamedTuple = (;),
-    # ) where {O,C<:AbstractBooleanCondition,_FFM<:FinalModel}
-    #     antecedents = convert.(C, antecedents)
-    #     consequent = wrap(consequent, AbstractModel{O})
-    #     FFM = typeintersect(Union{_FM,propagate_feasiblemodels(consequent)}, FinalModel{<:O})
-    #     check_model_constraints(RuleCascade{O}, typeof(consequent), FFM, O)
-    #     new{O,C,FFM}(antecedents, consequent, info)
-    # end
 
     function RuleCascade(
         antecedents::Vector,
@@ -1000,7 +992,8 @@ local outcomes of the block.
 In practice, a `DecisionTree` simply wraps a constrained
 sub-tree of `Branch` and `FinalModel`:
 
-    struct DecisionTree{O,
+    struct DecisionTree{
+    O,
         C<:AbstractBooleanCondition,
         FFM<:FinalModel
     } <: ConstrainedModel{O, Union{<:Branch{<:O,<:C}, <:FFM}}
@@ -1014,20 +1007,21 @@ information.
 
 See also [`ConstrainedModel`](@ref), [`MixedSymbolicModel`](@ref), [`DecisionList`](@ref).
 """
-struct DecisionTree{O,
+struct DecisionTree{
+    O,
     C<:AbstractBooleanCondition,
     FFM<:FinalModel
 } <: ConstrainedModel{O, Union{<:Branch{<:O,<:C}, <:FFM}}
     root::M where {M<:Union{FFM,Branch}}
     info::NamedTuple
 
-    # function DecisionTree(
-    #     root::Union{FFM,Branch{O,<:C,<:Union{Branch{<:O,<:C},FFM}}},
-    #     info::NamedTuple = (;),
-    # ) where {O, C<:AbstractBooleanCondition, FFM<:FinalModel{<:O}}
-    #     new{O,C,FFM}(root, info)
-    # end
-    # ) where {_O, _C<:AbstractBooleanCondition, _FFM<:FinalModel, M<:Union{_FFM,Branch{<:_O,<:_C,<:Union{Branch{<:_O,<:_C},_FFM}}}}
+    function DecisionTree(
+        root::Union{FFM,Branch{O,<:C,<:Union{Branch{<:O,<:C},FFM}}},
+        info::NamedTuple = (;),
+    ) where {O, C<:AbstractBooleanCondition, FFM<:FinalModel{<:O}}
+        new{O,C,FFM}(root, info)
+    end
+    ) where {_O, _C<:AbstractBooleanCondition, _FFM<:FinalModel, M<:Union{_FFM,Branch{<:_O,<:_C,<:Union{Branch{<:_O,<:_C},_FFM}}}}
 
     function DecisionTree(
         root::Any,
@@ -1040,7 +1034,11 @@ struct DecisionTree{O,
         # FM = typeintersect(Union{M,feasiblemodelstype(M)}, AbstractModel{<:O})
         FM = typeintersect(Union{propagate_feasiblemodels(M)}, AbstractModel{<:O})
         FFM = typeintersect(FM, FinalModel{<:O})
-        @assert M <: Union{<:FFM,<:Branch{<:O,<:C,<:Union{Branch,FFM}}} "Cannot instantiate DecisionTree{$(O),$(C),$(FFM),$(M)}(...) with root of type $(typeof(root)). Note that the should be either a FinalNode or a bounded Banch. $(M) <: $(Union{FinalModel,Branch{<:O,<:C,<:Union{Branch,FFM}}}) should hold."
+        @assert M <: Union{<:FFM,<:Branch{<:O,<:C,<:Union{Branch,FFM}}} "" *
+            "Cannot instantiate DecisionTree{$(O),$(C),$(FFM)}(...) with root of" *
+            " type $(typeof(root)). Note that the should be either a FinalNode or a" *
+            " bounded Branch." *
+            " $(M) <: $(Union{FinalModel,Branch{<:O,<:C,<:Union{Branch,FFM}}}) should hold."
         check_model_constraints(DecisionTree{O}, typeof(root), FM, O)
         new{O,C,FFM}(root, info)
     end
@@ -1059,7 +1057,11 @@ apply(m::DecisionTree, id::Union{AbstractInterpretation,AbstractInterpretationSe
 """
 A `Decision Forest` is a symbolic model that wraps an ensemble of models
 
-    struct DecisionForest{O,C<:AbstractBooleanCondition,FFM<:FinalModel} <: ConstrainedModel{O, Union{<:Branch{<:O,<:C}, <:FFM}}
+    struct DecisionForest{
+        O,
+        C<:AbstractBooleanCondition,
+        FFM<:FinalModel
+    } <: ConstrainedModel{O, Union{<:Branch{<:O,<:C}, <:FFM}}
         trees::Vector{<:DecisionTree}
         info::NamedTuple
     end
@@ -1068,7 +1070,11 @@ A `Decision Forest` is a symbolic model that wraps an ensemble of models
 See also [`ConstrainedModel`](@ref), [`MixedSymbolicModel`](@ref), [`DecisionList`](@ref),
 [`DecisionTree`](@ref)
 """
-struct DecisionForest{O,C<:AbstractBooleanCondition,FFM<:FinalModel} <: ConstrainedModel{O, Union{<:Branch{<:O,<:C}, <:FFM}}
+struct DecisionForest{
+    O,
+    C<:AbstractBooleanCondition,
+    FFM<:FinalModel
+} <: ConstrainedModel{O, Union{<:Branch{<:O,<:C}, <:FFM}}
     trees::Vector{<:DecisionTree}
     info::NamedTuple
 
@@ -1076,14 +1082,12 @@ struct DecisionForest{O,C<:AbstractBooleanCondition,FFM<:FinalModel} <: Constrai
         trees::Vector{<:DecisionTree},
         info::NamedTuple = (;),
     )
-        root_tree = wrap(root(trees[1]))
-        M = typeof(root_tree)
-        O = outcometype(root_tree)
-        C = (root_tree isa FinalModel ? AbstractBooleanCondition : conditiontype(M))
-        FM = typeintersect(Union{propagate_feasiblemodels(M)}, AbstractModel{<:O})
+        @assert length(trees) > 0 "Cannot instantiate forest with no trees!"
+        O = Union{outcometype.(trees)...}
+        C = Union(conditiontype.(trees)...)
+        FM = typeintersect(Union{propagate_feasiblemodels.(trees)...}, AbstractModel{<:O})
         FFM = typeintersect(FM, FinalModel{<:O})
-        @assert M <: Union{<:FFM,<:Branch{<:O,<:C,<:Union{Branch,FFM}}} "Cannot instantiate DecisionForest{$(O),$(C),$(FFM),$(M)}(...) with root first tree of type $(typeof(root)). Note that the should be either a FinalNode or a bounded Banch. $(M) <: $(Union{FinalModel,Branch{<:O,<:C,<:Union{Branch,FFM}}}) should hold."
-        check_model_constraints(DecisionTree{O}, typeof(root_tree), FM, O)
+        check_model_constraints.(DecisionForest{O}, typeof.(trees), FM, O)
         new{O,C,FFM}(trees, info)
     end
 end
