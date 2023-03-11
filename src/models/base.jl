@@ -1153,7 +1153,7 @@ end
 
 root(m::MixedSymbolicModel) = m.root
 
-issymbolic(::MixedSymbolicModel) = false
+issymbolic(m::MixedSymbolicModel) = issymbolic(root(m))
 
 isopen(::MixedSymbolicModel) = isopen(root)
 

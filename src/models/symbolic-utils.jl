@@ -352,32 +352,24 @@ end
 unroll_rules_cascade(m::FinalModel) = [m]
 
 function unroll_rules_cascade(m::Rule{O,<:TrueCondition}) where {O}
-    rules = begin
-        submodels = unroll_rules_cascade(consequent(m))
+    submodels = unroll_rules_cascade(consequent(m))
 
-        if submodels isa Vector{<:FinalModel}
-            [RuleCascade(fm) for fm in submodels]
-        else
-            [RuleCascade(antecedents(rule), consequent(rule)) for rule in submodels]
-        end
+    if submodels isa Vector{<:FinalModel}
+        return [RuleCascade(fm) for fm in submodels]
+    else
+        return [RuleCascade(antecedents(rule), consequent(rule)) for rule in submodels]
     end
-
-    return [rules...]
 end
 
 function unroll_rules_cascade(m::Rule{O,<:LogicalTruthCondition}) where {O}
-    rules = begin
-        submodels = unroll_rules_cascade(consequent(m))
-        ant = antecedent(m)
+    submodels = unroll_rules_cascade(consequent(m))
+    ant = antecedent(m)
 
-        if submodels isa Vector{<:FinalModel}
-            [RuleCascade([ant], fm) for fm in submodels]
-        else
-            [RuleCascade([ant,antecedents(rule)...], consequent(rule)) for rule in submodels]
-        end
+    if submodels isa Vector{<:FinalModel}
+        return [RuleCascade([ant], fm) for fm in submodels]
+    else
+        return [RuleCascade([ant,antecedents(rule)...], consequent(rule)) for rule in submodels]
     end
-
-    return [rules...]
 end
 
 function unroll_rules_cascade(m::Branch{O,<:TrueCondition}) where {O}
