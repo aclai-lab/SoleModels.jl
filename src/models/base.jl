@@ -18,6 +18,9 @@ See also
 """
 abstract type AbstractBooleanCondition end
 
+# TODO: move in correct position
+eachsample(d::AbstractDataset) = map(i->get_instance(d, i), 1:nsamples(d))
+
 function syntaxstring(c::AbstractBooleanCondition; kwargs...)
     error("Please, provide method syntaxstring(::$(typeof(c)); kwargs...).")
 end
@@ -32,13 +35,13 @@ function check(c::AbstractBooleanCondition, i::AbstractInterpretation, args...)
         " i::$(typeof(i)), args...).")
 end
 function check(c::AbstractBooleanCondition, d::AbstractInterpretationSet, args...)
-    map(i->check(c, i, args...), iterate_instances(d))
+    map(i->check(c, i, args...), eachsample(d))
 end
 
 """
     abstract type AbstractLogicalBooleanCondition <: AbstractBooleanCondition end
 
-A boolean condition based on a formula of a given logic, that is 
+A boolean condition based on a formula of a given logic, that is
 to be checked on a logical interpretation.
 
 See also
@@ -79,7 +82,7 @@ See also
 """
 struct TrueCondition <: AbstractLogicalBooleanCondition end
 
-formula(c::TrueCondition) = SyntaxTree(⊤)
+formula(::TrueCondition) = SyntaxTree(⊤)
 check(::TrueCondition, args...) = true
 
 """
@@ -210,7 +213,7 @@ function apply(m::AbstractModel, i::AbstractInterpretation)::outputtype(m)
     error("Please, provide method apply(::$(typeof(m)), ::$(typeof(i))).")
 end
 function apply(m::AbstractModel, d::AbstractInterpretationSet)::AbstractVector{<:outputtype(m)}
-    map(i->apply(m, i), iterate_instances(d))
+    map(i->apply(m, i), eachsample(d))
 end
 
 """
@@ -548,13 +551,9 @@ struct Rule{O,C<:AbstractBooleanCondition,FM<:AbstractModel} <: ConstrainedModel
         consequent::Any,
         info::NamedTuple = (;),
     )
-        antecedent = convert(AbstractBooleanCondition, antecedent)
-        C = typeof(antecedent)
         consequent = wrap(consequent)
         O = outcometype(consequent)
-        FM = typeintersect(propagate_feasiblemodels(consequent), AbstractModel{<:O})
-        check_model_constraints(Rule{O}, typeof(consequent), FM, O)
-        new{O,C,FM}(antecedent, consequent, info)
+        Rule{O}(antecedent, consequent, info)
     end
 
     function Rule(
@@ -562,12 +561,9 @@ struct Rule{O,C<:AbstractBooleanCondition,FM<:AbstractModel} <: ConstrainedModel
         info::NamedTuple = (;),
     )
         antecedent = TrueCondition()
-        C = typeof(antecedent)
         consequent = wrap(consequent)
         O = outcometype(consequent)
-        FM = typeintersect(propagate_feasiblemodels(consequent), AbstractModel{<:O})
-        check_model_constraints(Rule{O}, typeof(consequent), FM, O)
-        new{O,C,FM}(antecedent, consequent, info)
+        Rule{O}(antecedent, consequent, info)
     end
 end
 
@@ -841,6 +837,25 @@ function apply(m::DecisionList, i::AbstractInterpretation)
         end
     end
     defaultconsequent(m)
+end
+
+function apply(m::DecisionList{O}, X::AbstractInterpretationSet) where {O}
+    n_samples = nsamples(X)
+    pred = Vector{O}(undef, n_samples)
+    idxs = 1:n_samples
+
+    for rule in rulebase(m)
+        length(idxs) == 0 && break
+
+        idxs_sat = findall(check(antecedent(rule),X) .== true)
+        idxs = setdiff(idxs,idxs_sat)
+
+        map((i)->(pred[i] = outcome(consequent(rule))), idxs_sat)
+    end
+
+    length(idxs) != 0 && map((i)->(pred[i] = outcome(defaultconsequent(m))), idxs)
+
+    return pred
 end
 
 ############################################################################################

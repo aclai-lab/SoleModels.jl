@@ -3,17 +3,47 @@
 # Symbolic modeling utils
 ############################################################################################
 
-# TODO @Michele clean this file and document
-
-# TODO add tests for:
-# immediate_submodels
-# submodels
-
 """
     immediate_submodels(m::AbstractModel)
 
 Returns a list of immediate child models.
 Note: if the model is final, then the list is empty.
+
+# Examples
+```julia-repl
+julia> print(join(displaymodel.(immediate_submodels(rule); header = false)))
+YES
+
+julia> print(join(displaymodel.(immediate_submodels(rcmodel); header = false)))
+1
+
+julia> print(join(displaymodel.(immediate_submodels(branch); header = false)))
+┐ q
+├ ✔ YES
+└ ✘ NO
+YES
+
+julia> print(join(displaymodel.(immediate_submodels(decision_list); header = false)))
+┐(r ∧ s) ∧ t
+└ ✔ YES
+┐¬(r)
+└ ✔ YES
+YES
+
+julia> print(join(displaymodel.(immediate_submodels(decision_tree); header = false)))
+┐ s
+├ ✔ YES
+└ ✘ NO
+┐ t
+├ ✔ ┐ q
+│   ├ ✔ YES
+│   └ ✘ NO
+└ ✘ YES
+
+julia> print(join(displaymodel.(immediate_submodels(mixed_symbolic_model); header = false)))
+2
+1.5
+```
 
 See also
 [`submodels`](@ref),
@@ -29,13 +59,64 @@ end
 immediate_submodels(m::FinalModel{O}) where {O} = Vector{<:AbstractModel{<:O}}[]
 immediate_submodels(m::Rule) = [consequent(m)]
 immediate_submodels(m::Branch) = [posconsequent(m), negconsequent(m)]
-immediate_submodels(m::DecisionList) = [rulebase(m)..., consequent(m)]
+immediate_submodels(m::DecisionList) = [rulebase(m)..., defaultconsequent(m)]
 immediate_submodels(m::RuleCascade) = [consequent(m)]
 immediate_submodels(m::DecisionTree) = immediate_submodels(root(m))
 immediate_submodels(m::MixedSymbolicModel) = immediate_submodels(root(m))
 
 """
+    submodels(m::AbstractModel)
+
 This function provides access to the list of all child models in the sub-tree.
+
+# Examples
+```julia-repl
+julia> print(join(displaymodel.(submodels(rule); header = false)))
+YES
+
+@test submodels(rc1_string) isa Vector{<:AbstractModel}
+julia> print(join(displaymodel.(submodels(rule_cascade); header = false)))
+YES
+
+julia> print(join(displaymodel.(submodels(branch); header = false)))
+┐ s
+├ ✔ YES
+└ ✘ NO
+YES
+NO
+┐ t
+├ ✔ ┐ q
+│   ├ ✔ YES
+│   └ ✘ NO
+└ ✘ YES
+┐ q
+├ ✔ YES
+└ ✘ NO
+YES
+NO
+YES
+
+julia> print(join(displaymodel.(submodels(decision_list); header = false)))
+┐(r ∧ s) ∧ t
+└ ✔ YES
+YES
+┐¬(r)
+└ ✔ YES
+YES
+YES
+
+julia> print(join(displaymodel.(submodels(decision_tree); header = false)))
+┐ q
+├ ✔ YES
+└ ✘ NO
+YES
+NO
+YES
+
+julia> print(join(displaymodel.(submodels(mixed_symbolic_model); header = false)))
+2
+1.5
+```
 
 See also
 [`immediate_submodels`](@ref),
@@ -110,38 +191,89 @@ immediate_rules(m::MixedSymbolicModel) = immediate_rules(root(m))
 ############################################################################################
 
 """
+    unroll_rules(m::AbstractModel)
+
 This function extracts the behavior of a symbolic model and represents it as a
 set of mutually exclusive (and jointly exaustive, if the model is closed) rules,
-which can be useful
-for many purposes.
+which can be useful for many purposes.
+
+# Examples
+```julia-repl
+@test unroll_rules(r2_string) isa Vector{<:Rule}
+julia> print(join(displaymodel.(unroll_rules(rule); header = false)))
+┐¬(r)
+└ ✔ YES
+
+julia> print(join(displaymodel.(unroll_rules(decision_list); header = false)))
+┐(r ∧ s) ∧ t
+└ ✔ YES
+┐¬(r)
+└ ✔ YES
+┐⊤
+└ ✔ YES
+
+@test unroll_rules(rcmodel) isa Vector{<:Rule}
+julia> print(join(displaymodel.(unroll_rules(rule_cascade); header = false)))
+┐(p ∧ (q ∨ r)) ∧ ((p ∧ (q ∨ r)) ∧ (p ∧ (q ∨ r)))
+└ ✔ 1
+
+julia> print(join(displaymodel.(unroll_rules(branch); header = false)))
+┐r ∧ s
+└ ✔ YES
+┐r ∧ (¬(s))
+└ ✔ NO
+┐(¬(r)) ∧ (t ∧ q)
+└ ✔ YES
+┐(¬(r)) ∧ (t ∧ (¬(q)))
+└ ✔ NO
+┐(¬(r)) ∧ (¬(t))
+└ ✔ YES
+
+julia> print(join(displaymodel.(unroll_rules(decision_tree); header = false)))
+┐r ∧ s
+└ ✔ YES
+┐r ∧ (¬(s))
+└ ✔ NO
+┐(¬(r)) ∧ (t ∧ q)
+└ ✔ YES
+┐(¬(r)) ∧ (t ∧ (¬(q)))
+└ ✔ NO
+┐(¬(r)) ∧ (¬(t))
+└ ✔ YES
+
+julia> print(join(displaymodel.(unroll_rules(mixed_symbolic_model); header = false)))
+┐q
+└ ✔ 2
+┐¬(q)
+└ ✔ 1.5
+```
 
 See also [`immediate_rules`](@ref), [`unroll_rules_cascade`](@ref),
-[`issymbolic`](@ref), [`AbstractModel`](@ref).
+[`issymbolic`](@ref), [`FinalModel`](@ref), [`AbstractModel`](@ref).
 """
-# TODO remove or merge with unroll_rules_cascade?
-# function unroll_rules(m::AbstractModel)
-#     # TODO @Michele
-#     # [advance_formula(rule) for rule in unroll_rules(m)]
-#     error(begin
-#         if issymbolic(m)
-#             "Please, provide method unroll_rules(::$(typeof(m))) ($(typeof(m)) is a symbolic model)."
-#         else
-#             "Models of type $(typeof(m)) are not symbolic, and thus have no rules associated."
-#         end
-#     end)
-# end
-
 function unroll_rules(m::AbstractModel)
-    ms = unroll_rules_cascade(m)
-    return map(m->begin
-        if m isa RuleCascade && conditiontype(m) <: Union{TrueCondition,LogicalTruthCondition}
-            convert(Rule, m)
-        elseif m isa FinalModel
-            m
-        else
-            error("Unknown model type encountered in unroll_rules: $(typeof(m))")
+    try
+        ms = unroll_rules_cascade(m)
+        return map(m->begin
+            if m isa RuleCascade && conditiontype(m) <: Union{TrueCondition,LogicalTruthCondition}
+                convert(Rule, m)
+            elseif m isa FinalModel
+                m
+            else
+                error("Unknown model type encountered in unroll_rules: $(typeof(m))")
+            end
+        end, ms)
+    catch err
+        if err isa ErrorException
+            error(begin
+                if issymbolic(m)
+                    "Please, provide method unroll_rules(::$(typeof(m))) ($(typeof(m)) is a symbolic model)."
+                else
+                    "Models of type $(typeof(m)) are not symbolic, and thus have no rules associated."
+                end
+            end)
         end
-    end, ms)
+    end
 end
 
 ############################################################################################
@@ -149,16 +281,65 @@ end
 ############################################################################################
 
 """
+    unroll_rules_cascade(m::AbstractModel)
+
 This function extracts the behavior of a symbolic model and represents it as a
 set of mutually exclusive (and jointly exaustive, if the model is closed) rules cascade
 vectors, which can be useful for many purposes.
+
+# Examples
+```julia-repl
+julia> print(join(displaymodel.(unroll_rules_cascade(rule); header = false)))
+┐⩚((r ∧ s) ∧ t)
+└ ✔ YES
+
+julia> print(join(displaymodel.(unroll_rules_cascade(rule_cascade); header = false)))
+┐⩚(r, s, t)
+└ ✔ YES
+
+julia> print(join(displaymodel.(unroll_rules_cascade(branch); header = false)))
+┐⩚(r, s)
+└ ✔ YES
+┐⩚(r, ¬(s))
+└ ✔ NO
+┐⩚(¬(r), t, q)
+└ ✔ YES
+┐⩚(¬(r), t, ¬(q))
+└ ✔ NO
+┐⩚(¬(r), ¬(t))
+└ ✔ YES
+
+julia> print(join(displaymodel.(unroll_rules_cascade(decision_list); header = false)))
+┐⩚((r ∧ s) ∧ t)
+└ ✔ YES
+┐⩚(¬(r))
+└ ✔ YES
+┐⩚(⊤)
+└ ✔ YES
+
+julia> print(join(displaymodel.(unroll_rules_cascade(decision_tree); header = false)))
+┐⩚(r, s)
+└ ✔ YES
+┐⩚(r, ¬(s))
+└ ✔ NO
+┐⩚(¬(r), t, q)
+└ ✔ YES
+┐⩚(¬(r), t, ¬(q))
+└ ✔ NO
+┐⩚(¬(r), ¬(t))
+└ ✔ YES
+
+julia> print(join(displaymodel.(unroll_rules_cascade(mixed_symbolic_model); header = false)))
+┐⩚(q)
+└ ✔ 2
+┐⩚(¬(q))
+└ ✔ 1.5
+```
 
 See also [`immediate_rules`](@ref), [`issymbolic`](@ref), [`AbstractModel`](@ref),
 [`unroll_rules`](@ref).
 """
 function unroll_rules_cascade(m::AbstractModel)
-    # TODO @Michele
-    # [advance_formula(rule) for rule in unroll_rules(m)]
     error(begin
         if issymbolic(m)
             "Please, provide method unroll_rules_cascade(::$(typeof(m))) ($(typeof(m)) is a symbolic model)."
@@ -170,59 +351,81 @@ end
 
 unroll_rules_cascade(m::FinalModel) = [m]
 
-function unroll_rules_cascade(
-    m::Rule{O,<:Union{TrueCondition,LogicalTruthCondition}}
-) where {O}
+function unroll_rules_cascade(m::Rule{O,<:TrueCondition}) where {O}
     rules = begin
-        r = unroll_rules_cascade(consequent(m))
-        if antecedent(m) isa TrueCondition
-            r isa Vector{<:FinalModel} ?
-                [RuleCascade(fm) for fm in r] :
-                [RuleCascade(antecedents(rule), consequent(rule)) for rule in r]
-        elseif antecedent(m) isa LogicalTruthCondition
-            ant = antecedent(m)
+        submodels = unroll_rules_cascade(consequent(m))
 
-            r isa Vector{<:FinalModel} ?
-                [RuleCascade([ant], fm) for fm in r] :
-                [RuleCascade([ant,antecedents(rule)...], consequent(rule)) for rule in r]
+        if submodels isa Vector{<:FinalModel}
+            [RuleCascade(fm) for fm in submodels]
+        else
+            [RuleCascade(antecedents(rule), consequent(rule)) for rule in submodels]
         end
     end
 
     return [rules...]
 end
 
-function unroll_rules_cascade(
-    m::Branch{O,<:Union{TrueCondition,LogicalTruthCondition}}
-) where {O}
+function unroll_rules_cascade(m::Rule{O,<:LogicalTruthCondition}) where {O}
+    rules = begin
+        submodels = unroll_rules_cascade(consequent(m))
+        ant = antecedent(m)
+
+        if submodels isa Vector{<:FinalModel}
+            [RuleCascade([ant], fm) for fm in submodels]
+        else
+            [RuleCascade([ant,antecedents(rule)...], consequent(rule)) for rule in submodels]
+        end
+    end
+
+    return [rules...]
+end
+
+function unroll_rules_cascade(m::Branch{O,<:TrueCondition}) where {O}
     pos_rules = begin
-        r = unroll_rules_cascade(posconsequent(m))
-
-        if antecedent(m) isa TrueCondition
-            r isa Vector{<:FinalModel} ?
-                [RuleCascade(fm) for fm in r] :
-                [RuleCascade(antecedents(rule), consequent(rule)) for rule in r]
-        elseif antecedent(m) isa LogicalTruthCondition
-            ant = antecedent(m)
-
-            r isa Vector{<:FinalModel} ?
-                [RuleCascade([ant], fm) for fm in r] :
-                [RuleCascade([ant,antecedents(rule)...], consequent(rule)) for rule in r]
+        submodels = unroll_rules_cascade(posconsequent(m))
+        if submodels isa Vector{<:FinalModel}
+            [RuleCascade(fm) for fm in r]
+        else
+            [RuleCascade(antecedents(rule), consequent(rule)) for rule in submodels]
         end
     end
 
     neg_rules = begin
-        r = unroll_rules_cascade(negconsequent(m))
+        submodels = unroll_rules_cascade(negconsequent(m))
 
-        if antecedent(m) isa TrueCondition
-            r isa Vector{<:FinalModel} ?
-                [RuleCascade(fm) for fm in r] :
-                [RuleCascade(antecedents(rule), consequent(rule)) for rule in r]
-        elseif antecedent(m) isa LogicalTruthCondition
-            ant = LogicalTruthCondition(¬(formula(antecedent(m))))
+        if submodels isa Vector{<:FinalModel}
+            [RuleCascade(fm) for fm in submodels]
+        else
+            [RuleCascade(antecedents(rule), consequent(rule)) for rule in submodels]
+        end
+    end
 
-            r isa Vector{<:FinalModel} ?
-                [RuleCascade([ant], fm) for fm in r] :
-                [RuleCascade([ant,antecedents(rule)...], consequent(rule)) for rule in r]
+    return [
+        pos_rules...,
+        neg_rules...,
+    ]
+end
+
+function unroll_rules_cascade(m::Branch{O,<:LogicalTruthCondition}) where {O}
+    pos_rules = begin
+        submodels = unroll_rules_cascade(posconsequent(m))
+        ant = antecedent(m)
+
+        if submodels isa Vector{<:FinalModel}
+            [RuleCascade([ant], fm) for fm in submodels]
+        else
+            [RuleCascade([ant,antecedents(rule)...], consequent(rule)) for rule in submodels]
+        end
+    end
+
+    neg_rules = begin
+        submodels = unroll_rules_cascade(negconsequent(m))
+        ant = LogicalTruthCondition(¬(formula(antecedent(m))))
+
+        if submodels isa Vector{<:FinalModel}
+            [RuleCascade([ant], fm) for fm in submodels]
+        else
+            [RuleCascade([ant,antecedents(rule)...], consequent(rule)) for rule in submodels]
         end
     end
 
@@ -246,59 +449,6 @@ unroll_rules_cascade(m::RuleCascade) = [m]
 unroll_rules_cascade(m::DecisionTree) = unroll_rules_cascade(root(m))
 
 unroll_rules_cascade(m::MixedSymbolicModel) = unroll_rules_cascade(root(m))
-
-############################################################################################
-############################################################################################
-############################################################################################
-
-"""
-List all paths of a decision tree by performing a tree traversal
-"""
-# """
-# List all paths of a decision tree by performing a tree traversal
-# TODO @Michele
-# """
-# function list_paths(tree::DecisionTree{L<:AbstractLogic,O})::AbstractVector{<:AbstractVector{Union{Any,Rule{L,O}}}}
-#     return immediate_rules(root(tree))
-# end
-#=
-function list_paths(tree::DecisionTree)
-    # tree(f) [where f is a AbstractFormula object] is used to
-    # retrieve the root FNode of the formula(syntax) tree
-    pathset = list_paths(root(tree))
-
-    (length(pathset) == 1) && (return [RuleCascade(⊤,pathset[1])])
-
-    return [RuleCascade(path[1:end-1],path[end]) for path in pathset]
-end
-
-function list_paths(node::Branch)
-    positive_path  = [antecedent(node)]
-    negative_path = [NEGATION(tree(formula(antecedent(node))))]
-    return [
-        list_paths(posconsequent(node),  positive_path)...,
-        list_paths(negconsequent(node), negative_path)...,
-    ]
-end
-
-function list_paths(node::AbstractModel)
-    return [node]
-end
-
-function list_paths(node::Branch, this_path::AbstractVector)
-    # NOTE: antecedent(node) or tree(formula(antecedent(node))) to obtain a FNode?
-    positive_path  = [this_path..., antecedent(node)]
-    negative_path = [this_path..., NEGATION(tree(formula(antecedent(node))))]
-    return [
-        list_paths(posconsequent(node),  positive_path)...,
-        list_paths(negconsequent(node), negative_path)...,
-    ]
-end
-
-function list_paths(node::AbstractModel,this_path::AbstractVector)
-    return [[this_path..., node], ]
-end
-=#
 
 ############################################################################################
 ############################################################################################
