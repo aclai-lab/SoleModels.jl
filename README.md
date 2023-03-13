@@ -39,24 +39,24 @@ For more information, refer to the underlying logical layer: [SoleLogics.jl](htt
 
 ### Other noteworthy models:
 
-- Decision List (or decision table)
-- Decision Tree
-- Decision Forest (or tree ensamble)
-- Mixed Symbolic Model
+- Decision List (or decision table): see [Wikipedia](https://en.wikipedia.org/wiki/Decision_list);
+- Decision Tree: see [Wikipedia](https://en.wikipedia.org/wiki/Decision_tree);
+- Decision Forest (or tree ensamble): see [Wikipedia](https://en.wikipedia.org/wiki/Random_forest);
+- Mixed Symbolic Model: a nested structure, mixture of many symbolic models.
 
-## Dataset structures for logical symbolic learning
+## Dataset structures (for logical symbolic learning)
 
 Learning logical models (that is, models with logical formulas as antecedents)
 [often](https://scholar.google.com/scholar?q=Multi-Models+and+Multi-Formulas+Finite+Model+Checking+for+Modal+Logic+Formulas+Induction.)
-requires performing [model checking](https://en.m.wikipedia.org/wiki/Model_checking) many times.
+requires performing [model checking](https://en.wikipedia.org/wiki/Model_checking) many times.
 SoleModels.jl provides a set of structures for representing [logical datasets](https://github.com/aclai-lab/SoleLogics.jl#interpretation-sets),
 specifically optimized for multiple model checking operations.
 
 <!-- TODO explain -->
 
-## Acknoledgements
+## About
 
 The package is developed by the [ACLAI Lab](https://aclai.unife.it/en/) @ University of Ferrara.
 
 SoleModels.jl mainly builds upon [SoleLogics.jl](https://github.com/aclai-lab/SoleLogics.jl) and [SoleData.jl](https://github.com/aclai-lab/SoleData.jl), 
-and it is the core of [Sole.jl](https://pretalx.com/juliacon2023/talk/review/7LY9ZBBJQYVVLJFFSZMV9JCCMMTQJXPK), an open-source framework for symbolic machine learning.
+and it is the core module of [Sole.jl](https://pretalx.com/juliacon2023/talk/review/7LY9ZBBJQYVVLJFFSZMV9JCCMMTQJXPK), an open-source framework for symbolic machine learning.
