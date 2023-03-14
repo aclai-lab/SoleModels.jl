@@ -1021,7 +1021,6 @@ struct DecisionTree{
     ) where {O, C<:AbstractBooleanCondition, FFM<:FinalModel{<:O}}
         new{O,C,FFM}(root, info)
     end
-    ) where {_O, _C<:AbstractBooleanCondition, _FFM<:FinalModel, M<:Union{_FFM,Branch{<:_O,<:_C,<:Union{Branch{<:_O,<:_C},_FFM}}}}
 
     function DecisionTree(
         root::Any,
