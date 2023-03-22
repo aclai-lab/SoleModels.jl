@@ -1,5 +1,6 @@
 import Base: convert, length, getindex, isopen
 import SoleLogics: check, syntaxstring
+using SoleData: slice_dataset
 
 # Util
 typename(::Type{T}) where T = eval(nameof(T))
@@ -18,9 +19,6 @@ See also
 """
 abstract type AbstractBooleanCondition end
 
-# TODO: move in correct position
-eachsample(d::AbstractDataset) = map(i->get_instance(d, i), 1:nsamples(d))
-
 function syntaxstring(c::AbstractBooleanCondition; kwargs...)
     error("Please, provide method syntaxstring(::$(typeof(c)); kwargs...).")
 end
@@ -31,11 +29,13 @@ end
 
 # Check on a boolean condition
 function check(c::AbstractBooleanCondition, i::AbstractInterpretation, args...)
-    error("Please, provide method syntaxstring(::$(typeof(c))," *
+    error("Please, provide method check(::$(typeof(c))," *
         " i::$(typeof(i)), args...).")
 end
 function check(c::AbstractBooleanCondition, d::AbstractInterpretationSet, args...)
-    map(i->check(c, i, args...), eachsample(d))
+    error("Please, provide method check(::$(typeof(c))," *
+        " d::$(typeof(d)), args...).")
+    #map(i->check(c, slice_dataset(d, [i]), args...)[1], 1:nsamples(d))
 end
 
 """
@@ -84,6 +84,7 @@ struct TrueCondition <: AbstractLogicalBooleanCondition end
 
 formula(::TrueCondition) = SyntaxTree(⊤)
 check(::TrueCondition, args...) = true
+check(::TrueCondition, d::AbstractInterpretationSet, args...) = map(i->true, 1:nsamples(d))
 
 """
     struct LogicalTruthCondition{F<:AbstractFormula} <: AbstractLogicalBooleanCondition
@@ -114,6 +115,10 @@ struct LogicalTruthCondition{F<:AbstractFormula} <: AbstractLogicalBooleanCondit
 end
 
 formula(c::LogicalTruthCondition) = c.formula
+
+function check(c::LogicalTruthCondition, d::AbstractInterpretationSet, args...)
+    map(i->tops(check(formula(c), slice_dataset(d, [i]), args...)[1]), 1:nsamples(d))
+end
 
 function check(c::LogicalTruthCondition, i::AbstractInterpretation, args...)
     tops(check(formula(c), i, args...))
@@ -213,7 +218,8 @@ function apply(m::AbstractModel, i::AbstractInterpretation)::outputtype(m)
     error("Please, provide method apply(::$(typeof(m)), ::$(typeof(i))).")
 end
 function apply(m::AbstractModel, d::AbstractInterpretationSet)::AbstractVector{<:outputtype(m)}
-    map(i->apply(m, i), eachsample(d))
+    error("Please, provide method apply(::$(typeof(m)), ::$(typeof(d))).")
+    #map(i->apply(m, i), eachsample(d))
 end
 
 """
@@ -628,6 +634,11 @@ function check_antecedent(
     check(antecedent(m), id)
 end
 
+function apply(m::Rule, d::AbstractInterpretationSet)
+    ds = map(i->slice_dataset(d,[i]), 1:nsamples(d))
+    map(i->(check_antecedent(m, i)[1] ? apply(consequent(m), i) : nothing), ds)
+end
+
 function apply(m::Rule, i::AbstractInterpretation)
     check_antecedent(m, i) ? apply(consequent(m), i) : nothing
 end
@@ -1016,7 +1027,7 @@ struct DecisionTree{
     info::NamedTuple
 
     function DecisionTree(
-        root::Union{FFM,Branch{O,<:C,<:Union{Branch{<:O,<:C},FFM}}},
+        root::Union{FFM,Branch{O,C,<:Union{Branch{<:O,<:C},FFM}}},
         info::NamedTuple = (;),
     ) where {O, C<:AbstractBooleanCondition, FFM<:FinalModel{<:O}}
         new{O,C,FFM}(root, info)
