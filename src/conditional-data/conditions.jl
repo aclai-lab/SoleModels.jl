@@ -78,12 +78,20 @@ end
 syntaxstring(m::FeatCondition; threshold_decimals = nothing, kwargs...) =
     "$(_syntaxstring_feature_test_operator_pair(feature(m), test_operator(m))) $((isnothing(threshold_decimals) ? threshold(m) : round(threshold(m); digits=threshold_decimals)))"
 
+############################################################################################
+
+TODO Michi
 # Alphabet of conditions
 abstract type AbstractConditionalAlphabet{M,C<:FeatCondition{M}} <: AbstractAlphabet{C} end
 
 # Infinite alphabet of conditions induced from a set of metaconditions
-struct ExplicitConditionalAlphabet{M,C<:FeatCondition{M}} <: AbstractConditionalAlphabet{M,C}
+struct UnboundedExplicitConditionalAlphabet{M,C<:FeatCondition{M}} <: AbstractConditionalAlphabet{M,C}
   metaconditions::Vector{M}
+end
+
+# Infinite alphabet of conditions induced from a set of metaconditions
+struct BoundedExplicitConditionalAlphabet{M,C<:FeatCondition{M}} <: AbstractConditionalAlphabet{M,C}
+    ::Vector{Tuple{M,Vector}}
 end
 
 ############################################################################################

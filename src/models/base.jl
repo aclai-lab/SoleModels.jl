@@ -84,7 +84,7 @@ struct TrueCondition <: AbstractLogicalBooleanCondition end
 
 formula(::TrueCondition) = SyntaxTree(⊤)
 check(::TrueCondition, args...) = true
-check(::TrueCondition, d::AbstractInterpretationSet, args...) = map(i->true, 1:nsamples(d))
+check(::TrueCondition, d::AbstractInterpretationSet, args...) = fill(true, nsamples(d)) # Keep for resolving ambiguity
 
 """
     struct LogicalTruthCondition{F<:AbstractFormula} <: AbstractLogicalBooleanCondition
@@ -116,12 +116,12 @@ end
 
 formula(c::LogicalTruthCondition) = c.formula
 
-function check(c::LogicalTruthCondition, d::AbstractInterpretationSet, args...)
-    map(i->tops(check(formula(c), slice_dataset(d, [i]), args...)[1]), 1:nsamples(d))
-end
-
 function check(c::LogicalTruthCondition, i::AbstractInterpretation, args...)
     tops(check(formula(c), i, args...))
+end
+function check(c::LogicalTruthCondition, d::AbstractInterpretationSet, args...)
+    # TODO use get_instance instead?
+    map(i->tops(check(formula(c), slice_dataset(d, [i]), args...)[1]), 1:nsamples(d))
 end
 
 ############################################################################################
