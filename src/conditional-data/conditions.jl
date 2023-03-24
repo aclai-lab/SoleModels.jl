@@ -80,18 +80,26 @@ syntaxstring(m::FeatCondition; threshold_decimals = nothing, kwargs...) =
 
 ############################################################################################
 
-TODO Michi
+#TODO Michi
 # Alphabet of conditions
 abstract type AbstractConditionalAlphabet{M,C<:FeatCondition{M}} <: AbstractAlphabet{C} end
 
 # Infinite alphabet of conditions induced from a set of metaconditions
 struct UnboundedExplicitConditionalAlphabet{M,C<:FeatCondition{M}} <: AbstractConditionalAlphabet{M,C}
-  metaconditions::Vector{M}
+    metaconditions::Vector{M}
 end
 
-# Infinite alphabet of conditions induced from a set of metaconditions
+# Finite alphabet of conditions induced from a set of metaconditions
 struct BoundedExplicitConditionalAlphabet{M,C<:FeatCondition{M}} <: AbstractConditionalAlphabet{M,C}
-    ::Vector{Tuple{M,Vector}}
+    featconditions::Vector{Tuple{M,Vector}}
+
+    function BoundedExplicitConditionalAlphabet(
+        X::AbstractDataset,
+    )
+        features = features(X)
+        fwd = fwd(X)
+
+    end
 end
 
 ############################################################################################
