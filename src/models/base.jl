@@ -28,14 +28,12 @@ function Base.show(io::IO, c::AbstractBooleanCondition)
 end
 
 # Check on a boolean condition
-function check(c::AbstractBooleanCondition, i::AbstractInterpretation, args...)
+function check(c::AbstractBooleanCondition, i::AbstractInterpretation, args...; kwargs...)
     error("Please, provide method check(::$(typeof(c))," *
-        " i::$(typeof(i)), args...).")
+        " i::$(typeof(i)), args...; kwargs...).")
 end
-function check(c::AbstractBooleanCondition, d::AbstractInterpretationSet, args...)
-    error("Please, provide method check(::$(typeof(c))," *
-        " d::$(typeof(d)), args...).")
-    #map(i->check(c, slice_dataset(d, [i]), args...)[1], 1:nsamples(d))
+function check(c::AbstractBooleanCondition, d::AbstractInterpretationSet, args...; kwargs...)
+    map(i_sample->check(c, slice_dataset(d, [i_sample]), args...; kwargs...)[1], 1:nsamples(d))
 end
 
 """
@@ -70,7 +68,6 @@ function syntaxstring(c::AbstractLogicalBooleanCondition; kwargs...)
     syntaxstring(formula(c); kwargs...)
 end
 
-
 """
     struct TrueCondition <: AbstractLogicalBooleanCondition end
 
@@ -83,8 +80,8 @@ See also
 struct TrueCondition <: AbstractLogicalBooleanCondition end
 
 formula(::TrueCondition) = SyntaxTree(⊤)
-check(::TrueCondition, args...) = true
-check(::TrueCondition, d::AbstractInterpretationSet, args...) = fill(true, nsamples(d)) # Keep for resolving ambiguity
+check(::TrueCondition, i::AbstractInterpretation, args...) = true
+check(::TrueCondition, d::AbstractInterpretationSet, args...) = fill(true, nsamples(d))
 
 """
     struct LogicalTruthCondition{F<:AbstractFormula} <: AbstractLogicalBooleanCondition
@@ -116,12 +113,12 @@ end
 
 formula(c::LogicalTruthCondition) = c.formula
 
-function check(c::LogicalTruthCondition, i::AbstractInterpretation, args...)
-    tops(check(formula(c), i, args...))
+function check(c::LogicalTruthCondition, i::AbstractInterpretation, args...; kwargs...)
+    tops(check(formula(c), i, args...; kwargs...))
 end
-function check(c::LogicalTruthCondition, d::AbstractInterpretationSet, args...)
+function check(c::LogicalTruthCondition, d::AbstractInterpretationSet, args...; kwargs...)
     # TODO use get_instance instead?
-    map(i->tops(check(formula(c), slice_dataset(d, [i]), args...)[1]), 1:nsamples(d))
+    map(i_sample->tops(check(formula(c), slice_dataset(d, [i_sample]), args...; kwargs...)[1]), 1:nsamples(d))
 end
 
 ############################################################################################
@@ -200,11 +197,28 @@ function outputtype(m::AbstractModel)
 end
 
 """
-    apply(m::AbstractModel, i::AbstractInterpretation)::outputtype(m)
-    apply(m::AbstractModel, d::AbstractInterpretationSet)::AbstractVector{<:outputtype(m)}
+    apply(
+        m::AbstractModel,
+        i::AbstractInterpretation,
+        check_args = (),
+        check_kwargs = (;),
+    )::outputtype(m)
+
+    apply(
+        m::AbstractModel,
+        d::AbstractInterpretationSet,
+        check_args = (),
+        check_kwargs = (;),
+    )::AbstractVector{<:outputtype(m)}
 
 Returns the output prediction of the model on an instance, or on each instance of a dataset.
 The predictions can be `nothing` if the model is *open*
+
+TODO @Michele explain check_args and check_kwargs
+
+TODO @Michele explain functional_args/functional_kwargs
+
+TODO @Michele update this docstring
 
 See also
 [`isopen`](@ref),
@@ -214,12 +228,34 @@ See also
 [`AbstractInterpretation`](@ref),
 [`AbstractInterpretationSet`](@ref).
 """
-function apply(m::AbstractModel, i::AbstractInterpretation)::outputtype(m)
+function apply(
+    m::AbstractModel,
+    i::AbstractInterpretation;
+    check_args::Tuple = (),
+    check_kwargs::NamedTuple = (;),
+    functional_args::Tuple = (),
+    functional_kwargs::NamedTuple = (;),
+    kwargs...,
+)::outputtype(m)
     error("Please, provide method apply(::$(typeof(m)), ::$(typeof(i))).")
 end
-function apply(m::AbstractModel, d::AbstractInterpretationSet)::AbstractVector{<:outputtype(m)}
-    error("Please, provide method apply(::$(typeof(m)), ::$(typeof(d))).")
-    #map(i->apply(m, i), eachsample(d))
+
+function apply(
+    m::AbstractModel,
+    d::AbstractInterpretationSet,
+    i_sample::Integer;
+    kwargs...
+)::outputtype(m)
+    interpretation = get_instance(d, i_sample)
+    apply(m, interpretation; kwargs...)
+end
+
+function apply(
+    m::AbstractModel,
+    d::AbstractInterpretationSet;
+    kwargs...
+)::AbstractVector{<:outputtype(m)}
+    map(i_sample->apply(m, d, i_sample; kwargs...), 1:nsamples(d))
 end
 
 """
@@ -322,8 +358,9 @@ end
 
 outcome(m::ConstantModel) = m.outcome
 isopen(::ConstantModel) = false
-apply(m::ConstantModel, i::AbstractInterpretation) = outcome(m)
-apply(m::ConstantModel, d::AbstractInterpretationSet) = outcome(m)
+apply(m::ConstantModel, i::AbstractInterpretation; kwargs...) = outcome(m)
+apply(m::ConstantModel, d::AbstractInterpretationSet, i_sample::Integer; kwargs...) = outcome(m)
+apply(m::ConstantModel, d::AbstractInterpretationSet; kwargs...) = fill(outcome(m), nsamples(d))
 
 convert(::Type{ConstantModel{O}}, o::O) where {O} = ConstantModel{O}(o)
 convert(::Type{<:AbstractModel{F}}, m::ConstantModel) where {F} = ConstantModel{F}(m)
@@ -338,6 +375,8 @@ A `FunctionModel` is a `FinalModel` that applies a native Julia `Function`
 in order to compute the outcome. Over efficiency concerns, it is mandatory to make explicit
 the output type `O` by wrapping the `Function` into an object of type
 `FunctionWrapper{O}`.
+
+TODO @Michele explain functional_args/functional_kwargs
 
 See also [`ConstantModel`](@ref), [`FunctionWrapper`](@ref), [`FinalModel`](@ref).
 """
@@ -389,7 +428,33 @@ end
 
 f(m::FunctionModel) = m.f
 isopen(::FunctionModel) = false
-apply(m::FunctionModel, i::AbstractInterpretation) = f(m)(i)
+function apply(
+    m::FunctionModel,
+    i::AbstractInterpretation;
+    functional_models_gets_single_instance::Bool = false,
+    functional_args::Tuple = (),
+    functional_kwargs::NamedTuple = (;),
+    kwargs...,
+)
+    @assert functional_models_gets_single_instance
+    f(m)(i, functional_args...; functional_kwargs...)
+end
+function apply(
+    m::FunctionModel,
+    d::AbstractInterpretationSet,
+    i_sample::Integer;
+    functional_models_gets_single_instance::Bool = false,
+    functional_args::Tuple = (),
+    functional_kwargs::NamedTuple = (;),
+    kwargs...,
+)
+    if functional_models_gets_single_instance
+        interpretation = get_instance(d, i_sample)
+        f(m)(interpretation, functional_args...; functional_kwargs...)
+    else
+        f(m)(d, i_sample, functional_args...; functional_kwargs...)
+    end
+end
 
 convert(::Type{<:AbstractModel{F}}, m::FunctionModel) where {F} = FunctionModel{F}(m)
 
@@ -615,11 +680,12 @@ issymbolic(::Rule) = true
 """
     function check_antecedent(
         m::Union{Rule,Branch},
-        id::Union{AbstractInterpretation,AbstractInterpretationSet}
+        ...
     )
         check(antecedent(m), id)
     end
 
+TODO @Michele fix docstring
 Simply checks the antecedent of a rule on an instance or dataset.
 
 See also
@@ -629,18 +695,43 @@ See also
 """
 function check_antecedent(
     m::Rule,
-    id::Union{AbstractInterpretation,AbstractInterpretationSet}
+    args...;
+    kwargs...
 )
-    check(antecedent(m), id)
+    check(antecedent(m), args...; kwargs...)
 end
 
-function apply(m::Rule, d::AbstractInterpretationSet)
-    ds = map(i->slice_dataset(d,[i]), 1:nsamples(d))
-    map(i->(check_antecedent(m, i)[1] ? apply(consequent(m), i) : nothing), ds)
+function apply(
+    m::Rule,
+    i::AbstractInterpretation;
+    check_args::Tuple = (),
+    check_kwargs::NamedTuple = (;),
+    kwargs...
+)
+    check_antecedent(m, i, check_args...; check_kwargs...) ? apply(consequent(m), i;
+        check_args = check_args,
+        check_kwargs = check_kwargs,
+        kwargs...
+    ) : nothing
 end
 
-function apply(m::Rule, i::AbstractInterpretation)
-    check_antecedent(m, i) ? apply(consequent(m), i) : nothing
+function apply(
+    m::Rule,
+    d::AbstractInterpretationSet
+    i_sample::Integer;
+    check_args::Tuple = (),
+    check_kwargs::NamedTuple = (;),
+    kwargs...
+)
+    if check_antecedent(m, d, i_sample, check_args...; check_kwargs...)
+        apply(consequent(m), d, i_sample;
+            check_args = check_args,
+            check_kwargs = check_kwargs,
+            kwargs...
+        )
+    else
+        nothing
+    end
 end
 
 ############################################################################################
@@ -747,21 +838,30 @@ isopen(m::Branch) = isopen(posconsequent(m)) || isopen(negconsequent(m))
 
 function check_antecedent(
     m::Branch,
-    id::Union{AbstractInterpretation,AbstractInterpretationSet}
+    args...;
+    kwargs...
 )
-    check(antecedent(m), id)
+    check(antecedent(m), args...; kwargs...)
 end
 
+# TODO @Michele add arguments to all the AbstractModels below:
+#   check_args::Tuple = (),
+#   check_kwargs::NamedTuple = (;),
+#   kwargs...
 function apply(m::Branch, i::AbstractInterpretation)
     check_antecedent(m, i) ? apply(posconsequent(m), i) : apply(negconsequent(m), i)
 end
-function apply(m::Branch{O,<:LogicalTruthCondition}, d::AbstractInterpretationSet) where {O}
+function apply(m::Branch{O,<:LogicalTruthCondition}, d::AbstractInterpretationSet, i_sample...) where {O}
+    TODO fix
+    check_antecedent(m, d, i_sample, ...) ? apply(posconsequent(m), d, i_sample, ...) : apply(negconsequent(m), d, i_sample, ...)
+end
+function apply(m::Branch{O,<:LogicalTruthCondition}, d::AbstractInterpretationSet, ...) where {O}
     cs = check_antecedent(m, d)
     cpos = findall((c)->c==true, cs)
     cneg = findall((c)->c==false, cs)
     out = fill(true, length(cs))
-    out[cpos] = apply(posconsequent(m), slice_dataset(d, cpos))
-    out[cneg] = apply(posconsequent(m), slice_dataset(d, cneg))
+    out[cpos] = apply(posconsequent(m), slice_dataset(d, cpos), ...)
+    out[cneg] = apply(posconsequent(m), slice_dataset(d, cneg), ...)
     out
 end
 
@@ -846,21 +946,21 @@ function apply(m::DecisionList, i::AbstractInterpretation)
     defaultconsequent(m)
 end
 
-function apply(m::DecisionList{O}, X::AbstractInterpretationSet) where {O}
-    n_samples = nsamples(X)
-    pred = Vector{O}(undef, n_samples)
-    idxs = 1:n_samples
+function apply(m::DecisionList{O}, d::AbstractInterpretationSet) where {O}
+    nsamp = nsamples(d)
+    pred = Vector{O}(undef, nsamp)
+    uncovered_idxs = 1:nsamp
 
     for rule in rulebase(m)
-        length(idxs) == 0 && break
+        length(uncovered_idxs) == 0 && break
 
-        idxs_sat = findall(check(antecedent(rule),X) .== true)
-        idxs = setdiff(idxs,idxs_sat)
+        idxs_sat = findall(check(antecedent(rule),d) .== true)
+        uncovered_idxs = setdiff(uncovered_idxs,idxs_sat)
 
         map((i)->(pred[i] = outcome(consequent(rule))), idxs_sat)
     end
 
-    length(idxs) != 0 && map((i)->(pred[i] = outcome(defaultconsequent(m))), idxs)
+    length(uncovered_idxs) != 0 && map((i)->(pred[i] = outcome(defaultconsequent(m))), uncovered_idxs)
 
     return pred
 end
@@ -1060,7 +1160,7 @@ issymbolic(::DecisionTree) = true
 
 isopen(::DecisionTree) = false
 
-apply(m::DecisionTree, id::Union{AbstractInterpretation,AbstractInterpretationSet}) = apply(root(m), id)
+apply(m::DecisionTree, id::Union{AbstractInterpretation,AbstractInterpretationSet}, args...; kwargs...) = apply(root(m), id, args...; kwargs...)
 
 ############################################################################################
 
