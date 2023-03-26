@@ -32,8 +32,16 @@ function check(c::AbstractBooleanCondition, i::AbstractInterpretation, args...; 
     error("Please, provide method check(::$(typeof(c))," *
         " i::$(typeof(i)), args...; kwargs...).")
 end
-function check(c::AbstractBooleanCondition, d::AbstractInterpretationSet, args...; kwargs...)
-    map(i_sample->check(c, slice_dataset(d, [i_sample]), args...; kwargs...)[1], 1:nsamples(d))
+function check(
+    c::AbstractBooleanCondition,
+    d::AbstractInterpretationSet,
+    args...;
+    kwargs...
+)
+    map(
+        i_sample->check(c, slice_dataset(d, [i_sample]), args...; kwargs...)[1],
+        1:nsamples(d)
+    )
 end
 
 """
@@ -80,8 +88,9 @@ See also
 struct TrueCondition <: AbstractLogicalBooleanCondition end
 
 formula(::TrueCondition) = SyntaxTree(⊤)
-check(::TrueCondition, i::AbstractInterpretation, args...) = true
-check(::TrueCondition, d::AbstractInterpretationSet, args...) = fill(true, nsamples(d))
+check(::TrueCondition, i::AbstractInterpretation, args...; kwargs...) = true
+check(::TrueCondition, d::AbstractInterpretationSet, args...; kwargs...) =
+    fill(true, nsamples(d))
 
 """
     struct LogicalTruthCondition{F<:AbstractFormula} <: AbstractLogicalBooleanCondition
@@ -118,7 +127,11 @@ function check(c::LogicalTruthCondition, i::AbstractInterpretation, args...; kwa
 end
 function check(c::LogicalTruthCondition, d::AbstractInterpretationSet, args...; kwargs...)
     # TODO use get_instance instead?
-    map(i_sample->tops(check(formula(c), slice_dataset(d, [i_sample]), args...; kwargs...)[1]), 1:nsamples(d))
+    map(
+        i_sample->tops(
+            check(formula(c), slice_dataset(d, [i_sample]), args...; kwargs...)[1]
+        ), 1:nsamples(d)
+    )
 end
 
 ############################################################################################
@@ -199,16 +212,22 @@ end
 """
     apply(
         m::AbstractModel,
-        i::AbstractInterpretation,
-        check_args = (),
-        check_kwargs = (;),
+        i::AbstractInterpretation;
+        check_args::Tuple = (),
+        check_kwargs::NamedTuple = (;),
+        functional_args::Tuple = (),
+        functional_kwargs::NamedTuple = (;),
+        kwargs...
     )::outputtype(m)
 
     apply(
         m::AbstractModel,
-        d::AbstractInterpretationSet,
-        check_args = (),
-        check_kwargs = (;),
+        d::AbstractInterpretationSet;
+        check_args::Tuple = (),
+        check_kwargs::NamedTuple = (;),
+        functional_args::Tuple = (),
+        functional_kwargs::NamedTuple = (;),
+        kwargs...
     )::AbstractVector{<:outputtype(m)}
 
 Returns the output prediction of the model on an instance, or on each instance of a dataset.
@@ -680,12 +699,12 @@ issymbolic(::Rule) = true
 """
     function check_antecedent(
         m::Union{Rule,Branch},
-        ...
+        args...;
+        kwargs...
     )
-        check(antecedent(m), id)
+        check(antecedent(m), id, args...; kwargs...)
     end
 
-TODO @Michele fix docstring
 Simply checks the antecedent of a rule on an instance or dataset.
 
 See also
@@ -708,16 +727,20 @@ function apply(
     check_kwargs::NamedTuple = (;),
     kwargs...
 )
-    check_antecedent(m, i, check_args...; check_kwargs...) ? apply(consequent(m), i;
-        check_args = check_args,
-        check_kwargs = check_kwargs,
-        kwargs...
-    ) : nothing
+    if check_antecedent(m, i, check_args...; check_kwargs...)
+        apply(consequent(m), i;
+            check_args = check_args,
+            check_kwargs = check_kwargs,
+            kwargs...
+        )
+    else
+        nothing
+    end
 end
 
 function apply(
     m::Rule,
-    d::AbstractInterpretationSet
+    d::AbstractInterpretationSet,
     i_sample::Integer;
     check_args::Tuple = (),
     check_kwargs::NamedTuple = (;),
@@ -844,24 +867,72 @@ function check_antecedent(
     check(antecedent(m), args...; kwargs...)
 end
 
-# TODO @Michele add arguments to all the AbstractModels below:
-#   check_args::Tuple = (),
-#   check_kwargs::NamedTuple = (;),
-#   kwargs...
-function apply(m::Branch, i::AbstractInterpretation)
-    check_antecedent(m, i) ? apply(posconsequent(m), i) : apply(negconsequent(m), i)
+function apply(
+    m::Branch,
+    i::AbstractInterpretation;
+    check_args::Tuple = (),
+    check_kwargs::NamedTuple = (;),
+    kwargs...
+)
+    if check_antecedent(m, i, check_args...; check_kwargs...)
+        apply(posconsequent(m), i;
+            check_args = check_args,
+            check_kwargs = check_kwargs,
+            kwargs...
+        )
+    else
+        apply(negconsequent(m), i;
+            check_args = check_args,
+            check_kwargs = check_kwargs,
+            kwargs...
+        )
+    end
 end
-function apply(m::Branch{O,<:LogicalTruthCondition}, d::AbstractInterpretationSet, i_sample...) where {O}
-    TODO fix
-    check_antecedent(m, d, i_sample, ...) ? apply(posconsequent(m), d, i_sample, ...) : apply(negconsequent(m), d, i_sample, ...)
+
+function apply(
+    m::Branch{O,<:LogicalTruthCondition},
+    d::AbstractInterpretationSet,
+    i_sample::Integer;
+    check_args::Tuple = (),
+    check_kwargs::NamedTuple = (;),
+    kwargs...
+) where {O}
+    if check_antecedent(m, d, i_sample, check_args...; check_kwargs...)
+        apply(posconsequent(m), d, i_sample;
+            check_args = check_args,
+            check_kwargs = check_kwargs,
+            kwargs...
+        )
+    else
+        apply(negconsequent(m), d, i_sample;
+            check_args = check_args,
+            check_kwargs = check_kwargs,
+            kwargs...
+        )
+    end
 end
-function apply(m::Branch{O,<:LogicalTruthCondition}, d::AbstractInterpretationSet, ...) where {O}
-    cs = check_antecedent(m, d)
+
+function apply(
+    m::Branch{O,<:LogicalTruthCondition},
+    d::AbstractInterpretationSet;
+    check_args::Tuple = (),
+    check_kwargs::NamedTuple = (;),
+    kwargs...
+) where {O}
+    cs = check_antecedent(m, d, check_args...; check_kwargs...)
     cpos = findall((c)->c==true, cs)
     cneg = findall((c)->c==false, cs)
     out = fill(true, length(cs))
-    out[cpos] = apply(posconsequent(m), slice_dataset(d, cpos), ...)
-    out[cneg] = apply(posconsequent(m), slice_dataset(d, cneg), ...)
+    out[cpos] = apply(posconsequent(m), slice_dataset(d, cpos);
+                    check_args = check_args,
+                    check_kwargs = check_kwargs,
+                    kwargs...
+                )
+    out[cneg] = apply(posconsequent(m), slice_dataset(d, cneg);
+                    check_args = check_args,
+                    check_kwargs = check_kwargs,
+                    kwargs...
+                )
     out
 end
 
@@ -937,16 +1008,28 @@ issymbolic(::DecisionList) = true
 
 isopen(m::DecisionList) = isopen(defaultconsequent(m))
 
-function apply(m::DecisionList, i::AbstractInterpretation)
+function apply(
+    m::DecisionList,
+    i::AbstractInterpretation;
+    check_args::Tuple = (),
+    check_kwargs::NamedTuple = (;),
+    kwargs...
+)
     for rule in rulebase(m)
-        if check(m, i)
+        if check(m, i, check_args...; check_kwargs...)
             return consequent(rule)
         end
     end
     defaultconsequent(m)
 end
 
-function apply(m::DecisionList{O}, d::AbstractInterpretationSet) where {O}
+function apply(
+    m::DecisionList{O},
+    d::AbstractInterpretationSet;
+    check_args::Tuple = (),
+    check_kwargs::NamedTuple = (;),
+    kwargs...
+) where {O}
     nsamp = nsamples(d)
     pred = Vector{O}(undef, nsamp)
     uncovered_idxs = 1:nsamp
@@ -954,13 +1037,16 @@ function apply(m::DecisionList{O}, d::AbstractInterpretationSet) where {O}
     for rule in rulebase(m)
         length(uncovered_idxs) == 0 && break
 
-        idxs_sat = findall(check(antecedent(rule),d) .== true)
+        idxs_sat = findall(
+            check(antecedent(rule),d, check_args...; check_kwargs...) .== true
+        )
         uncovered_idxs = setdiff(uncovered_idxs,idxs_sat)
 
         map((i)->(pred[i] = outcome(consequent(rule))), idxs_sat)
     end
 
-    length(uncovered_idxs) != 0 && map((i)->(pred[i] = outcome(defaultconsequent(m))), uncovered_idxs)
+    length(uncovered_idxs) != 0 &&
+        map((i)->(pred[i] = outcome(defaultconsequent(m))), uncovered_idxs)
 
     return pred
 end
@@ -1042,9 +1128,15 @@ conditiontype(m::RuleCascade) = conditiontype(typeof(m))
 
 issymbolic(::RuleCascade) = true
 
-function apply(m::RuleCascade, i::AbstractInterpretation)
+function apply(
+    m::RuleCascade,
+    i::AbstractInterpretation;
+    check_args::Tuple = (),
+    check_kwargs::NamedTuple = (;),
+    kwargs...
+)
     for antecedent in antecedents(m)
-        if ! check(antecedent, i)
+        if ! check(antecedent, i, check_args...; check_kwargs...)
             return nothing
         end
     end
@@ -1160,7 +1252,13 @@ issymbolic(::DecisionTree) = true
 
 isopen(::DecisionTree) = false
 
-apply(m::DecisionTree, id::Union{AbstractInterpretation,AbstractInterpretationSet}, args...; kwargs...) = apply(root(m), id, args...; kwargs...)
+function apply(
+    m::DecisionTree,
+    id::Union{AbstractInterpretation,AbstractInterpretationSet};
+    kwargs...
+)
+    apply(root(m), id; kwargs...)
+end
 
 ############################################################################################
 
@@ -1206,8 +1304,12 @@ trees(forest::DecisionForest) = forest.trees
 
 issymbolic(::DecisionForest) = false
 
-function apply(f::DecisionForest, id::Union{AbstractInterpretation,AbstractInterpretationSet})
-    best_guess([apply(t, id) for t in trees(f)])
+function apply(
+    f::DecisionForest,
+    id::Union{AbstractInterpretation,AbstractInterpretationSet};
+    kwargs...
+)
+    best_guess([apply(t, id; kwargs...) for t in trees(f)])
 end
 
 ############################################################################################
@@ -1267,6 +1369,12 @@ issymbolic(m::MixedSymbolicModel) = issymbolic(root(m))
 
 isopen(::MixedSymbolicModel) = isopen(root)
 
-apply(m::MixedSymbolicModel, id::Union{AbstractInterpretation,AbstractInterpretationSet}) = apply(root(m), id)
+function apply(
+    m::MixedSymbolicModel,
+    id::Union{AbstractInterpretation,AbstractInterpretationSet};
+    kwargs...
+)
+    apply(root(m), id; kwargs...)
+end
 
 ############################################################################################
