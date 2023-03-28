@@ -1,7 +1,7 @@
 using SoleLogics: AbstractAlphabet
 import SoleLogics: negation
 
-import Base: isequal, hash
+import Base: isequal, hash, in, iterate, isfinite, length, rand
 
 abstract type AbstractCondition end # TODO parametric?
 
@@ -93,7 +93,7 @@ Base.isfinite(::Type{UnboundedExplicitConditionalAlphabet}) = false
 Base.isiterable(::Type{UnboundedExplicitConditionalAlphabet}) = false
 
 # Finite alphabet of conditions induced from a set of metaconditions
-# TODO: to complete
+# TODO: to complete -> who is C ??
 struct BoundedExplicitConditionalAlphabet{M,C<:FeatCondition{M}} <: AbstractConditionalAlphabet{M,C}
     featconditions::Vector{Tuple{M,Vector}}
 
@@ -110,7 +110,8 @@ struct BoundedExplicitConditionalAlphabet{M,C<:FeatCondition{M}} <: AbstractCond
         length(featmetaconditions) != length(thresholds) &&
             error("featmetaconditions vector's length don't match with thresholds" *
                   "vector's length")
-        featconditions = map(i->(featmetaconditions[i],thresholds[i]),length(featmetaconditions))
+        featconditions =
+            map(i->(featmetaconditions[i],thresholds[i]),length(featmetaconditions))
         M = SoleBase._typejoin(typeof.(featmetaconditions)...)
         BoundedExplicitConditionalAlphabet{M,C}(featconditions)
     end
@@ -131,17 +132,60 @@ featconditions(a::BoundedExplicitConditionalAlphabet) = a.featconditions
 propositions(a::BoundedExplicitConditionalAlphabet) =
     reduce(vcat, map(f-> map(a-> FeatCondition(f[1], a), f[2]), featconditions(a)))
 
-Base.in(fc::FeatCondition, a::BoundedExplicitConditionalAlphabet) =
-    Base.in(fc,proportions(a))
+function Base.in(fc::FeatCondition, a::BoundedExplicitConditionalAlphabet)
+    return Base.in(fc,proportions(a))
+end
 
 Base.iterate(a::BoundedExplicitConditionalAlphabet) = Base.iterate(propositions(a))
-Base.iterate(a::BoundedExplicitConditionalAlphabet, state) =
-    Base.iterate(propositions(a), state)
+function Base.iterate(a::BoundedExplicitConditionalAlphabet, state)
+    return Base.iterate(propositions(a), state)
+end
 
 Base.isfinite(::Type{BoundedExplicitConditionalAlphabet}) = true
 Base.isfinite(a::BoundedExplicitConditionalAlphabet) = Base.isfinite(typeof(a))
 
 Base.length(a::BoundedExplicitConditionalAlphabet) = length(propositions(a))
+
+function Base.rand(
+    rng::AbstractRNG,
+    a::BoundedExplicitConditionalAlphabet;
+    original_featcondition::FeatCondition = nothing,
+    featcondition_rand::Bool = true,
+    not_feature_rand::Bool = false,
+    threshold_rand::Bool = false,
+    kwargs...
+)::FeatCondition
+    if (featcondition_rand, not_feature_rand, threshold_rand) ∉
+            [(true,false,false), (false,true,false), (false,true,true)]
+        error("More active rand options")
+    end
+
+    if not_feature_rand || threshold_rand
+        isnothing(original_featcondition) && error("Missing input feat condition")
+    end
+
+    featconds = featconditions(a)
+    f = feature(original_featcondition)
+    t_op = test_operator(original_featcondition)
+
+    fc = begin
+        if featcondition_rand
+            rand(rng,featconds)
+        elseif not_feature_rand
+            fc_f = filter(p-> feature(p[1]) == f, featconds)
+            rand(rng, fc_f)
+        elseif threshold_rand
+            fc = filter(p-> feature(p[1]) == f && test_operator(p[1]) == t_op, featconds)
+            length(fc) != 1 && error("There can't be more than one feat condition with " *
+                                     "that feature and test operator")
+            fc
+        else
+            error("A rand pick was not indicated")
+        end
+    end
+
+    return FeatCondition(fc[1],rand(rng,fc[2]))
+end
 
 ############################################################################################
 
