@@ -89,18 +89,59 @@ struct UnboundedExplicitConditionalAlphabet{M,C<:FeatCondition{M}} <: AbstractCo
     metaconditions::Vector{M}
 end
 
+Base.isfinite(::Type{UnboundedExplicitConditionalAlphabet}) = false
+Base.isiterable(::Type{UnboundedExplicitConditionalAlphabet}) = false
+
 # Finite alphabet of conditions induced from a set of metaconditions
+# TODO: to complete
 struct BoundedExplicitConditionalAlphabet{M,C<:FeatCondition{M}} <: AbstractConditionalAlphabet{M,C}
     featconditions::Vector{Tuple{M,Vector}}
 
-    function BoundedExplicitConditionalAlphabet(
-        X::AbstractDataset,
-    )
-        features = features(X)
-        fwd = fwd(X)
-
+    function BoundedExplicitConditionalAlphabet{M,C}(
+        featconditions::Vector{Tuple{M,Vector}}
+    ) where {M,C<:FeatCondition{M}}
+        new{M,C}(featconditions)
     end
+
+    function BoundedExplicitConditionalAlphabet(
+        featmetaconditions::Vector{<:FeatMetaCondition},
+        thresholds::Vector,
+    )
+        length(featmetaconditions) != length(thresholds) &&
+            error("featmetaconditions vector's length don't match with thresholds" *
+                  "vector's length")
+        featconditions = map(i->(featmetaconditions[i],thresholds[i]),length(featmetaconditions))
+        M = SoleBase._typejoin(typeof.(featmetaconditions)...)
+        BoundedExplicitConditionalAlphabet{M,C}(featconditions)
+    end
+
+    #=function BoundedExplicitConditionalAlphabet(
+        features       :: Vector,
+        test_operators :: Vector,
+        thresholds     :: Vector
+    )
+        featmetaconditions =
+            [FeatMetaCondition(f,t) for f in features for t in test_operators]
+        BoundedExplicitConditionalAlphabet(featmetaconditions,thresholds)
+    end=#
 end
+
+featconditions(a::BoundedExplicitConditionalAlphabet) = a.featconditions
+
+propositions(a::BoundedExplicitConditionalAlphabet) =
+    reduce(vcat, map(f-> map(a-> FeatCondition(f[1], a), f[2]), featconditions(a)))
+
+Base.in(fc::FeatCondition, a::BoundedExplicitConditionalAlphabet) =
+    Base.in(fc,proportions(a))
+
+Base.iterate(a::BoundedExplicitConditionalAlphabet) = Base.iterate(propositions(a))
+Base.iterate(a::BoundedExplicitConditionalAlphabet, state) =
+    Base.iterate(propositions(a), state)
+
+Base.isfinite(::Type{BoundedExplicitConditionalAlphabet}) = true
+Base.isfinite(a::BoundedExplicitConditionalAlphabet) = Base.isfinite(typeof(a))
+
+Base.length(a::BoundedExplicitConditionalAlphabet) = length(propositions(a))
 
 ############################################################################################
 
