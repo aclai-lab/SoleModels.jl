@@ -233,11 +233,12 @@ end
 Returns the output prediction of the model on an instance, or on each instance of a dataset.
 The predictions can be `nothing` if the model is *open*
 
-TODO @Michele explain check_args and check_kwargs
+`check_args` and `check_kwargs` are kwargs that can influence check's behavior at the time
+of its computation (see [`check`](@ref))
 
-TODO @Michele explain functional_args/functional_kwargs
-
-TODO @Michele update this docstring
+`functional_args` and `functional_kwargs` are kwargs that can influence FunctionModel's
+behavior when the corresponding function is applied to AbstractInterpretation (see
+[`FunctionModel`](@ref), [`AbstractInterpretation`](@ref))
 
 See also
 [`isopen`](@ref),
