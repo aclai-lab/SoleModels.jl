@@ -156,7 +156,7 @@ function Base.rand(
     kwargs...
 )::FeatCondition
     if (featcondition_rand, not_feature_rand, threshold_rand) ∉
-            [(true,false,false), (false,true,false), (false,true,true)]
+            [(true,false,false), (false,true,false), (false,false,true)]
         error("More active rand options")
     end
 
