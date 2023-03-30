@@ -1,7 +1,8 @@
 using SoleLogics: AbstractAlphabet
 import SoleLogics: negation
 
-import Base: isequal, hash, in, iterate, isfinite, length, rand
+import Base: isequal, hash, in, iterate, isfinite, length
+import StatsBase: sample
 
 abstract type AbstractCondition end # TODO parametric?
 
@@ -146,7 +147,7 @@ Base.isfinite(a::BoundedExplicitConditionalAlphabet) = Base.isfinite(typeof(a))
 
 Base.length(a::BoundedExplicitConditionalAlphabet) = length(propositions(a))
 
-function Base.rand(
+function StatsBase.sample(
     rng::AbstractRNG,
     a::BoundedExplicitConditionalAlphabet;
     original_featcondition::FeatCondition = nothing,
@@ -184,7 +185,7 @@ function Base.rand(
         end
     end
 
-    return FeatCondition(fc[1],rand(rng,fc[2]))
+    return FeatCondition(fc[1], rand(rng, fc[2]))
 end
 
 ############################################################################################
