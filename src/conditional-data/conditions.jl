@@ -1,4 +1,5 @@
 using SoleLogics: AbstractAlphabet
+using Random
 import SoleLogics: negation
 
 import Base: isequal, hash, in, iterate, isfinite, length

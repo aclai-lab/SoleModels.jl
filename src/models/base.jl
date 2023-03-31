@@ -1251,6 +1251,9 @@ root(m::DecisionTree) = m.root
 
 issymbolic(::DecisionTree) = true
 
+conditiontype(::Type{M}) where {M<:DecisionTree{O,C,FFM}} where {O,C,FFM} = C
+conditiontype(m::DecisionTree) = conditiontype(typeof(m))
+
 isopen(::DecisionTree) = false
 
 function apply(
@@ -1293,7 +1296,7 @@ struct DecisionForest{
     )
         @assert length(trees) > 0 "Cannot instantiate forest with no trees!"
         O = Union{outcometype.(trees)...}
-        C = Union(conditiontype.(trees)...)
+        C = Union{conditiontype.(trees)...}
         FM = typeintersect(Union{propagate_feasiblemodels.(trees)...}, AbstractModel{<:O})
         FFM = typeintersect(FM, FinalModel{<:O})
         check_model_constraints.(DecisionForest{O}, typeof.(trees), FM, O)
