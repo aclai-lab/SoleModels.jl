@@ -929,7 +929,7 @@ function apply(
                     check_kwargs = check_kwargs,
                     kwargs...
                 )
-    out[cneg] = apply(posconsequent(m), slice_dataset(d, cneg);
+    out[cneg] = apply(negconsequent(m), slice_dataset(d, cneg);
                     check_args = check_args,
                     check_kwargs = check_kwargs,
                     kwargs...
