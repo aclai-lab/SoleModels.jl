@@ -155,6 +155,22 @@ Base.isfinite(a::BoundedExplicitConditionalAlphabet) = Base.isfinite(typeof(a))
 
 Base.length(a::BoundedExplicitConditionalAlphabet) = length(propositions(a))
 
+"""
+    function StatsBase.sample(
+        rng::AbstractRNG,
+        a::BoundedExplicitConditionalAlphabet;
+        metaconditions::Union{Nothing,FeatMetaCondition,AbstractVector{<:FeatMetaCondition}} = nothing,
+        feature::Union{Nothing,AbstractFeature,AbstractVector{<:AbstractFeature}} = nothing,
+        test_operator::Union{Nothing,TestOperatorFun,AbstractVector{<:TestOperatorFun}} = nothing,
+    )::FeatCondition
+
+sample is a function that randomly generates a featcondition where:
+ - if metaconditions is not nothing, then feature, test_operator and threshold are chosen randomly from those passed
+ - if feature is not nothing, then test_operator and threshold are chosen randomly
+ - if test_operator is not nothing, then feature and threshold are chosen randomly
+ - if feature and test_operator are not nothing, then threshold are chosen randomly
+ - if all kwargs are nothing, then feature, test_operator and threshold are chosen randomly
+"""
 function StatsBase.sample(
     rng::AbstractRNG,
     a::BoundedExplicitConditionalAlphabet;
@@ -162,29 +178,40 @@ function StatsBase.sample(
     feature::Union{Nothing,AbstractFeature,AbstractVector{<:AbstractFeature}} = nothing,
     test_operator::Union{Nothing,TestOperatorFun,AbstractVector{<:TestOperatorFun}} = nothing,
 )::FeatCondition
-    
+
     # Transform values to singletons
     metaconditions = metaconditions isa FeatMetaCondition ? [metaconditions] : metaconditions
     feature = feature isa AbstractFeature ? [feature] : feature
     test_operator = test_operator isa TestOperatorFun ? [test_operator] : test_operator
 
     @assert !(!isnothing(metaconditions) &&
-        (!isnothing(feature) || !isnothing(test_operator))) "TODO error"
+        (!isnothing(feature) || !isnothing(test_operator)))
+            "Ambiguous output, there are more choices; only one metacondition, one " *
+            "feature or one operator must be specified\n Now: \n" *
+            "metaconditions: $(metaconditions)\n" *
+            "feature: $(feature)\n" *
+            "test operator: $(test_operator)\n"
 
     featconds = featconditions(a)
 
     filtered_featconds = begin
         if !isnothing(metaconditions)
             filtered_featconds = filter(mc_thresholds->first(mc_thresholds) in metaconditions, featconds)
-            @assert length(filtered_featconds) == length(metaconditions) "TODO error"
+            @assert length(filtered_featconds) == length(metaconditions)
+                "There is at least one metacondition passed that is not among the " *
+                "possible ones\n metaconditions: $(metaconditions)\n filtered " *
+                "metaconditions: $(filtered_featconds)"
             filtered_featconds
-        else !isnothing(feature) || !isnothing(test_operator)
+        elseif !isnothing(feature) || !isnothing(test_operator)
             filtered_featconds = filter(mc_thresholds->begin
                 mc = first(mc_thresholds)
                 return (isnothing(feature) || SoleLogics.feature(mc) in feature) &&
                     (isnothing(test_operator) || SoleLogics.test_operator(mc) in test_operator)
             end, featconds)
-            @assert length(filtered_featconds) == length(metaconditions) "TODO error"
+            @assert length(filtered_featconds) == length(metaconditions)
+                "There is at least one metacondition passed that is not among the " *
+                "possible ones\n metaconditions: $(metaconditions)\n filtered " *
+                "metaconditions: $(filtered_featconds)"
             filtered_featconds
         else
             featconds
