@@ -175,17 +175,17 @@ function StatsBase.sample(
     rng::AbstractRNG,
     a::BoundedExplicitConditionalAlphabet;
     metaconditions::Union{Nothing,FeatMetaCondition,AbstractVector{<:FeatMetaCondition}} = nothing,
-    feature::Union{Nothing,AbstractFeature,AbstractVector{<:AbstractFeature}} = nothing,
-    test_operator::Union{Nothing,TestOperatorFun,AbstractVector{<:TestOperatorFun}} = nothing,
+    features::Union{Nothing,AbstractFeature,AbstractVector{<:AbstractFeature}} = nothing,
+    test_operators::Union{Nothing,TestOperatorFun,AbstractVector{<:TestOperatorFun}} = nothing,
 )::FeatCondition
 
     # Transform values to singletons
     metaconditions = metaconditions isa FeatMetaCondition ? [metaconditions] : metaconditions
-    feature = feature isa AbstractFeature ? [feature] : feature
-    test_operator = test_operator isa TestOperatorFun ? [test_operator] : test_operator
+    features = features isa AbstractFeature ? [features] : features
+    test_operators = test_operators isa TestOperatorFun ? [test_operators] : test_operators
 
     @assert !(!isnothing(metaconditions) &&
-        (!isnothing(feature) || !isnothing(test_operator)))
+        (!isnothing(features) || !isnothing(test_operators)))
             "Ambiguous output, there are more choices; only one metacondition, one " *
             "feature or one operator must be specified\n Now: \n" *
             "metaconditions: $(metaconditions)\n" *
@@ -202,11 +202,11 @@ function StatsBase.sample(
                 "possible ones\n metaconditions: $(metaconditions)\n filtered " *
                 "metaconditions: $(filtered_featconds)"
             filtered_featconds
-        elseif !isnothing(feature) || !isnothing(test_operator)
+        elseif !isnothing(features) || !isnothing(test_operators)
             filtered_featconds = filter(mc_thresholds->begin
                 mc = first(mc_thresholds)
-                return (isnothing(feature) || SoleLogics.feature(mc) in feature) &&
-                    (isnothing(test_operator) || SoleLogics.test_operator(mc) in test_operator)
+                return (isnothing(features) || SoleLogics.feature(mc) in feature) &&
+                    (isnothing(test_operators) || SoleLogics.test_operator(mc) in test_operator)
             end, featconds)
             @assert length(filtered_featconds) == length(metaconditions)
                 "There is at least one metacondition passed that is not among the " *
