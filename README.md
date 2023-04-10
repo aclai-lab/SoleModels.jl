@@ -1,4 +1,4 @@
-# SoleModels.jl – Symbolic Learning Models
+# *SoleModels.jl* – Symbolic Learning Models
 
 [![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://aclai-lab.github.io/SoleModels.jl/stable)
 [![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://aclai-lab.github.io/SoleModels.jl/dev)
@@ -10,7 +10,7 @@
 
 ## In a nutshell
 
-SoleModels.jl defines the building blocks of *symbolic* modeling and learning.
+*SoleModels.jl* defines the building blocks of *symbolic* modeling and learning.
 It features:
 - Definitions for symbolic models (decision trees/forests, rules, etc.);
 - Optimized data structures, useful when learning models from datasets;
@@ -49,7 +49,7 @@ For more information, refer to [*SoleLogics.jl*](https://github.com/aclai-lab/So
 Learning logical models (that is, models with logical formulas as antecedents)
 [often](https://scholar.google.com/scholar?q=Multi-Models+and+Multi-Formulas+Finite+Model+Checking+for+Modal+Logic+Formulas+Induction.)
 requires performing [model checking](https://en.wikipedia.org/wiki/Model_checking) many times.
-SoleModels.jl provides a set of structures for representing [logical datasets](https://github.com/aclai-lab/SoleLogics.jl#interpretation-sets),
+*SoleModels.jl* provides a set of structures for representing [logical datasets](https://github.com/aclai-lab/SoleLogics.jl#interpretation-sets),
 specifically optimized for multiple model checking operations.
 
 <!-- TODO explain -->
