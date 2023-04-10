@@ -1016,9 +1016,9 @@ struct DecisionTree{
     info::NamedTuple
 
     function DecisionTree(
-        root::Union{FFM,Branch{O,<:C,<:Union{Branch{<:O,<:C},FFM}}},
+        root::Union{FFM,Branch{O,C,<:Union{Branch{<:O,C2},FFM}}},
         info::NamedTuple = (;),
-    ) where {O, C<:AbstractBooleanCondition, FFM<:FinalModel{<:O}}
+    ) where {O, C<:AbstractBooleanCondition, C2<:C, FFM<:FinalModel{<:O}}
         new{O,C,FFM}(root, info)
     end
 
@@ -1044,6 +1044,9 @@ struct DecisionTree{
 end
 
 root(m::DecisionTree) = m.root
+
+conditiontype(::Type{M}) where {M<:DecisionTree{O,C}} where {O,C} = C
+conditiontype(m::DecisionTree) = conditiontype(typeof(m))
 
 issymbolic(::DecisionTree) = true
 
@@ -1083,7 +1086,7 @@ struct DecisionForest{
     )
         @assert length(trees) > 0 "Cannot instantiate forest with no trees!"
         O = Union{outcometype.(trees)...}
-        C = Union(conditiontype.(trees)...)
+        C = Union{conditiontype.(trees)...}
         FM = typeintersect(Union{propagate_feasiblemodels.(trees)...}, AbstractModel{<:O})
         FFM = typeintersect(FM, FinalModel{<:O})
         check_model_constraints.(DecisionForest{O}, typeof.(trees), FM, O)
@@ -1092,6 +1095,9 @@ struct DecisionForest{
 end
 
 trees(forest::DecisionForest) = forest.trees
+
+conditiontype(::Type{M}) where {M<:DecisionForest{O,C}} where {O,C} = C
+conditiontype(m::DecisionForest) = conditiontype(typeof(m))
 
 issymbolic(::DecisionForest) = false
 
