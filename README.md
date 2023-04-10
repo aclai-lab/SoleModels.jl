@@ -35,7 +35,7 @@ Remember:
 
 More specifically, antecedents can be *logical formulas* and, in such case, the symbolic models
 are can be applied to *logical interpretations*.
-For more information, refer to [SoleLogics.jl](https://github.com/aclai-lab/SoleLogics.jl), the underlying logical layer.
+For more information, refer to [*SoleLogics.jl*](https://github.com/aclai-lab/SoleLogics.jl), the underlying logical layer.
 
 ### Other noteworthy models:
 
@@ -58,5 +58,5 @@ specifically optimized for multiple model checking operations.
 
 The package is developed by the [ACLAI Lab](https://aclai.unife.it/en/) @ University of Ferrara.
 
-SoleModels.jl mainly builds upon [SoleLogics.jl](https://github.com/aclai-lab/SoleLogics.jl) and [SoleData.jl](https://github.com/aclai-lab/SoleData.jl), 
-and it is the core module of [Sole.jl](https://pretalx.com/juliacon2023/talk/review/7LY9ZBBJQYVVLJFFSZMV9JCCMMTQJXPK), an open-source framework for symbolic machine learning.
+*SoleModels.jl* mainly builds upon [*SoleLogics.jl*](https://github.com/aclai-lab/SoleLogics.jl) and [*SoleData.jl*](https://github.com/aclai-lab/SoleData.jl), 
+and it is the core module of [*Sole.jl*](https://github.com/aclai-lab/Sole.jl), an open-source framework for symbolic machine learning.
