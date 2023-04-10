@@ -1,48 +1,61 @@
 module SoleModels
 
-
-abstract type AbstractInstance end
-
-
-using SoleLogics
+using SoleBase
 using SoleData
-
-using Reexport
-
-using SoleLogics: AbstractLogic, Formula
+using SoleLogics
+using SoleLogics: AbstractInterpretation, AbstractInterpretationSet
+using SoleLogics: AbstractSyntaxToken
+using SoleLogics: AbstractFormula, Formula
+using SoleLogics: ⊤, ¬, ∧
 
 using FunctionWrappers: FunctionWrapper
-
-using Logging: LogLevel, @logmsg
-
 using StatsBase
 
-import Base: convert
+include("utils.jl")
 
-
-export AbstractModel
-
-export outcometype, output_type
-export print_model
-
-export Consequent
-export Performance
+export outcometype, outputtype
 
 export Rule, Branch
+export check_antecedent
+export antecedent, consequent
+export posconsequent, negconsequent
 
-export DecisionList, RuleCascade
-export DecisionTree, MixedSymbolicModel
+export DecisionList
+export rulebase, defaultconsequent
 
-export evaluate_antecedent, evaluate_rule
-export rule_metrics
-export convert, list_paths
+export RuleCascade # TODO remove
+
+export DecisionTree
+export root
+
+export MixedSymbolicModel, DecisionForest
 
 include("models/base.jl")
+
+export printmodel, displaymodel
+
 include("models/print.jl")
+
+# TODO export?
+export immediate_submodels, unroll_rules, immediate_rules, unroll_rules_cascade
+
 include("models/symbolic-utils.jl")
 
 include("machine-learning.jl")
 
-include("confusion-matrix.jl")
+include("models/rule-evaluation.jl")
+
+# TODO avoid?
+export AbstractFeature,
+        DimensionalFeature, SingleAttributeFeature,
+        SingleAttributeNamedFeature,
+        SingleAttributeMin, SingleAttributeMax,
+        SingleAttributeSoftMin, SingleAttributeSoftMax,
+        SingleAttributeGenericFeature, MultiAttributeFeature,
+        NamedFeature, ExternalFWDFeature
+
+export compute_feature
+
+include("conditional-data/main.jl")
 
 end

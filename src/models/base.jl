@@ -1,64 +1,148 @@
-export antecedent, consequent, positive_consequent, negative_consequent, default_consequent, rules, root
-
-import Base: isopen
-
-using SoleLogics: Formula, TOP, AbstractTruthOperator, ⊤, ¬, ∧
-const FormulaOrTree = Union{Formula,SyntaxTree}
-
-############################################################################################
-# TODO move this stuff
-############################################################################################
-
-function check(::Formula, ::AbstractInstance) end
-function check(::Formula, ::AbstractDataset) end
-
-############################################################################################
+import Base: convert, length, getindex, isopen
+import SoleLogics: check, syntaxstring
 
 # Util
 typename(::Type{T}) where T = eval(nameof(T))
 
 """
-A condition is something that can be tested on a piece of data, and giving a truth value.
+    abstract type AbstractBooleanCondition end
+
+A boolean condition is a condition that evaluates to a boolean truth value (`true`/`false`),
+when checked on a logical interpretation.
+
+See also
+[`TrueCondition`](@ref),
+[`LogicalTruthCondition`](@ref),
+[`check`](@ref),
+[`syntaxstring`](@ref).
 """
-abstract type AbstractCondition end
+abstract type AbstractBooleanCondition end
+
+# TODO: move in correct position
+eachsample(d::AbstractDataset) = map(i->get_instance(d, i), 1:nsamples(d))
+
+function syntaxstring(c::AbstractBooleanCondition; kwargs...)
+    error("Please, provide method syntaxstring(::$(typeof(c)); kwargs...).")
+end
+
+function Base.show(io::IO, c::AbstractBooleanCondition)
+    print(io, "$(typeof(c))($(syntaxstring(c)))")
+end
+
+# Check on a boolean condition
+function check(c::AbstractBooleanCondition, i::AbstractInterpretation, args...)
+    error("Please, provide method syntaxstring(::$(typeof(c))," *
+        " i::$(typeof(i)), args...).")
+end
+function check(c::AbstractBooleanCondition, d::AbstractInterpretationSet, args...)
+    map(i->check(c, i, args...), eachsample(d))
+end
 
 """
-A boolean condition is a `Condition` that evaluates to a boolean truth value (`true`/`false`.
+    abstract type AbstractLogicalBooleanCondition <: AbstractBooleanCondition end
+
+A boolean condition based on a formula of a given logic, that is
+to be checked on a logical interpretation.
+
+See also
+[`formula`](@ref),
+[`syntaxstring`](@ref),
+[`check`](@ref),
+[`AbstractBooleanCondition`](@ref).
 """
-abstract type AbstractBooleanCondition <: AbstractCondition end
+abstract type AbstractLogicalBooleanCondition <: AbstractBooleanCondition end
 
 """
-A true condition is the boolean `Condition` that is always true.
-"""
-struct TrueCondition <: AbstractBooleanCondition end
+    formula(c::AbstractLogicalBooleanCondition)::AbstractFormula
 
+Returns the logical formula (see [`SoleLogics`](@ref) package) of a given
+logical boolean condition.
+
+See also
+[`syntaxstring`](@ref),
+[`AbstractLogicalBooleanCondition`](@ref).
+"""
+function formula(c::AbstractLogicalBooleanCondition)::AbstractFormula
+    error("Please, provide method formula(::$(typeof(c))).")
+end
+
+function syntaxstring(c::AbstractLogicalBooleanCondition; kwargs...)
+    syntaxstring(formula(c); kwargs...)
+end
+
+
+"""
+    struct TrueCondition <: AbstractLogicalBooleanCondition end
+
+A true condition is the boolean condition that always yields `true`.
+
+See also
+[`LogicalTruthCondition`](@ref),
+[`AbstractLogicalBooleanCondition`](@ref).
+"""
+struct TrueCondition <: AbstractLogicalBooleanCondition end
+
+formula(::TrueCondition) = SyntaxTree(⊤)
 check(::TrueCondition, args...) = true
 
-condition_length(c::TrueCondition) = 0
-
-# Helper. Mh, what about TOP as a formula?
-convert(::Type{AbstractBooleanCondition}, ::typeof(TOP)) = TrueCondition()
-
 """
-A logical truth condition is the boolean `Condition` that a logical formula is true on a logical model.
-Namely, that the formula checks `TOP` on the model.
+    struct LogicalTruthCondition{F<:AbstractFormula} <: AbstractLogicalBooleanCondition
+        formula::F
+    end
+
+A boolean condition that, on a given logical interpretation,
+a logical formula evaluates to the `top` of the logic's algebra.
+
+See also
+[`formula`](@ref),
+[`AbstractLogicalBooleanCondition`](@ref).
 """
-struct LogicalTruthCondition{F<:FormulaOrTree} <: AbstractBooleanCondition
+struct LogicalTruthCondition{F<:AbstractFormula} <: AbstractLogicalBooleanCondition
     formula::F
+
+    function LogicalTruthCondition{F}(
+        formula::F
+    ) where {F<:AbstractFormula}
+        new{F}(formula)
+    end
+
+    function LogicalTruthCondition(
+        formula::F
+    ) where {F<:AbstractFormula}
+        LogicalTruthCondition{F}(formula)
+    end
 end
 
 formula(c::LogicalTruthCondition) = c.formula
-check(c::LogicalTruthCondition, args...) = (check(formula(c), args...) == TOP)
 
-condition_length(c::LogicalTruthCondition) = npropositions(formula(c))
+function check(c::LogicalTruthCondition, i::AbstractInterpretation, args...)
+    tops(check(formula(c), i, args...))
+end
 
-# Helper
-convert(::Type{AbstractBooleanCondition}, f::FormulaOrTree) = LogicalTruthCondition(f)
+############################################################################################
+
+# Helpers
+convert(::Type{AbstractBooleanCondition}, f::AbstractFormula) = LogicalTruthCondition(f)
+convert(::Type{AbstractBooleanCondition}, tok::AbstractSyntaxToken) = LogicalTruthCondition(SyntaxTree(tok))
+convert(::Type{AbstractBooleanCondition}, ::typeof(⊤)) = TrueCondition()
+
+############################################################################################
 
 """
-A Machine Learning model (`AbstractModel`) is a mathematical model that,
-given an instance object (i.e., a piece of data), outputs an
+    abstract type AbstractModel{O} end
+
+Abstract type for mathematical models that,
+given an instance object (i.e., a piece of data), output an
 outcome of type `O`.
+
+See also
+[`Rule`](@ref),
+[`Branch`](@ref),
+[`isopen`](@ref),
+[`apply`](@ref),
+[`issymbolic`](@ref),
+[`info`](@ref),
+[`outcometype`](@ref).
 """
 abstract type AbstractModel{O} end
 
@@ -66,7 +150,7 @@ abstract type AbstractModel{O} end
     outcometype(::Type{<:AbstractModel{O}}) where {O} = O
     outcometype(m::AbstractModel) = outcometype(typeof(m))
 
-Returns the outcome type of the model.
+Returns the outcome type of a model (type).
 
 See also [`AbstractModel`](@ref).
 """
@@ -79,88 +163,87 @@ Otherwise, the model can output `nothing` values and is referred to as *open*.
 """
 
 """
-$(doc_open_model)
-This behavior can be expressed via the `isopen` trait, which defaults to `true`:
+    isopen(::AbstractModel)::Bool
 
-    isopen(::AbstractModel) = true
+Returns whether a model is open.
+$(doc_open_model)
+[`Rule`](@ref) is an example of an *open* model, while [`Branch`](@ref)
+is an example of *closed* model.
 
 See also [`AbstractModel`](@ref).
 """
 isopen(::AbstractModel) = true
 
 """
-$(doc_open_model)
-`output_type` leverages the `isopen` trait to provide the type for the outcome of a model:
+    outputtype(m::AbstractModel)
 
-    output_type(M::AbstractModel{O}) = isopen(M) ? Union{Nothing,O} : O
+Returns a supertype for the outputs obtained when `apply`ing a model.
+The result depends on whether the model is open or closed:
 
-See also [`isopen`](@ref), [`AbstractModel`](@ref).
+    outputtype(M::AbstractModel{O}) = isopen(M) ? Union{Nothing,O} : O
+
+Note that if the model is closed, then `outputtype(m)` is equal to `outcometype(m)`.
+
+See also
+[`isopen`](@ref),
+[`apply`](@ref),
+[`outcometype`](@ref),
+[`AbstractModel`](@ref).
 """
-function output_type(m::AbstractModel{O}) where {O}
-    isopen(m) ? Union{Nothing, outcometype(m)} : outcometype(m)
+function outputtype(m::AbstractModel)
+    isopen(m) ? Union{Nothing,outcometype(m)} : outcometype(m)
 end
 
 """
-Any `AbstractModel` can be applied to an instance object or a dataset of instance objects.
+    apply(m::AbstractModel, i::AbstractInterpretation)::outputtype(m)
+    apply(m::AbstractModel, d::AbstractInterpretationSet)::AbstractVector{<:outputtype(m)}
 
-See also [`AbstractModel`](@ref), [`AbstractInstance`](@ref), [`AbstractDataset`](@ref).
+Returns the output prediction of the model on an instance, or on each instance of a dataset.
+The predictions can be `nothing` if the model is *open*
+
+See also
+[`isopen`](@ref),
+[`outcometype`](@ref),
+[`outputtype`](@ref),
+[`AbstractModel`](@ref),
+[`AbstractInterpretation`](@ref),
+[`AbstractInterpretationSet`](@ref).
 """
-apply(m::AbstractModel, i::AbstractInstance)::output_type(m) = error("Please, provide method apply(::$(typeof(m)), ::$(typeof(i))).")
-apply(m::AbstractModel, d::AbstractDataset)::AbstractVector{<:output_type(m)} = map(i->apply(m, i), iterate_instances(d))
+function apply(m::AbstractModel, i::AbstractInterpretation)::outputtype(m)
+    error("Please, provide method apply(::$(typeof(m)), ::$(typeof(i))).")
+end
+function apply(m::AbstractModel, d::AbstractInterpretationSet)::AbstractVector{<:outputtype(m)}
+    map(i->apply(m, i), eachsample(d))
+end
 
+"""
+    issymbolic(::AbstractModel)::Bool
 
-doc_symbolic = """
-A `AbstractModel` is said to be `symbolic` when it is based on certain a logical language (or "logic",
-see [`SoleLogics`](@ref) package).
+Returns whether a model is symbolic or not.
+A model is said to be `symbolic` when its application relies on checking formulas
+of a certain logical language (see [`SoleLogics`](@ref) package) on the instance.
 Symbolic models provide a form of transparent and interpretable modeling.
-"""
 
-"""
-$(doc_symbolic)
-The `issymbolic` trait, defaulted to `false` can be used to specify that a model is symbolic.
-A symbolic model is one where the computation has a *rule-base structure*.
+Instead, a model is said to be functional when it encodes an algebraic mathematical
+function (e.g., a neural network).
+TODO explain unroll_rules/cascade/rules A symbolic model is one where the computation has a *rule-base structure*.
 
-See also [`logic`](@ref), [`unroll_rules`](@ref), [`AbstractModel`](@ref).
+See also
+[`apply`](@ref),
+[`unroll_rules`](@ref),
+[`AbstractModel`](@ref).
 """
 issymbolic(::AbstractModel) = false
 
-# """
-# $(doc_symbolic)
-# Every symbolic model must provide access to its corresponding `AbstractLogic` type via the `logic` trait.
+"""
+    info(m::AbstractModel)::NamedTuple = m.info
 
-# TODO remove
-# See also [`issymbolic`](@ref), [`AbstractModel`](@ref).
-# """
-# function logic(m::AbstractModel)::AbstractLogic
-#     if issymbolic(m)
-#         error("Please, provide method logic(::$(typeof(m))), or define issymbolic(::$(typeof(m))) = false.")
-#     else
-#         error("Models of type $(typeof(m)) are not symbolic, and thus have no logic associated.")
-#     end
-# end
-
+Returns the `info` structure for model `m`; this structure is used
+for storing additional information that does not affect the model's behavior.
+This structure can hold, for example, information
+about the model's statistical performance during the learning phase.
 """
-Instead, a `AbstractModel` is said to be functional when it encodes an algebraic mathematical function.
-"""
-
-doc_info = """
-In Sole.jl, each `AbstractModel` encompasses an `info::NamedTuple` field for storing additional information,
-that does not affect on the model's behavior. This structure can hold, for example, information
-about the `AbstractModel`ss statistical performance during the learning phase.
-"""
-
-"""
-$(doc_info)
-The `hasinfo` trait, defaulted to `true`, can be used to specify models that do not implement an
-`info` field.
-"""
-hasinfo(::AbstractModel) = true
-
-"""
-$(doc_info)
-The `info` getter function accesses this structure.
-"""
-info(m::AbstractModel)::NamedTuple = hasinfo(m) ? m.info : error("Type $(typeof(m)) does not have an `info` field.")
+info(m::AbstractModel)::NamedTuple = m.info
 
 
 ############################################################################################
@@ -168,18 +251,41 @@ info(m::AbstractModel)::NamedTuple = hasinfo(m) ? m.info : error("Type $(typeof(
 ############################################################################################
 
 """
+    abstract type FinalModel{O} <: AbstractModel{O} end
+
 A `FinalModel` is a model which outcomes do not depend on another model.
 An `AbstractModel` can generally wrap other `AbstractModel`s. In such case, the outcome can
 depend on the inner models being applied on the instance object. Otherwise, the model is
 considered final; that is, it is a leaf of a tree of `AbstractModel`s.
+
+See also [`ConstantModel`](@ref), [`FunctionModel`](@ref), [`AbstractModel`](@ref).
 """
 abstract type FinalModel{O} <: AbstractModel{O} end
 
 """
-Perhaps the simplest type of `AbstractModel` is the `ConstantModel`.
-This is a final model (`FinalModel`) that always outputs the same outcome.
+    struct ConstantModel{O} <: FinalModel{O}
+        outcome::O
+        info::NamedTuple
+    end
 
-See also [`FunctionModel`](@ref), [`FinalModel`](@ref).
+The simplest type of model is the `ConstantModel`;
+it is a `FinalModel` that always outputs the same outcome.
+
+# Examples
+```julia-repl
+julia> SoleModels.FinalModel(2) isa SoleModels.ConstantModel
+
+julia> SoleModels.FinalModel(sum) isa SoleModels.FunctionModel
+┌ Warning: Over efficiency concerns, please consider wrappingJulia Function's into FunctionWrapper{O,Tuple{SoleModels.AbstractInterpretation}} structures,where O is their return type.
+└ @ SoleModels ~/.julia/dev/SoleModels/src/models/base.jl:337
+true
+
+```
+
+See also
+[`apply`](@ref),
+[`FunctionModel`](@ref),
+[`FinalModel`](@ref).
 """
 struct ConstantModel{O} <: FinalModel{O}
     outcome::O
@@ -209,25 +315,29 @@ struct ConstantModel{O} <: FinalModel{O}
 end
 
 outcome(m::ConstantModel) = m.outcome
-
 isopen(::ConstantModel) = false
+apply(m::ConstantModel, i::AbstractInterpretation) = outcome(m)
+apply(m::ConstantModel, d::AbstractInterpretationSet) = outcome(m)
 
 convert(::Type{ConstantModel{O}}, o::O) where {O} = ConstantModel{O}(o)
 convert(::Type{<:AbstractModel{F}}, m::ConstantModel) where {F} = ConstantModel{F}(m)
 
-apply(m::ConstantModel, i::AbstractInstance) = outcome(m)
-apply(m::ConstantModel, d::AbstractDataset) = outcome(m)
-
 """
-A `FunctionModel` is a final model (`FinalModel`) that applies a native Julia `Function`
+    struct FunctionModel{O} <: FinalModel{O}
+        f::FunctionWrapper{O}
+        info::NamedTuple
+    end
+
+A `FunctionModel` is a `FinalModel` that applies a native Julia `Function`
 in order to compute the outcome. Over efficiency concerns, it is mandatory to make explicit
-the output type `O` by wrapping the `Function` into a `FunctionWrapper{O}`
+the output type `O` by wrapping the `Function` into an object of type
+`FunctionWrapper{O}`.
 
 See also [`ConstantModel`](@ref), [`FunctionWrapper`](@ref), [`FinalModel`](@ref).
 """
 struct FunctionModel{O} <: FinalModel{O}
     f::FunctionWrapper{O}
-    # isopen::Bool
+    # isopen::Bool TODO
     info::NamedTuple
 
     function FunctionModel{O}(
@@ -244,6 +354,24 @@ struct FunctionModel{O} <: FinalModel{O}
         FunctionModel{O}(f, info)
     end
 
+    function FunctionModel{O}(
+        f::Function,
+        info::NamedTuple = (;),
+    ) where {O}
+        @warn "Over efficiency concerns, please consider wrapping"*
+        "Julia Function's into FunctionWrapper{O,Tuple{SoleModels.AbstractInterpretation}}"*
+        " structures,where O is their return type."
+        f = FunctionWrapper{O,Tuple{AbstractInterpretation}}(f)
+        FunctionModel{O}(f, info)
+    end
+
+    function FunctionModel(
+        f::Function,
+        info::NamedTuple = (;),
+    )
+        FunctionModel{Any}(f, info)
+    end
+
     function FunctionModel{O}(m::FunctionModel) where {O}
         FunctionModel{O}(m.f, m.info)
     end
@@ -254,34 +382,33 @@ struct FunctionModel{O} <: FinalModel{O}
 end
 
 f(m::FunctionModel) = m.f
-
 isopen(::FunctionModel) = false
+apply(m::FunctionModel, i::AbstractInterpretation) = f(m)(i)
 
 convert(::Type{<:AbstractModel{F}}, m::FunctionModel) where {F} = FunctionModel{F}(m)
 
-apply(m::FunctionModel, i::AbstractInstance) = f(m)(i)
-
 """
-This function is used to specify the default `FinalModel` used for wrapping native computation.
+    wrap(o::Any)::AbstractModel
+
+This function wraps anything into an AbstractModel.
 The default behavior is the following:
-- when called on an `AbstractModel`, the model is simply returned (without wrapping it);
+- when called on an `AbstractModel`, the model is
+simply returned (no wrapping is performed);
 - `Function`s and `FunctionWrapper`s are wrapped into a `FunctionModel`;
 - every other object is wrapped into a `ConstantModel`.
 
-See also [`ConstantModel`](@ref), [`FunctionModel`](@ref), [`ConstrainedModel`](@ref), [`FinalModel`](@ref).
+See also
+[`ConstantModel`](@ref), [`FunctionModel`](@ref),
+[`ConstrainedModel`](@ref), [`FinalModel`](@ref).
 """
-# TODO add `info` parameter
-FinalModel(o::Any) = wrap(o)
 wrap(o::Any, FM::Type{<:AbstractModel}) = convert(FM, wrap(o))
 wrap(m::AbstractModel) = m
-wrap(o::O) where {O} = convert(ConstantModel{O}, o)
-function wrap(o::Function)
-    @warn "Over efficiency concerns, please consider wrapping"*
-    "Julia Function's into FunctionWrapper{O,Tuple{SoleModels.AbstractInstance}} structures,"*
-    "where O is their return type."
-    wrap(FunctionWrapper{Any,Tuple{AbstractInstance}}(o))
-end
+wrap(o::Function) = FunctionModel(o)
 wrap(o::FunctionWrapper{O}) where {O} = FunctionModel{O}(o)
+wrap(o::O) where {O} = convert(ConstantModel{O}, o)
+
+# Helper
+FinalModel(o) = wrap(o)
 
 ############################################################################################
 ############################################################################################
@@ -294,18 +421,22 @@ and enclose a *tree* of `AbstractModel`s (with `FinalModel`s at the leaves).
 In order to typebound the Feasible Models (`FM`) allowed in the sub-tree,
 the `ConstrainedModel` type is introduced:
 
-    ConstrainedModel{O, FM <: AbstractModel} <: AbstractModel{O}
+    abstract type ConstrainedModel{O,FM<:AbstractModel} <: AbstractModel{O} end
 
-For example, `ConstrainedModel{String, Union{Branch{String}, ConstantModel{String}}}` supertypes models
-that with `String` outcomes that make use of `Branch{String}` and `ConstantModel{String}`
-(essentially, a decision trees with `String`s at the leaves).
+For example, `ConstrainedModel{String, Union{Branch{String}, ConstantModel{String}}}`
+supertypes models that with `String` outcomes that make use of `Branch{String}` and
+`ConstantModel{String}` (essentially, a decision trees with `String`s at the leaves).
 
 See also [`FinalModel`](@ref), [`AbstractModel`](@ref).
 """
-abstract type ConstrainedModel{O, FM <: AbstractModel} <: AbstractModel{O} end
+abstract type ConstrainedModel{O,FM<:AbstractModel} <: AbstractModel{O} end
 
 """
-Returns the type of the Feasible Models (`FM`).
+    feasiblemodelstype(m::AbstractModel)
+
+Returns a `Union` of the Feasible Models (`FM`) allowed in the sub-tree of any
+AbstractModel. Note that for a `ConstrainedModel{O,FM<:AbstractModel}`, it
+simply returns `FM`.
 
 See also [`ConstrainedModel`](@ref).
 """
@@ -313,7 +444,7 @@ feasiblemodelstype(::Type{M}) where {O, M<:AbstractModel{O}} = AbstractModel{<:O
 feasiblemodelstype(::Type{M}) where {M<:AbstractModel} = AbstractModel
 feasiblemodelstype(::Type{M}) where {O, M<:FinalModel{O}} = Union{}
 feasiblemodelstype(::Type{M}) where {M<:FinalModel} = Union{}
-feasiblemodelstype(::Type{<:ConstrainedModel{O, FM}}) where {O, FM} = FM
+feasiblemodelstype(::Type{<:ConstrainedModel{O,FM}}) where {O,FM} = FM
 feasiblemodelstype(m::ConstrainedModel) = outcometype(typeof(m))
 
 """
@@ -339,15 +470,24 @@ models satisfy the desired type constraints.
 
 See also [`ConstrainedModel`](@ref), [`Rule`](@ref), [`Branch`](@ref).
 """
-function check_model_constraints(M::Type{<:AbstractModel}, I_M::Type{<:AbstractModel}, FM::Type{<:AbstractModel}, FM_O::Type = outcometype(FM))
+function check_model_constraints(
+    M::Type{<:AbstractModel},
+    I_M::Type{<:AbstractModel},
+    FM::Type{<:AbstractModel},
+    FM_O::Type = outcometype(FM)
+)
     I_O = outcometype(I_M)
     # FM_O = outcometype(FM)
-    @assert I_O <: FM_O "Can't instantiate $(M) with inner model outcometype $(I_O)! $(I_O) <: $(FM_O) should hold."
+    @assert I_O <: FM_O "Can't instantiate $(M) with inner model outcometype" *
+        " $(I_O)! $(I_O) <: $(FM_O) should hold."
     # @assert I_M <: FM || typename(I_M) <: typename(FM) "Can't instantiate $(M) with inner model $(I_M))! $(I_M) <: $(FM) || $(typename(I_M)) <: $(typename(FM)) should hold."
-    @assert I_M <: FM "Can't instantiate $(M) with inner model $(I_M))! $(I_M) <: $(FM) should hold."
+    @assert I_M <: FM "Can't instantiate $(M) with inner model $(I_M))!" *
+        " $(I_M) <: $(FM) should hold."
     if ! (I_M<:FinalModel{<:FM_O})
         # @assert I_M<:ConstrainedModel{FM_O,<:FM} "ConstrainedModels require I_M<:ConstrainedModel{O,<:FM}, but $(I_M) does not subtype $(ConstrainedModel{FM_O,<:FM})."
-        @assert I_M<:ConstrainedModel{<:FM_O,<:FM} "ConstrainedModels require I_M<:ConstrainedModel{<:O,<:FM}, but $(I_M) does not subtype $(ConstrainedModel{<:FM_O,<:FM})."
+        @assert I_M<:ConstrainedModel{<:FM_O,<:FM} "ConstrainedModels require" *
+            " I_M<:ConstrainedModel{<:O,<:FM}, but $(I_M) does not" *
+            " subtype $(ConstrainedModel{<:FM_O,<:FM})."
     end
 end
 
@@ -358,79 +498,51 @@ end
 doc_symbolic_basics = """
 Symbolic modeling builds onto two basic building blocks, which are `AbstractModel`s themselves:
 - `Rule`: IF (antecedent) THEN (consequent) END
-- `Branch`: IF (antecedent) THEN (positive_consequent) ELSE (negative_consequent) END
+- `Branch`: IF (antecedent) THEN (posconsequent) ELSE (negconsequent) END
 The *antecedent* is a formula of a certain logic, that can typically evaluate to true or false
 when the model is applied on an instance object;
 the *consequent*s are `AbstractModel`s themselves, that are to be applied to the instance object
 in order to obtain an outcome.
 """
 
-
 """
-    struct Rule{O, C<:AbstractBooleanCondition, FM<:AbstractModel} <: ConstrainedModel{O, FM}
+    struct Rule{
+        O,
+        C<:AbstractBooleanCondition,
+        FM<:AbstractModel
+    } <: ConstrainedModel{O,FM}
         antecedent::C
         consequent::FM
         info::NamedTuple
     end
 
-A `Rule` is one of the fundamental building blocks of symbolic modeling, and has the semantics:
+A `Rule` is one of the fundamental building blocks of symbolic modeling, and has
+the semantics:
 
     IF (antecedent) THEN (consequent) END
 
 where the antecedent is a condition to be tested and the consequent is the local outcome of the block.
 
 Note that `FM` refers to the Feasible Models (`FM`) allowed in the model's sub-tree.
-Also note that this structure also includes an `info::NamedTuple` for storing additional information.
 
-See also [`Branch`](@ref), [`ConstrainedModel`](@ref), [`AbstractModel`](@ref).
+See also
+[`antecedent`](@ref),
+[`consequent`](@ref),
+[`AbstractBooleanCondition`](@ref),
+[`ConstrainedModel`](@ref),
+[`AbstractModel`](@ref).
 """
-struct Rule{O, C<:AbstractBooleanCondition, FM<:AbstractModel} <: ConstrainedModel{O, FM}
+struct Rule{
+    O,
+    C<:AbstractBooleanCondition,
+    FM<:AbstractModel
+} <: ConstrainedModel{O,FM}
     antecedent::C
     consequent::FM
     info::NamedTuple
 
-    # function Rule{O, C, _FM, _M}(
-    #     antecedent::Union{AbstractBooleanCondition, FormulaOrTree, AbstractTruthOperator},
-    #     consequent::Any,
-    #     info::NamedTuple = (;),
-    # ) where {O, C<:AbstractBooleanCondition, _FM<:AbstractModel, _M<:AbstractModel}
-    #     antecedent = convert(C, antecedent)
-    #     consequent = wrap(consequent, _M)
-    #     M = typeof(consequent)
-    #     # FM = _FM
-    #     # FM = typeintersect(Union{propagate_feasiblemodels(M), _FM}, AbstractModel{<:O})
-    #     FM = propagate_feasiblemodels(M)
-    #     check_model_constraints(Rule{O}, typeof(consequent), FM)
-    #     new{O,C,FM,M}(antecedent, consequent, info)
-    # end
-
-    # function Rule{O, C, _FM}(
-    #     antecedent::Union{AbstractBooleanCondition, FormulaOrTree, AbstractTruthOperator},
-    #     consequent::Any,
-    #     info::NamedTuple = (;),
-    # ) where {O, C<:AbstractBooleanCondition, _FM<:AbstractModel}
-    #     antecedent = convert(C, antecedent)
-    #     consequent = wrap(consequent, AbstractModel{O})
-    #     FM = typeintersect(Union{_FM,propagate_feasiblemodels(consequent)}, AbstractModel{<:O})
-    #     check_model_constraints(Rule{O}, typeof(consequent), FM, O)
-    #     new{O,C,FM}(antecedent, consequent, info)
-    # end
-
-    # function Rule{O, _FM}(
-    #     antecedent::Union{AbstractBooleanCondition, FormulaOrTree, AbstractTruthOperator},
-    #     consequent::Any,
-    #     info::NamedTuple = (;),
-    # ) where {O, _FM<:AbstractModel}
-    #     antecedent = convert(AbstractBooleanCondition, antecedent)
-    #     C = typeof(antecedent)
-    #     consequent = wrap(consequent, AbstractModel{O})
-    #     FM = typeintersect(Union{propagate_feasiblemodels(consequent), _FM}, AbstractModel{<:O})
-    #     check_model_constraints(Rule{O}, typeof(consequent), FM, O)
-    #     new{O,C,FM}(antecedent, consequent, info)
-    # end
-
     function Rule{O}(
-        antecedent::Union{AbstractBooleanCondition, FormulaOrTree, AbstractTruthOperator},
+        antecedent::Union{AbstractSyntaxToken,AbstractFormula,AbstractBooleanCondition},
         consequent::Any,
         info::NamedTuple = (;),
     ) where {O}
@@ -443,41 +555,99 @@ struct Rule{O, C<:AbstractBooleanCondition, FM<:AbstractModel} <: ConstrainedMod
     end
 
     function Rule(
-        antecedent::Union{AbstractBooleanCondition, FormulaOrTree, AbstractTruthOperator},
+        antecedent::Union{AbstractSyntaxToken,AbstractFormula,AbstractBooleanCondition},
         consequent::Any,
         info::NamedTuple = (;),
     )
-        antecedent = convert(AbstractBooleanCondition, antecedent)
-        C = typeof(antecedent)
         consequent = wrap(consequent)
         O = outcometype(consequent)
-        FM = typeintersect(propagate_feasiblemodels(consequent), AbstractModel{<:O})
-        check_model_constraints(Rule{O}, typeof(consequent), FM, O)
-        new{O,C,FM}(antecedent, consequent, info)
+        Rule{O}(antecedent, consequent, info)
+    end
+
+    function Rule(
+        consequent::Any,
+        info::NamedTuple = (;),
+    )
+        antecedent = TrueCondition()
+        consequent = wrap(consequent)
+        O = outcometype(consequent)
+        Rule{O}(antecedent, consequent, info)
     end
 end
 
+"""
+    antecedent(m::Union{Rule,Branch})::AbstractBooleanCondition
+
+Returns the antecedent of a rule/branch;
+that is, the condition to be evaluated upon applying the model.
+
+See also
+[`apply`](@ref),
+[`consequent`](@ref),
+[`check_antecedent`](@ref),
+[`Rule`](@ref),
+[`Branch`](@ref).
+"""
 antecedent(m::Rule) = m.antecedent
+
+"""
+    consequent(m::Rule)::AbstractModel
+
+Returns the consequent of a rule.
+
+See also
+[`antecedent`](@ref),
+[`Rule`](@ref).
+"""
 consequent(m::Rule) = m.consequent
 
-conditiontype(::Type{M}) where {M<:Rule{O, C}} where {O, C} = C
+conditiontype(::Type{M}) where {M<:Rule{O,C}} where {O,C} = C
 conditiontype(m::Rule) = conditiontype(typeof(m))
 
 issymbolic(::Rule) = true
 
-check(m::Rule, id) = check(antecedent(m), id)
-apply(m::Rule, id) = check(antecedent(m), id) ? apply(consequent(m), id) : nothing
+"""
+    function check_antecedent(
+        m::Union{Rule,Branch},
+        id::Union{AbstractInterpretation,AbstractInterpretationSet}
+    )
+        check(antecedent(m), id)
+    end
 
+Simply checks the antecedent of a rule on an instance or dataset.
+
+See also
+[`antecedent`](@ref),
+[`Rule`](@ref),
+[`Branch`](@ref).
+"""
+function check_antecedent(
+    m::Rule,
+    id::Union{AbstractInterpretation,AbstractInterpretationSet}
+)
+    check(antecedent(m), id)
+end
+
+function apply(m::Rule, i::AbstractInterpretation)
+    check_antecedent(m, i) ? apply(consequent(m), i) : nothing
+end
+
+############################################################################################
 
 """
-    struct Branch{O, C<:AbstractBooleanCondition, FM<:AbstractModel} <: ConstrainedModel{O, FM}
+    struct Branch{
+        O,
+        C<:AbstractBooleanCondition,
+        FM<:AbstractModel
+    } <: ConstrainedModel{O,FM}
         antecedent::C
-        positive_consequent::FM
-        negative_consequent::FM
+        posconsequent::FM
+        negconsequent::FM
         info::NamedTuple
     end
 
-A `Branch` is one of the fundamental building blocks of symbolic modeling, and has the semantics:
+A `Branch` is one of the fundamental building blocks of symbolic modeling, and has
+the semantics:
 
     IF (antecedent) THEN (consequent_1) ELSE (consequent_2) END
 
@@ -485,76 +655,115 @@ where the antecedent is boolean condition to be tested and the consequents are t
 local outcomes of the block.
 
 Note that `FM` refers to the Feasible Models (`FM`) allowed in the model's sub-tree.
-Also note that this structure also includes an `info::NamedTuple` for storing additional information.
 
-See also [`Rule`](@ref), [`ConstrainedModel`](@ref), [`AbstractModel`](@ref).
+See also
+[`antecedent`](@ref),
+[`posconsequent`](@ref),
+[`negconsequent`](@ref),
+[`AbstractBooleanCondition`](@ref),
+[`Rule`](@ref),
+[`ConstrainedModel`](@ref), [`AbstractModel`](@ref).
 """
-struct Branch{O, C<:AbstractBooleanCondition, FM<:AbstractModel} <: ConstrainedModel{O, FM}
+struct Branch{
+    O,
+    C<:AbstractBooleanCondition,
+    FM<:AbstractModel
+} <: ConstrainedModel{O,FM}
     antecedent::C
-    positive_consequent::FM
-    negative_consequent::FM
+    posconsequent::FM
+    negconsequent::FM
     info::NamedTuple
 
-    # function Branch{O, C, _FM}(
-    #     antecedent::Union{AbstractBooleanCondition, FormulaOrTree, AbstractTruthOperator},
-    #     positive_consequent::Any,
-    #     negative_consequent::Any,
-    #     info::NamedTuple = (;),
-    # ) where {O, C<:AbstractBooleanCondition, _FM<:AbstractModel}
-    #     antecedent = convert(C, antecedent)
-    #     positive_consequent = wrap(positive_consequent, AbstractModel{O})
-    #     negative_consequent = wrap(negative_consequent, AbstractModel{O})
-    #     FM = typeintersect(Union{_FM,propagate_feasiblemodels(positive_consequent),propagate_feasiblemodels(negative_consequent)}, AbstractModel{<:O})
-    #     check_model_constraints(Branch{O}, typeof(positive_consequent), FM, O)
-    #     check_model_constraints(Branch{O}, typeof(negative_consequent), FM, O)
-    #     new{O,C,FM}(antecedent, positive_consequent, negative_consequent, info)
-    # end
-
     function Branch(
-        antecedent::Union{AbstractBooleanCondition, FormulaOrTree, AbstractTruthOperator},
-        positive_consequent::Any,
-        negative_consequent::Any,
+        antecedent::Union{AbstractSyntaxToken,AbstractFormula,AbstractBooleanCondition},
+        posconsequent::Any,
+        negconsequent::Any,
         info::NamedTuple = (;),
     )
         antecedent = convert(AbstractBooleanCondition, antecedent)
         C = typeof(antecedent)
-        positive_consequent = wrap(positive_consequent)
-        negative_consequent = wrap(negative_consequent)
-        O = Union{outcometype(positive_consequent), outcometype(negative_consequent)}
-        FM = typeintersect(Union{propagate_feasiblemodels(positive_consequent),propagate_feasiblemodels(negative_consequent)}, AbstractModel{<:O})
-        check_model_constraints(Branch{O}, typeof(positive_consequent), FM, O)
-        check_model_constraints(Branch{O}, typeof(negative_consequent), FM, O)
-        new{O,C,FM}(antecedent, positive_consequent, negative_consequent, info)
+        posconsequent = wrap(posconsequent)
+        negconsequent = wrap(negconsequent)
+        O = Union{outcometype(posconsequent),outcometype(negconsequent)}
+        FM = typeintersect(Union{propagate_feasiblemodels(posconsequent),propagate_feasiblemodels(negconsequent)}, AbstractModel{<:O})
+        check_model_constraints(Branch{O}, typeof(posconsequent), FM, O)
+        check_model_constraints(Branch{O}, typeof(negconsequent), FM, O)
+        new{O,C,FM}(antecedent, posconsequent, negconsequent, info)
     end
 
     function Branch(
-        antecedent::Union{AbstractBooleanCondition, FormulaOrTree, AbstractTruthOperator},
-        (positive_consequent, negative_consequent)::Tuple{Any,Any},
+        antecedent::Union{AbstractSyntaxToken,AbstractFormula,AbstractBooleanCondition},
+        (posconsequent, negconsequent)::Tuple{Any,Any},
         info::NamedTuple = (;),
     )
-        Branch(antecedent, positive_consequent, negative_consequent, info)
+        Branch(antecedent, posconsequent, negconsequent, info)
     end
 
 end
 
 antecedent(m::Branch) = m.antecedent
-positive_consequent(m::Branch) = m.positive_consequent
-negative_consequent(m::Branch) = m.negative_consequent
 
-conditiontype(::Type{M}) where {M<:Branch{O, C}} where {O, C} = C
+"""
+    posconsequent(m::Branch)::AbstractModel
+
+Returns the positive consequent of a branch;
+that is, the model to be applied if the antecedent evaluates to `true`.
+
+See also
+[`antecedent`](@ref),
+[`Branch`](@ref).
+"""
+posconsequent(m::Branch) = m.posconsequent
+
+"""
+    negconsequent(m::Branch)::AbstractModel
+
+Returns the negative consequent of a branch;
+that is, the model to be applied if the antecedent evaluates to `false`.
+
+See also
+[`antecedent`](@ref),
+[`Branch`](@ref).
+"""
+negconsequent(m::Branch) = m.negconsequent
+
+conditiontype(::Type{M}) where {M<:Branch{O,C}} where {O,C} = C
 conditiontype(m::Branch) = conditiontype(typeof(m))
 
 issymbolic(::Branch) = true
 
-isopen(m::Branch) = isopen(positive_consequent(m)) || isopen(negative_consequent(m))
+isopen(m::Branch) = isopen(posconsequent(m)) || isopen(negconsequent(m))
 
-check(m::Branch, i::AbstractInstance) = check(antecedent(m), i)
-apply(m::Branch, d::Union{AbstractInstance, AbstractDataset}) = check(antecedent(m), d) ? apply(positive_consequent(m), d) : apply(negative_consequent(m), d)
+function check_antecedent(
+    m::Branch,
+    id::Union{AbstractInterpretation,AbstractInterpretationSet}
+)
+    check(antecedent(m), id)
+end
+
+function apply(m::Branch, i::AbstractInterpretation)
+    check_antecedent(m, i) ? apply(posconsequent(m), i) : apply(negconsequent(m), i)
+end
+function apply(m::Branch{O,<:LogicalTruthCondition}, d::AbstractInterpretationSet) where {O}
+    cs = check_antecedent(m, d)
+    cpos = findall((c)->c==true, cs)
+    cneg = findall((c)->c==false, cs)
+    out = fill(true, length(cs))
+    out[cpos] = apply(posconsequent(m), slice_dataset(d, cpos))
+    out[cneg] = apply(posconsequent(m), slice_dataset(d, cneg))
+    out
+end
+
+############################################################################################
 
 """
-    struct DecisionList{O, C<:AbstractBooleanCondition, FM<:AbstractModel} <: ConstrainedModel{O, FM}
-        rules::Vector{Rule{_O, _C, _FM} where {_O<:O, _C<:C, _FM<:FM}}
-        default_consequent::FM
+    struct DecisionList{
+        O,
+        C<:AbstractBooleanCondition,
+        FM<:AbstractModel
+    } <: ConstrainedModel{O,FM}
+        rulebase::Vector{Rule{_O,_C,_FM} where {_O<:O,_C<:C,_FM<:FM}}
+        defaultconsequent::FM
         info::NamedTuple
     end
 
@@ -574,81 +783,85 @@ and a consequent is returned as soon as a valid antecedent is found,
 or when the computation reaches the ELSE clause.
 
 Note that `FM` refers to the Feasible Models (`FM`) allowed in the model's sub-tree.
-Also note that this structure also includes an `info::NamedTuple` for storing additional information.
 
-See also [`Rule`](@ref), [`ConstrainedModel`](@ref), [`DecisionTree`](@ref), [`AbstractModel`](@ref).
+See also
+[`Rule`](@ref),
+[`ConstrainedModel`](@ref),
+[`DecisionTree`](@ref),
+[`AbstractModel`](@ref).
 """
-struct DecisionList{O, C<:AbstractBooleanCondition, FM<:AbstractModel} <: ConstrainedModel{O, FM}
-    rules::Vector{Rule{_O, _C, _FM} where {_O<:O, _C<:C, _FM<:FM}}
-    default_consequent::FM
+struct DecisionList{
+    O,
+    C<:AbstractBooleanCondition,
+    FM<:AbstractModel
+} <: ConstrainedModel{O,FM}
+    rulebase::Vector{Rule{_O,_C,_FM} where {_O<:O,_C<:C,_FM<:FM}}
+    defaultconsequent::FM
     info::NamedTuple
 
-    # function DecisionList{O, C, _FM}(
-    #     rules::Vector{<:Rule{<:O, <:C, <:_FM}},
-    #     default_consequent::Any,
-    #     info::NamedTuple = (;),
-    # ) where {O, C<:AbstractBooleanCondition, _FM<:AbstractModel}
-    #     default_consequent = wrap(default_consequent, AbstractModel{O})
-    #     FM = typeintersect(Union{_FM,propagate_feasiblemodels(default_consequent),propagate_feasiblemodels.(rules)...}, AbstractModel{<:O})
-    #     # FM = typeintersect(Union{propagate_feasiblemodels(default_consequent),propagate_feasiblemodels.(rules)...}, AbstractModel{O})
-    #     # FM = Union{propagate_feasiblemodels(default_consequent),propagate_feasiblemodels.(rules)...}
-    #     check_model_constraints.(DecisionList{O}, typeof.(rules), FM, O)
-    #     check_model_constraints(DecisionList{O}, typeof(default_consequent), FM)
-    #     new{O,C,FM}(rules, default_consequent, info)
-    # end
-
-    # function DecisionList{O}(
-    #     rules::Vector{<:Rule{OO, <:C, <:FM}},
-    #     default_consequent::Any,
-    #     info::NamedTuple = (;),
-    # ) where {O, OO<:O}
-    #     default_consequent = wrap(default_consequent, AbstractModel{O})
-    #     FM = typeintersect(Union{propagate_feasiblemodels(default_consequent),propagate_feasiblemodels.(rules)...}, AbstractModel{<:O})
-    #     # FM = typeintersect(Union{propagate_feasiblemodels(default_consequent),propagate_feasiblemodels.(rules)...}, AbstractModel{O})
-    #     # FM = Union{propagate_feasiblemodels(default_consequent),propagate_feasiblemodels.(rules)...}
-    #     check_model_constraints.(DecisionList{O}, typeof.(rules), FM, O)
-    #     check_model_constraints(DecisionList{O}, typeof(default_consequent), FM, O)
-    #     new{O,C,FM}(rules, default_consequent, info)
-    # end
-
     function DecisionList(
-        rules::Vector{<:Rule},
-        default_consequent::Any,
+        rulebase::Vector{<:Rule},
+        defaultconsequent::Any,
         info::NamedTuple = (;),
-    ) where {}
-        default_consequent = wrap(default_consequent)
-        O = Union{outcometype(default_consequent), outcometype.(rules)...}
-        C = Union{conditiontype.(rules)...}
-        FM = typeintersect(Union{propagate_feasiblemodels(default_consequent),propagate_feasiblemodels.(rules)...}, AbstractModel{<:O})
-        # FM = typeintersect(Union{propagate_feasiblemodels(default_consequent),propagate_feasiblemodels.(rules)...}, AbstractModel{O})
-        # FM = Union{propagate_feasiblemodels(default_consequent),propagate_feasiblemodels.(rules)...}
-        check_model_constraints.(DecisionList{O}, typeof.(rules), FM, O)
-        check_model_constraints(DecisionList{O}, typeof(default_consequent), FM, O)
-        new{O,C,FM}(rules, default_consequent, info)
+    )
+        defaultconsequent = wrap(defaultconsequent)
+        O = Union{outcometype(defaultconsequent),outcometype.(rulebase)...}
+        C = Union{conditiontype.(rulebase)...}
+        FM = typeintersect(Union{propagate_feasiblemodels(defaultconsequent),propagate_feasiblemodels.(rulebase)...}, AbstractModel{<:O})
+        # FM = typeintersect(Union{propagate_feasiblemodels(defaultconsequent),propagate_feasiblemodels.(rulebase)...}, AbstractModel{O})
+        # FM = Union{propagate_feasiblemodels(defaultconsequent),propagate_feasiblemodels.(rulebase)...}
+        check_model_constraints.(DecisionList{O}, typeof.(rulebase), FM, O)
+        check_model_constraints(DecisionList{O}, typeof(defaultconsequent), FM, O)
+        new{O,C,FM}(rulebase, defaultconsequent, info)
     end
 end
 
-rules(m::DecisionList) = m.rules
-default_consequent(m::DecisionList) = m.default_consequent
+rulebase(m::DecisionList) = m.rulebase
+defaultconsequent(m::DecisionList) = m.defaultconsequent
 
-conditiontype(::Type{M}) where {M<:DecisionList{O, C}} where {O, C} = C
+conditiontype(::Type{M}) where {M<:DecisionList{O,C}} where {O,C} = C
 conditiontype(m::DecisionList) = conditiontype(typeof(m))
 
 issymbolic(::DecisionList) = true
 
-isopen(m::DecisionList) = isopen(default_consequent(m))
+isopen(m::DecisionList) = isopen(defaultconsequent(m))
 
-function apply(m::DecisionList, i::AbstractInstance)
-    for rule in rules(m)
+function apply(m::DecisionList, i::AbstractInterpretation)
+    for rule in rulebase(m)
         if check(m, i)
             return consequent(rule)
         end
     end
-    default_consequent(m)
+    defaultconsequent(m)
 end
 
+function apply(m::DecisionList{O}, X::AbstractInterpretationSet) where {O}
+    n_samples = nsamples(X)
+    pred = Vector{O}(undef, n_samples)
+    idxs = 1:n_samples
+
+    for rule in rulebase(m)
+        length(idxs) == 0 && break
+
+        idxs_sat = findall(check(antecedent(rule),X) .== true)
+        idxs = setdiff(idxs,idxs_sat)
+
+        map((i)->(pred[i] = outcome(consequent(rule))), idxs_sat)
+    end
+
+    length(idxs) != 0 && map((i)->(pred[i] = outcome(defaultconsequent(m))), idxs)
+
+    return pred
+end
+
+############################################################################################
+
 """
-    struct RuleCascade{O, C<:AbstractBooleanCondition, FFM<:FinalModel} <: ConstrainedModel{O, FFM}
+    struct RuleCascade{
+        O,
+        C<:AbstractBooleanCondition,
+        FFM<:FinalModel
+    } <: ConstrainedModel{O,FFM}
         antecedents::Vector{<:C}
         consequent::FFM
         info::NamedTuple
@@ -670,34 +883,38 @@ where the antecedents are conditions to be tested and the consequent is the feas
 local outcome of the block.
 
 Note that `FM` refers to the Feasible Models (`FM`) allowed in the model's sub-tree.
-Also note that this structure also includes an `info::NamedTuple` for storing additional information.
 
 See also [`Rule`](@ref), [`ConstrainedModel`](@ref), [`DecisionList`](@ref), [`AbstractModel`](@ref).
 """
-struct RuleCascade{O, C<:AbstractBooleanCondition, FFM<:FinalModel} <: ConstrainedModel{O, FFM}
+struct RuleCascade{
+    O,
+    C<:AbstractBooleanCondition,
+    FFM<:FinalModel
+} <: ConstrainedModel{O,FFM}
     antecedents::Vector{<:C}
     consequent::FFM
     info::NamedTuple
 
-    # function RuleCascade{O, C, _FFM}(
-    #     antecedents::Vector{<:C},
-    #     consequent::Any,
-    #     info::NamedTuple = (;),
-    # ) where {O, C<:AbstractBooleanCondition, _FFM<:FinalModel}
-    #     antecedents = convert.(C, antecedents)
-    #     consequent = wrap(consequent, AbstractModel{O})
-    #     FFM = typeintersect(Union{_FM,propagate_feasiblemodels(consequent)}, FinalModel{<:O})
-    #     check_model_constraints(RuleCascade{O}, typeof(consequent), FFM, O)
-    #     new{O,C,FFM}(antecedents, consequent, info)
-    # end
-
     function RuleCascade(
-        antecedents::Vector{<:Union{AbstractBooleanCondition, FormulaOrTree, AbstractTruthOperator}},
+        antecedents::Vector,
         consequent::Any,
         info::NamedTuple = (;),
-    ) where {}
+    )
         antecedents = convert.(AbstractBooleanCondition, antecedents)
-        C = Union{typeof.(antecedents)...}
+        C = SoleBase._typejoin(typeof.(antecedents)...)
+        consequent = wrap(consequent)
+        O = outcometype(consequent)
+        FFM = typeintersect(propagate_feasiblemodels(consequent), FinalModel{<:O})
+        check_model_constraints(RuleCascade{O}, typeof(consequent), FFM, O)
+        new{O,C,FFM}(antecedents, consequent, info)
+    end
+
+    function RuleCascade(
+        consequent::Any,
+        info::NamedTuple = (;),
+    )
+        antecedents = [TrueCondition()]
+        C = SoleBase._typejoin(typeof.(antecedents)...)
         consequent = wrap(consequent)
         O = outcometype(consequent)
         FFM = typeintersect(propagate_feasiblemodels(consequent), FinalModel{<:O})
@@ -709,12 +926,12 @@ end
 antecedents(m::RuleCascade) = m.antecedents
 consequent(m::RuleCascade) = m.consequent
 
-conditiontype(::Type{M}) where {M<:RuleCascade{O, C}} where {O, C} = C
+conditiontype(::Type{M}) where {M<:RuleCascade{O,C}} where {O,C} = C
 conditiontype(m::RuleCascade) = conditiontype(typeof(m))
 
 issymbolic(::RuleCascade) = true
 
-function apply(m::RuleCascade, i::AbstractInstance)
+function apply(m::RuleCascade, i::AbstractInterpretation)
     for antecedent in antecedents(m)
         if ! check(antecedent, i)
             return nothing
@@ -723,8 +940,37 @@ function apply(m::RuleCascade, i::AbstractInstance)
     consequent(m)
 end
 
+# Convert a rule cascade into a rule by joining the antecedents.
+function convert(
+    ::Type{R},
+    m::RuleCascade{O,C}
+) where {R<:Rule,O,C<:Union{TrueCondition,LogicalTruthCondition}}
+    function _antecedent(m::Vector{<:AbstractLogicalBooleanCondition})
+        if length(m) == 0
+            return SyntaxTree(⊤)
+        elseif length(m) == 1
+            return formula(m[1])
+        else
+            return ∧((formula.(m))...)
+        end
+    end
+
+    if C isa TrueCondition
+        return R(consequent(m), info(m))
+    else
+        cond = LogicalTruthCondition(_antecedent(antecedents(m)))
+        return R(cond, consequent(m), info(m))
+    end
+end
+
+Base.length(rc::RuleCascade) = length(antecedents(rc))
+Base.getindex(rc::RuleCascade, idxs) = RuleCascade(antecedents(rc)[idxs], consequent(rc))
+
+############################################################################################
+
 """
-A `DecisionTree` is a symbolic model that operates as a nested structure of IF-THEN-ELSE blocks:
+A `DecisionTree` is a symbolic model that operates as a nested structure of
+IF-THEN-ELSE blocks:
 
     IF (antecedent_1) THEN
         IF (antecedent_2) THEN
@@ -743,29 +989,38 @@ A `DecisionTree` is a symbolic model that operates as a nested structure of IF-T
 where the antecedents are conditions to be tested and the consequents are the feasible
 local outcomes of the block.
 
-In practice, a `DecisionTree` simply wraps a constrained sub-tree of `Branch` and `FinalModel`:
+In practice, a `DecisionTree` simply wraps a constrained
+sub-tree of `Branch` and `FinalModel`:
 
-    struct DecisionTree{O, C<:AbstractBooleanCondition, FFM<:FinalModel} <: ConstrainedModel{O, Union{<:Branch{<:O,<:C}, <:FFM}}
+    struct DecisionTree{
+    O,
+        C<:AbstractBooleanCondition,
+        FFM<:FinalModel
+    } <: ConstrainedModel{O, Union{<:Branch{<:O,<:C}, <:FFM}}
         root::M where {M<:Union{FFM,Branch}}
         info::NamedTuple
     end
 
 Note that `FM` refers to the Feasible Models (`FM`) allowed in the model's sub-tree.
-Also note that this structure also includes an `info::NamedTuple` for storing additional information.
+Also note that this structure also includes an `info::NamedTuple` for storing additional
+information.
 
 See also [`ConstrainedModel`](@ref), [`MixedSymbolicModel`](@ref), [`DecisionList`](@ref).
 """
-struct DecisionTree{O, C<:AbstractBooleanCondition, FFM<:FinalModel} <: ConstrainedModel{O, Union{<:Branch{<:O,<:C}, <:FFM}}
+struct DecisionTree{
+    O,
+    C<:AbstractBooleanCondition,
+    FFM<:FinalModel
+} <: ConstrainedModel{O, Union{<:Branch{<:O,<:C}, <:FFM}}
     root::M where {M<:Union{FFM,Branch}}
     info::NamedTuple
 
-    # function DecisionTree(
-    #     root::Union{FFM,Branch{O,<:C,<:Union{Branch{<:O,<:C},FFM}}},
-    #     info::NamedTuple = (;),
-    # ) where {O, C<:AbstractBooleanCondition, FFM<:FinalModel{<:O}}
-    #     new{O,C,FFM}(root, info)
-    # end
-    # ) where {_O, _C<:AbstractBooleanCondition, _FFM<:FinalModel, M<:Union{_FFM,Branch{<:_O,<:_C,<:Union{Branch{<:_O,<:_C},_FFM}}}}
+    function DecisionTree(
+        root::Union{FFM,Branch{O,C,<:Union{Branch{<:O,C2},FFM}}},
+        info::NamedTuple = (;),
+    ) where {O, C<:AbstractBooleanCondition, C2<:C, FFM<:FinalModel{<:O}}
+        new{O,C,FFM}(root, info)
+    end
 
     function DecisionTree(
         root::Any,
@@ -775,36 +1030,53 @@ struct DecisionTree{O, C<:AbstractBooleanCondition, FFM<:FinalModel} <: Constrai
         M = typeof(root)
         O = outcometype(root)
         C = (root isa FinalModel ? AbstractBooleanCondition : conditiontype(M))
-        # FM = typeintersect(Union{M, feasiblemodelstype(M)}, AbstractModel{<:O})
+        # FM = typeintersect(Union{M,feasiblemodelstype(M)}, AbstractModel{<:O})
         FM = typeintersect(Union{propagate_feasiblemodels(M)}, AbstractModel{<:O})
         FFM = typeintersect(FM, FinalModel{<:O})
-        @assert M <: Union{<:FFM,<:Branch{<:O,<:C,<:Union{Branch,FFM}}} "Cannot instantiate DecisionTree{$(O),$(C),$(FFM),$(M)}(...) with root of type $(typeof(root)). Note that the should be either a FinalNode or a bounded Banch. $(M) <: $(Union{FinalModel,Branch{<:O,<:C,<:Union{Branch,FFM}}}) should hold."
+        @assert M <: Union{<:FFM,<:Branch{<:O,<:C,<:Union{Branch,FFM}}} "" *
+            "Cannot instantiate DecisionTree{$(O),$(C),$(FFM)}(...) with root of" *
+            " type $(typeof(root)). Note that the should be either a FinalNode or a" *
+            " bounded Branch." *
+            " $(M) <: $(Union{FinalModel,Branch{<:O,<:C,<:Union{Branch,FFM}}}) should hold."
         check_model_constraints(DecisionTree{O}, typeof(root), FM, O)
         new{O,C,FFM}(root, info)
     end
 end
+
 root(m::DecisionTree) = m.root
+
+conditiontype(::Type{M}) where {M<:DecisionTree{O,C}} where {O,C} = C
+conditiontype(m::DecisionTree) = conditiontype(typeof(m))
 
 issymbolic(::DecisionTree) = true
 
 isopen(::DecisionTree) = false
 
-apply(m::DecisionTree, i::AbstractInstance) = apply(root(m), i)
+apply(m::DecisionTree, id::Union{AbstractInterpretation,AbstractInterpretationSet}) = apply(root(m), id)
+
+############################################################################################
 
 """
 A `Decision Forest` is a symbolic model that wraps an ensemble of models
 
-    struct DecisionForest{O, C<:AbstractBooleanCondition, FFM<:FinalModel} <: ConstrainedModel{O, Union{<:Branch{<:O,<:C}, <:FFM}}
+    struct DecisionForest{
+        O,
+        C<:AbstractBooleanCondition,
+        FFM<:FinalModel
+    } <: ConstrainedModel{O, Union{<:Branch{<:O,<:C}, <:FFM}}
         trees::Vector{<:DecisionTree}
         info::NamedTuple
     end
 
-Note that this structure also includes an `info::NamedTuple` for storing additional information.
 
 See also [`ConstrainedModel`](@ref), [`MixedSymbolicModel`](@ref), [`DecisionList`](@ref),
 [`DecisionTree`](@ref)
 """
-struct DecisionForest{O, C<:AbstractBooleanCondition, FFM<:FinalModel} <: ConstrainedModel{O, Union{<:Branch{<:O,<:C}, <:FFM}}
+struct DecisionForest{
+    O,
+    C<:AbstractBooleanCondition,
+    FFM<:FinalModel
+} <: ConstrainedModel{O, Union{<:Branch{<:O,<:C}, <:FFM}}
     trees::Vector{<:DecisionTree}
     info::NamedTuple
 
@@ -812,25 +1084,28 @@ struct DecisionForest{O, C<:AbstractBooleanCondition, FFM<:FinalModel} <: Constr
         trees::Vector{<:DecisionTree},
         info::NamedTuple = (;),
     )
-        root_tree = wrap(root(trees[1]))
-        M = typeof(root_tree)
-        O = outcometype(root_tree)
-        C = (root_tree isa FinalModel ? AbstractBooleanCondition : conditiontype(M))
-        FM = typeintersect(Union{propagate_feasiblemodels(M)}, AbstractModel{<:O})
+        @assert length(trees) > 0 "Cannot instantiate forest with no trees!"
+        O = Union{outcometype.(trees)...}
+        C = Union{conditiontype.(trees)...}
+        FM = typeintersect(Union{propagate_feasiblemodels.(trees)...}, AbstractModel{<:O})
         FFM = typeintersect(FM, FinalModel{<:O})
-        @assert M <: Union{<:FFM,<:Branch{<:O,<:C,<:Union{Branch,FFM}}} "Cannot instantiate DecisionForest{$(O),$(C),$(FFM),$(M)}(...) with root first tree of type $(typeof(root)). Note that the should be either a FinalNode or a bounded Banch. $(M) <: $(Union{FinalModel,Branch{<:O,<:C,<:Union{Branch,FFM}}}) should hold."
-        check_model_constraints(DecisionTree{O}, typeof(root_tree), FM, O)
+        check_model_constraints.(DecisionForest{O}, typeof.(trees), FM, O)
         new{O,C,FFM}(trees, info)
     end
 end
 
 trees(forest::DecisionForest) = forest.trees
-info(forest::DecisionForest) = forest.info
 
-issymbolic(::DecisionForest) = true
+conditiontype(::Type{M}) where {M<:DecisionForest{O,C}} where {O,C} = C
+conditiontype(m::DecisionForest) = conditiontype(typeof(m))
 
-apply_trees(f::DecisionForest, i::AbstractInstance) = [apply(t,i) for t in trees(f)]
-apply(f::DecisionForest, i::AbstractInstance) = majority_vote(apply_trees(trees(f), i))
+issymbolic(::DecisionForest) = false
+
+function apply(f::DecisionForest, id::Union{AbstractInterpretation,AbstractInterpretationSet})
+    best_guess([apply(t, id) for t in trees(f)])
+end
+
+############################################################################################
 
 """
 A `MixedSymbolicModel` is a symbolic model that operaters as a free nested structure of IF-THEN-ELSE
@@ -855,17 +1130,16 @@ In Sole.jl, this logic can implemented using `ConstrainedModel`s such as
 `Rule`s, `Branch`s, `RuleCascade`s, `DecisionList`s, `DecisionTree`s, and the be wrapped into
 a `MixedSymbolicModel`:
 
-    struct MixedSymbolicModel{O, FM<:AbstractModel} <: ConstrainedModel{O, FM}
+    struct MixedSymbolicModel{O,FM<:AbstractModel} <: ConstrainedModel{O,FM}
         root::M where {M<:Union{FinalModel{<:O},ConstrainedModel{<:O,<:FM}}}
         info::NamedTuple
     end
 
 Note that `FM` refers to the Feasible Models (`FM`) allowed in the model's sub-tree.
-Also note that this structure also includes an `info::NamedTuple` for storing additional information.
 
 See also [`ConstrainedModel`](@ref), [`DecisionTree`](@ref), [`DecisionList`](@ref).
 """
-struct MixedSymbolicModel{O, FM<:AbstractModel} <: ConstrainedModel{O, FM}
+struct MixedSymbolicModel{O,FM<:AbstractModel} <: ConstrainedModel{O,FM}
     root::M where {M<:Union{FinalModel{<:O},ConstrainedModel{<:O,<:FM}}}
     info::NamedTuple
 
@@ -881,348 +1155,13 @@ struct MixedSymbolicModel{O, FM<:AbstractModel} <: ConstrainedModel{O, FM}
         new{O,FM}(root, info)
     end
 end
+
 root(m::MixedSymbolicModel) = m.root
 
-issymbolic(::MixedSymbolicModel) = true
+issymbolic(m::MixedSymbolicModel) = issymbolic(root(m))
 
 isopen(::MixedSymbolicModel) = isopen(root)
 
-apply(m::MixedSymbolicModel, i::AbstractInstance) = apply(root(m), i)
-
-
-############################################################################################
-####################################### UTILS ##############################################
-############################################################################################
-
-"""
-    Convert a rule cascade into a rule
-"""
-convert(::Type{Rule}, antecedents::Vector{<:AbstractBooleanCondition}, consequent::Any) =
-    convert(Rule,RuleCascade(antecedents,consequent))
-
-function convert(::Type{Rule}, m::RuleCascade{O, C}) where {O, C<:LogicalTruthCondition}
-    cond = LogicalTruthCondition{SyntaxTree}(_antecedent(antecedents(m)))
-    return Rule(cond, consequent(m), info(m))
-end
-
-function convert(::Type{R}, antecedents::Vector{<:AbstractBooleanCondition}, consequent::Any) where {R<:Rule}
-    return convert(Rule,RuleCascade(antecedents,consequent))
-end
-
-function convert(::Type{R}, m::RuleCascade) where {R<:Rule}
-    cond = LogicalTruthCondition(_antecedent(antecedents(m)))
-    return R(cond, consequent(m), info(m))
-end
-
-# Note: Assuming the logic is a BaseLogic
-_antecedent(m::Vector{<:AbstractBooleanCondition}) = base_formula(__antecedent)
-function __antecedent(m::Vector{<:AbstractBooleanCondition})
-    if length(m) == 0
-        return SyntaxTree(⊤)
-    elseif length(m) == 1
-        return formula(m[1])
-    else
-        return ∧(formula(m[1]),__antecedent(m[2:end]))
-    end
-end
-
-#=
-function _antecedent(m::RuleCascade{O, C, FM}) where {O, C<:LogicalTruthCondition, FM<:AbstractModel}
-    antecedents = m.antecedents
-    if length(antecedents) == 0
-        Formula(FNode(SoleLogics.TOP))
-    else
-        Formula(SoleLogics.CONJUNCTION(formula.(antecedents)...))
-    end
-end
-=#
-
-"""
-Convert a rule into a rule cascade
-"""
-function convert(::Type{RuleCascade}, rule::Rule)
-    RuleCascade([antecedent(rule)],consequent(rule))
-end
+apply(m::MixedSymbolicModel, id::Union{AbstractInterpretation,AbstractInterpretationSet}) = apply(root(m), id)
 
 ############################################################################################
-############################################################################################
-############################################################################################
-
-"""
-Function for evaluating the antecedent of a rule
-"""
-
-function evaluate_antecedent(rule::Rule, X::AbstractDataset)
-    evaluate_antecedent(antecedent(rule), X)
-end
-
-function evaluate_antecedent(antecedent::Formula, X::AbstractDataset)
-    check(antecedent, X)
-end
-
-"""
-Function for evaluating a rule
-"""
-function evaluate_rule(
-    rule::Rule,
-    X::AbstractDataset,
-    Y::AbstractVector{<:FinalModel}
-)
-    # Antecedent satisfaction. For each instances in X:
-    #  - `false` when not satisfiable,
-    #  - `true` when satisfiable.
-    ant_sat = evaluate_antecedent(antecedent(rule),X)
-
-    # Indices of satisfiable instances
-    idxs_sat = findall(ant_sat .== true)
-
-    # Consequent satisfaction. For each instances in X:
-    #  - `false` when not satisfiable,
-    #  - `true` when satisfiable,
-    #  - `nothing` when antecedent does not hold.
-    cons_sat = begin
-        cons_sat = Vector{Union{Bool, Nothing}}(fill(nothing, length(Y)))
-        idxs_true = begin
-            idx_cons = findall(consequent(rule) .== Y)
-            intersect(idxs_sat,idx_cons)
-        end
-        idxs_false = begin
-            idx_cons = findall(consequent(rule) .!= Y)
-            intersect(idxs_sat,idx_cons)
-        end
-        cons_sat[idxs_true]  .= true
-        cons_sat[idxs_false] .= false
-        cons_sat
-    end
-
-    y_pred = begin
-        y_pred = Vector{Union{FinalModel, Nothing}}(fill(nothing, length(Y)))
-        y_pred[idxs_sat] .= consequent(rule)
-        y_pred
-    end
-
-    return (;
-        ant_sat   = ant_sat,
-        idxs_sat  = idxs_sat,
-        cons_sat  = cons_sat,
-        y_pred    = y_pred,
-    )
-end
-
-############################################################################################
-############################################################################################
-############################################################################################
-
-"""
-Length of the rule
-"""
-rule_length(rule::Rule) = condition_length(antecedent(rule))
-
-"""
-Metrics of the rule
-"""
-
-function rule_metrics(
-    rule::Rule,
-    X::AbstractDataset,
-    Y::AbstractVector{<:FinalModel}
-)
-
-    eval_result = evaluate_rule(rule, X, Y)
-    n_instances = Base.size(X,1)
-    n_satisfy = sum(eval_result[:ant_sat])
-
-    # Support of the rule
-    rule_support =  n_satisfy / n_instances
-
-    # Error of the rule
-    rule_error = begin
-        if outcometype(consequent(rule)) <: CLabel
-            # Number of incorrectly classified instances divided by number of instances
-            # satisfying the rule condition.
-            misclassified_instances = length(findall(eval_result[:y_pred] .== Y))
-            misclassified_instances / n_satisfy
-        elseif outcometype(consequent(rule)) <: RLabel
-            # Mean Squared Error (mse)
-            idxs_sat = eval_result[:idxs_sat]
-            mse(eval_result[:y_pred][idxs_sat], Y[idxs_sat])
-        end
-    end
-
-    return (;
-        support   = rule_support,
-        error     = rule_error,
-        length    = rule_length(rule),
-    )
-end
-
-# Evaluation for single decision
-# TODO
-# function evaluate_decision(dec::Decision, X::MultiFrameModalDataset) end
-
-############################################################################################
-# Rule evaluation
-############################################################################################
-
-# # Evaluation for an antecedent
-
-# evaluate_antecedent(antecedent::Formula{L}, X::MultiFrameModalDataset) where {L<:AbstractLogic} =
-#     evaluate_antecedent(extract_decisions(antecedent), X)
-
-# function evaluate_antecedent(decs::AbstractVector{<:Decision}, X::MultiFrameModalDataset)
-#     D = hcat([evaluate_decision(d, X) for d in decs]...)
-#     # If all values in a row is true, then true (and logical)
-#     return map(all, eachrow(D))
-# end
-
-# # Evaluation for a rule
-
-# # From rule to antecedent and consequent
-# evaluate_rule(rule::Rule, X::MultiFrameModalDataset, Y::AbstractVector{<:Consequent}) =
-#     evaluate_rule(antecedent(rule), consequent(rule), X, Y)
-
-# # From antecedent to decision
-# evaluate_rule(
-#     ant::Formula{L},
-#     cons::Consequent,
-#     X::MultiFrameModalDataset,
-#     Y::AbstractVector{<:Consequent}
-# ) where {L<:AbstractLogic} = evaluate_rule(extract_decisions(ant),cons,X,Y)
-
-# # Use decision and consequent
-# function evaluate_rule(
-#     decs::AbstractVector{<:Decision},
-#     cons::Consequent,
-#     X::MultiFrameModalDataset,
-#     Y::AbstractVector{<:Consequent}
-# )
-#     # Antecedent satisfaction. For each instances in X:
-#     #  - `false` when not satisfiable,
-#     #  - `true` when satisfiable.
-#     ant_sat = evaluate_antecedent(decs,X)
-
-#     # Indices of satisfiable instances
-#     idxs_sat = findall(ant_sat .== true)
-
-#     # Consequent satisfaction. For each instances in X:
-#     #  - `false` when not satisfiable,
-#     #  - `true` when satisfiable,
-#     #  - `nothing` when antecedent does not hold.
-#     cons_sat = begin
-#         cons_sat = Vector{Union{Bool, Nothing}}(fill(nothing, length(Y)))
-#         idxs_true = begin
-#             idx_cons = findall(cons .== Y)
-#             intersect(idxs_sat,idx_cons)
-#         end
-#         idxs_false = begin
-#             idx_cons = findall(cons .!= Y)
-#             intersect(idxs_sat,idx_cons)
-#         end
-#         cons_sat[idxs_true]  .= true
-#         cons_sat[idxs_false] .= false
-#     end
-
-#     y_pred = begin
-#         y_pred = Vector{Union{Consequent, Nothing}}(fill(nothing, length(Y)))
-#         y_pred[idxs_sat] .= C
-#         y_pred
-#     end
-
-#     return (;
-#         ant_sat   = ant_sat,
-#         idxs_sat  = idxs_sat,
-#         cons_sat  = cons_sat,
-#         y_pred    = y_pred,
-#     )
-# end
-
-
-#     # """
-#     #     rule_length(node::FNode, operators::Operators) -> Int
-
-#     #     Compute the number of pairs in a rule (length of the rule)
-
-#     # # Arguments
-#     # - `node::FNode`: node on which you refer
-#     # - `operators::Operators`: set of operators of the considered logic
-
-#     # # Returns
-#     # - `Int`: number of pairs
-#     # """
-#     # function rule_length(node::FNode, operators::Operators)
-#     #     left_size = 0
-#     #     right_size = 0
-
-#     #     if !isdefined(node, :leftchild) && !isdefined(node, :rightchild)
-#     #         # Leaf
-#     #         if token(node) in operators
-#     #             return 0
-#     #         else
-#     #             return 1
-#     #         end
-#     #     end
-
-#     #     isdefined(node, :leftchild) && (left_size = rule_length(leftchild(node), operators))
-#     #     isdefined(node, :rightchild) && (right_size = rule_length(rightchild(node), operators))
-
-#     #     if token(node) in operators
-#     #         return left_size + right_size
-#     #     else
-#     #         return 1 + left_size + right_size
-#     #     end
-#     # end
-
-#     rule_metrics(rule::Rule{L,C}, X::MultiFrameModalDataset, Y::AbstractVector{<:Consequent}) =
-#         rule_metrics(extract_decisions(antecedent(rule)),cons,X,Y)
-
-#     """
-#         rule_metrics(args...) -> AbstractVector
-
-#         Compute frequency, error and length of the rule
-
-#     # Arguments
-#     - `decs::AbstractVector{<:Decision}`: vector of decisions
-#     - `cons::Consequent`: rule's consequent
-#     - `X::MultiFrameModalDataset`: dataset
-#     - `Y::AbstractVector{<:Consequent}`: target values of X
-
-#     # Returns
-#     - `AbstractVector`: metrics values vector of the rule
-#     """
-#     function rule_metrics(
-#         decs::AbstractVector{<:Decision},
-#         cons::Consequent,
-#         X::MultiFrameModalDataset,
-#         Y::AbstractVector{<:Consequent}
-#     )
-#         eval_result = evaluate_rule(decs, cons, X, Y)
-#         n_instances = size(X, 1)
-#         n_satisfy = sum(eval_result[:ant_sat])
-
-#         # Support of the rule
-#         rule_support =  n_satisfy / n_instances
-
-#         # Error of the rule
-#         rule_error = begin
-#             if typeof(cons) <: CLabel
-#                 # Number of incorrectly classified instances divided by number of instances
-#                 # satisfying the rule condition.
-#                 misclassified_instances = length(findall(eval_result[:y_pred] .== Y))
-#                 misclassified_instances / n_satisfy
-#             elseif typeof(cons) <: RLabel
-#                 # Mean Squared Error (mse)
-#                 idxs_sat = eval_result[:idxs_sat]
-#                 mse(eval_result[:y_pred][idxs_sat], Y[idxs_sat])
-#             end
-#         end
-
-#         return (;
-#             support   = rule_support,
-#             error     = rule_error,
-#             length    = rule_length(decs,
-#         )
-#     end
-
-# ############################################################################################
-# ############################################################################################
-# ############################################################################################

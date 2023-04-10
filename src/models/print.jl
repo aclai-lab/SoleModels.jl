@@ -1,19 +1,5 @@
-"""
-Any `M<:AbstractModel` must provide a `print_model(m::M; kwargs...)` method
-that is used for rendering the model in text. See print.jl.
+import Base: display
 
-See also [`AbstractModel`](@ref).
-"""
-print_model(m::AbstractModel; kwargs...) = print_model(stdout, m; kwargs...)
-
-function Base.show(io::IO, ::MIME"text/plain", m::AbstractModel)
-    # io = IOBuffer()
-    print_model(io, m)
-    # String(take!(io))
-end
-
-############################################################################################
-# Printing utils
 ############################################################################################
 
 default_indentation_list_children = "┐"
@@ -22,182 +8,361 @@ default_indentation_any_space  = "│ "
 default_indentation_last_first = "└ " # "╰✘ "
 default_indentation_last_space = "  "
 
-default_indentation = (default_indentation_list_children, default_indentation_any_first, default_indentation_any_space, default_indentation_last_first, default_indentation_last_space)
+default_indentation = (
+    default_indentation_list_children,
+    default_indentation_any_first,
+    default_indentation_any_space,
+    default_indentation_last_first,
+    default_indentation_last_space,
+)
 
-macro print_submodel(io, submodel, indentation_str, indentation, depth, max_depth, kwargs)
+############################################################################################
+
+Base.show(io::IO, m::AbstractModel) = print(io, displaymodel(m))
+Base.show(io::IO, ::MIME"text/plain", m::AbstractModel) = printmodel(io, m)
+
+
+doc_printdisplay_model = """
+    printmodel(io::IO, m::AbstractModel; kwargs...)
+    displaymodel(m::AbstractModel; kwargs...)
+
+prints or returns a string representation of model `m`.
+
+# Arguments
+- `header::Bool = true`: when set to `true`, a header is printed, displaying
+ the `info` structure for `m`;
+- `show_subtree_info::Bool = false`: when set to `true`, the header is printed for 
+models in the sub-tree of `m`; 
+- `max_depth::Union{Nothing,Int} = nothing`: when it is an `Int`, models in the sub-tree
+with a depth higher than `max_depth` are ellipsed with "...";
+- `syntaxstring_kwargs::NamedTuple = (;)`: kwargs to be passed to `syntaxstring` for
+formatting logical formulas.
+
+See also [`SoleLogics.syntaxstring`](@ref), [`AbstractModel`](@ref).
+"""
+
+"""$(doc_printdisplay_model)"""
+function printmodel(io::IO, m::AbstractModel; kwargs...)
+    println(io, displaymodel(m; kwargs...))
+end
+printmodel(m::AbstractModel; kwargs...) = printmodel(stdout, m; kwargs...)
+
+"""$(doc_printdisplay_model)"""
+function displaymodel(
+    m::AbstractModel;
+    header = true,
+    indentation_str = "",
+    indentation = default_indentation,
+    depth = 0,
+    max_depth = nothing,
+    show_subtree_info = false,
+    syntaxstring_kwargs = (;),
+)
+    println("Please, provide method displaymodel(::$(typeof(m)); kwargs...)." *
+        " See help for displaymodel.")
+end
+
+############################################################################################
+############################################################################################
+############################################################################################
+
+# Utility macro for recursively displaying submodels
+macro _display_submodel(
+    submodel,
+    indentation_str,
+    indentation,
+    depth,
+    max_depth,
+    show_subtree_info,
+    syntaxstring_kwargs,
+    kwargs
+)
     quote
-        print_model($(esc(io)), $(esc(submodel));
+        displaymodel($(esc(submodel));
             indentation_str = $(esc(indentation_str)),
             indentation = $(esc(indentation)),
-            header = false,
+            header = $(esc(show_subtree_info)),
+            show_subtree_info = $(esc(show_subtree_info)),
             depth = $(esc(depth))+1,
             max_depth = $(esc(max_depth)),
+            syntaxstring_kwargs = $(esc(syntaxstring_kwargs)),
             $(esc(kwargs))...,
         )
     end
 end
 
-function print_model(
-        io::IO,
-        m::ConstantModel;
-        indentation_str="",
-        header = true,
-        kwargs...,
-    )
-    !header || println(io, "$(indentation_str)$(typeof(m))$(length(info(m)) == 0 ? "" : "\n$(indentation_str)Info: $(info(m))")")
+function displaymodel(
+    m::ConstantModel;
+    header = true,
+    indentation_str = "",
+    show_subtree_info = false,
+    kwargs...,
+)
+    io = IOBuffer()
+    !header || println(io, "$(indentation_str)$(typeof(m))$((length(info(m)) == 0) ?
+        "" : "\n$(indentation_str)Info: $(info(m))")")
     println(io, "$(outcome(m))")
+    String(take!(io))
 end
 
-function print_model(
-        io::IO,
-        m::FunctionModel;
-        header = true,
-        indentation_str="",
-        kwargs...,
-    )
-    !header || println(io, "$(indentation_str)$(typeof(m))$(length(info(m)) == 0 ? "" : "\n$(indentation_str)Info: $(info(m))")")
+function displaymodel(
+    m::FunctionModel;
+    header = true,
+    indentation_str = "",
+    show_subtree_info = false,
+    kwargs...,
+)
+    io = IOBuffer()
+    !header || println(io, "$(indentation_str)$(typeof(m))$((length(info(m)) == 0) ?
+        "" : "\n$(indentation_str)Info: $(info(m))")")
     println(io, "$(f(m))")
+    String(take!(io))
 end
 
-function print_model(
-        io::IO,
-        m::Rule;
-        header = true,
-        indentation_str="",
-        indentation = default_indentation,
-        depth = 0,
-        max_depth = nothing,
-        kwargs...,
-    )
-    (indentation_list_children, indentation_any_first, indentation_any_space, indentation_last_first, indentation_last_space) = indentation
-    !header || println(io, "$(indentation_str)$(typeof(m))$(length(info(m)) == 0 ? "" : "\n$(indentation_str)Info: $(info(m))")")
+function displaymodel(
+    m::Rule;
+    header = true,
+    indentation_str = "",
+    indentation = default_indentation,
+    depth = 0,
+    max_depth = nothing,
+    show_subtree_info = false,
+    syntaxstring_kwargs = (;),
+    kwargs...,
+)
+    io = IOBuffer()
+    (
+        indentation_list_children,
+        indentation_any_first,
+        indentation_any_space,
+        indentation_last_first,
+        indentation_last_space
+    ) = indentation
+    !header || println(io, "$(indentation_str)$(typeof(m))$((length(info(m)) == 0) ?
+        "" : "\n$(indentation_str)Info: $(info(m))")")
+    ########################################################################################
     if isnothing(max_depth) || depth < max_depth
         pipe = "$(indentation_list_children)"
         # println(io, "$(indentation_str*pipe)$(antecedent(m))")
-        println(io, "$(pipe)$(antecedent(m))")
+        #println(io, "$(pipe)$(antecedent(m))")
+        println(io, "$(pipe)$(syntaxstring(antecedent(m); syntaxstring_kwargs...))")
         pad_str = indentation_str*repeat(" ", length(pipe)-length(indentation_last_space)+1)
         print(io, "$(pad_str*indentation_last_first)$("✔ ")")
-        ind = pad_str*indentation_last_space*repeat(" ", length("✔ ")-length(indentation_last_space)+2)
-        @print_submodel io consequent(m) ind indentation depth max_depth kwargs
+        ind_str = pad_str*indentation_last_space*repeat(" ", length("✔ ")-length(indentation_last_space)+2)
+        subm_str = @_display_submodel consequent(m) ind_str indentation depth max_depth show_subtree_info syntaxstring_kwargs kwargs
+        print(io, subm_str)
     else
         println(io, "[...]")
     end
+    String(take!(io))
 end
 
-function print_model(
-        io::IO,
-        m::Branch;
-        header = true,
-        indentation_str="",
-        indentation = default_indentation,
-        depth = 0,
-        max_depth = nothing,
-        kwargs...,
-    )
-    (indentation_list_children, indentation_any_first, indentation_any_space, indentation_last_first, indentation_last_space) = indentation
-    !header || println(io, "$(indentation_str)$(typeof(m))$(length(info(m)) == 0 ? "" : "\n$(indentation_str)Info: $(info(m))")")
+function displaymodel(
+    m::Branch;
+    header = true,
+    indentation_str = "",
+    indentation = default_indentation,
+    depth = 0,
+    max_depth = nothing,
+    show_subtree_info = false,
+    syntaxstring_kwargs = (;),
+    kwargs...,
+)
+    io = IOBuffer()
+    (
+        indentation_list_children,
+        indentation_any_first,
+        indentation_any_space,
+        indentation_last_first,
+        indentation_last_space
+    ) = indentation
+    !header || println(io, "$(indentation_str)$(typeof(m))$((length(info(m)) == 0) ?
+        "" : "\n$(indentation_str)Info: $(info(m))")")
+    ########################################################################################
     if isnothing(max_depth) || depth < max_depth
         pipe = "$(indentation_list_children) "
-        println(io, "$(pipe)$(antecedent(m))")
-        for (consequent, indentation_flag_space, indentation_flag_first, f) in [(positive_consequent(m), indentation_any_space, indentation_any_first, "✔ "), (negative_consequent(m), indentation_last_space, indentation_last_first, "✘ ")]
+        println(io, "$(pipe)$(syntaxstring(antecedent(m); syntaxstring_kwargs...))")
+        for (consequent, indentation_flag_space, indentation_flag_first, f) in [(posconsequent(m), indentation_any_space, indentation_any_first, "✔ "), (negconsequent(m), indentation_last_space, indentation_last_first, "✘ ")]
             # pad_str = indentation_str*indentation_flag_first**repeat(" ", length(pipe)-length(indentation_flag_first))
             pad_str = "$(indentation_str*indentation_flag_first)$(f)"
             print(io, "$(pad_str)")
-            ind = indentation_str*indentation_flag_space*repeat(" ", length(f))
-            @print_submodel io consequent ind indentation depth max_depth kwargs
+            ind_str = indentation_str*indentation_flag_space*repeat(" ", length(f))
+            subm_str = @_display_submodel consequent ind_str indentation depth max_depth show_subtree_info syntaxstring_kwargs kwargs
+            print(io, subm_str)
         end
     else
         println(io, "[...]")
     end
+    String(take!(io))
 end
 
 
-function print_model(
-        io::IO,
-        m::DecisionList;
-        header = true,
-        indentation_str="",
-        indentation = default_indentation,
-        depth = 0,
-        max_depth = nothing,
-        kwargs...,
-    )
-    (indentation_list_children, indentation_any_first, indentation_any_space, indentation_last_first, indentation_last_space) = indentation
-    !header || println(io, "$(indentation_str)$(typeof(m))$(length(info(m)) == 0 ? "" : "\n$(indentation_str)Info: $(info(m))")")
+function displaymodel(
+    m::DecisionList;
+    header = true,
+    indentation_str = "",
+    indentation = default_indentation,
+    depth = 0,
+    max_depth = nothing,
+    show_subtree_info = false,
+    syntaxstring_kwargs = (;),
+    kwargs...,
+)
+    io = IOBuffer()
+    (
+        indentation_list_children,
+        indentation_any_first,
+        indentation_any_space,
+        indentation_last_first,
+        indentation_last_space
+    ) = indentation
+    !header || println(io, "$(indentation_str)$(typeof(m))$((length(info(m)) == 0) ?
+        "" : "\n$(indentation_str)Info: $(info(m))")")
+    ########################################################################################
     if isnothing(max_depth) || depth < max_depth
         println(io, "$(indentation_list_children)")
-        for (i_rule, rule) in enumerate(rules(m))
+        for (i_rule, rule) in enumerate(rulebase(m))
             # pipe = indentation_any_first
-            pipe = indentation_any_first*"[$(i_rule)/$(length(rules(m)))]┐"
-            println(io, "$(indentation_str*pipe) $(antecedent(rule))")
+            pipe = indentation_any_first*"[$(i_rule)/$(length(rulebase(m)))]┐"
+            println(io, "$(indentation_str*pipe) $(syntaxstring(antecedent(rule); syntaxstring_kwargs...))")
             pad_str = indentation_str*indentation_any_space*repeat(" ", length(pipe)-length(indentation_any_space)-1)
             print(io, "$(pad_str*indentation_last_first)")
-            ind = pad_str*indentation_last_space
-            @print_submodel io consequent(rule) ind indentation depth max_depth kwargs
+            ind_str = pad_str*indentation_last_space
+            subm_str = @_display_submodel consequent(rule) ind_str indentation depth max_depth show_subtree_info syntaxstring_kwargs kwargs
+            print(io, subm_str)
         end
         pipe = indentation_last_first*"$("✘ ")"
         print(io, "$(indentation_str*pipe)")
         # print(io, "$(indentation_str*indentation_last_space*repeat(" ", length(pipe)-length(indentation_last_space)-1)*indentation_last_space)")
-        ind = indentation_str*indentation_last_space*repeat(" ", length(pipe)-length(indentation_last_space)-1)*indentation_last_space
-        # ind = indentation_str*indentation_last_space,
-        @print_submodel io default_consequent(m) ind indentation depth max_depth kwargs
+        ind_str = indentation_str*indentation_last_space*repeat(" ", length(pipe)-length(indentation_last_space)-1)*indentation_last_space
+        # ind_str = indentation_str*indentation_last_space,
+        subm_str = @_display_submodel defaultconsequent(m) ind_str indentation depth max_depth show_subtree_info syntaxstring_kwargs kwargs
+        print(io, subm_str)
     else
         println(io, "[...]")
     end
+    String(take!(io))
 end
 
 
-function print_model(
-        io::IO,
-        m::RuleCascade;
-        header = true,
-        indentation_str="",
-        indentation = default_indentation,
-        depth = 0,
-        max_depth = nothing,
-        kwargs...,
-    )
-    (indentation_list_children, indentation_any_first, indentation_any_space, indentation_last_first, indentation_last_space) = indentation
-    !header || println(io, "$(indentation_str)$(typeof(m))$(length(info(m)) == 0 ? "" : "\n$(indentation_str)Info: $(info(m))")")
+function displaymodel(
+    m::RuleCascade;
+    header = true,
+    indentation_str = "",
+    indentation = default_indentation,
+    depth = 0,
+    max_depth = nothing,
+    show_subtree_info = false,
+    syntaxstring_kwargs = (;),
+    kwargs...,
+)
+    io = IOBuffer()
+    (
+        indentation_list_children,
+        indentation_any_first,
+        indentation_any_space,
+        indentation_last_first,
+        indentation_last_space
+    ) = indentation
+    !header || println(io, "$(indentation_str)$(typeof(m))$((length(info(m)) == 0) ?
+        "" : "\n$(indentation_str)Info: $(info(m))")")
+    ########################################################################################
     if isnothing(max_depth) || depth < max_depth
         pipe = "$(indentation_list_children)"
         # println(io, "$(indentation_str*pipe)⩚("*join(antecedents(m), ", ")*")")
-        println(io, "$(pipe)⩚("*join(antecedents(m), ", ")*")")
+        #println(io, "$(pipe)⩚("*join(antecedents(m), ", ")*")")
+        println(io, "$(pipe)⩚("*join(map(a->syntaxstring(a; syntaxstring_kwargs...), antecedents(m)), ", ")*")")
         pad_str = indentation_str*repeat(" ", length(pipe)-length(indentation_last_space)+1)
         print(io, "$(pad_str*indentation_last_first)$("✔ ")")
-        ind = pad_str*indentation_last_space*repeat(" ", length("✔ ")+1)
-        @print_submodel io consequent(m) ind indentation depth max_depth kwargs
+        ind_str = pad_str*indentation_last_space*repeat(" ", length("✔ ")+1)
+        subm_str = @_display_submodel consequent(m) ind_str indentation depth max_depth show_subtree_info syntaxstring_kwargs kwargs
+        print(io, subm_str)
     else
         println(io, "[...]")
     end
+    String(take!(io))
 end
 
 
-function print_model(
-        io::IO,
-        m::DecisionTree;
-        header = true,
-        indentation_str="",
-        indentation = default_indentation,
-        depth = 0,
-        kwargs...
-    )
-    (indentation_list_children, indentation_any_first, indentation_any_space, indentation_last_first, indentation_last_space) = indentation
-    !header || println(io, "$(indentation_str)$(typeof(m))$(length(info(m)) == 0 ? "" : "\n$(indentation_str)Info: $(info(m))")")
-    print_model(io, root(m); kwargs...)
+function displaymodel(
+    m::DecisionTree;
+    header = true,
+    indentation_str = "",
+    indentation = default_indentation,
+    depth = 0,
+    max_depth = nothing,
+    show_subtree_info = false,
+    syntaxstring_kwargs = (;),
+    kwargs...,
+)
+    io = IOBuffer()
+    (
+        indentation_list_children,
+        indentation_any_first,
+        indentation_any_space,
+        indentation_last_first,
+        indentation_last_space
+    ) = indentation
+    !header || println(io, "$(indentation_str)$(typeof(m))$((length(info(m)) == 0) ?
+        "" : "\n$(indentation_str)Info: $(info(m))")")
+    ########################################################################################
+    subm_str = @_display_submodel root(m) indentation_str indentation depth max_depth show_subtree_info syntaxstring_kwargs kwargs
+    print(io, subm_str)
+    String(take!(io))
 end
 
-function print_model(
-        io::IO,
-        m::MixedSymbolicModel;
-        header = true,
-        indentation_str="",
-        indentation = default_indentation,
-        depth = 0,
-        kwargs...
-    )
-    (indentation_list_children, indentation_any_first, indentation_any_space, indentation_last_first, indentation_last_space) = indentation
-    !header || println(io, "$(indentation_str)$(typeof(m))$(length(info(m)) == 0 ? "" : "\n$(indentation_str)Info: $(info(m))")")
-    print_model(io, root(m); kwargs...)
+function displaymodel(
+    m::DecisionForest;
+    header = true,
+    indentation_str = "",
+    indentation = default_indentation,
+    depth = 0,
+    max_depth = nothing,
+    show_subtree_info = false,
+    syntaxstring_kwargs = (;),
+    kwargs...,
+)
+    io = IOBuffer()
+    (
+        indentation_list_children,
+        indentation_any_first,
+        indentation_any_space,
+        indentation_last_first,
+        indentation_last_space
+    ) = indentation
+    !header || println(io, "$(indentation_str)$(typeof(m))$((length(info(m)) == 0) ?
+        "" : "\n$(indentation_str)Info: $(info(m))")")
+    ########################################################################################
+    for tree in trees(m)
+        subm_str = @_display_submodel tree indentation_str indentation depth max_depth show_subtree_info syntaxstring_kwargs kwargs
+        print(io, subm_str)
+    end
+    String(take!(io))
 end
 
+function displaymodel(
+    m::MixedSymbolicModel;
+    header = true,
+    indentation_str = "",
+    indentation = default_indentation,
+    depth = 0,
+    max_depth = nothing,
+    show_subtree_info = false,
+    syntaxstring_kwargs = (;),
+    kwargs...,
+)
+    io = IOBuffer()
+    (
+        indentation_list_children,
+        indentation_any_first,
+        indentation_any_space,
+        indentation_last_first,
+        indentation_last_space
+    ) = indentation
+    !header || println(io, "$(indentation_str)$(typeof(m))$((length(info(m)) == 0) ?
+        "" : "\n$(indentation_str)Info: $(info(m))")")
+    ########################################################################################
+    subm_str = @_display_submodel root(m) indentation_str indentation depth max_depth show_subtree_info syntaxstring_kwargs kwargs
+    print(io, subm_str)
+    String(take!(io))
+end
