@@ -13,9 +13,6 @@ usesmemo(fwd_rs::AbstractUniformFullDimensionalRelationalSupport) = Nothing <: B
 capacity(fwd_rs::AbstractUniformFullDimensionalRelationalSupport) =
     error("Please, provide method capacity(...).")
 nmemoizedvalues(support::AbstractUniformFullDimensionalRelationalSupport) = (capacity(support) - count(isnothing, support.d))
-function nonnothingshare(support::AbstractUniformFullDimensionalRelationalSupport)
-    (isinf(capacity(support)) ? NaN : nmemoizedvalues(support)/capacity(support))
-end
 
 ############################################################################################
 # FWD relational support for uniform full dimensional frames:

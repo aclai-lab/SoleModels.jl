@@ -16,6 +16,10 @@
 # remove: abstract type ExplicitModalDatasetWithSupport{V,W,FR} <: ActiveFeaturedDataset{V,W,FR,FT} end
 # And an abstract type for support lookup tables
 abstract type AbstractSupport{V,W} end
+
+function nonnothingshare(support::AbstractSupport)
+    (isinf(capacity(support)) ? NaN : nmemoizedvalues(support)/capacity(support))
+end
 # 
 # In general, one can use lookup (with or without memoization) for any decision, even the
 #  more complex ones, for example:
