@@ -747,7 +747,7 @@ function apply(
     check_kwargs::NamedTuple = (;),
     kwargs...
 )
-    if check_antecedent(m, d, i_sample, check_args...; check_kwargs...)
+    if check_antecedent(m, d, i_sample, check_args...; check_kwargs...) == true
         apply(consequent(m), d, i_sample;
             check_args = check_args,
             check_kwargs = check_kwargs,
@@ -898,7 +898,7 @@ function apply(
     check_kwargs::NamedTuple = (;),
     kwargs...
 ) where {O}
-    if check_antecedent(m, d, i_sample, check_args...; check_kwargs...)
+    if check_antecedent(m, d, i_sample, check_args...; check_kwargs...) == true
         apply(posconsequent(m), d, i_sample;
             check_args = check_args,
             check_kwargs = check_kwargs,
@@ -1055,124 +1055,6 @@ end
 ############################################################################################
 
 """
-    struct RuleCascade{
-        O,
-        C<:AbstractBooleanCondition,
-        FFM<:FinalModel
-    } <: ConstrainedModel{O,FFM}
-        antecedents::Vector{<:C}
-        consequent::FFM
-        info::NamedTuple
-    end
-
-A `RuleCascade` is a symbolic model that operates as a nested structure of IF-THEN blocks:
-
-    IF (antecedent_1) THEN
-        IF (antecedent_2) THEN
-            ...
-                IF (antecedent_n) THEN
-                    (consequent)
-                END
-            ...
-        END
-    END
-
-where the antecedents are conditions to be tested and the consequent is the feasible
-local outcome of the block.
-
-Note that `FM` refers to the Feasible Models (`FM`) allowed in the model's sub-tree.
-
-See also [`Rule`](@ref), [`ConstrainedModel`](@ref), [`DecisionList`](@ref), [`AbstractModel`](@ref).
-"""
-struct RuleCascade{
-    O,
-    C<:AbstractBooleanCondition,
-    FFM<:FinalModel
-} <: ConstrainedModel{O,FFM}
-    antecedents::Vector{<:C}
-    consequent::FFM
-    info::NamedTuple
-
-    function RuleCascade(
-        antecedents::Vector,
-        consequent::Any,
-        info::NamedTuple = (;),
-    )
-        antecedents = convert.(AbstractBooleanCondition, antecedents)
-        C = SoleBase._typejoin(typeof.(antecedents)...)
-        consequent = wrap(consequent)
-        O = outcometype(consequent)
-        FFM = typeintersect(propagate_feasiblemodels(consequent), FinalModel{<:O})
-        check_model_constraints(RuleCascade{O}, typeof(consequent), FFM, O)
-        new{O,C,FFM}(antecedents, consequent, info)
-    end
-
-    function RuleCascade(
-        consequent::Any,
-        info::NamedTuple = (;),
-    )
-        antecedents = [TrueCondition()]
-        C = SoleBase._typejoin(typeof.(antecedents)...)
-        consequent = wrap(consequent)
-        O = outcometype(consequent)
-        FFM = typeintersect(propagate_feasiblemodels(consequent), FinalModel{<:O})
-        check_model_constraints(RuleCascade{O}, typeof(consequent), FFM, O)
-        new{O,C,FFM}(antecedents, consequent, info)
-    end
-end
-
-antecedents(m::RuleCascade) = m.antecedents
-consequent(m::RuleCascade) = m.consequent
-
-conditiontype(::Type{M}) where {M<:RuleCascade{O,C}} where {O,C} = C
-conditiontype(m::RuleCascade) = conditiontype(typeof(m))
-
-issymbolic(::RuleCascade) = true
-
-function apply(
-    m::RuleCascade,
-    i::AbstractInterpretation;
-    check_args::Tuple = (),
-    check_kwargs::NamedTuple = (;),
-    kwargs...
-)
-    for antecedent in antecedents(m)
-        if ! check(antecedent, i, check_args...; check_kwargs...)
-            return nothing
-        end
-    end
-    consequent(m)
-end
-
-# Convert a rule cascade into a rule by joining the antecedents.
-function convert(
-    ::Type{R},
-    m::RuleCascade{O,C}
-) where {R<:Rule,O,C<:Union{TrueCondition,LogicalTruthCondition}}
-    function _antecedent(m::Vector{<:AbstractLogicalBooleanCondition})
-        if length(m) == 0
-            return SyntaxTree(⊤)
-        elseif length(m) == 1
-            return formula(m[1])
-        else
-            return ∧((formula.(m))...)
-        end
-    end
-
-    if C isa TrueCondition
-        return R(consequent(m), info(m))
-    else
-        cond = LogicalTruthCondition(_antecedent(antecedents(m)))
-        return R(cond, consequent(m), info(m))
-    end
-end
-
-Base.length(rc::RuleCascade) = length(antecedents(rc))
-Base.getindex(rc::RuleCascade, idxs) = RuleCascade(antecedents(rc)[idxs], consequent(rc))
-
-############################################################################################
-
-"""
 A `DecisionTree` is a symbolic model that operates as a nested structure of
 IF-THEN-ELSE blocks:
 
@@ -1220,7 +1102,7 @@ struct DecisionTree{
     info::NamedTuple
 
     function DecisionTree(
-        root::Union{FFM,Branch{O,C,<:Union{Branch{<:O,<:C},FFM}}},
+        root::Union{FFM,Branch{O,C, Union{<:Branch{<:O,<:C}, <:FFM}}},
         info::NamedTuple = (;),
     ) where {O, C<:AbstractBooleanCondition, FFM<:FinalModel{<:O}}
         new{O,C,FFM}(root, info)
@@ -1338,7 +1220,7 @@ where the antecedents are conditinos and the consequents are the feasible
 local outcomes of the block.
 
 In Sole.jl, this logic can implemented using `ConstrainedModel`s such as
-`Rule`s, `Branch`s, `RuleCascade`s, `DecisionList`s, `DecisionTree`s, and the be wrapped into
+`Rule`s, `Branch`s, `DecisionList`s, `DecisionTree`s, and the be wrapped into
 a `MixedSymbolicModel`:
 
     struct MixedSymbolicModel{O,FM<:AbstractModel} <: ConstrainedModel{O,FM}
