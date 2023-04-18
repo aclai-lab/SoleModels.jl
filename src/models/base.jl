@@ -695,6 +695,16 @@ consequent(m::Rule) = m.consequent
 conditiontype(::Type{M}) where {M<:Rule{O,C}} where {O,C} = C
 conditiontype(m::Rule) = conditiontype(typeof(m))
 
+Base.length(m::Rule) = length(formula(antecedent(m)))
+Base.getindex(m::Rule, idxs) = Rule(
+    LogicalTruthCondition(begin
+        f = formula(antecedent(m))
+        ants = f isa LeftmostLinearForm ? children(f) : f
+        length(idxs) == 1 ? ants[idxs] : LeftmostConjunctiveForm(ants[idxs])
+    end),
+    consequent(m)
+)
+
 issymbolic(::Rule) = true
 
 """
