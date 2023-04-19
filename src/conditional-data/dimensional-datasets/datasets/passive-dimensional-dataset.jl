@@ -48,7 +48,10 @@ struct PassiveDimensionalDataset{
     function PassiveDimensionalDataset{N,W,DOM}(
         d::DOM,
     ) where {N,W<:AbstractWorld,DOM<:AbstractDimensionalDataset}
-        PassiveDimensionalDataset{N,W,DOM,_frametype(d)}(d)
+        FR = _frametype(d)
+        _W = worldtype(FR)
+        @assert W <: _W "This should hold: $(W) <: $(_W)"
+        PassiveDimensionalDataset{N,_W,DOM,FR}(d)
     end
 
     function PassiveDimensionalDataset{N,W}(
@@ -99,5 +102,5 @@ frame(X::PassiveDimensionalDataset, i_sample) = _frame(X.d, i_sample)
 
 ############################################################################################
 
-_frametype(X::UniformDimensionalDataset) = typeof(FullDimensionalFrame(channel_size(X)))
-_frame(X::UniformDimensionalDataset, i_sample) = FullDimensionalFrame(channel_size(X))
+_frametype(X::Union{UniformDimensionalDataset,AbstractArray}) = typeof(FullDimensionalFrame(channel_size(X))) # TODO dirty but works
+_frame(X::Union{UniformDimensionalDataset,AbstractArray}, i_sample) = FullDimensionalFrame(channel_size(X)) # TODO dirty but works

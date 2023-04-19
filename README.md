@@ -1,4 +1,4 @@
-# SoleModels.jl – Symbolic Learning Models
+# *SoleModels.jl* – Symbolic Learning Models
 
 [![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://aclai-lab.github.io/SoleModels.jl/stable)
 [![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://aclai-lab.github.io/SoleModels.jl/dev)
@@ -10,7 +10,7 @@
 
 ## In a nutshell
 
-SoleModels.jl defines the building blocks of *symbolic* modeling and learning.
+*SoleModels.jl* defines the building blocks of *symbolic* modeling and learning.
 It features:
 - Definitions for symbolic models (decision trees/forests, rules, etc.);
 - Optimized data structures, useful when learning models from datasets;
@@ -31,11 +31,11 @@ These definitions provide a unified base for implementing symbolic algorithms, s
 
 Remember:
 - An antecedent is any *condition* that can be checked on a machine learning *instance*, yielding a `true/false` value;
-- A consequent is... anything you want, really, even another model (spoiler: a Branch with Branch consequents is a Decision Tree ;)).
+- A consequent is... anything you want, really, even another model (spoiler: a Branch with Branch consequents is a Decision Tree 😉).
 
 More specifically, antecedents can be *logical formulas* and, in such case, the symbolic models
 are can be applied to *logical interpretations*.
-For more information, refer to the underlying logical layer: [SoleLogics.jl](https://github.com/aclai-lab/SoleLogics.jl).
+For more information, refer to [*SoleLogics.jl*](https://github.com/aclai-lab/SoleLogics.jl), the underlying logical layer.
 
 ### Other noteworthy models:
 
@@ -49,7 +49,7 @@ For more information, refer to the underlying logical layer: [SoleLogics.jl](htt
 Learning logical models (that is, models with logical formulas as antecedents)
 [often](https://scholar.google.com/scholar?q=Multi-Models+and+Multi-Formulas+Finite+Model+Checking+for+Modal+Logic+Formulas+Induction.)
 requires performing [model checking](https://en.wikipedia.org/wiki/Model_checking) many times.
-SoleModels.jl provides a set of structures for representing [logical datasets](https://github.com/aclai-lab/SoleLogics.jl#interpretation-sets),
+*SoleModels.jl* provides a set of structures for representing [logical datasets](https://github.com/aclai-lab/SoleLogics.jl#interpretation-sets),
 specifically optimized for multiple model checking operations.
 
 <!-- TODO explain -->
@@ -58,5 +58,5 @@ specifically optimized for multiple model checking operations.
 
 The package is developed by the [ACLAI Lab](https://aclai.unife.it/en/) @ University of Ferrara.
 
-SoleModels.jl mainly builds upon [SoleLogics.jl](https://github.com/aclai-lab/SoleLogics.jl) and [SoleData.jl](https://github.com/aclai-lab/SoleData.jl), 
-and it is the core module of [Sole.jl](https://pretalx.com/juliacon2023/talk/review/7LY9ZBBJQYVVLJFFSZMV9JCCMMTQJXPK), an open-source framework for symbolic machine learning.
+*SoleModels.jl* mainly builds upon [*SoleLogics.jl*](https://github.com/aclai-lab/SoleLogics.jl) and [*SoleData.jl*](https://github.com/aclai-lab/SoleData.jl), 
+and it is the core module of [*Sole.jl*](https://github.com/aclai-lab/Sole.jl), an open-source framework for symbolic machine learning.
