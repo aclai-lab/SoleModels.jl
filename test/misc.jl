@@ -812,14 +812,14 @@ unroll_rules_cascade(branch_r)
 @test convert(RuleCascade,r1_string) isa RuleCascade
 displaymodel.(io,convert(RuleCascade,r1_string))
 @test String(take!(io)) == """
-RuleCascade{String, LogicalTruthCondition{SyntaxTree{Union{SoleLogics.NamedOperator{:∧}, Proposition{String}}, SoleLogics.NamedOperator{:∧}}}, ConstantModel{String}}
+RuleCascade{String, LogicalTruthCondition{SyntaxTree{SoleLogics.NamedOperator{:∧}}}, ConstantModel{String}}
 ┐⩚(r ∧ s ∧ t)
 └ ✔ YES
 """
 @test_nowarn convert(RuleCascade,r2_string)
 displaymodel.(io,convert(RuleCascade,r2_string))
 @test String(take!(io)) == """
-RuleCascade{String, LogicalTruthCondition{SyntaxTree{Union{SoleLogics.NamedOperator{:¬}, Proposition{String}}, SoleLogics.NamedOperator{:¬}}}, ConstantModel{String}}
+RuleCascade{String, LogicalTruthCondition{SyntaxTree{Proposition{String}}, SoleLogics.NamedOperator{:¬}}}, ConstantModel{String}}
 ┐⩚(¬(r))
 └ ✔ YES
 """

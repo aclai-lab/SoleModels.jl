@@ -50,7 +50,7 @@ struct PassiveDimensionalDataset{
     ) where {N,W<:AbstractWorld,DOM<:AbstractDimensionalDataset}
         FR = _frametype(d)
         _W = worldtype(FR)
-        @assert W <: _W
+        @assert W <: _W "This should hold: $(W) <: $(_W)"
         PassiveDimensionalDataset{N,_W,DOM,FR}(d)
     end
 
