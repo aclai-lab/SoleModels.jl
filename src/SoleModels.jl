@@ -41,6 +41,8 @@ include("models/symbolic-utils.jl")
 
 include("machine-learning.jl")
 
+include("models/linear-forms.jl")
+
 include("models/rule-evaluation.jl")
 
 # TODO avoid?

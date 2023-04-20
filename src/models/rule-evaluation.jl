@@ -82,7 +82,7 @@ See also
 """
 rule_length(rule::Rule{O,<:TrueCondition}) where {O} = 1
 function rule_length(rule::Rule{O,C}) where {O,C<:LogicalTruthCondition}
-    npropositions(formula(antecedent(rule)))
+    npropositions(antecedent(rule))
 end
 
 """

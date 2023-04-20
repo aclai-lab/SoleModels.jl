@@ -157,7 +157,7 @@ immediate_rules(m::AbstractModel{O} where {O})::Rule{<:O} =
         end
     end)
 
-immediate_rules(m::FinalModel) = [Rule(⊤, m)]
+immediate_rules(m::FinalModel) = [Rule(TrueCondition, m)]
 
 immediate_rules(m::Rule) = [m]
 
@@ -173,7 +173,7 @@ function immediate_rules(m::DecisionList{O,FM}) where {O,FM}
         rule = advance_formula(rule, assumed_formula)
         assumed_formula = advance_formula(SoleLogics.NEGATION(antecedent(rule)), assumed_formula)
     end
-    default_antecedent = isnothing(assumed_formula) ? ⊤ : assumed_formula
+    default_antecedent = isnothing(assumed_formula) ? TrueCondition : assumed_formula
     push!(normalized_rules, Rule{O,FM}(default_antecedent, defaultconsequent(m)))
     normalized_rules
 end
@@ -187,7 +187,7 @@ immediate_rules(m::MixedSymbolicModel) = immediate_rules(root(m))
 ############################################################################################
 
 """
-    unroll_rules(m::AbstractModel; tree::Bool=false)
+    unroll_rules(m::AbstractModel; tree::Bool = false)
 
 This function extracts the behavior of a symbolic model and represents it as a
 set of mutually exclusive (and jointly exaustive, if the model is closed) rules,
@@ -262,72 +262,38 @@ end
 
 unroll_rules(m::FinalModel; kwargs...) = [m]
 
-unroll_rules(m::Rule; tree::Bool=false) = [ begin
-   !tree ? m : Rule(
-        LogicalTruthCondition(tree(formula(antecedent(m)))),
-        consequent(m),
-        info(m)
-    )
-end ]
+function unroll_rules(
+    m::Rule{O,<:TrueCondition},
+)
+    [m]
+end
 
-function unroll_rules(m::Branch{O,<:TrueCondition}; kwargs...) where {O}
+function unroll_rules(
+    m::Rule{O,<:LogicalTruthCondition};
+    tree::Bool = false
+) where {O}
+    [begin
+       !tree ? m : Rule{O}(
+            LogicalTruthCondition(tree(formula(m))),
+            consequent(m),
+            info(m)
+        )
+    end]
+end
+
+# TODO warning we loose the info
+function unroll_rules
+    m::Branch{O,<:TrueCondition};
+    kwargs...,
+) where {O}
     pos_rules = begin
         submodels = unroll_rules(posconsequent(m); kwargs...)
-        submodels isa Vector{<:FinalModel} ? [Rule(fm) for fm in submodels] : submodels
+        submodels isa Vector{<:FinalModel} ? [Rule{O,TrueCondition}(fm) for fm in submodels] : submodels
     end
 
     neg_rules = begin
         submodels = unroll_rules(negconsequent(m); kwargs...)
-        submodels isa Vector{<:FinalModel} ? [Rule(fm) for fm in submodels] : submodels
-    end
-
-    return [
-        pos_rules...,
-        neg_rules...,
-    ]
-end
-
-function unroll_rules(m::Branch{O,<:LogicalTruthCondition}; tree::Bool=false) where {O}
-    pos_rules = begin
-        submodels = unroll_rules(posconsequent(m); tree=tree)
-        ant = tree(formula(antecedent(m)))
-
-        map(subm-> begin
-            if subm isa FinalModel
-                Rule(LogicalTruthCondition(ant), subm)
-            else
-                f = formula(antecedent(subm))
-                subants = f isa LeftmostLinearForm ? children(f) : [f]
-                Rule(
-                    LogicalTruthCondition( begin
-                        lf = LeftmostConjunctiveForm([ant, subants...])
-                        tree ? tree(lf) : lf
-                    end ),
-                    consequent(subm)
-                )
-            end
-        end, submodels)
-    end
-
-    neg_rules = begin
-        submodels = unroll_rules(negconsequent(m); tree=tree)
-        ant = ¬(tree(formula(antecedent(m))))
-
-        map(subm-> begin
-            if subm isa FinalModel
-                Rule(LogicalTruthCondition(ant), subm)
-            else
-                f = formula(antecedent(subm))
-                subants = f isa LeftmostLinearForm ? children(f) : [f]
-                Rule(
-                    LogicalTruthCondition( begin
-                        lf = LeftmostConjunctiveForm([ant, subants...])
-                        tree ? tree(lf) : lf
-                    end ),
-                    consequent(subm)
-                )
-            end
-        end, submodels)
+        submodels isa Vector{<:FinalModel} ? [Rule{O,TrueCondition}(fm) for fm in submodels] : submodels
     end
 
     return [
@@ -337,13 +303,60 @@ function unroll_rules(m::Branch{O,<:LogicalTruthCondition}; tree::Bool=false) wh
 end
 
 function unroll_rules(
-    m::DecisionList{O,<:Union{TrueCondition,LogicalTruthCondition}};
+    m::Branch{O,<:LogicalTruthCondition};
+    tree::Bool = false,
     kwargs...,
 ) where {O}
-    [
-        reduce(vcat,[unroll_rules(rule; kwargs...) for rule in rulebase(m)])...,
-        Rule(unroll_rules(defaultconsequent(m); kwargs...)...),
+    pos_rules = begin
+        submodels = unroll_rules(posconsequent(m); tree = tree, kwargs...)
+        ant = tree(formula(m))
+
+        map(subm-> begin
+            if subm isa FinalModel
+                Rule(LogicalTruthCondition(ant), subm)
+            else
+                f = formula(subm)
+                subants = f isa LeftmostLinearForm ? children(f) : [f]
+                Rule(
+                    LogicalTruthCondition( begin
+                        lf = LeftmostConjunctiveForm([ant, subants...])
+                        tree ? tree(lf) : lf
+                    end ),
+                    consequent(subm)
+                )
+            end
+        end, submodels)
+    end
+
+    neg_rules = begin
+        submodels = unroll_rules(negconsequent(m); tree = tree, kwargs...)
+        ant = ¬(tree(formula(m)))
+
+        map(subm-> begin
+            if subm isa FinalModel
+                Rule(LogicalTruthCondition(ant), subm)
+            else
+                f = formula(subm)
+                subants = f isa LeftmostLinearForm ? children(f) : [f]
+                Rule(
+                    LogicalTruthCondition( begin
+                        lf = LeftmostConjunctiveForm([ant, subants...])
+                        tree ? tree(lf) : lf
+                    end ),
+                    consequent(subm)
+                )
+            end
+        end, submodels)
+    end
+
+    return [
+        pos_rules...,
+        neg_rules...,
     ]
+end
+
+function unroll_rules(m::DecisionList; kwargs...)
+    [unroll_rules(rule; kwargs...) for rule in immediate_rules(m)]
 end
 
 unroll_rules(m::DecisionTree; kwargs...) = unroll_rules(root(m); kwargs...)
