@@ -942,6 +942,11 @@ function apply(
     out
 end
 
+# Helper
+function formula(m::Branch{O,<:Union{LogicalTruthCondition,TrueCondition}}) where {O}
+    formula(antecedent(m))
+end
+
 ############################################################################################
 
 """

@@ -263,17 +263,18 @@ end
 unroll_rules(m::FinalModel; kwargs...) = [m]
 
 function unroll_rules(
-    m::Rule{O,<:TrueCondition},
-)
+    m::Rule{O,<:TrueCondition};
+    kwargs...,
+) where {O}
     [m]
 end
 
 function unroll_rules(
     m::Rule{O,<:LogicalTruthCondition};
-    tree::Bool = false
+    syntaxtree::Bool = false
 ) where {O}
     [begin
-       !tree ? m : Rule{O}(
+       !syntaxtree ? m : Rule{O}(
             LogicalTruthCondition(tree(formula(m))),
             consequent(m),
             info(m)
@@ -282,7 +283,7 @@ function unroll_rules(
 end
 
 # TODO warning we loose the info
-function unroll_rules
+function unroll_rules(
     m::Branch{O,<:TrueCondition};
     kwargs...,
 ) where {O}
@@ -304,11 +305,11 @@ end
 
 function unroll_rules(
     m::Branch{O,<:LogicalTruthCondition};
-    tree::Bool = false,
+    syntaxtree::Bool = false,
     kwargs...,
 ) where {O}
     pos_rules = begin
-        submodels = unroll_rules(posconsequent(m); tree = tree, kwargs...)
+        submodels = unroll_rules(posconsequent(m); syntaxtree = syntaxtree, kwargs...)
         ant = tree(formula(m))
 
         map(subm-> begin
@@ -320,7 +321,7 @@ function unroll_rules(
                 Rule(
                     LogicalTruthCondition( begin
                         lf = LeftmostConjunctiveForm([ant, subants...])
-                        tree ? tree(lf) : lf
+                        syntaxtree ? tree(lf) : lf
                     end ),
                     consequent(subm)
                 )
@@ -329,7 +330,7 @@ function unroll_rules(
     end
 
     neg_rules = begin
-        submodels = unroll_rules(negconsequent(m); tree = tree, kwargs...)
+        submodels = unroll_rules(negconsequent(m); syntaxtree = syntaxtree, kwargs...)
         ant = ¬(tree(formula(m)))
 
         map(subm-> begin
@@ -341,7 +342,7 @@ function unroll_rules(
                 Rule(
                     LogicalTruthCondition( begin
                         lf = LeftmostConjunctiveForm([ant, subants...])
-                        tree ? tree(lf) : lf
+                        syntaxtree ? tree(lf) : lf
                     end ),
                     consequent(subm)
                 )
