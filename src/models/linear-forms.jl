@@ -1,6 +1,7 @@
+using SoleLogics: LeftmostLinearForm, LeftmostConjunctiveForm, LeftmostDisjunctiveForm
 
 # Helpers
-function nconjuncts(m::Rule{O,<:LogicalTruthCondition{<:LeftmostConjunctiveForm}}) where {O}
+function conjuncts(m::Rule{O,<:LogicalTruthCondition{<:LeftmostConjunctiveForm}}) where {O}
     children(formula(m))
 end
 function nconjuncts(m::Rule{O,<:LogicalTruthCondition{<:LeftmostConjunctiveForm}}) where {O}
@@ -12,9 +13,11 @@ end
 function ndisjuncts(m::Rule{O,<:LogicalTruthCondition{<:LeftmostDisjunctiveForm}}) where {O}
     nchildren(formula(m))
 end
+
+#=
 function Base.getindex(
     m::Rule{O,C},
-    idxs,
+    idxs::AbstractVector{<:Integer},
 ) where {O,C<:LogicalTruthCondition{SS},SS<:LeftmostLinearForm}
     Rule{O,C}(
         LogicalTruthCondition{SS}(begin
@@ -24,3 +27,7 @@ function Base.getindex(
         consequent(m)
     )
 end
+Base.getindex(m::Rule{O,C}, args...) where {O,C<:TrueCondition} = m
+
+Base.getindex(m::Branch, args...) = Base.getindex(formula(m), args...)
+=#
