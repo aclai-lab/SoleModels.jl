@@ -160,10 +160,6 @@ bmodel_mixed_number = @test_nowarn Branch(phi, rmodel_number, dlmodel)
 bmodel_2 = @test_nowarn Branch(phi,(dlmodel,bmodel))
 @test_nowarn printmodel(io, bmodel_2);
 
-rcmodel = RuleCascade([phi,phi,phi], cmodel_integer)
-@test_nowarn printmodel(io, Branch(phi, rcmodel, bmodel_2));
-
-
 branch_q = @test_nowarn Branch(formula_q, ("yes", "no"))
 branch_s = @test_nowarn Branch(formula_s, ("yes", "no"))
 branch_r0 = @test_nowarn Branch(formula_r, (branch_s, "yes"))

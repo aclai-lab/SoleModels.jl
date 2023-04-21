@@ -4,8 +4,8 @@ using SoleBase
 using SoleData
 using SoleLogics
 using SoleLogics: AbstractInterpretation, AbstractInterpretationSet
-using SoleLogics: AbstractSyntaxToken
-using SoleLogics: AbstractFormula, Formula
+using SoleLogics: AbstractSyntaxToken, LeftmostConjunctiveForm, LeftmostLinearForm
+using SoleLogics: AbstractFormula, Formula, synstruct
 using SoleLogics: ⊤, ¬, ∧
 
 using FunctionWrappers: FunctionWrapper
@@ -23,8 +23,6 @@ export posconsequent, negconsequent
 export DecisionList
 export rulebase, defaultconsequent
 
-export RuleCascade # TODO remove
-
 export DecisionTree
 export root
 
@@ -37,11 +35,13 @@ export printmodel, displaymodel
 include("models/print.jl")
 
 # TODO export?
-export immediate_submodels, unroll_rules, immediate_rules, unroll_rules_cascade
+export immediate_submodels, unroll_rules, immediate_rules
 
 include("models/symbolic-utils.jl")
 
 include("machine-learning.jl")
+
+include("models/linear-forms.jl")
 
 include("models/rule-evaluation.jl")
 
