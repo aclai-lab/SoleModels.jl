@@ -29,7 +29,7 @@ end
 
 ############################################################################################
 
-@inline function onestep_accessible_aggregation
+@inline function onestep_accessible_aggregation(
     X::DimensionalFeaturedDataset{VV,N,W},
     i_sample::Integer,
     w::W,
@@ -40,7 +40,7 @@ end
 ) where {VV,N,V<:VV,W<:AbstractWorld}
     onestep_accessible_aggregation(domain(X), i_sample, w, r, f, aggr, args...)
 end
-@inline function onestep_accessible_aggregation
+@inline function onestep_accessible_aggregation(
     X::DimensionalFeaturedDataset{VV,N,W},
     i_sample::Integer,
     r::GlobalRel,

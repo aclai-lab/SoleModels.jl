@@ -4,7 +4,7 @@ using SoleBase
 using SoleData
 using SoleLogics
 using SoleLogics: AbstractInterpretation, AbstractInterpretationSet
-using SoleLogics: AbstractSyntaxToken, LeftmostConjunctiveForm, LeftmostLinearForm
+using SoleLogics: AbstractSyntaxToken
 using SoleLogics: AbstractFormula, Formula, synstruct
 using SoleLogics: ⊤, ¬, ∧
 
