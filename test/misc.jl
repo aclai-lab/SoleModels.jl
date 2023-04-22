@@ -543,9 +543,9 @@ YES
 @test join(displaymodel.(unroll_rules(d1_string); header = false)) == """
 ┐(r ∧ s) ∧ t
 └ ✔ YES
-┐¬(r)
+┐(¬((r ∧ s) ∧ t)) ∧ (¬(r))
 └ ✔ YES
-┐⊤
+┐(¬((r ∧ s) ∧ t)) ∧ (¬((¬((r ∧ s) ∧ t)) ∧ (¬(r))))
 └ ✔ YES
 """
 

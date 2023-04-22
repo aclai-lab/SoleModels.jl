@@ -1112,7 +1112,7 @@ struct DecisionTree{
     info::NamedTuple
 
     function DecisionTree(
-        root::Union{FFM,Branch{O,C,<:Union{Branch{<:O,C2},FFM}}},
+        root::Union{FFM,Branch{O,C,Union{Branch{<:O,C2},FFM}}},
         info::NamedTuple = (;),
     ) where {O, C<:AbstractBooleanCondition, C2<:C, FFM<:FinalModel{<:O}}
         new{O,C,FFM}(root, info)
@@ -1142,12 +1142,10 @@ end
 root(m::DecisionTree) = m.root
 
 conditiontype(::Type{M}) where {M<:DecisionTree{O,C}} where {O,C} = C
+conditiontype(::Type{M}) where {M<:DecisionTree{O,C,FFM}} where {O,C,FFM} = C
 conditiontype(m::DecisionTree) = conditiontype(typeof(m))
 
 issymbolic(::DecisionTree) = true
-
-conditiontype(::Type{M}) where {M<:DecisionTree{O,C,FFM}} where {O,C,FFM} = C
-conditiontype(m::DecisionTree) = conditiontype(typeof(m))
 
 isopen(::DecisionTree) = false
 

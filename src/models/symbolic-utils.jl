@@ -134,8 +134,8 @@ _submodels(m::AbstractModel) = [m, Iterators.flatten(_submodels.(immediate_submo
 advance_formula(f::AbstractFormula, assumed_formula::Union{Nothing,AbstractFormula}) =
     isnothing(assumed_formula) ? f : ∧(assumed_formula, f)
 
-advance_formula(r::R where {R<:Rule}, assumed_formula::Union{Nothing,AbstractFormula}) =
-    R(advance_formula(antecedent(r), assumed_formula), consequent(r), info(r))
+advance_formula(r::Rule, assumed_formula::Union{Nothing,AbstractFormula}) =
+    Rule(LogicalTruthCondition(advance_formula(formula(r), assumed_formula)), consequent(r), info(r))
 
 ############################################################################################
 ############################################################################################
@@ -166,15 +166,16 @@ immediate_rules(m::Branch{O,FM}) where {O,FM} = [
     Rule{O,FM}(SoleLogics.NEGATION(antecedent(m)), negconsequent(m)),
 ]
 
-function immediate_rules(m::DecisionList{O,FM}) where {O,FM}
+function immediate_rules(m::DecisionList{O,C,FM}) where {O,C,FM}
     assumed_formula = nothing
-    normalized_rules = Vector{eltype(rulebase(m))}[]
+    normalized_rules = []
     for rule in rulebase(m)
         rule = advance_formula(rule, assumed_formula)
-        assumed_formula = advance_formula(SoleLogics.NEGATION(antecedent(rule)), assumed_formula)
+        push!(normalized_rules, rule)
+        assumed_formula = advance_formula(SoleLogics.NEGATION(formula(rule)), assumed_formula)
     end
-    default_antecedent = isnothing(assumed_formula) ? TrueCondition : assumed_formula
-    push!(normalized_rules, Rule{O,FM}(default_antecedent, defaultconsequent(m)))
+    default_antecedent = isnothing(assumed_formula) ? TrueCondition : LogicalTruthCondition(assumed_formula)
+    push!(normalized_rules, Rule(default_antecedent, defaultconsequent(m)))
     normalized_rules
 end
 
@@ -357,7 +358,7 @@ function unroll_rules(
 end
 
 function unroll_rules(m::DecisionList; kwargs...)
-    [unroll_rules(rule; kwargs...) for rule in immediate_rules(m)]
+    reduce(vcat,[unroll_rules(rule; kwargs...) for rule in immediate_rules(m)])
 end
 
 unroll_rules(m::DecisionTree; kwargs...) = unroll_rules(root(m); kwargs...)
