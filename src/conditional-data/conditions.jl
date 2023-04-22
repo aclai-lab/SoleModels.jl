@@ -71,7 +71,6 @@ end
 metacond(c::FeatCondition) = c.metacond
 threshold(c::FeatCondition) = c.a
 
-# TODO fix: here, I'm assuming that metacondition isa FeatMetaCondition
 feature(c::FeatCondition) = feature(metacond(c))
 test_operator(c::FeatCondition) = test_operator(metacond(c))
 
@@ -84,19 +83,62 @@ syntaxstring(m::FeatCondition; threshold_decimals = nothing, kwargs...) =
 
 ############################################################################################
 
-# Alphabet of conditions
+"""
+    abstract type AbstractConditionalAlphabet{M<:FeatMetaCondition} <: AbstractAlphabet{M} end
+
+Abstract type for alphabets of conditions.
+
+See also
+[`FeatCondition`](@ref),
+[`FeatMetaCondition`](@ref),
+[`AbstractAlphabet`](@ref).
+"""
 abstract type AbstractConditionalAlphabet{M<:FeatMetaCondition} <: AbstractAlphabet{M} end
 
-# Infinite alphabet of conditions induced from a set of metaconditions
+"""
+    struct UnboundedExplicitConditionalAlphabet{M<:FeatMetaCondition} <: AbstractConditionalAlphabet{M}
+        metaconditions::Vector{M}
+    end
+
+An infinite alphabet of conditions induced from a finite set of metaconditions.
+For example, if `metaconditions = [FeatMetaCondition(SingleAttributeMin(1), ≥)]`,
+the alphabet represents the (infinite) set: \${min(V1) ≥ a, a ∈ ℝ}\$. # TODO display math
+
+See also
+[`BoundedExplicitConditionalAlphabet`](@ref),
+[`FeatCondition`](@ref),
+[`FeatMetaCondition`](@ref),
+[`AbstractAlphabet`](@ref).
+"""
 struct UnboundedExplicitConditionalAlphabet{M<:FeatMetaCondition} <: AbstractConditionalAlphabet{M}
     metaconditions::Vector{M}
+
+    function UnboundedExplicitConditionalAlphabet{M}(
+        metaconditions::Vector{M}
+    ) where {M<:FeatMetaCondition}
+        new{M}(metaconditions)
+    end
+
+    function UnboundedExplicitConditionalAlphabet(
+        metaconditions::Vector{M}
+    ) where {M<:FeatMetaCondition}
+        UnboundedExplicitConditionalAlphabet{M}(metaconditions)
+    end
+
+    function UnboundedExplicitConditionalAlphabet(
+        features       :: Vector,
+        test_operators :: Vector,
+    )
+        metaconditions =
+            [FeatMetaCondition(f,t) for f in features for t in test_operators]
+        UnboundedExplicitConditionalAlphabet(metaconditions)
+    end
 end
 
 Base.isfinite(::Type{<:UnboundedExplicitConditionalAlphabet}) = false
 Base.isiterable(::Type{<:UnboundedExplicitConditionalAlphabet}) = false
 
 # Finite alphabet of conditions induced from a set of metaconditions
-# TODO: to complete -> who is C ??
 struct BoundedExplicitConditionalAlphabet{M<:FeatMetaCondition} <: AbstractConditionalAlphabet{M}
     featconditions::Vector{Tuple{M,Vector}}
 
@@ -107,27 +149,27 @@ struct BoundedExplicitConditionalAlphabet{M<:FeatMetaCondition} <: AbstractCondi
     end
 
     function BoundedExplicitConditionalAlphabet(
-        featmetaconditions::Vector{<:FeatMetaCondition},
+        metaconditions::Vector{<:FeatMetaCondition},
         thresholds::Vector{<:Vector},
     )
-        length(featmetaconditions) != length(thresholds) &&
+        length(metaconditions) != length(thresholds) &&
             error("Can't instantiate BoundedExplicitConditionalAlphabet with mismatching" *
-                " number of `featmetaconditions` and `thresholds`" *
-                " ($(featmetaconditions) != $(thresholds)).")
-        featconditions = collect(zip(featmetaconditions, thresholds))
-        M = SoleBase._typejoin(typeof.(featmetaconditions)...)
+                " number of `metaconditions` and `thresholds`" *
+                " ($(metaconditions) != $(thresholds)).")
+        featconditions = collect(zip(metaconditions, thresholds))
+        M = SoleBase._typejoin(typeof.(metaconditions)...)
         BoundedExplicitConditionalAlphabet{M}(featconditions)
     end
 
-    #= TODO? function BoundedExplicitConditionalAlphabet(
+    function BoundedExplicitConditionalAlphabet(
         features       :: Vector,
         test_operators :: Vector,
         thresholds     :: Vector
     )
-        featmetaconditions =
+        metaconditions =
             [FeatMetaCondition(f,t) for f in features for t in test_operators]
-        BoundedExplicitConditionalAlphabet(featmetaconditions,thresholds)
-    end=#
+        BoundedExplicitConditionalAlphabet(metaconditions,thresholds)
+    end
 end
 
 featconditions(a::BoundedExplicitConditionalAlphabet) = a.featconditions
@@ -154,74 +196,6 @@ Base.isfinite(::Type{BoundedExplicitConditionalAlphabet}) = true
 Base.isfinite(a::BoundedExplicitConditionalAlphabet) = Base.isfinite(typeof(a))
 
 Base.length(a::BoundedExplicitConditionalAlphabet) = length(propositions(a))
-
-"""
-    function StatsBase.sample(
-        rng::AbstractRNG,
-        a::BoundedExplicitConditionalAlphabet;
-        metaconditions::Union{Nothing,FeatMetaCondition,AbstractVector{<:FeatMetaCondition}} = nothing,
-        feature::Union{Nothing,AbstractFeature,AbstractVector{<:AbstractFeature}} = nothing,
-        test_operator::Union{Nothing,TestOperatorFun,AbstractVector{<:TestOperatorFun}} = nothing,
-    )::FeatCondition
-
-sample is a function that randomly generates a featcondition where:
- - if metaconditions is not nothing, then feature, test_operator and threshold are chosen randomly from those passed
- - if feature is not nothing, then test_operator and threshold are chosen randomly
- - if test_operator is not nothing, then feature and threshold are chosen randomly
- - if feature and test_operator are not nothing, then threshold are chosen randomly
- - if all kwargs are nothing, then feature, test_operator and threshold are chosen randomly
-"""
-function StatsBase.sample(
-    rng::AbstractRNG,
-    a::BoundedExplicitConditionalAlphabet;
-    metaconditions::Union{Nothing,FeatMetaCondition,AbstractVector{<:FeatMetaCondition}} = nothing,
-    features::Union{Nothing,AbstractFeature,AbstractVector{<:AbstractFeature}} = nothing,
-    test_operators::Union{Nothing,TestOperatorFun,AbstractVector{<:TestOperatorFun}} = nothing,
-)::FeatCondition
-
-    # Transform values to singletons
-    metaconditions = metaconditions isa FeatMetaCondition ? [metaconditions] : metaconditions
-    features = features isa AbstractFeature ? [features] : features
-    test_operators = test_operators isa TestOperatorFun ? [test_operators] : test_operators
-
-    @assert !(!isnothing(metaconditions) &&
-        (!isnothing(features) || !isnothing(test_operators)))
-            "Ambiguous output, there are more choices; only one metacondition, one " *
-            "feature or one operator must be specified\n Now: \n" *
-            "metaconditions: $(metaconditions)\n" *
-            "feature: $(feature)\n" *
-            "test operator: $(test_operator)\n"
-
-    featconds = featconditions(a)
-
-    filtered_featconds = begin
-        if !isnothing(metaconditions)
-            filtered_featconds = filter(mc_thresholds->first(mc_thresholds) in metaconditions, featconds)
-            @assert length(filtered_featconds) == length(metaconditions)
-                "There is at least one metacondition passed that is not among the " *
-                "possible ones\n metaconditions: $(metaconditions)\n filtered " *
-                "metaconditions: $(filtered_featconds)"
-            filtered_featconds
-        elseif !isnothing(features) || !isnothing(test_operators)
-            filtered_featconds = filter(mc_thresholds->begin
-                mc = first(mc_thresholds)
-                return (isnothing(features) || SoleLogics.feature(mc) in feature) &&
-                    (isnothing(test_operators) || SoleLogics.test_operator(mc) in test_operator)
-            end, featconds)
-            @assert length(filtered_featconds) == length(metaconditions)
-                "There is at least one metacondition passed that is not among the " *
-                "possible ones\n metaconditions: $(metaconditions)\n filtered " *
-                "metaconditions: $(filtered_featconds)"
-            filtered_featconds
-        else
-            featconds
-        end
-    end
-
-    mc_thresholds = rand(rng, filtered_featconds)
-
-    return FeatCondition(first(mc_thresholds), rand(rng, last(mc_thresholds)))
-end
 
 ############################################################################################
 
