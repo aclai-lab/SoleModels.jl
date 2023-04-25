@@ -8,7 +8,7 @@ using SoleModels
 using SoleModels: AbstractModel
 using SoleModels: ConstantModel, FinalModel
 using SoleModels: LogicalTruthCondition, TrueCondition
-using SoleModels: unroll_rules, formula, displaymodel, submodels
+using SoleModels: unrollrules, formula, displaymodel, submodels
 
 io = IOBuffer()
 
@@ -297,54 +297,54 @@ ms_model = MixedSymbolicModel(ms_model)
 @test_throws MethodError convert(AbstractModel{<:Int}, cmodel_number)
 
 ############################################################################################
-############################ Testing immediate_submodels #######################################
+############################ Testing immediatesubmodels ####################################
 ############################################################################################
 
-@test_nowarn immediate_submodels(outcome_int)
-@test_nowarn immediate_submodels(outcome_float)
-@test_nowarn immediate_submodels(outcome_string)
-@test_nowarn immediate_submodels(outcome_string2)
-@test_nowarn immediate_submodels(cmodel_string)
+@test_nowarn immediatesubmodels(outcome_int)
+@test_nowarn immediatesubmodels(outcome_float)
+@test_nowarn immediatesubmodels(outcome_string)
+@test_nowarn immediatesubmodels(outcome_string2)
+@test_nowarn immediatesubmodels(cmodel_string)
 
-@test immediate_submodels(outcome_int) isa Vector{Vector{<:AbstractModel{<:Int64}}}
-@test immediate_submodels(outcome_float) isa Vector{Vector{<:AbstractModel{<:Float64}}}
-@test immediate_submodels(outcome_string) isa Vector{Vector{<:AbstractModel{<:String}}}
-@test immediate_submodels(outcome_string2) isa Vector{Vector{<:AbstractModel{<:String}}}
-@test immediate_submodels(cmodel_string) isa Vector{Vector{<:AbstractModel{<:String}}}
+@test immediatesubmodels(outcome_int) isa Vector{Vector{<:AbstractModel{<:Int64}}}
+@test immediatesubmodels(outcome_float) isa Vector{Vector{<:AbstractModel{<:Float64}}}
+@test immediatesubmodels(outcome_string) isa Vector{Vector{<:AbstractModel{<:String}}}
+@test immediatesubmodels(outcome_string2) isa Vector{Vector{<:AbstractModel{<:String}}}
+@test immediatesubmodels(cmodel_string) isa Vector{Vector{<:AbstractModel{<:String}}}
 
-@test immediate_submodels(r1_string) isa Vector{<:AbstractModel}
-@test join(displaymodel.(immediate_submodels(r1_string); header = false)) == """
+@test immediatesubmodels(r1_string) isa Vector{<:AbstractModel}
+@test join(displaymodel.(immediatesubmodels(r1_string); header = false)) == """
 YES
 """
 
-@test immediate_submodels(r2_string) isa Vector{<:AbstractModel}
-@test join(displaymodel.(immediate_submodels(r2_string); header = false)) == """
+@test immediatesubmodels(r2_string) isa Vector{<:AbstractModel}
+@test join(displaymodel.(immediatesubmodels(r2_string); header = false)) == """
 YES
 """
 
-@test immediate_submodels(b_nsx) isa Vector{<:AbstractModel}
-@test immediate_submodels(b_fsx) isa Vector{<:AbstractModel}
-@test immediate_submodels(b_fdx) isa Vector{<:AbstractModel}
-@test immediate_submodels(b_p) isa Vector{<:AbstractModel}
+@test immediatesubmodels(b_nsx) isa Vector{<:AbstractModel}
+@test immediatesubmodels(b_fsx) isa Vector{<:AbstractModel}
+@test immediatesubmodels(b_fdx) isa Vector{<:AbstractModel}
+@test immediatesubmodels(b_p) isa Vector{<:AbstractModel}
 
-@test join(displaymodel.(immediate_submodels(b_nsx); header = false)) == """
-YES
-NO
-"""
-
-@test join(displaymodel.(immediate_submodels(b_fsx); header = false)) == """
+@test join(displaymodel.(immediatesubmodels(b_nsx); header = false)) == """
 YES
 NO
 """
 
-@test join(displaymodel.(immediate_submodels(b_fdx); header = false)) == """
+@test join(displaymodel.(immediatesubmodels(b_fsx); header = false)) == """
+YES
+NO
+"""
+
+@test join(displaymodel.(immediatesubmodels(b_fdx); header = false)) == """
 ┐ q
 ├ ✔ YES
 └ ✘ NO
 YES
 """
 
-@test join(displaymodel.(immediate_submodels(b_p); header = false)) == """
+@test join(displaymodel.(immediatesubmodels(b_p); header = false)) == """
 ┐ s
 ├ ✔ YES
 └ ✘ NO
@@ -355,8 +355,8 @@ YES
 └ ✘ YES
 """
 
-@test immediate_submodels(d1_string) isa Vector{<:AbstractModel}
-@test join(displaymodel.(immediate_submodels(d1_string); header = false)) == """
+@test immediatesubmodels(d1_string) isa Vector{<:AbstractModel}
+@test join(displaymodel.(immediatesubmodels(d1_string); header = false)) == """
 ┐(r ∧ s) ∧ t
 └ ✔ YES
 ┐¬(r)
@@ -364,8 +364,8 @@ YES
 YES
 """
 
-@test immediate_submodels(dt1) isa Vector{<:AbstractModel}
-@test join(displaymodel.(immediate_submodels(dt1); header = false)) == """
+@test immediatesubmodels(dt1) isa Vector{<:AbstractModel}
+@test join(displaymodel.(immediatesubmodels(dt1); header = false)) == """
 ┐ s
 ├ ✔ YES
 └ ✘ NO
@@ -376,16 +376,16 @@ YES
 └ ✘ YES
 """
 
-@test immediate_submodels(dt2) isa Vector{<:AbstractModel}
-@test join(displaymodel.(immediate_submodels(dt2); header = false)) == """
+@test immediatesubmodels(dt2) isa Vector{<:AbstractModel}
+@test join(displaymodel.(immediatesubmodels(dt2); header = false)) == """
 ┐ q
 ├ ✔ YES
 └ ✘ NO
 YES
 """
 
-@test immediate_submodels(msm) isa Vector{<:AbstractModel}
-@test join(displaymodel.(immediate_submodels(msm); header = false)) == """
+@test immediatesubmodels(msm) isa Vector{<:AbstractModel}
+@test join(displaymodel.(immediatesubmodels(msm); header = false)) == """
 2
 1.5
 """
@@ -507,40 +507,40 @@ YES
 """
 
 ############################################################################################
-############################ Testing unroll_rules ##########################################
+############################ Testing unrollrules ##########################################
 ############################################################################################
 
-@test_nowarn unroll_rules(outcome_int)
-@test_nowarn unroll_rules(outcome_float)
-@test_nowarn unroll_rules(outcome_string)
-@test_nowarn unroll_rules(outcome_string2)
-@test_nowarn unroll_rules(cmodel_string)
+@test_nowarn unrollrules(outcome_int)
+@test_nowarn unrollrules(outcome_float)
+@test_nowarn unrollrules(outcome_string)
+@test_nowarn unrollrules(outcome_string2)
+@test_nowarn unrollrules(cmodel_string)
 
-@test unroll_rules(outcome_int) isa Vector{<:ConstantModel}
-@test unroll_rules(outcome_float) isa Vector{<:ConstantModel}
-@test unroll_rules(outcome_string) isa Vector{<:ConstantModel}
-@test unroll_rules(outcome_string2) isa Vector{<:ConstantModel}
-@test unroll_rules(cmodel_string) isa Vector{<:ConstantModel}
+@test unrollrules(outcome_int) isa Vector{<:ConstantModel}
+@test unrollrules(outcome_float) isa Vector{<:ConstantModel}
+@test unrollrules(outcome_string) isa Vector{<:ConstantModel}
+@test unrollrules(outcome_string2) isa Vector{<:ConstantModel}
+@test unrollrules(cmodel_string) isa Vector{<:ConstantModel}
 
 
-@test_nowarn unroll_rules(rule_r)
-@test_nowarn ruleset = unroll_rules(branch_r)
-@test_broken unroll_rules(dlmodel)
+@test_nowarn unrollrules(rule_r)
+@test_nowarn ruleset = unrollrules(branch_r)
+@test_broken unrollrules(dlmodel)
 
-@test unroll_rules(r1_string) isa Vector{<:Rule}
-@test join(displaymodel.(unroll_rules(r1_string); header = false)) == """
+@test unrollrules(r1_string) isa Vector{<:Rule}
+@test join(displaymodel.(unrollrules(r1_string); header = false)) == """
 ┐(r ∧ s) ∧ t
 └ ✔ YES
 """
 
-@test unroll_rules(r2_string) isa Vector{<:Rule}
-@test join(displaymodel.(unroll_rules(r2_string); header = false)) == """
+@test unrollrules(r2_string) isa Vector{<:Rule}
+@test join(displaymodel.(unrollrules(r2_string); header = false)) == """
 ┐¬(r)
 └ ✔ YES
 """
 
-@test unroll_rules(d1_string) isa Vector{<:Rule}
-@test join(displaymodel.(unroll_rules(d1_string); header = false)) == """
+@test unrollrules(d1_string) isa Vector{<:Rule}
+@test join(displaymodel.(unrollrules(d1_string); header = false)) == """
 ┐(r ∧ s) ∧ t
 └ ✔ YES
 ┐(¬((r ∧ s) ∧ t)) ∧ (¬(r))
@@ -549,24 +549,24 @@ YES
 └ ✔ YES
 """
 
-@test unroll_rules(b_nsx) isa Vector{<:Rule}
-@test join(displaymodel.(unroll_rules(b_nsx); header = false)) == """
+@test unrollrules(b_nsx) isa Vector{<:Rule}
+@test join(displaymodel.(unrollrules(b_nsx); header = false)) == """
 ┐q
 └ ✔ YES
 ┐¬(q)
 └ ✔ NO
 """
 
-@test unroll_rules(b_fsx) isa Vector{<:Rule}
-@test join(displaymodel.(unroll_rules(b_fsx); header = false)) == """
+@test unrollrules(b_fsx) isa Vector{<:Rule}
+@test join(displaymodel.(unrollrules(b_fsx); header = false)) == """
 ┐s
 └ ✔ YES
 ┐¬(s)
 └ ✔ NO
 """
 
-@test unroll_rules(b_fdx) isa Vector{<:Rule}
-@test join(displaymodel.(unroll_rules(b_fdx); header = false)) == """
+@test unrollrules(b_fdx) isa Vector{<:Rule}
+@test join(displaymodel.(unrollrules(b_fdx); header = false)) == """
 ┐(t) ∧ (q)
 └ ✔ YES
 ┐(t) ∧ (¬(q))
@@ -575,8 +575,8 @@ YES
 └ ✔ YES
 """
 
-@test unroll_rules(b_p) isa Vector{<:Rule}
-@test join(displaymodel.(unroll_rules(b_p); header = false)) == """
+@test unrollrules(b_p) isa Vector{<:Rule}
+@test join(displaymodel.(unrollrules(b_p); header = false)) == """
 ┐(r) ∧ (s)
 └ ✔ YES
 ┐(r) ∧ (¬(s))
@@ -589,8 +589,8 @@ YES
 └ ✔ YES
 """
 
-@test unroll_rules(dt1) isa Vector{<:Rule}
-@test join(displaymodel.(unroll_rules(dt1); header = false)) == """
+@test unrollrules(dt1) isa Vector{<:Rule}
+@test join(displaymodel.(unrollrules(dt1); header = false)) == """
 ┐(r) ∧ (s)
 └ ✔ YES
 ┐(r) ∧ (¬(s))
@@ -603,8 +603,8 @@ YES
 └ ✔ YES
 """
 
-@test unroll_rules(dt2) isa Vector{<:Rule}
-@test join(displaymodel.(unroll_rules(dt2); header = false)) == """
+@test unrollrules(dt2) isa Vector{<:Rule}
+@test join(displaymodel.(unrollrules(dt2); header = false)) == """
 ┐(t) ∧ (q)
 └ ✔ YES
 ┐(t) ∧ (¬(q))
@@ -613,8 +613,8 @@ YES
 └ ✔ YES
 """
 
-@test unroll_rules(msm) isa Vector{<:Rule}
-@test join(displaymodel.(unroll_rules(msm); header = false)) == """
+@test unrollrules(msm) isa Vector{<:Rule}
+@test join(displaymodel.(unrollrules(msm); header = false)) == """
 ┐q
 └ ✔ 2
 ┐¬(q)

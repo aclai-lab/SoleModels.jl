@@ -4,33 +4,33 @@
 ############################################################################################
 
 """
-    immediate_submodels(m::AbstractModel)
+    immediatesubmodels(m::AbstractModel)
 
 Returns a list of immediate child models.
 Note: if the model is final, then the list is empty.
 
 # Examples
 ```julia-repl
-julia> print(join(displaymodel.(immediate_submodels(rule); header = false)))
+julia> print(join(displaymodel.(immediatesubmodels(rule); header = false)))
 YES
 
-julia> print(join(displaymodel.(immediate_submodels(rcmodel); header = false)))
+julia> print(join(displaymodel.(immediatesubmodels(rcmodel); header = false)))
 1
 
-julia> print(join(displaymodel.(immediate_submodels(branch); header = false)))
+julia> print(join(displaymodel.(immediatesubmodels(branch); header = false)))
 ┐ q
 ├ ✔ YES
 └ ✘ NO
 YES
 
-julia> print(join(displaymodel.(immediate_submodels(decision_list); header = false)))
+julia> print(join(displaymodel.(immediatesubmodels(decision_list); header = false)))
 ┐(r ∧ s) ∧ t
 └ ✔ YES
 ┐¬(r)
 └ ✔ YES
 YES
 
-julia> print(join(displaymodel.(immediate_submodels(decision_tree); header = false)))
+julia> print(join(displaymodel.(immediatesubmodels(decision_tree); header = false)))
 ┐ s
 ├ ✔ YES
 └ ✘ NO
@@ -40,7 +40,7 @@ julia> print(join(displaymodel.(immediate_submodels(decision_tree); header = fal
 │   └ ✘ NO
 └ ✘ YES
 
-julia> print(join(displaymodel.(immediate_submodels(mixed_symbolic_model); header = false)))
+julia> print(join(displaymodel.(immediatesubmodels(mixed_symbolic_model); header = false)))
 2
 1.5
 ```
@@ -50,18 +50,18 @@ See also
 [`FinalModel`](@ref),
 [`AbstractModel`](@ref).
 """
-function immediate_submodels(
+function immediatesubmodels(
     m::AbstractModel{O}
 )::Vector{<:{AbstractModel{<:O}}} where {O}
-    error("Please, provide method immediate_submodels(::$(typeof(m))).")
+    error("Please, provide method immediatesubmodels(::$(typeof(m))).")
 end
 
-immediate_submodels(m::FinalModel{O}) where {O} = Vector{<:AbstractModel{<:O}}[]
-immediate_submodels(m::Rule) = [consequent(m)]
-immediate_submodels(m::Branch) = [posconsequent(m), negconsequent(m)]
-immediate_submodels(m::DecisionList) = [rulebase(m)..., defaultconsequent(m)]
-immediate_submodels(m::DecisionTree) = immediate_submodels(root(m))
-immediate_submodels(m::MixedSymbolicModel) = immediate_submodels(root(m))
+immediatesubmodels(m::FinalModel{O}) where {O} = Vector{<:AbstractModel{<:O}}[]
+immediatesubmodels(m::Rule) = [consequent(m)]
+immediatesubmodels(m::Branch) = [posconsequent(m), negconsequent(m)]
+immediatesubmodels(m::DecisionList) = [rulebase(m)..., defaultconsequent(m)]
+immediatesubmodels(m::DecisionTree) = immediatesubmodels(root(m))
+immediatesubmodels(m::MixedSymbolicModel) = immediatesubmodels(root(m))
 
 """
     submodels(m::AbstractModel)
@@ -118,12 +118,12 @@ julia> print(join(displaymodel.(submodels(mixed_symbolic_model); header = false)
 ```
 
 See also
-[`immediate_submodels`](@ref),
+[`immediatesubmodels`](@ref),
 [`FinalModel`](@ref),
 [`AbstractModel`](@ref).
 """
-submodels(m::AbstractModel) = [Iterators.flatten(_submodels.(immediate_submodels(m)))...]
-_submodels(m::AbstractModel) = [m, Iterators.flatten(_submodels.(immediate_submodels(m)))...]
+submodels(m::AbstractModel) = [Iterators.flatten(_submodels.(immediatesubmodels(m)))...]
+_submodels(m::AbstractModel) = [m, Iterators.flatten(_submodels.(immediatesubmodels(m)))...]
 
 
 ############################################################################################
@@ -131,64 +131,64 @@ _submodels(m::AbstractModel) = [m, Iterators.flatten(_submodels.(immediate_submo
 ############################################################################################
 
 # When `assumed_formula` is assumed, and `f` is known to be true, their conjuction holds.
-advance_formula(f::AbstractFormula, assumed_formula::Union{Nothing,AbstractFormula}) =
+advanceformula(f::AbstractFormula, assumed_formula::Union{Nothing,AbstractFormula}) =
     isnothing(assumed_formula) ? f : ∧(assumed_formula, f)
 
-advance_formula(r::Rule, assumed_formula::Union{Nothing,AbstractFormula}) =
-    Rule(LogicalTruthCondition(advance_formula(formula(r), assumed_formula)), consequent(r), info(r))
+advanceformula(r::Rule, assumed_formula::Union{Nothing,AbstractFormula}) =
+    Rule(LogicalTruthCondition(advanceformula(formula(r), assumed_formula)), consequent(r), info(r))
 
 ############################################################################################
 ############################################################################################
 ############################################################################################
 
 """
-    immediate_rules(m::AbstractModel{O} where {O})::Rule{<:O}
+    immediaterules(m::AbstractModel{O} where {O})::Rule{<:O}
 
 Returns the immediate rules equivalent to a model. TODO explain
 
-See also [`unroll_rules`](@ref), [`issymbolic`](@ref), [`AbstractModel`](@ref).
+See also [`unrollrules`](@ref), [`issymbolic`](@ref), [`AbstractModel`](@ref).
 """
-immediate_rules(m::AbstractModel{O} where {O})::Rule{<:O} =
+immediaterules(m::AbstractModel{O} where {O})::Rule{<:O} =
     error(begin
         if issymbolic(m)
-            "Please, provide method immediate_rules(::$(typeof(m))) ($(typeof(m)) is a symbolic model)."
+            "Please, provide method immediaterules(::$(typeof(m))) ($(typeof(m)) is a symbolic model)."
         else
             "Models of type $(typeof(m)) are not symbolic, and thus have no rules associated."
         end
     end)
 
-immediate_rules(m::FinalModel) = [Rule(TrueCondition, m)]
+immediaterules(m::FinalModel) = [Rule(TrueCondition, m)]
 
-immediate_rules(m::Rule) = [m]
+immediaterules(m::Rule) = [m]
 
-immediate_rules(m::Branch{O,FM}) where {O,FM} = [
+immediaterules(m::Branch{O,FM}) where {O,FM} = [
     Rule{O,FM}(antecedent(m), posconsequent(m)),
     Rule{O,FM}(SoleLogics.NEGATION(antecedent(m)), negconsequent(m)),
 ]
 
-function immediate_rules(m::DecisionList{O,C,FM}) where {O,C,FM}
+function immediaterules(m::DecisionList{O,C,FM}) where {O,C,FM}
     assumed_formula = nothing
     normalized_rules = []
     for rule in rulebase(m)
-        rule = advance_formula(rule, assumed_formula)
+        rule = advanceformula(rule, assumed_formula)
         push!(normalized_rules, rule)
-        assumed_formula = advance_formula(SoleLogics.NEGATION(formula(rule)), assumed_formula)
+        assumed_formula = advanceformula(SoleLogics.NEGATION(formula(rule)), assumed_formula)
     end
     default_antecedent = isnothing(assumed_formula) ? TrueCondition : LogicalTruthCondition(assumed_formula)
     push!(normalized_rules, Rule(default_antecedent, defaultconsequent(m)))
     normalized_rules
 end
 
-immediate_rules(m::DecisionTree) = immediate_rules(root(m))
+immediaterules(m::DecisionTree) = immediaterules(root(m))
 
-immediate_rules(m::MixedSymbolicModel) = immediate_rules(root(m))
+immediaterules(m::MixedSymbolicModel) = immediaterules(root(m))
 
 ############################################################################################
 ############################################################################################
 ############################################################################################
 
 """
-    unroll_rules(m::AbstractModel; tree::Bool = false)
+    unrollrules(m::AbstractModel; tree::Bool = false)
 
 This function extracts the behavior of a symbolic model and represents it as a
 set of mutually exclusive (and jointly exaustive, if the model is closed) rules,
@@ -199,12 +199,12 @@ antecedent is constructed as SyntaxTree
 
 # Examples
 ```julia-repl
-@test unroll_rules(r2_string) isa Vector{<:Rule}
-julia> print(join(displaymodel.(unroll_rules(rule); header = false)))
+@test unrollrules(r2_string) isa Vector{<:Rule}
+julia> print(join(displaymodel.(unrollrules(rule); header = false)))
 ┐¬(r)
 └ ✔ YES
 
-julia> print(join(displaymodel.(unroll_rules(decision_list); header = false)))
+julia> print(join(displaymodel.(unrollrules(decision_list); header = false)))
 ┐(r ∧ s) ∧ t
 └ ✔ YES
 ┐¬(r)
@@ -212,12 +212,12 @@ julia> print(join(displaymodel.(unroll_rules(decision_list); header = false)))
 ┐⊤
 └ ✔ YES
 
-@test unroll_rules(rcmodel) isa Vector{<:Rule}
-julia> print(join(displaymodel.(unroll_rules(rule_cascade); header = false)))
+@test unrollrules(rcmodel) isa Vector{<:Rule}
+julia> print(join(displaymodel.(unrollrules(rule_cascade); header = false)))
 ┐(p ∧ (q ∨ r)) ∧ ((p ∧ (q ∨ r)) ∧ (p ∧ (q ∨ r)))
 └ ✔ 1
 
-julia> print(join(displaymodel.(unroll_rules(branch); header = false)))
+julia> print(join(displaymodel.(unrollrules(branch); header = false)))
 ┐r ∧ s
 └ ✔ YES
 ┐r ∧ (¬(s))
@@ -229,7 +229,7 @@ julia> print(join(displaymodel.(unroll_rules(branch); header = false)))
 ┐(¬(r)) ∧ (¬(t))
 └ ✔ YES
 
-julia> print(join(displaymodel.(unroll_rules(decision_tree); header = false)))
+julia> print(join(displaymodel.(unrollrules(decision_tree); header = false)))
 ┐r ∧ s
 └ ✔ YES
 ┐r ∧ (¬(s))
@@ -241,36 +241,36 @@ julia> print(join(displaymodel.(unroll_rules(decision_tree); header = false)))
 ┐(¬(r)) ∧ (¬(t))
 └ ✔ YES
 
-julia> print(join(displaymodel.(unroll_rules(mixed_symbolic_model); header = false)))
+julia> print(join(displaymodel.(unrollrules(mixed_symbolic_model); header = false)))
 ┐q
 └ ✔ 2
 ┐¬(q)
 └ ✔ 1.5
 ```
 
-See also [`immediate_rules`](@ref), [`issymbolic`](@ref), [`FinalModel`](@ref),
+See also [`immediaterules`](@ref), [`issymbolic`](@ref), [`FinalModel`](@ref),
 [`AbstractModel`](@ref).
 """
-function unroll_rules(m::AbstractModel; kwargs...)
+function unrollrules(m::AbstractModel; kwargs...)
     error(begin
         if issymbolic(m)
-            "Please, provide method unroll_rules(::$(typeof(m))) ($(typeof(m)) is a symbolic model)."
+            "Please, provide method unrollrules(::$(typeof(m))) ($(typeof(m)) is a symbolic model)."
         else
             "Models of type $(typeof(m)) are not symbolic, and thus have no rules associated."
         end
     end)
 end
 
-unroll_rules(m::FinalModel; kwargs...) = [m]
+unrollrules(m::FinalModel; kwargs...) = [m]
 
-function unroll_rules(
+function unrollrules(
     m::Rule{O,<:TrueCondition};
     kwargs...,
 ) where {O}
     [m]
 end
 
-function unroll_rules(
+function unrollrules(
     m::Rule{O,<:LogicalTruthCondition};
     syntaxtree::Bool = false
 ) where {O}
@@ -284,17 +284,17 @@ function unroll_rules(
 end
 
 # TODO warning we loose the info
-function unroll_rules(
+function unrollrules(
     m::Branch{O,<:TrueCondition};
     kwargs...,
 ) where {O}
     pos_rules = begin
-        submodels = unroll_rules(posconsequent(m); kwargs...)
+        submodels = unrollrules(posconsequent(m); kwargs...)
         submodels isa Vector{<:FinalModel} ? [Rule{O,TrueCondition}(fm) for fm in submodels] : submodels
     end
 
     neg_rules = begin
-        submodels = unroll_rules(negconsequent(m); kwargs...)
+        submodels = unrollrules(negconsequent(m); kwargs...)
         submodels isa Vector{<:FinalModel} ? [Rule{O,TrueCondition}(fm) for fm in submodels] : submodels
     end
 
@@ -304,13 +304,13 @@ function unroll_rules(
     ]
 end
 
-function unroll_rules(
+function unrollrules(
     m::Branch{O,<:LogicalTruthCondition};
     syntaxtree::Bool = false,
     kwargs...,
 ) where {O}
     pos_rules = begin
-        submodels = unroll_rules(posconsequent(m); syntaxtree = syntaxtree, kwargs...)
+        submodels = unrollrules(posconsequent(m); syntaxtree = syntaxtree, kwargs...)
         ant = tree(formula(m))
 
         map(subm-> begin
@@ -331,7 +331,7 @@ function unroll_rules(
     end
 
     neg_rules = begin
-        submodels = unroll_rules(negconsequent(m); syntaxtree = syntaxtree, kwargs...)
+        submodels = unrollrules(negconsequent(m); syntaxtree = syntaxtree, kwargs...)
         ant = ¬(tree(formula(m)))
 
         map(subm-> begin
@@ -357,13 +357,13 @@ function unroll_rules(
     ]
 end
 
-function unroll_rules(m::DecisionList; kwargs...)
-    reduce(vcat,[unroll_rules(rule; kwargs...) for rule in immediate_rules(m)])
+function unrollrules(m::DecisionList; kwargs...)
+    reduce(vcat,[unrollrules(rule; kwargs...) for rule in immediaterules(m)])
 end
 
-unroll_rules(m::DecisionTree; kwargs...) = unroll_rules(root(m); kwargs...)
+unrollrules(m::DecisionTree; kwargs...) = unrollrules(root(m); kwargs...)
 
-unroll_rules(m::MixedSymbolicModel; kwargs...) = unroll_rules(root(m); kwargs...)
+unrollrules(m::MixedSymbolicModel; kwargs...) = unrollrules(root(m); kwargs...)
 
 ############################################################################################
 ############################################################################################

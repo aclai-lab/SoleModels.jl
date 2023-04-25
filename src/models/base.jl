@@ -1,6 +1,7 @@
 import Base: convert, length, getindex, isopen
 import SoleLogics: check, syntaxstring
 using SoleData: slice_dataset
+using SoleLogics: LeftmostLinearForm, LeftmostConjunctiveForm, LeftmostDisjunctiveForm
 
 # Util
 typename(::Type{T}) where T = eval(nameof(T))
@@ -288,11 +289,11 @@ Symbolic models provide a form of transparent and interpretable modeling.
 
 Instead, a model is said to be functional when it encodes an algebraic mathematical
 function (e.g., a neural network).
-TODO explain unroll_rules/cascade/rules A symbolic model is one where the computation has a *rule-base structure*.
+TODO explain unrollrules/cascade/rules A symbolic model is one where the computation has a *rule-base structure*.
 
 See also
 [`apply`](@ref),
-[`unroll_rules`](@ref),
+[`unrollrules`](@ref),
 [`AbstractModel`](@ref).
 """
 issymbolic(::AbstractModel) = false
@@ -763,6 +764,35 @@ function formula(m::Rule{O,<:Union{LogicalTruthCondition,TrueCondition}}) where 
     formula(antecedent(m))
 end
 
+function conjuncts(m::Rule{O,<:LogicalTruthCondition{<:LeftmostConjunctiveForm}}) where {O}
+    conjuncts(formula(m))
+end
+function nconjuncts(m::Rule{O,<:LogicalTruthCondition{<:LeftmostConjunctiveForm}}) where {O}
+    nconjuncts(formula(m))
+end
+function disjuncts(m::Rule{O,<:LogicalTruthCondition{<:LeftmostDisjunctiveForm}}) where {O}
+    disjuncts(formula(m))
+end
+function ndisjuncts(m::Rule{O,<:LogicalTruthCondition{<:LeftmostDisjunctiveForm}}) where {O}
+    ndisjuncts(formula(m))
+end
+
+#=
+function Base.getindex(
+    m::Rule{O,C},
+    idxs::AbstractVector{<:Integer},
+) where {O,C<:LogicalTruthCondition{SS},SS<:LeftmostLinearForm}
+    Rule{O,C}(
+        LogicalTruthCondition{SS}(begin
+            ants = children(formula(m))
+            SS(ants[idxs])
+        end),
+        consequent(m)
+    )
+end
+Base.getindex(m::Rule{O,C}, args...) where {O,C<:TrueCondition} = m
+=#
+
 ############################################################################################
 
 """
@@ -945,6 +975,13 @@ end
 # Helper
 function formula(m::Branch{O,<:Union{LogicalTruthCondition,TrueCondition}}) where {O}
     formula(antecedent(m))
+end
+
+function Base.getindex(
+    m::Branch{O,<:LogicalTruthCondition{<:LeftmostLinearForm}},
+    args...
+) where {O}
+    return Base.getindex(formula(m), args...)
 end
 
 ############################################################################################
