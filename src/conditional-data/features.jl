@@ -61,11 +61,15 @@ i_attribute(f::SingleAttributeFeature) = f.i_attribute
 function attribute_name(
     f::SingleAttributeFeature;
     attribute_names_map::Union{Nothing,AbstractDict,AbstractVector} = nothing,
+    attribute_name_prefix::Union{Nothing,String} = nothing,
     kwargs...,
 )
     if isnothing(attribute_names_map)
-        "A$(i_attribute(f))"
+        # Default prefix for "V" (for "variable")
+        attribute_name_prefix = isnothing(attribute_name_prefix) ? "V" : attribute_name_prefix
+        "$(attribute_name_prefix)$(i_attribute(f))"
     else
+        @assert isnothing(attribute_name_prefix)
         "$(attribute_names_map[i_attribute(f)])"
     end
 end

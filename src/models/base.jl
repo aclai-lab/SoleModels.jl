@@ -1146,9 +1146,6 @@ conditiontype(m::DecisionTree) = conditiontype(typeof(m))
 
 issymbolic(::DecisionTree) = true
 
-conditiontype(::Type{M}) where {M<:DecisionTree{O,C,FFM}} where {O,C,FFM} = C
-conditiontype(m::DecisionTree) = conditiontype(typeof(m))
-
 isopen(::DecisionTree) = false
 
 function apply(
