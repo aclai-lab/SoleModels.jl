@@ -32,7 +32,7 @@ feature(m::FeatMetaCondition) = m.feature
 test_operator(m::FeatMetaCondition) = m.test_operator
 
 syntaxstring(m::FeatMetaCondition; kwargs...) =
-    "$(_syntaxstring_feature_test_operator_pair(feature(m),test_operator(m); kwargs...)) ⍰"
+    "$(_syntaxstring_feature_test_operator_pair(feature(m), test_operator(m); kwargs...)) ⍰"
 
 ############################################################################################
 
@@ -124,7 +124,7 @@ struct UnboundedExplicitConditionalAlphabet{C<:FeatCondition} <: AbstractConditi
         test_operators :: AbstractVector,
     ) where {C<:FeatCondition}
         metaconditions =
-            [FeatMetaCondition(f,t) for f in features for t in test_operators]
+            [FeatMetaCondition(f, t) for f in features for t in test_operators]
         UnboundedExplicitConditionalAlphabet{C}(metaconditions)
     end
 end
@@ -179,8 +179,8 @@ struct BoundedExplicitConditionalAlphabet{C<:FeatCondition} <: AbstractCondition
         thresholds     :: Vector
     ) where {C<:FeatCondition}
         metaconditions =
-            [FeatMetaCondition(f,t) for f in features for t in test_operators]
-        BoundedExplicitConditionalAlphabet{C}(metaconditions,thresholds)
+            [FeatMetaCondition(f, t) for f in features for t in test_operators]
+        BoundedExplicitConditionalAlphabet{C}(metaconditions, thresholds)
     end
 end
 
