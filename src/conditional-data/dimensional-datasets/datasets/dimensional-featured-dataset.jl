@@ -163,14 +163,19 @@ struct DimensionalFeaturedDataset{
         DimensionalFeaturedDataset{V}(domain, ontology, features, args...; kwargs...)
     end
 
+    preserves_type(::Any) = false
+    preserves_type(::CanonicalFeature) = true
+    preserves_type(::typeof(minimum)) = true # TODO fix
+    preserves_type(::typeof(maximum)) = true # TODO fix
+
     function DimensionalFeaturedDataset(
         domain           :: Union{PassiveDimensionalDataset{N,W},AbstractDimensionalDataset},
         ontology         :: Ontology{W},
         mixed_features   :: AbstractVector;
         kwargs...,
     ) where {N,W<:AbstractWorld}
-        domain = (domain isa AbstractDimensionalDataset ? PassiveDimensionalDataset{N,W}(domain) : domain)
-        @assert all((f)->(f isa CanonicalFeature && SoleModels.preserves_type(f)), mixed_features) "Please, specify the feature output type V upon construction, as in: DimensionalFeaturedDataset{V}(...)." # TODO highlight and improve
+        domain = (domain isa AbstractDimensionalDataset ? PassiveDimensionalDataset{dimensionality(domain),W}(domain) : domain)
+        @assert all((f)->(preserves_type(f)), mixed_features) "Please, specify the feature output type V upon construction, as in: DimensionalFeaturedDataset{V}(...)." # TODO highlight and improve
         V = eltype(domain)
         DimensionalFeaturedDataset{V}(domain, ontology, mixed_features; kwargs...)
     end

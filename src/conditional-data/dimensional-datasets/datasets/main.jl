@@ -6,6 +6,7 @@ using SoleLogics: AbstractFormula
 using SoleModels: CanonicalFeatureGeq, CanonicalFeatureGeqSoft, CanonicalFeatureLeq, CanonicalFeatureLeqSoft
 using SoleModels: evaluate_thresh_decision, existential_aggregator, aggregator_bottom, aggregator_to_binary
 import SoleModels: check
+using SoleModels: BoundedExplicitConditionalAlphabet
 
 import SoleData: get_instance, instance, max_channel_size, channel_size, nattributes, nsamples, slice_dataset, _slice_dataset
 import SoleData: dimensionality
@@ -14,8 +15,10 @@ import Base: eltype
 
 ############################################################################################
 
-# Convenience function
-function grouped_featsnops2grouped_featsaggrsnops(grouped_featsnops::AbstractVector{<:AbstractVector{<:TestOperatorFun}})::AbstractVector{<:AbstractDict{<:Aggregator,<:AbstractVector{<:TestOperatorFun}}}
+# Convenience functions
+function grouped_featsnops2grouped_featsaggrsnops(
+    grouped_featsnops::AbstractVector{<:AbstractVector{<:TestOperatorFun}}
+)::AbstractVector{<:AbstractDict{<:Aggregator,<:AbstractVector{<:TestOperatorFun}}}
     grouped_featsaggrsnops = Dict{<:Aggregator,<:AbstractVector{<:TestOperatorFun}}[]
     for (i_feature, test_operators) in enumerate(grouped_featsnops)
         aggrsnops = Dict{Aggregator,AbstractVector{<:TestOperatorFun}}()
@@ -29,6 +32,15 @@ function grouped_featsnops2grouped_featsaggrsnops(grouped_featsnops::AbstractVec
         push!(grouped_featsaggrsnops, aggrsnops)
     end
     grouped_featsaggrsnops
+end
+
+function grouped_featsaggrsnops2grouped_featsnops(
+    grouped_featsaggrsnops::AbstractVector{<:AbstractDict{<:Aggregator,<:AbstractVector{<:TestOperatorFun}}}
+)::AbstractVector{<:AbstractVector{<:TestOperatorFun}}
+    grouped_featsnops = [begin
+        vcat(values(grouped_featsaggrsnops)...)
+    end for grouped_featsaggrsnops in grouped_featsaggrsnops]
+    grouped_featsnops
 end
 
 function features_grouped_featsaggrsnops2featsnaggrs_grouped_featsnaggrs(features, grouped_featsaggrsnops)
@@ -88,6 +100,32 @@ featvaltype(d::ActiveFeaturedDataset) = featvaltype(typeof(d))
 
 featuretype(::Type{<:ActiveFeaturedDataset{V,W,FR,FT}}) where {V,W,FR,FT} = FT
 featuretype(d::ActiveFeaturedDataset) = featuretype(typeof(d))
+
+function grouped_featsaggrsnops(X::ActiveFeaturedDataset)
+    return error("Please, provide method grouped_featsaggrsnops(::$(typeof(X))).")
+end
+
+function grouped_metaconditions(X::ActiveFeaturedDataset)
+    grouped_featsnops = grouped_featsaggrsnops2grouped_featsnops(grouped_featsaggrsnops(X))
+    [begin
+        (feat,[FeatMetaCondition(feat,op) for op in ops])
+    end for (feat,ops) in zip(features(X),grouped_featsnops)]
+end
+
+function alphabet(X::ActiveFeaturedDataset)
+    conds = vcat([begin
+        thresholds = unique([
+                X[i_sample, w, feature]
+                for i_sample in 1:nsamples(X)
+                    for w in allworlds(X, i_sample)
+            ])
+        [(mc, thresholds) for mc in metaconditions]
+    end for (feature, metaconditions) in grouped_metaconditions(X)]...)
+    C = FeatCondition{featvaltype(X),FeatMetaCondition{featuretype(X)}}
+    BoundedExplicitConditionalAlphabet{C}(collect(conds))
+end
+
+
 
 # Base.length(X::ActiveFeaturedDataset) = nsamples(X)
 # Base.iterate(X::ActiveFeaturedDataset, state=1) = state > nsamples(X) ? nothing : (get_instance(X, state), state+1)

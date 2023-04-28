@@ -52,6 +52,8 @@ export AbstractFeature,
         SingleAttributeGenericFeature, MultiAttributeFeature,
         NamedFeature, ExternalFWDFeature
 
+export propositions
+
 export compute_feature
 
 include("conditional-data/main.jl")

@@ -1,8 +1,8 @@
 using SoleLogics: AbstractAlphabet
 using Random
-import SoleLogics: negation
+import SoleLogics: negation, propositions
 
-import Base: isequal, hash, in, iterate, isfinite, length
+import Base: isequal, hash, in, isfinite, length
 import StatsBase: sample
 
 abstract type AbstractCondition end # TODO parametric?
@@ -32,7 +32,7 @@ feature(m::FeatMetaCondition) = m.feature
 test_operator(m::FeatMetaCondition) = m.test_operator
 
 syntaxstring(m::FeatMetaCondition; kwargs...) =
-    "$(_syntaxstring_feature_test_operator_pair(feature(m),test_operator(m); kwargs...)) ⍰"
+    "$(_syntaxstring_feature_test_operator_pair(feature(m), test_operator(m); kwargs...)) ⍰"
 
 ############################################################################################
 
@@ -84,7 +84,7 @@ syntaxstring(m::FeatCondition; threshold_decimals = nothing, kwargs...) =
 ############################################################################################
 
 """
-    abstract type AbstractConditionalAlphabet{M<:FeatMetaCondition} <: AbstractAlphabet{M} end
+    abstract type AbstractConditionalAlphabet{C<:FeatCondition} <: AbstractAlphabet{C} end
 
 Abstract type for alphabets of conditions.
 
@@ -93,11 +93,11 @@ See also
 [`FeatMetaCondition`](@ref),
 [`AbstractAlphabet`](@ref).
 """
-abstract type AbstractConditionalAlphabet{M<:FeatMetaCondition} <: AbstractAlphabet{M} end
+abstract type AbstractConditionalAlphabet{C<:FeatCondition} <: AbstractAlphabet{C} end
 
 """
-    struct UnboundedExplicitConditionalAlphabet{M<:FeatMetaCondition} <: AbstractConditionalAlphabet{M}
-        metaconditions::Vector{M}
+    struct UnboundedExplicitConditionalAlphabet{C<:FeatCondition} <: AbstractConditionalAlphabet{C}
+        metaconditions::Vector{<:FeatMetaCondition}
     end
 
 An infinite alphabet of conditions induced from a finite set of metaconditions.
@@ -110,92 +110,97 @@ See also
 [`FeatMetaCondition`](@ref),
 [`AbstractAlphabet`](@ref).
 """
-struct UnboundedExplicitConditionalAlphabet{M<:FeatMetaCondition} <: AbstractConditionalAlphabet{M}
-    metaconditions::Vector{M}
+struct UnboundedExplicitConditionalAlphabet{C<:FeatCondition} <: AbstractConditionalAlphabet{C}
+    metaconditions::Vector{<:FeatMetaCondition}
 
-    function UnboundedExplicitConditionalAlphabet{M}(
-        metaconditions::Vector{M}
-    ) where {M<:FeatMetaCondition}
-        new{M}(metaconditions)
+    function UnboundedExplicitConditionalAlphabet{C}(
+        metaconditions::Vector{<:FeatMetaCondition}
+    ) where {C<:FeatCondition}
+        new{C}(metaconditions)
     end
 
     function UnboundedExplicitConditionalAlphabet(
-        metaconditions::Vector{M}
-    ) where {M<:FeatMetaCondition}
-        UnboundedExplicitConditionalAlphabet{M}(metaconditions)
-    end
-
-    function UnboundedExplicitConditionalAlphabet(
-        features       :: Vector,
-        test_operators :: Vector,
-    )
+        features       :: AbstractVector{C},
+        test_operators :: AbstractVector,
+    ) where {C<:FeatCondition}
         metaconditions =
-            [FeatMetaCondition(f,t) for f in features for t in test_operators]
-        UnboundedExplicitConditionalAlphabet(metaconditions)
+            [FeatMetaCondition(f, t) for f in features for t in test_operators]
+        UnboundedExplicitConditionalAlphabet{C}(metaconditions)
     end
 end
 
 Base.isfinite(::Type{<:UnboundedExplicitConditionalAlphabet}) = false
-Base.isiterable(::Type{<:UnboundedExplicitConditionalAlphabet}) = false
 
-# Finite alphabet of conditions induced from a set of metaconditions
-struct BoundedExplicitConditionalAlphabet{M<:FeatMetaCondition} <: AbstractConditionalAlphabet{M}
-    featconditions::Vector{Tuple{M,Vector}}
+function Base.in(p::Proposition{<:FeatCondition}, a::UnboundedExplicitConditionalAlphabet)
+    fc = atom(p)
+    idx = findfirst(mc->mc == metacond(fc), a.metaconditions)
+    return !isnothing(idx)
+end
 
-    function BoundedExplicitConditionalAlphabet{M}(
-        featconditions::Vector{Tuple{M,Vector}}
-    ) where {M<:FeatMetaCondition}
-        new{M}(featconditions)
+"""
+    struct BoundedExplicitConditionalAlphabet{C<:FeatCondition} <: AbstractConditionalAlphabet{C}
+        grouped_featconditions::Vector{Tuple{<:FeatMetaCondition,Vector}}
     end
 
-    function BoundedExplicitConditionalAlphabet(
+A finite alphabet of conditions, grouped by (a finite set of) metaconditions.
+
+See also
+[`UnboundedExplicitConditionalAlphabet`](@ref),
+[`FeatCondition`](@ref),
+[`FeatMetaCondition`](@ref),
+[`AbstractAlphabet`](@ref).
+"""
+# Finite alphabet of conditions induced from a set of metaconditions
+struct BoundedExplicitConditionalAlphabet{C<:FeatCondition} <: AbstractConditionalAlphabet{C}
+    grouped_featconditions::Vector{<:Tuple{FeatMetaCondition,Vector}}
+
+    function BoundedExplicitConditionalAlphabet{C}(
+        grouped_featconditions::Vector{<:Tuple{FeatMetaCondition,Vector}}
+    ) where {C<:FeatCondition}
+        new{C}(grouped_featconditions)
+    end
+
+    function BoundedExplicitConditionalAlphabet{C}(
         metaconditions::Vector{<:FeatMetaCondition},
         thresholds::Vector{<:Vector},
-    )
+    ) where {C<:FeatCondition}
         length(metaconditions) != length(thresholds) &&
             error("Can't instantiate BoundedExplicitConditionalAlphabet with mismatching" *
                 " number of `metaconditions` and `thresholds`" *
                 " ($(metaconditions) != $(thresholds)).")
-        featconditions = collect(zip(metaconditions, thresholds))
-        M = SoleBase._typejoin(typeof.(metaconditions)...)
-        BoundedExplicitConditionalAlphabet{M}(featconditions)
+        grouped_featconditions = collect(zip(metaconditions, thresholds))
+        # M = SoleBase._typejoin(typeof.(metaconditions)...)
+        BoundedExplicitConditionalAlphabet{C}(grouped_featconditions)
     end
 
     function BoundedExplicitConditionalAlphabet(
-        features       :: Vector,
-        test_operators :: Vector,
+        features       :: AbstractVector{C},
+        test_operators :: AbstractVector,
         thresholds     :: Vector
-    )
+    ) where {C<:FeatCondition}
         metaconditions =
-            [FeatMetaCondition(f,t) for f in features for t in test_operators]
-        BoundedExplicitConditionalAlphabet(metaconditions,thresholds)
+            [FeatMetaCondition(f, t) for f in features for t in test_operators]
+        BoundedExplicitConditionalAlphabet{C}(metaconditions, thresholds)
     end
 end
 
-featconditions(a::BoundedExplicitConditionalAlphabet) = a.featconditions
+function propositions(a::BoundedExplicitConditionalAlphabet)
+    Iterators.flatten(
+        map(
+            ((mc,thresholds),)->map(
+                threshold->Proposition(FeatCondition(mc, threshold)),
+                thresholds),
+            a.grouped_featconditions
+        )
+    ) |> collect
+end
 
-propositions(a::BoundedExplicitConditionalAlphabet) =
-    reduce(vcat, map(
-        mc_thresholds->
-            map(threshold->FeatCondition(first(mc_thresholds), threshold),
-            last(mc_thresholds)),
-        featconditions(a)))
-
-function Base.in(fc::FeatCondition, a::BoundedExplicitConditionalAlphabet)
-    featconds = featconditions(a)
-    idx = findfirst(mc_thresholds->first(mc_thresholds)==metacond(fc), featconds)
+function Base.in(p::Proposition{<:FeatCondition}, a::BoundedExplicitConditionalAlphabet)
+    fc = atom(p)
+    featconds = a.grouped_featconditions
+    idx = findfirst(((mc,thresholds),)->mc == metacond(fc), featconds)
     return !isnothing(idx) && Base.in(threshold(fc), last(featconds[idx]))
 end
-
-Base.iterate(a::BoundedExplicitConditionalAlphabet) = Base.iterate(propositions(a))
-function Base.iterate(a::BoundedExplicitConditionalAlphabet, state)
-    return Base.iterate(propositions(a), state)
-end
-
-Base.isfinite(::Type{BoundedExplicitConditionalAlphabet}) = true
-Base.isfinite(a::BoundedExplicitConditionalAlphabet) = Base.isfinite(typeof(a))
-
-Base.length(a::BoundedExplicitConditionalAlphabet) = length(propositions(a))
 
 ############################################################################################
 
