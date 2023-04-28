@@ -1071,8 +1071,36 @@ function apply(
     defaultconsequent(m)
 end
 
-#TODO: write in docstring that possible values are: :append, true, false
 function apply(
+    m::DecisionList{O},
+    d::AbstractInterpretationSet;
+    check_args::Tuple = (),
+    check_kwargs::NamedTuple = (;),
+    kwargs...
+) where {O}
+    nsamp = nsamples(d)
+    pred = Vector{O}(undef, nsamp)
+    uncovered_idxs = 1:nsamp
+
+    for rule in rulebase(m)
+        length(uncovered_idxs) == 0 && break
+
+        idxs_sat = findall(
+            check(antecedent(rule),d, check_args...; check_kwargs...) .== true
+        )
+        uncovered_idxs = setdiff(uncovered_idxs,idxs_sat)
+
+        map((i)->(pred[i] = outcome(consequent(rule))), idxs_sat)
+    end
+
+    length(uncovered_idxs) != 0 &&
+        map((i)->(pred[i] = outcome(defaultconsequent(m))), uncovered_idxs)
+
+    return pred
+end
+
+#TODO: write in docstring that possible values are: :append, true, false
+function apply!(
     m::DecisionList{O},
     d::AbstractInterpretationSet;
     check_args::Tuple = (),
