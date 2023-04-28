@@ -58,4 +58,7 @@ export compute_feature
 
 include("conditional-data/main.jl")
 
+export featcondbuilder
+include("models/parse.jl")
+
 end

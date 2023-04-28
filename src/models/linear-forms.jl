@@ -1,3 +1,4 @@
+#= This entire page is temporarily commented out for compiling purposes
 using SoleLogics: LeftmostLinearForm, LeftmostConjunctiveForm, LeftmostDisjunctiveForm
 
 # Helpers
@@ -13,6 +14,7 @@ end
 function ndisjuncts(m::Rule{O,<:LogicalTruthCondition{<:LeftmostDisjunctiveForm}}) where {O}
     nchildren(formula(m))
 end
+=#
 
 #=
 function Base.getindex(
