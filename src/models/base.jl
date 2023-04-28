@@ -1071,32 +1071,66 @@ function apply(
     defaultconsequent(m)
 end
 
+#TODO: write in docstring that possible values are: :append, true, false
 function apply(
     m::DecisionList{O},
     d::AbstractInterpretationSet;
     check_args::Tuple = (),
     check_kwargs::NamedTuple = (;),
+    compute_metrics::Union{Symbol,Bool} = false,
     kwargs...
 ) where {O}
+    function _newtuple(s::Symbol,nt::NamedTuple,v::Vector)
+        return s ∉ keys(nt) ?  merge(nt, (s = v,)) : begin
+            prev = i[:s]
+            ntwithout = (; [p for p in pairs(nt) if p[1] != :s]...)
+            if compute_metrics == :append
+                merge(ntwithout,(; s = [prev..., v...]))
+            elseif compute_metrics == true
+                merge(ntwithout,(; s = v))
+            end
+        end
+    end
+
     nsamp = nsamples(d)
     pred = Vector{O}(undef, nsamp)
+    delays = Vector{Integer}(undef, nsamp)
     uncovered_idxs = 1:nsamp
+    rules = rulebase(m)
 
-    for rule in rulebase(m)
+    for (n,rule) in enumerate(rules)
         length(uncovered_idxs) == 0 && break
 
         idxs_sat = findall(
-            check(antecedent(rule),d, check_args...; check_kwargs...) .== true
+            check(antecedent(rule), d, check_args...; check_kwargs...) .== true
         )
-        uncovered_idxs = setdiff(uncovered_idxs,idxs_sat)
-
         map((i)->(pred[i] = outcome(consequent(rule))), idxs_sat)
+        delays[idxs_sat] .= (n-1)
+
+        uncovered_idxs = setdiff(uncovered_idxs,idxs_sat)
     end
 
-    length(uncovered_idxs) != 0 &&
+    if length(uncovered_idxs) != 0
         map((i)->(pred[i] = outcome(defaultconsequent(m))), uncovered_idxs)
+        length(rules) == 0 ? (delays .= 0) : (delays[uncovered_idxs] .= length(rules))
+    end
 
-    return pred
+    delays = delays ./ length(rules)
+
+    i = info(m)
+    inew = compute_metrics == false ? i : _newtuple(:delays, i, delays)
+    inewnew = _newtuple(:pred, inew, pred)
+
+    return DecisionList(rules, defaultconsequent(m), inewnew)
+end
+
+# TODO: if delays not in info(m) ?
+function meandelay(m::DecisionList)
+    i = info(m)
+
+    if :delay in keys(i)
+        return mean(i[:delays])
+    end
 end
 
 ############################################################################################
