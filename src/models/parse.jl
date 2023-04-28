@@ -1,4 +1,4 @@
-#= ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#= ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Code purpose ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Given a string "min[A189] <= 250", build the corresponding FeatCondition.
 
 In the example:
@@ -8,8 +8,24 @@ In the example:
 
 This can be done by integrating this code with SoleLogics parsing system:
     SoleLogics.parseformulatree(
-        "min[189] <= 250 ∧ min[189] <= 250", proposition_parser = featcondbuilder
-    )
+        "min[189] <= 250 ∧ min[189] <= 250", proposition_parser = featcondbuilder);
+    as you notice, featconbuilder is passed to parseformulatree to interpret
+    each proposition found as Proposition{FeatCondition} instead of Proposition{String}.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ =#
+
+#= ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Limitations ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Here are listed the current limitations in featcondbuilder: in other words,
+the limitations that has to be considered when converting a string
+shaped like "feature[attribute] operator threshold" into a FeatCondition.
+
+- Legal features are only "min" and "max" (see _BASE_FEATURES).
+- In "min[A189] <= 250", a space between "<=" and "250" is required:
+    this is because otherwise we don't know when the operator string finishes;
+    a solution could be to take a vector of legal operators from the user, and provide
+    a default one.
+- In "min[A189] <= 250", "min" has to be written exactly like this ("min  " is illegal).
+- Features are always Type{Real}.
+- Thresholds are always Type{Float64}.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ =#
 
 # Feature brackets
