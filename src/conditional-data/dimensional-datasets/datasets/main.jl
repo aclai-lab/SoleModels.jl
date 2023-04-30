@@ -2,6 +2,7 @@ using ProgressMeter
 
 using SoleLogics: AbstractRelation
 using SoleLogics: AbstractFormula
+import SoleLogics: alphabet
 
 using SoleModels: CanonicalFeatureGeq, CanonicalFeatureGeqSoft, CanonicalFeatureLeq, CanonicalFeatureLeqSoft
 using SoleModels: evaluate_thresh_decision, existential_aggregator, aggregator_bottom, aggregator_to_binary
@@ -89,7 +90,7 @@ end
 # Active datasets comprehend structures for representing relation sets, features, enumerating worlds,
 #  etc. While learning a model can be done only with active modal datasets, testing a model
 #  can be done with both active and passive modal datasets.
-# 
+#
 abstract type ActiveFeaturedDataset{V<:Number,W<:AbstractWorld,FR<:AbstractFrame{W,Bool},FT<:AbstractFeature{V}} <: AbstractConditionalDataset{W,AbstractCondition,Bool,FR} end
 
 import SoleModels: featvaltype
@@ -204,9 +205,9 @@ function check(
     use_memo::Union{Nothing,AbstractVector{<:AbstractDict{F,T}}} = nothing,
     # memo_max_height = Inf,
 ) where {W<:AbstractWorld,T<:Bool,FR<:AbstractMultiModalFrame{W,T},F<:SoleLogics.AbstractFormula}
-    
+
     @assert SoleLogics.isglobal(φ) "TODO expand code to specifying a world, defaulted to an initialworld. Cannot check non-global formula: $(syntaxstring(φ))."
-    
+
     memo_structure = begin
         if isnothing(use_memo)
             Dict{SyntaxTree,WorldSet{W}}()
@@ -214,7 +215,7 @@ function check(
             use_memo[i_sample]
         end
     end
-    
+
     # forget_list = Vector{SoleLogics.FNode}()
     # hasmemo(::ActiveFeaturedDataset) = false
     # hasmemo(X)TODO
@@ -222,7 +223,7 @@ function check(
     # φ = normalize(φ) # TODO normalize formula and/or use a dedicate memoization structure that normalizes functions
 
     fr = frame(X, i_sample)
-    
+
     if !hasformula(memo_structure, φ)
         for ψ in unique(SoleLogics.subformulas(φ))
             # @show ψ
@@ -269,7 +270,7 @@ function compute_chained_threshold(
     i_sample;
     use_memo::Union{Nothing,AbstractVector{<:AbstractDict{F,T}}} = nothing,
 ) where {V<:Number,W<:AbstractWorld,T<:Bool,FR<:AbstractMultiModalFrame{W,T},F<:SoleLogics.AbstractFormula}
-    
+
     @assert SoleLogics.isglobal(φ) "TODO expand code to specifying a world, defaulted to an initialworld. Cannot check non-global formula: $(syntaxstring(φ))."
 
     memo_structure = begin
@@ -283,7 +284,7 @@ function compute_chained_threshold(
     # φ = normalize(φ) # TODO normalize formula and/or use a dedicate memoization structure that normalizes functions
 
     fr = frame(X, i_sample)
-    
+
     if !hasformula(memo_structure, φ)
         for ψ in unique(SoleLogics.subformulas(φ))
             if !hasformula(memo_structure, ψ)

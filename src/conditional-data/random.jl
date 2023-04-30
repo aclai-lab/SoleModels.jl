@@ -43,7 +43,7 @@ function StatsBase.sample(
             "feature: $(feature)\n" *
             "test operator: $(test_operator)\n"
 
-    featconds = featconditions(a)
+    featconds = a.grouped_featconditions
 
     filtered_featconds = begin
         if !isnothing(metaconditions)
