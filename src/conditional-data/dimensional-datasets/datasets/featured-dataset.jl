@@ -329,8 +329,9 @@ worldtype(X::FeaturedDataset{V,W}) where {V,W<:AbstractWorld} = W
 nfeatsnaggrs(X::FeaturedDataset)            = sum(length.(grouped_featsnaggrs(X)))
 
 frame(X::FeaturedDataset, i_sample) = frame(fwd(X), i_sample)
+initialworld(X::FeaturedDataset) = X.initialworld
 function initialworld(X::FeaturedDataset, i_sample)
-    X.initialworld isa AbstractWorldSet ? X.initialworld[i_sample] : X.initialworld
+    initialworld(X) isa AbstractWorldSet ? initialworld(X)[i_sample] : initialworld(X)
 end
 
 function _slice_dataset(X::FeaturedDataset, inds::AbstractVector{<:Integer}, args...; kwargs...)

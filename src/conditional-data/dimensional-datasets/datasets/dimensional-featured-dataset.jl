@@ -233,8 +233,9 @@ _slice_dataset(X::DimensionalFeaturedDataset, inds::AbstractVector{<:Integer}, a
     DimensionalFeaturedDataset(_slice_dataset(domain(X), inds, args...; kwargs...), ontology(X), features(X), X.grouped_featsaggrsnops)
 
 frame(X::DimensionalFeaturedDataset, i_sample) = frame(domain(X), i_sample)
+initialworld(X::DimensionalFeaturedDataset) = X.initialworld
 function initialworld(X::DimensionalFeaturedDataset, i_sample)
-    X.initialworld isa AbstractWorldSet ? X.initialworld[i_sample] : X.initialworld
+    initialworld(X) isa AbstractWorldSet ? initialworld(X)[i_sample] : initialworld(X)
 end
 
 function display_structure(X::DimensionalFeaturedDataset; indent_str = "")
