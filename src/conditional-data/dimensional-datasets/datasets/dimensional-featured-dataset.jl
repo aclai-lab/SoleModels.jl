@@ -242,7 +242,8 @@ function display_structure(X::DimensionalFeaturedDataset; indent_str = "")
     out = "$(typeof(X))\t$(Base.summarysize(X) / 1024 / 1024 |> x->round(x, digits=2)) MBs\n"
     out *= indent_str * "├ relations: \t$((length(relations(X))))\t$(relations(X))\n"
     out *= indent_str * "├ domain shape\t$(Base.size(domain(X)))\n"
-    out *= indent_str * "└ max_channel_size\t$(max_channel_size(X))"
+    out *= indent_str * "├ max_channel_size\t$(max_channel_size(X))"
+    out *= indent_str * "└ initialworld(s)\t$(initialworld(X))"
     out
 end
 
