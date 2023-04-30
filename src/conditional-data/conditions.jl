@@ -31,7 +31,7 @@ end
 feature(m::FeatMetaCondition) = m.feature
 test_operator(m::FeatMetaCondition) = m.test_operator
 
-negation(c::FeatMetaCondition) = FeatMetaCondition(feature(c), test_operator_inverse(test_operator(c)))
+negation(m::FeatMetaCondition) = FeatMetaCondition(feature(m), test_operator_inverse(test_operator(m)))
 
 syntaxstring(m::FeatMetaCondition; kwargs...) =
     "$(_syntaxstring_feature_test_operator_pair(feature(m), test_operator(m); kwargs...)) ⍰"
@@ -76,7 +76,7 @@ threshold(c::FeatCondition) = c.a
 feature(c::FeatCondition) = feature(metacond(c))
 test_operator(c::FeatCondition) = test_operator(metacond(c))
 
-negation(c::FeatCondition) = FeatCondition(negation(metacond), threshold(c))
+negation(c::FeatCondition) = FeatCondition(negation(metacond(c)), threshold(c))
 
 syntaxstring(m::FeatCondition; threshold_decimals = nothing, kwargs...) =
     "$(_syntaxstring_feature_test_operator_pair(feature(m), test_operator(m))) $((isnothing(threshold_decimals) ? threshold(m) : round(threshold(m); digits=threshold_decimals)))"
