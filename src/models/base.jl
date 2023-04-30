@@ -130,21 +130,9 @@ function check(
     c::LogicalTruthCondition,
     d::AbstractInterpretationSet,
     args...;
-    use_memo::Union{Nothing,AbstractVector} = nothing,
     kwargs...,
 )
-    # TODO use get_instance instead?
-    map(
-        i_sample->tops(begin
-            check(
-                formula(c),
-                slice_dataset(d, [i_sample]),
-                args...;
-                use_memo = (isnothing(use_memo) ? nothing : @view use_memo[[i_sample]]),
-                kwargs...,
-            )[1]
-        end), 1:nsamples(d)
-    )
+    map(tops, check(formula(c), d, args...; kwargs...))
 end
 
 ############################################################################################
@@ -1096,9 +1084,9 @@ function apply(
         length(uncovered_idxs) == 0 && break
 
         idxs_sat = findall(
-            check(antecedent(rule),d, check_args...; check_kwargs...) .== true
+            check(antecedent(rule), d, check_args...; check_kwargs...) .== true
         )
-        uncovered_idxs = setdiff(uncovered_idxs,idxs_sat)
+        uncovered_idxs = setdiff(uncovered_idxs, idxs_sat)
 
         map((i)->(pred[i] = outcome(consequent(rule))), idxs_sat)
     end
@@ -1124,7 +1112,7 @@ function apply!(
     uncovered_idxs = 1:nsamp
     rules = rulebase(m)
 
-    for (n,rule) in enumerate(rules)
+    for (n, rule) in enumerate(rules)
         length(uncovered_idxs) == 0 && break
 
         idxs_sat = findall(
@@ -1133,7 +1121,7 @@ function apply!(
         map((i)->(pred[i] = outcome(consequent(rule))), idxs_sat)
         delays[idxs_sat] .= (n-1)
 
-        uncovered_idxs = setdiff(uncovered_idxs,idxs_sat)
+        uncovered_idxs = setdiff(uncovered_idxs, idxs_sat)
     end
 
     if length(uncovered_idxs) != 0

@@ -339,7 +339,8 @@ function _slice_dataset(X::FeaturedDataset, inds::AbstractVector{<:Integer}, arg
         _slice_dataset(fwd(X), inds, args...; kwargs...),
         relations(X),
         features(X),
-        grouped_featsaggrsnops(X)
+        grouped_featsaggrsnops(X);
+        initialworld = initialworld(X)
     )
 end
 
