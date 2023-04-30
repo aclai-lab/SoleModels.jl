@@ -1118,18 +1118,6 @@ function apply!(
     check_kwargs::NamedTuple = (; use_memo = [Dict{SyntaxTree,WorldSet{worldtype(d)}}() for i in 1:nsamples(d)]),
     compute_metrics::Union{Symbol,Bool} = false,
 ) where {O}
-    function _newtuple(s::Symbol,nt::NamedTuple,v::Vector)
-        return s ∉ keys(nt) ?  merge(nt, (s = v,)) : begin
-            prev = i[:s]
-            ntwithout = (; [p for p in pairs(nt) if p[1] != :s]...)
-            if compute_metrics == :append
-                merge(ntwithout,(; s = [prev..., v...]))
-            elseif compute_metrics == true
-                merge(ntwithout,(; s = v))
-            end
-        end
-    end
-
     nsamp = nsamples(d)
     pred = Vector{O}(undef, nsamp)
     delays = Vector{Integer}(undef, nsamp)
@@ -1153,11 +1141,36 @@ function apply!(
         length(rules) == 0 ? (delays .= 0) : (delays[uncovered_idxs] .= length(rules))
     end
 
-    delays = delays ./ length(rules)
+    (length(rules) != 0) && (delays = delays ./ length(rules))
 
-    i = info(m)
-    inew = compute_metrics == false ? i : _newtuple(:delays, i, delays)
-    inewnew = _newtuple(:pred, inew, pred)
+    iprev = info(m)
+    inew = compute_metrics == false ? iprev : begin
+        if :delays ∉ keys(iprev)
+            merge(iprev, (; delays = delays))
+        else
+            prev = iprev[:delays]
+            ntwithout = (; [p for p in pairs(nt) if p[1] != :delays]...)
+            if compute_metrics == :append
+                merge(ntwithout,(; delays = [prev..., delays...]))
+            elseif compute_metrics == true
+                merge(ntwithout,(; delays = delays))
+            end
+        end
+    end
+
+    inewnew = begin
+        if :pred ∉ keys(inew)
+            merge(inew, (; pred = pred))
+        else
+            prev = inew[:pred]
+            ntwithout = (; [p for p in pairs(nt) if p[1] != :pred]...)
+            if compute_metrics == :append
+                merge(ntwithout,(; pred = [prev..., pred...]))
+            elseif compute_metrics == true
+                merge(ntwithout,(; pred = pred))
+            end
+        end
+    end
 
     return DecisionList(rules, defaultconsequent(m), inewnew)
 end
@@ -1166,7 +1179,7 @@ end
 function meandelay(m::DecisionList)
     i = info(m)
 
-    if :delay in keys(i)
+    if :delays in keys(i)
         return mean(i[:delays])
     end
 end

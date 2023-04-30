@@ -47,7 +47,7 @@ function StatsBase.sample(
 
     filtered_featconds = begin
         if !isnothing(metaconditions)
-            filtered_featconds = filter(mc_thresholds->first(mc_thresholds) in [metaconditions..., negation.(metaconditions)], grouped_featconditions)
+            filtered_featconds = filter(mc_thresholds->first(mc_thresholds) in [metaconditions..., negation.(metaconditions)...], grouped_featconditions)
             @assert length(filtered_featconds) == length(metaconditions) "" *
                 "There is at least one metacondition passed that is not among the " *
                 "possible ones\n metaconditions: $(metaconditions)\n filtered " *
