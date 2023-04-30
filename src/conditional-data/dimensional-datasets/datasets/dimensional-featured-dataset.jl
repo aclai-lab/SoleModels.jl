@@ -230,7 +230,7 @@ max_channel_size(X::DimensionalFeaturedDataset)          = max_channel_size(doma
 get_instance(X::DimensionalFeaturedDataset, args...)     = get_instance(domain(X), args...)
 
 _slice_dataset(X::DimensionalFeaturedDataset, inds::AbstractVector{<:Integer}, args...; kwargs...)    =
-    DimensionalFeaturedDataset(_slice_dataset(domain(X), inds, args...; kwargs...), ontology(X), features(X), X.grouped_featsaggrsnops)
+    DimensionalFeaturedDataset(_slice_dataset(domain(X), inds, args...; kwargs...), ontology(X), features(X), grouped_featsaggrsnops(X); initialworld = initialworld(X))
 
 frame(X::DimensionalFeaturedDataset, i_sample) = frame(domain(X), i_sample)
 initialworld(X::DimensionalFeaturedDataset) = X.initialworld
