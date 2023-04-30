@@ -28,7 +28,7 @@ function StatsBase.sample(
     metaconditions::Union{Nothing,FeatMetaCondition,AbstractVector{<:FeatMetaCondition}} = nothing,
     features::Union{Nothing,AbstractFeature,AbstractVector{<:AbstractFeature}} = nothing,
     test_operators::Union{Nothing,TestOperatorFun,AbstractVector{<:TestOperatorFun}} = nothing,
-)::FeatCondition
+)::Proposition{<:FeatCondition}
 
     # Transform values to singletons
     metaconditions = metaconditions isa FeatMetaCondition ? [metaconditions] : metaconditions
@@ -71,5 +71,5 @@ function StatsBase.sample(
 
     mc_thresholds = rand(rng, filtered_featconds)
 
-    return FeatCondition(first(mc_thresholds), rand(rng, last(mc_thresholds)))
+    return Proposition(FeatCondition(first(mc_thresholds), rand(rng, last(mc_thresholds))))
 end
