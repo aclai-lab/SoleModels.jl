@@ -139,6 +139,7 @@ function check(
             check(
                 formula(c),
                 slice_dataset(d, [i_sample]),
+                i_sample,
                 args...;
                 use_memo = (isnothing(use_memo) ? nothing : @view use_memo[[i_sample]]),
                 kwargs...,
