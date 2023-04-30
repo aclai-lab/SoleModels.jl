@@ -225,7 +225,7 @@ end
         m::AbstractModel,
         d::AbstractInterpretationSet;
         check_args::Tuple = (),
-        check_kwargs::NamedTuple = (;),
+        check_kwargs::NamedTuple = (; use_memo = [Dict{SyntaxTree,WorldSet{worldtype(d)}}() for i in 1:nsamples(d)]),
         functional_args::Tuple = (),
         functional_kwargs::NamedTuple = (;),
         kwargs...
@@ -952,7 +952,7 @@ function apply(
     m::Branch{O,<:LogicalTruthCondition},
     d::AbstractInterpretationSet;
     check_args::Tuple = (),
-    check_kwargs::NamedTuple = (;),
+    check_kwargs::NamedTuple = (; use_memo = [Dict{SyntaxTree,WorldSet{worldtype(d)}}() for i in 1:nsamples(d)]),
     kwargs...
 ) where {O}
     cs = check_antecedent(m, d, check_args...; check_kwargs...)
@@ -1061,7 +1061,6 @@ function apply(
     i::AbstractInterpretation;
     check_args::Tuple = (),
     check_kwargs::NamedTuple = (;),
-    kwargs...
 )
     for rule in rulebase(m)
         if check(m, i, check_args...; check_kwargs...)
@@ -1075,8 +1074,7 @@ function apply(
     m::DecisionList{O},
     d::AbstractInterpretationSet;
     check_args::Tuple = (),
-    check_kwargs::NamedTuple = (;),
-    kwargs...
+    check_kwargs::NamedTuple = (; use_memo = [Dict{SyntaxTree,WorldSet{worldtype(d)}}() for i in 1:nsamples(d)]),
 ) where {O}
     nsamp = nsamples(d)
     pred = Vector{O}(undef, nsamp)
@@ -1099,14 +1097,14 @@ function apply(
     return pred
 end
 
-#TODO: write in docstring that possible values are: :append, true, false
+#TODO: write apply! for the other models
+#TODO write in docstring that possible values for compute_metrics are: :append, true, false
 function apply!(
     m::DecisionList{O},
     d::AbstractInterpretationSet;
     check_args::Tuple = (),
-    check_kwargs::NamedTuple = (;),
+    check_kwargs::NamedTuple = (; use_memo = [Dict{SyntaxTree,WorldSet{worldtype(d)}}() for i in 1:nsamples(d)]),
     compute_metrics::Union{Symbol,Bool} = false,
-    kwargs...
 ) where {O}
     function _newtuple(s::Symbol,nt::NamedTuple,v::Vector)
         return s ∉ keys(nt) ?  merge(nt, (s = v,)) : begin
