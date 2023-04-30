@@ -36,7 +36,7 @@ function StatsBase.sample(
     test_operators = test_operators isa TestOperatorFun ? [test_operators] : test_operators
 
     @assert !(!isnothing(metaconditions) &&
-        (!isnothing(features) || !isnothing(test_operators)))
+        (!isnothing(features) || !isnothing(test_operators))) "" *
             "Ambiguous output, there are more choices; only one metacondition, one " *
             "feature or one operator must be specified\n Now: \n" *
             "metaconditions: $(metaconditions)\n" *
@@ -47,22 +47,25 @@ function StatsBase.sample(
 
     filtered_featconds = begin
         if !isnothing(metaconditions)
-            filtered_featconds = filter(mc_thresholds->first(mc_thresholds) in metaconditions, featconds)
-            @assert length(filtered_featconds) == length(metaconditions)
+            filtered_featconds = filter(mc_thresholds->first(mc_thresholds) in [metaconditions..., negation.(metaconditions)], featconds)
+            @assert length(filtered_featconds) == length(metaconditions) "" *
                 "There is at least one metacondition passed that is not among the " *
                 "possible ones\n metaconditions: $(metaconditions)\n filtered " *
-                "metaconditions: $(filtered_featconds)"
+                "metaconditions: $(filtered_featconds)\n" *
+                "featconds: $(map(first,featconds))"
             filtered_featconds
         elseif !isnothing(features) || !isnothing(test_operators)
             filtered_featconds = filter(mc_thresholds->begin
                 mc = first(mc_thresholds)
-                return (isnothing(features) || SoleLogics.feature(mc) in feature) &&
-                    (isnothing(test_operators) || SoleLogics.test_operator(mc) in test_operator)
+                return (isnothing(features) || feature(mc) in features) &&
+                    (isnothing(test_operators) || test_operator(mc) in test_operators)
             end, featconds)
-            @assert length(filtered_featconds) == length(metaconditions)
+            # TODO check with alphabet
+            #=@assert length(filtered_featconds) == length(metaconditions) "" *
                 "There is at least one metacondition passed that is not among the " *
                 "possible ones\n metaconditions: $(metaconditions)\n filtered " *
-                "metaconditions: $(filtered_featconds)"
+                "metaconditions: $(filtered_featconds)" *
+                "featconds: $(map(first,featconds))" =#
             filtered_featconds
         else
             featconds
