@@ -43,32 +43,32 @@ function StatsBase.sample(
             "feature: $(feature)\n" *
             "test operator: $(test_operator)\n"
 
-    featconds = a.grouped_featconditions
+    grouped_featconditions = a.grouped_featconditions
 
     filtered_featconds = begin
         if !isnothing(metaconditions)
-            filtered_featconds = filter(mc_thresholds->first(mc_thresholds) in [metaconditions..., negation.(metaconditions)], featconds)
+            filtered_featconds = filter(mc_thresholds->first(mc_thresholds) in [metaconditions..., negation.(metaconditions)], grouped_featconditions)
             @assert length(filtered_featconds) == length(metaconditions) "" *
                 "There is at least one metacondition passed that is not among the " *
                 "possible ones\n metaconditions: $(metaconditions)\n filtered " *
                 "metaconditions: $(filtered_featconds)\n" *
-                "featconds: $(map(first,featconds))"
+                "grouped_featconditions: $(map(first,grouped_featconditions))"
             filtered_featconds
         elseif !isnothing(features) || !isnothing(test_operators)
             filtered_featconds = filter(mc_thresholds->begin
                 mc = first(mc_thresholds)
                 return (isnothing(features) || feature(mc) in features) &&
                     (isnothing(test_operators) || test_operator(mc) in test_operators)
-            end, featconds)
+            end, grouped_featconditions)
             # TODO check with alphabet
             #=@assert length(filtered_featconds) == length(metaconditions) "" *
                 "There is at least one metacondition passed that is not among the " *
                 "possible ones\n metaconditions: $(metaconditions)\n filtered " *
                 "metaconditions: $(filtered_featconds)" *
-                "featconds: $(map(first,featconds))" =#
+                "grouped_featconditions: $(map(first,grouped_featconditions))" =#
             filtered_featconds
         else
-            featconds
+            grouped_featconditions
         end
     end
 
