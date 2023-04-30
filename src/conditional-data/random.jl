@@ -2,11 +2,11 @@
 """
     function StatsBase.sample(
         rng::AbstractRNG,
-        a::BoundedExplicitConditionalAlphabet;
+        a::BoundedExplicitConditionalAlphabet{C};
         metaconditions::Union{Nothing,FeatMetaCondition,AbstractVector{<:FeatMetaCondition}} = nothing,
         feature::Union{Nothing,AbstractFeature,AbstractVector{<:AbstractFeature}} = nothing,
         test_operator::Union{Nothing,TestOperatorFun,AbstractVector{<:TestOperatorFun}} = nothing,
-    )::FeatCondition
+    )::Proposition{C} where {C}
 
 Randomly samples a `FeatCondition` from conditional alphabet `a`, such that:
 - if `metaconditions` are specified, then the set of metaconditions (feature-operator pairs)
@@ -24,11 +24,11 @@ See also
 """
 function StatsBase.sample(
     rng::AbstractRNG,
-    a::BoundedExplicitConditionalAlphabet;
+    a::BoundedExplicitConditionalAlphabet{C};
     metaconditions::Union{Nothing,FeatMetaCondition,AbstractVector{<:FeatMetaCondition}} = nothing,
     features::Union{Nothing,AbstractFeature,AbstractVector{<:AbstractFeature}} = nothing,
     test_operators::Union{Nothing,TestOperatorFun,AbstractVector{<:TestOperatorFun}} = nothing,
-)::Proposition{<:FeatCondition}
+)::Proposition{C} where {C}
 
     # Transform values to singletons
     metaconditions = metaconditions isa FeatMetaCondition ? [metaconditions] : metaconditions
