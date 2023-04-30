@@ -7,6 +7,7 @@ import SoleLogics: initialworld
 
 using SoleModels: CanonicalFeatureGeq, CanonicalFeatureGeqSoft, CanonicalFeatureLeq, CanonicalFeatureLeqSoft
 using SoleModels: evaluate_thresh_decision, existential_aggregator, aggregator_bottom, aggregator_to_binary
+# import SoleLogics: check
 import SoleModels: check
 using SoleModels: BoundedExplicitConditionalAlphabet
 
@@ -213,7 +214,7 @@ function check(
     X::AbstractConditionalDataset{W,<:AbstractCondition,<:Number,FR},
     i_sample::Integer;
     initialworld::Union{Nothing,W,AbstractVector{<:W}} = SoleLogics.initialworld(X, i_sample),
-    use_memo::Union{Nothing,AbstractVector{<:AbstractDict{F,T}}} = nothing,
+    use_memo::Union{Nothing,AbstractVector{<:AbstractDict{<:F,<:T}}} = nothing,
     # memo_max_height = Inf,
 ) where {W<:AbstractWorld,T<:Bool,FR<:AbstractMultiModalFrame{W,T},F<:SoleLogics.AbstractFormula}
 
