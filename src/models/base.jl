@@ -130,29 +130,19 @@ function check(
     c::LogicalTruthCondition,
     d::AbstractInterpretationSet,
     args...;
-    check_kwargs::NamedTuple = (;),
+    use_memo::Union{Nothing,AbstractVector} = nothing,
     kwargs...,
 )
     # TODO use get_instance instead?
     map(
         i_sample->tops(begin
-            if haskey(check_kwargs, :use_memo)
-                check(
-                    formula(c),
-                    slice_dataset(d, [i_sample]),
-                    args...;
-                    check_kwargs = merge(check_kwargs, (; use_memo = @view check_kwargs.use_memo[[i_sample]])),
-                    kwargs...,
-                )[1]
-            else
-                check(
-                    formula(c),
-                    slice_dataset(d, [i_sample]),
-                    args...;
-                    check_kwargs = check_kwargs,
-                    kwargs...,
-                )[1]
-            end
+            check(
+                formula(c),
+                slice_dataset(d, [i_sample]),
+                args...;
+                use_memo = (isnothing(use_memo) ? nothing : @view use_memo[[i_sample]]),
+                kwargs...,
+            )[1]
         end), 1:nsamples(d)
     )
 end
