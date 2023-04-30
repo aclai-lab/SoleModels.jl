@@ -126,12 +126,34 @@ formula(c::LogicalTruthCondition) = c.formula
 function check(c::LogicalTruthCondition, i::AbstractInterpretation, args...; kwargs...)
     tops(check(formula(c), i, args...; kwargs...))
 end
-function check(c::LogicalTruthCondition, d::AbstractInterpretationSet, args...; kwargs...)
+function check(
+    c::LogicalTruthCondition,
+    d::AbstractInterpretationSet,
+    args...;
+    check_kwargs::NamedTuple = (;),
+    kwargs...,
+)
     # TODO use get_instance instead?
     map(
-        i_sample->tops(
-            check(formula(c), slice_dataset(d, [i_sample]), args...; kwargs...)[1]
-        ), 1:nsamples(d)
+        i_sample->tops(begin
+            if haskey(check_kwargs, :use_memo)
+                check(
+                    formula(c),
+                    slice_dataset(d, [i_sample]),
+                    args...;
+                    check_kwargs = merge(check_kwargs, (; use_memo = @view check_kwargs.use_memo[[i_sample]])),
+                    kwargs...,
+                )[1]
+            else
+                check(
+                    formula(c),
+                    slice_dataset(d, [i_sample]),
+                    args...;
+                    check_kwargs = check_kwargs,
+                    kwargs...,
+                )[1]
+            end
+        end), 1:nsamples(d)
     )
 end
 
