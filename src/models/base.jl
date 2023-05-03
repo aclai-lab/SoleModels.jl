@@ -958,17 +958,21 @@ function apply(
     cs = check_antecedent(m, d, check_args...; check_kwargs...)
     cpos = findall((c)->c==true, cs)
     cneg = findall((c)->c==false, cs)
-    out = fill(true, length(cs))
-    out[cpos] = apply(posconsequent(m), slice_dataset(d, cpos);
-                    check_args = check_args,
-                    check_kwargs = check_kwargs,
-                    kwargs...
-                )
-    out[cneg] = apply(negconsequent(m), slice_dataset(d, cneg);
-                    check_args = check_args,
-                    check_kwargs = check_kwargs,
-                    kwargs...
-                )
+    out = Array{outputtype(m)}(undef,length(cs)) #fill(outputtype(m), length(cs))
+    if !isempty(cpos)
+        out[cpos] .= apply(posconsequent(m), slice_dataset(d, cpos; allow_no_instances = true, return_view = true);
+                        check_args = check_args,
+                        check_kwargs = check_kwargs,
+                        kwargs...
+                    )
+    end
+    if !isempty(cneg)
+        out[cneg] .= apply(negconsequent(m), slice_dataset(d, cneg; allow_no_instances = true, return_view = true);
+                        check_args = check_args,
+                        check_kwargs = check_kwargs,
+                        kwargs...
+                    )
+    end
     out
 end
 
@@ -1261,10 +1265,19 @@ isopen(::DecisionTree) = false
 
 function apply(
     m::DecisionTree,
-    id::Union{AbstractInterpretation,AbstractInterpretationSet};
+    #id::Union{AbstractInterpretation,AbstractInterpretationSet};
+    id::AbstractInterpretation;
     kwargs...
 )
     apply(root(m), id; kwargs...)
+end
+
+function apply(
+    m::DecisionTree,
+    d::AbstractInterpretationSet;
+    kwargs...,
+)
+    apply(root(m), d; kwargs...)
 end
 
 ############################################################################################
@@ -1316,10 +1329,19 @@ issymbolic(::DecisionForest) = false
 
 function apply(
     f::DecisionForest,
-    id::Union{AbstractInterpretation,AbstractInterpretationSet};
+    id::AbstractInterpretation;
     kwargs...
 )
     best_guess([apply(t, id; kwargs...) for t in trees(f)])
+end
+
+function apply(
+    f::DecisionForest,
+    d::AbstractInterpretationSet;
+    kwargs...
+)
+    # TODO: Vector{Vector{String}}
+    best_guess([apply(t, d; kwargs...) for t in trees(f)])
 end
 
 ############################################################################################
