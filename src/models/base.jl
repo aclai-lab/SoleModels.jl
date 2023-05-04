@@ -1168,7 +1168,7 @@ function apply!(
 end
 
 # TODO: if delays not in info(m) ?
-function meandelay(m::DecisionList)
+function meandelaydl(m::DecisionList)
     i = info(m)
 
     if :delays in keys(i)
@@ -1332,7 +1332,7 @@ function apply(
     id::AbstractInterpretation;
     kwargs...
 )
-    best_guess([apply(t, id; kwargs...) for t in trees(f)])
+    best_guess([apply(t, d; kwargs...) for t in trees(f)])
 end
 
 function apply(
@@ -1340,8 +1340,8 @@ function apply(
     d::AbstractInterpretationSet;
     kwargs...
 )
-    # TODO: Vector{Vector{String}}
-    best_guess([apply(t, d; kwargs...) for t in trees(f)])
+    pred = hcat([apply(t, d; kwargs...) for t in trees(f)]...)
+    return [best_guess(pred[i,:]) for i in 1:size(pred,1)]
 end
 
 ############################################################################################
