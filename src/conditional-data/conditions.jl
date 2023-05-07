@@ -3,7 +3,6 @@ using Random
 import SoleLogics: negation, propositions
 
 import Base: isequal, hash, in, isfinite, length
-import StatsBase: sample
 
 abstract type AbstractCondition end # TODO parametric?
 

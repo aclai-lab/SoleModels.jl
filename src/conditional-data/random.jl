@@ -1,14 +1,16 @@
+import Base: rand
 
 """
-    function StatsBase.sample(
+    function Base.rand(
         rng::AbstractRNG,
         a::BoundedExplicitConditionalAlphabet;
         metaconditions::Union{Nothing,FeatMetaCondition,AbstractVector{<:FeatMetaCondition}} = nothing,
         feature::Union{Nothing,AbstractFeature,AbstractVector{<:AbstractFeature}} = nothing,
         test_operator::Union{Nothing,TestOperatorFun,AbstractVector{<:TestOperatorFun}} = nothing,
-    )::FeatCondition
+    )::Proposition
 
-Randomly samples a `FeatCondition` from conditional alphabet `a`, such that:
+Randomly samples a `Proposition` (holding a `FeatCondition`) from conditional alphabet `a`,
+such that:
 - if `metaconditions` are specified, then the set of metaconditions (feature-operator pairs)
 is limited to `metaconditions`;
 - if `feature` is specified, then the set of metaconditions (feature-operator pairs)
@@ -20,15 +22,15 @@ See also
 [`BoundedExplicitConditionalAlphabet`](@ref),
 [`FeatCondition`](@ref),
 [`FeatMetaCondition`](@ref),
-[`AbstractAlphabet].
+[`AbstractAlphabet'](@ref).
 """
-function StatsBase.sample(
+function Base.rand(
     rng::AbstractRNG,
     a::BoundedExplicitConditionalAlphabet;
     metaconditions::Union{Nothing,FeatMetaCondition,AbstractVector{<:FeatMetaCondition}} = nothing,
     features::Union{Nothing,AbstractFeature,AbstractVector{<:AbstractFeature}} = nothing,
     test_operators::Union{Nothing,TestOperatorFun,AbstractVector{<:TestOperatorFun}} = nothing,
-)::FeatCondition
+)::Proposition
 
     # Transform values to singletons
     metaconditions = metaconditions isa FeatMetaCondition ? [metaconditions] : metaconditions
@@ -71,5 +73,5 @@ function StatsBase.sample(
 
     mc_thresholds = rand(rng, filtered_featconds)
 
-    return FeatCondition(first(mc_thresholds), rand(rng, last(mc_thresholds)))
+    return Proposition(FeatCondition(first(mc_thresholds), rand(rng, last(mc_thresholds))))
 end
