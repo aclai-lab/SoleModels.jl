@@ -40,7 +40,7 @@ function check(
     kwargs...
 )
     map(
-        i_sample->check(c, slice_dataset(d, [i_sample]), args...; kwargs...)[1],
+        i_sample->check(c, slice_dataset(d, [i_sample]; return_view = true), args...; kwargs...)[1],
         1:nsamples(d)
     )
 end
@@ -958,7 +958,7 @@ function apply(
     cs = check_antecedent(m, d, check_args...; check_kwargs...)
     cpos = findall((c)->c==true, cs)
     cneg = findall((c)->c==false, cs)
-    out = Array{outputtype(m)}(undef,length(cs)) #fill(outputtype(m), length(cs))
+    out = Array{outputtype(m)}(undef,length(cs))
     if !isempty(cpos)
         out[cpos] .= apply(posconsequent(m), slice_dataset(d, cpos; allow_no_instances = true, return_view = true);
                         check_args = check_args,
@@ -1263,6 +1263,7 @@ issymbolic(::DecisionTree) = true
 
 isopen(::DecisionTree) = false
 
+# TODO join these two or note that they are kept separate due to possible dispatch ambiguities.
 function apply(
     m::DecisionTree,
     #id::Union{AbstractInterpretation,AbstractInterpretationSet};
@@ -1327,6 +1328,7 @@ conditiontype(m::DecisionForest) = conditiontype(typeof(m))
 
 issymbolic(::DecisionForest) = false
 
+# TODO check these two.
 function apply(
     f::DecisionForest,
     id::AbstractInterpretation;
