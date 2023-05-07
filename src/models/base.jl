@@ -1088,7 +1088,7 @@ function apply(
         length(uncovered_idxs) == 0 && break
 
         idxs_sat = findall(
-            check(antecedent(rule), d, check_args...; check_kwargs...) .== true
+            check(antecedent(rule), d, check_args...; check_kwargs...) .== true # TODO: use check_antecedent?
         )
         uncovered_idxs = setdiff(uncovered_idxs, idxs_sat)
 
@@ -1120,7 +1120,7 @@ function apply!(
         length(uncovered_idxs) == 0 && break
 
         idxs_sat = findall(
-            check(antecedent(rule), d, check_args...; check_kwargs...) .== true
+            check(antecedent(rule), d, check_args...; check_kwargs...) .== true # TODO: use check_antecedent?
         )
         map((i)->(pred[i] = outcome(consequent(rule))), idxs_sat)
         delays[idxs_sat] .= (n-1)
