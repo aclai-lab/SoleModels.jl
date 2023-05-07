@@ -126,13 +126,13 @@ formula(c::LogicalTruthCondition) = c.formula
 function check(c::LogicalTruthCondition, i::AbstractInterpretation, args...; kwargs...)
     tops(check(formula(c), i, args...; kwargs...))
 end
-function check(c::LogicalTruthCondition, d::AbstractInterpretationSet, args...; kwargs...)
-    # TODO use get_instance instead?
-    map(
-        i_sample->tops(
-            check(formula(c), slice_dataset(d, [i_sample]), args...; kwargs...)[1]
-        ), 1:nsamples(d)
-    )
+function check(
+    c::LogicalTruthCondition,
+    d::AbstractInterpretationSet,
+    args...;
+    kwargs...,
+)
+    map(tops, check(formula(c), d, args...; kwargs...))
 end
 
 ############################################################################################
@@ -225,7 +225,7 @@ end
         m::AbstractModel,
         d::AbstractInterpretationSet;
         check_args::Tuple = (),
-        check_kwargs::NamedTuple = (;),
+        check_kwargs::NamedTuple = (; use_memo = [Dict{SyntaxTree,WorldSet{worldtype(d)}}() for i in 1:nsamples(d)]),
         functional_args::Tuple = (),
         functional_kwargs::NamedTuple = (;),
         kwargs...
@@ -952,23 +952,27 @@ function apply(
     m::Branch{O,<:LogicalTruthCondition},
     d::AbstractInterpretationSet;
     check_args::Tuple = (),
-    check_kwargs::NamedTuple = (;),
+    check_kwargs::NamedTuple = (; use_memo = [Dict{SyntaxTree,WorldSet{worldtype(d)}}() for i in 1:nsamples(d)]),
     kwargs...
 ) where {O}
     cs = check_antecedent(m, d, check_args...; check_kwargs...)
     cpos = findall((c)->c==true, cs)
     cneg = findall((c)->c==false, cs)
-    out = fill(true, length(cs))
-    out[cpos] = apply(posconsequent(m), slice_dataset(d, cpos);
-                    check_args = check_args,
-                    check_kwargs = check_kwargs,
-                    kwargs...
-                )
-    out[cneg] = apply(negconsequent(m), slice_dataset(d, cneg);
-                    check_args = check_args,
-                    check_kwargs = check_kwargs,
-                    kwargs...
-                )
+    out = Array{outputtype(m)}(undef,length(cs)) #fill(outputtype(m), length(cs))
+    if !isempty(cpos)
+        out[cpos] .= apply(posconsequent(m), slice_dataset(d, cpos; allow_no_instances = true, return_view = true);
+                        check_args = check_args,
+                        check_kwargs = check_kwargs,
+                        kwargs...
+                    )
+    end
+    if !isempty(cneg)
+        out[cneg] .= apply(negconsequent(m), slice_dataset(d, cneg; allow_no_instances = true, return_view = true);
+                        check_args = check_args,
+                        check_kwargs = check_kwargs,
+                        kwargs...
+                    )
+    end
     out
 end
 
@@ -1061,7 +1065,6 @@ function apply(
     i::AbstractInterpretation;
     check_args::Tuple = (),
     check_kwargs::NamedTuple = (;),
-    kwargs...
 )
     for rule in rulebase(m)
         if check(m, i, check_args...; check_kwargs...)
@@ -1075,8 +1078,7 @@ function apply(
     m::DecisionList{O},
     d::AbstractInterpretationSet;
     check_args::Tuple = (),
-    check_kwargs::NamedTuple = (;),
-    kwargs...
+    check_kwargs::NamedTuple = (; use_memo = [Dict{SyntaxTree,WorldSet{worldtype(d)}}() for i in 1:nsamples(d)]),
 ) where {O}
     nsamp = nsamples(d)
     pred = Vector{O}(undef, nsamp)
@@ -1086,9 +1088,9 @@ function apply(
         length(uncovered_idxs) == 0 && break
 
         idxs_sat = findall(
-            check(antecedent(rule),d, check_args...; check_kwargs...) .== true
+            check(antecedent(rule), d, check_args...; check_kwargs...) .== true
         )
-        uncovered_idxs = setdiff(uncovered_idxs,idxs_sat)
+        uncovered_idxs = setdiff(uncovered_idxs, idxs_sat)
 
         map((i)->(pred[i] = outcome(consequent(rule))), idxs_sat)
     end
@@ -1097,6 +1099,81 @@ function apply(
         map((i)->(pred[i] = outcome(defaultconsequent(m))), uncovered_idxs)
 
     return pred
+end
+
+#TODO: write apply! for the other models
+#TODO write in docstring that possible values for compute_metrics are: :append, true, false
+function apply!(
+    m::DecisionList{O},
+    d::AbstractInterpretationSet;
+    check_args::Tuple = (),
+    check_kwargs::NamedTuple = (; use_memo = [Dict{SyntaxTree,WorldSet{worldtype(d)}}() for i in 1:nsamples(d)]),
+    compute_metrics::Union{Symbol,Bool} = false,
+) where {O}
+    nsamp = nsamples(d)
+    pred = Vector{O}(undef, nsamp)
+    delays = Vector{Integer}(undef, nsamp)
+    uncovered_idxs = 1:nsamp
+    rules = rulebase(m)
+
+    for (n, rule) in enumerate(rules)
+        length(uncovered_idxs) == 0 && break
+
+        idxs_sat = findall(
+            check(antecedent(rule), d, check_args...; check_kwargs...) .== true
+        )
+        map((i)->(pred[i] = outcome(consequent(rule))), idxs_sat)
+        delays[idxs_sat] .= (n-1)
+
+        uncovered_idxs = setdiff(uncovered_idxs, idxs_sat)
+    end
+
+    if length(uncovered_idxs) != 0
+        map((i)->(pred[i] = outcome(defaultconsequent(m))), uncovered_idxs)
+        length(rules) == 0 ? (delays .= 0) : (delays[uncovered_idxs] .= length(rules))
+    end
+
+    (length(rules) != 0) && (delays = delays ./ length(rules))
+
+    iprev = info(m)
+    inew = compute_metrics == false ? iprev : begin
+        if :delays ∉ keys(iprev)
+            merge(iprev, (; delays = delays))
+        else
+            prev = iprev[:delays]
+            ntwithout = (; [p for p in pairs(nt) if p[1] != :delays]...)
+            if compute_metrics == :append
+                merge(ntwithout,(; delays = [prev..., delays...]))
+            elseif compute_metrics == true
+                merge(ntwithout,(; delays = delays))
+            end
+        end
+    end
+
+    inewnew = begin
+        if :pred ∉ keys(inew)
+            merge(inew, (; pred = pred))
+        else
+            prev = inew[:pred]
+            ntwithout = (; [p for p in pairs(nt) if p[1] != :pred]...)
+            if compute_metrics == :append
+                merge(ntwithout,(; pred = [prev..., pred...]))
+            elseif compute_metrics == true
+                merge(ntwithout,(; pred = pred))
+            end
+        end
+    end
+
+    return DecisionList(rules, defaultconsequent(m), inewnew)
+end
+
+# TODO: if delays not in info(m) ?
+function meandelaydl(m::DecisionList)
+    i = info(m)
+
+    if :delays in keys(i)
+        return mean(i[:delays])
+    end
 end
 
 ############################################################################################
@@ -1188,10 +1265,19 @@ isopen(::DecisionTree) = false
 
 function apply(
     m::DecisionTree,
-    id::Union{AbstractInterpretation,AbstractInterpretationSet};
+    #id::Union{AbstractInterpretation,AbstractInterpretationSet};
+    id::AbstractInterpretation;
     kwargs...
 )
     apply(root(m), id; kwargs...)
+end
+
+function apply(
+    m::DecisionTree,
+    d::AbstractInterpretationSet;
+    kwargs...,
+)
+    apply(root(m), d; kwargs...)
 end
 
 ############################################################################################
@@ -1243,10 +1329,19 @@ issymbolic(::DecisionForest) = false
 
 function apply(
     f::DecisionForest,
-    id::Union{AbstractInterpretation,AbstractInterpretationSet};
+    id::AbstractInterpretation;
     kwargs...
 )
-    best_guess([apply(t, id; kwargs...) for t in trees(f)])
+    best_guess([apply(t, d; kwargs...) for t in trees(f)])
+end
+
+function apply(
+    f::DecisionForest,
+    d::AbstractInterpretationSet;
+    kwargs...
+)
+    pred = hcat([apply(t, d; kwargs...) for t in trees(f)]...)
+    return [best_guess(pred[i,:]) for i in 1:size(pred,1)]
 end
 
 ############################################################################################

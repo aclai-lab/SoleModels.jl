@@ -30,6 +30,8 @@ end
 feature(m::FeatMetaCondition) = m.feature
 test_operator(m::FeatMetaCondition) = m.test_operator
 
+negation(m::FeatMetaCondition) = FeatMetaCondition(feature(m), test_operator_inverse(test_operator(m)))
+
 syntaxstring(m::FeatMetaCondition; kwargs...) =
     "$(_syntaxstring_feature_test_operator_pair(feature(m), test_operator(m); kwargs...)) ⍰"
 
@@ -73,9 +75,7 @@ threshold(c::FeatCondition) = c.a
 feature(c::FeatCondition) = feature(metacond(c))
 test_operator(c::FeatCondition) = test_operator(metacond(c))
 
-function negation(c::FeatCondition)
-    FeatCondition(feature(c), test_operator_inverse(test_operator(c)), threshold(c))
-end
+negation(c::FeatCondition) = FeatCondition(negation(metacond(c)), threshold(c))
 
 syntaxstring(m::FeatCondition; threshold_decimals = nothing, kwargs...) =
     "$(_syntaxstring_feature_test_operator_pair(feature(m), test_operator(m))) $((isnothing(threshold_decimals) ? threshold(m) : round(threshold(m); digits=threshold_decimals)))"
@@ -196,9 +196,9 @@ end
 
 function Base.in(p::Proposition{<:FeatCondition}, a::BoundedExplicitConditionalAlphabet)
     fc = atom(p)
-    featconds = a.grouped_featconditions
-    idx = findfirst(((mc,thresholds),)->mc == metacond(fc), featconds)
-    return !isnothing(idx) && Base.in(threshold(fc), last(featconds[idx]))
+    grouped_featconditions = a.grouped_featconditions
+    idx = findfirst(((mc,thresholds),)->mc == metacond(fc), grouped_featconditions)
+    return !isnothing(idx) && Base.in(threshold(fc), last(grouped_featconditions[idx]))
 end
 
 ############################################################################################

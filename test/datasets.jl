@@ -23,3 +23,10 @@ dfd2 = @test_nowarn DimensionalFeaturedDataset(X, ontology, [minimum, maximum])
 
 @test all(((propositions(dfd |> SupportedFeaturedDataset |> ModalLogic.alphabet))) .==
     ((propositions(dfd |> ModalLogic.alphabet))))
+
+
+dfd3 = @test_nowarn DimensionalFeaturedDataset{Float64}(X, ontology, [ModalLogic.CanonicalFeatureGeq(), ModalLogic.CanonicalFeatureLeq()]; initialworld = Interval2D((2,3),(2,3)))
+
+check(SyntaxTree(⊤), dfd, 1)
+check(SyntaxTree(⊤), dfd2, 1)
+check(SyntaxTree(⊤), dfd3, 1)

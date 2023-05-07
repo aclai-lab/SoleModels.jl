@@ -2,9 +2,12 @@ using ProgressMeter
 
 using SoleLogics: AbstractRelation
 using SoleLogics: AbstractFormula
+import SoleLogics: alphabet
+import SoleLogics: initialworld
 
 using SoleModels: CanonicalFeatureGeq, CanonicalFeatureGeqSoft, CanonicalFeatureLeq, CanonicalFeatureLeqSoft
 using SoleModels: evaluate_thresh_decision, existential_aggregator, aggregator_bottom, aggregator_to_binary
+# import SoleLogics: check
 import SoleModels: check
 using SoleModels: BoundedExplicitConditionalAlphabet
 
@@ -85,12 +88,22 @@ function features_grouped_featsaggrsnops2grouped_featsnaggrs(features, grouped_f
     grouped_featsnaggrs
 end
 
+function check_initialworld(FD::Type{<:AbstractConditionalDataset}, initialworld, W)
+    @assert isnothing(initialworld) || initialworld isa W "Cannot instantiate" *
+        " $(FD) with worldtype = $(W) but initialworld of type $(typeof(initialworld))."
+end
+
 ############################################################################################
 # Active datasets comprehend structures for representing relation sets, features, enumerating worlds,
 #  etc. While learning a model can be done only with active modal datasets, testing a model
 #  can be done with both active and passive modal datasets.
-# 
-abstract type ActiveFeaturedDataset{V<:Number,W<:AbstractWorld,FR<:AbstractFrame{W,Bool},FT<:AbstractFeature{V}} <: AbstractConditionalDataset{W,AbstractCondition,Bool,FR} end
+#
+abstract type ActiveFeaturedDataset{
+    V<:Number,
+    W<:AbstractWorld,
+    FR<:AbstractFrame{W,Bool},
+    FT<:AbstractFeature{V}
+} <: AbstractConditionalDataset{W,AbstractCondition,Bool,FR} end
 
 import SoleModels: featvaltype
 import SoleModels: frame
@@ -124,7 +137,6 @@ function alphabet(X::ActiveFeaturedDataset)
     C = FeatCondition{featvaltype(X),FeatMetaCondition{featuretype(X)}}
     BoundedExplicitConditionalAlphabet{C}(collect(conds))
 end
-
 
 
 # Base.length(X::ActiveFeaturedDataset) = nsamples(X)
@@ -201,12 +213,15 @@ function check(
     φ::SoleLogics.AbstractFormula,
     X::AbstractConditionalDataset{W,<:AbstractCondition,<:Number,FR},
     i_sample::Integer;
-    use_memo::Union{Nothing,AbstractVector{<:AbstractDict{F,T}}} = nothing,
+    initialworld::Union{Nothing,W,AbstractVector{<:W}} = SoleLogics.initialworld(X, i_sample),
+    # use_memo::Union{Nothing,AbstractVector{<:AbstractDict{<:F,<:T}}} = nothing,
+    # use_memo::Union{Nothing,AbstractVector{<:AbstractDict{<:F,<:WorldSet{W}}}} = nothing,
+    use_memo::Union{Nothing,AbstractVector{<:AbstractDict{<:F,<:WorldSet}}} = nothing,
     # memo_max_height = Inf,
 ) where {W<:AbstractWorld,T<:Bool,FR<:AbstractMultiModalFrame{W,T},F<:SoleLogics.AbstractFormula}
-    
-    @assert SoleLogics.isglobal(φ) "TODO expand code to specifying a world, defaulted to an initialworld. Cannot check non-global formula: $(syntaxstring(φ))."
-    
+
+    @assert SoleLogics.isglobal(φ) || !isnothing(initialworld) "Cannot check non-global formula with no initialworld(s): $(syntaxstring(φ))."
+
     memo_structure = begin
         if isnothing(use_memo)
             Dict{SyntaxTree,WorldSet{W}}()
@@ -214,7 +229,7 @@ function check(
             use_memo[i_sample]
         end
     end
-    
+
     # forget_list = Vector{SoleLogics.FNode}()
     # hasmemo(::ActiveFeaturedDataset) = false
     # hasmemo(X)TODO
@@ -222,7 +237,7 @@ function check(
     # φ = normalize(φ) # TODO normalize formula and/or use a dedicate memoization structure that normalizes functions
 
     fr = frame(X, i_sample)
-    
+
     if !hasformula(memo_structure, φ)
         for ψ in unique(SoleLogics.subformulas(φ))
             # @show ψ
@@ -258,71 +273,75 @@ function check(
     #     end
     # end
 
-    return length(memo_structure[φ]) > 0
+    if isnothing(initialworld)
+        return length(memo_structure[φ]) > 0
+    else
+        return initialworld in memo_structure[φ]
+    end
 end
 
 ############################################################################################
 
-function compute_chained_threshold(
-    φ::SoleLogics.AbstractFormula,
-    X::SupportedFeaturedDataset{V,W,FR},
-    i_sample;
-    use_memo::Union{Nothing,AbstractVector{<:AbstractDict{F,T}}} = nothing,
-) where {V<:Number,W<:AbstractWorld,T<:Bool,FR<:AbstractMultiModalFrame{W,T},F<:SoleLogics.AbstractFormula}
-    
-    @assert SoleLogics.isglobal(φ) "TODO expand code to specifying a world, defaulted to an initialworld. Cannot check non-global formula: $(syntaxstring(φ))."
+# function compute_chained_threshold(
+#     φ::SoleLogics.AbstractFormula,
+#     X::SupportedFeaturedDataset{V,W,FR},
+#     i_sample;
+#     use_memo::Union{Nothing,AbstractVector{<:AbstractDict{F,T}}} = nothing,
+# ) where {V<:Number,W<:AbstractWorld,T<:Bool,FR<:AbstractMultiModalFrame{W,T},F<:SoleLogics.AbstractFormula}
 
-    memo_structure = begin
-        if isnothing(use_memo)
-            Dict{SyntaxTree,V}()
-        else
-            use_memo[i_sample]
-        end
-    end
+#     @assert SoleLogics.isglobal(φ) "TODO expand code to specifying a world, defaulted to an initialworld. Cannot check non-global formula: $(syntaxstring(φ))."
 
-    # φ = normalize(φ) # TODO normalize formula and/or use a dedicate memoization structure that normalizes functions
+#     memo_structure = begin
+#         if isnothing(use_memo)
+#             Dict{SyntaxTree,V}()
+#         else
+#             use_memo[i_sample]
+#         end
+#     end
 
-    fr = frame(X, i_sample)
-    
-    if !hasformula(memo_structure, φ)
-        for ψ in unique(SoleLogics.subformulas(φ))
-            if !hasformula(memo_structure, ψ)
-                tok = token(ψ)
-                memo_structure[ψ] = begin
-                    if tok isa AbstractRelationalOperator && length(children(φ)) == 1 && height(φ) == 1
-                        featcond = atom(token(children(φ)[1]))
-                        if tok isa DiamondRelationalOperator
-                            # (L) f > a <-> max(acc) > a
-                            onestep_accessible_aggregation(X, i_sample, w, relation(tok), feature(featcond), existential_aggregator(test_operator(featcond)))
-                        elseif tok isa BoxRelationalOperator
-                            # [L] f > a  <-> min(acc) > a <-> ! (min(acc) <= a) <-> ¬ <L> (f <= a)
-                            onestep_accessible_aggregation(X, i_sample, w, relation(tok), feature(featcond), universal_aggregator(test_operator(featcond)))
-                        else
-                            error("Unexpected operator encountered in onestep_collateworlds: $(typeof(tok))")
-                        end
-                    else
-                        TODO
-                    end
-                end
-            end
-            # @show syntaxstring(ψ), memo_structure[ψ]
-        end
-    end
+#     # φ = normalize(φ) # TODO normalize formula and/or use a dedicate memoization structure that normalizes functions
 
-    # # All the worlds where a given formula is valid are returned.
-    # # Then, internally, memoization-regulation is applied
-    # # to forget some formula thus freeing space.
-    # fcollection = deepcopy(memo(X))
-    # for h in forget_list
-    #     k = fhash(h)
-    #     if hasformula(memo_structure, k)
-    #         empty!(memo(X, k)) # Collection at memo(X)[k] is erased
-    #         pop!(memo(X), k)    # Key k is deallocated too
-    #     end
-    # end
+#     fr = frame(X, i_sample)
 
-    return memo_structure[φ]
-end
+#     if !hasformula(memo_structure, φ)
+#         for ψ in unique(SoleLogics.subformulas(φ))
+#             if !hasformula(memo_structure, ψ)
+#                 tok = token(ψ)
+#                 memo_structure[ψ] = begin
+#                     if tok isa AbstractRelationalOperator && length(children(φ)) == 1 && height(φ) == 1
+#                         featcond = atom(token(children(φ)[1]))
+#                         if tok isa DiamondRelationalOperator
+#                             # (L) f > a <-> max(acc) > a
+#                             onestep_accessible_aggregation(X, i_sample, w, relation(tok), feature(featcond), existential_aggregator(test_operator(featcond)))
+#                         elseif tok isa BoxRelationalOperator
+#                             # [L] f > a  <-> min(acc) > a <-> ! (min(acc) <= a) <-> ¬ <L> (f <= a)
+#                             onestep_accessible_aggregation(X, i_sample, w, relation(tok), feature(featcond), universal_aggregator(test_operator(featcond)))
+#                         else
+#                             error("Unexpected operator encountered in onestep_collateworlds: $(typeof(tok))")
+#                         end
+#                     else
+#                         TODO
+#                     end
+#                 end
+#             end
+#             # @show syntaxstring(ψ), memo_structure[ψ]
+#         end
+#     end
+
+#     # # All the worlds where a given formula is valid are returned.
+#     # # Then, internally, memoization-regulation is applied
+#     # # to forget some formula thus freeing space.
+#     # fcollection = deepcopy(memo(X))
+#     # for h in forget_list
+#     #     k = fhash(h)
+#     #     if hasformula(memo_structure, k)
+#     #         empty!(memo(X, k)) # Collection at memo(X)[k] is erased
+#     #         pop!(memo(X), k)    # Key k is deallocated too
+#     #     end
+#     # end
+
+#     return memo_structure[φ]
+# end
 
 
 ############################################################################################
