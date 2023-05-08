@@ -1091,9 +1091,13 @@ function apply(
     for rule in rulebase(m)
         length(uncovered_idxs) == 0 && break
 
+        uncovered_d = slice_dataset(d, uncovered_idxs; return_view = true))
+
         idxs_sat = findall(
-            check(antecedent(rule), d, check_args...; check_kwargs...) .== true # TODO: use check_antecedent?
+            check(antecedent(rule), uncovered_d, check_args...; check_kwargs...) .== true # TODO: use check_antecedent?
         )
+        idxs_sat = uncovered_idxs[idxs_sat]
+
         uncovered_idxs = setdiff(uncovered_idxs, idxs_sat)
 
         map((i)->(pred[i] = outcome(consequent(rule))), idxs_sat)
