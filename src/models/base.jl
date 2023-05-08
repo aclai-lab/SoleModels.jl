@@ -1127,6 +1127,7 @@ function apply!(
     for (n, rule) in enumerate(rules)
         length(uncovered_idxs) == 0 && break
 
+        # TODO don't check everything (see apply above)
         idxs_sat = findall(
             check(antecedent(rule), d, check_args...; check_kwargs...) .== true # TODO: use check_antecedent?
         )
