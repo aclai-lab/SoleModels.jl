@@ -239,6 +239,8 @@ function check(
     fr = frame(X, i_sample)
 
     if !hasformula(memo_structure, φ)
+        l = ReentrantLock()
+        lock(l)
         for ψ in unique(SoleLogics.subformulas(φ))
             # @show ψ
             # @show syntaxstring(ψ)
@@ -246,8 +248,6 @@ function check(
             #     push!(forget_list, ψ)
             # end
             if !hasformula(memo_structure, ψ)
-                l = ReentrantLock()
-                lock(l)
                 memo_structure[ψ] = begin
                     if tok isa SoleLogics.AbstractOperator
                         collect(SoleLogics.collateworlds(fr, tok, map(f->memo_structure[f], children(ψ))))
@@ -257,10 +257,10 @@ function check(
                         error("Unexpected token encountered in _check: $(typeof(tok))")
                     end
                 end
-                unlock(l)
             end
             # @show syntaxstring(ψ), memo_structure[ψ]
         end
+        unlock(l)
     end
 
     # # All the worlds where a given formula is valid are returned.
