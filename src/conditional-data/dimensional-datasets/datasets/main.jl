@@ -239,9 +239,6 @@ function check(
     fr = frame(X, i_sample)
 
     # TODO avoid using when memo is nothing
-    l = ReentrantLock()
-    lock(l)
-
     if !hasformula(memo_structure, φ)
         for ψ in unique(SoleLogics.subformulas(φ))
             # @show ψ
@@ -284,8 +281,6 @@ function check(
             initialworld in memo_structure[φ]
         end
     end
-
-    unlock(l)
 
     return ret
 end
