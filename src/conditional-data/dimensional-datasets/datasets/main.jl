@@ -248,6 +248,7 @@ function check(
             #     push!(forget_list, ψ)
             # end
             if !hasformula(memo_structure, ψ)
+                tok = token(ψ)
                 memo_structure[ψ] = begin
                     if tok isa SoleLogics.AbstractOperator
                         collect(SoleLogics.collateworlds(fr, tok, map(f->memo_structure[f], children(ψ))))
