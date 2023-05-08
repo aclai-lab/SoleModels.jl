@@ -238,9 +238,11 @@ function check(
 
     fr = frame(X, i_sample)
 
+    # TODO avoid using when memo is nothing
+    l = ReentrantLock()
+    lock(l)
+
     if !hasformula(memo_structure, φ)
-        l = ReentrantLock()
-        lock(l)
         for ψ in unique(SoleLogics.subformulas(φ))
             # @show ψ
             # @show syntaxstring(ψ)
@@ -261,7 +263,6 @@ function check(
             end
             # @show syntaxstring(ψ), memo_structure[ψ]
         end
-        unlock(l)
     end
 
     # # All the worlds where a given formula is valid are returned.
@@ -276,11 +277,17 @@ function check(
     #     end
     # end
 
-    if isnothing(initialworld)
-        return length(memo_structure[φ]) > 0
-    else
-        return initialworld in memo_structure[φ]
+    ret = begin
+        if isnothing(initialworld)
+            length(memo_structure[φ]) > 0
+        else
+            initialworld in memo_structure[φ]
+        end
     end
+
+    unlock(l)
+
+    return ret
 end
 
 ############################################################################################
