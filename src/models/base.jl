@@ -960,18 +960,22 @@ function apply(
     cneg = findall((c)->c==false, cs)
     out = Array{outputtype(m)}(undef,length(cs))
     if !isempty(cpos)
-        out[cpos] .= apply(posconsequent(m), slice_dataset(d, cpos; allow_no_instances = true, return_view = true);
-                        check_args = check_args,
-                        check_kwargs = check_kwargs,
-                        kwargs...
-                    )
+        out[cpos] .= apply(
+            posconsequent(m),
+            slice_dataset(d, cpos; return_view = true);
+            check_args = check_args,
+            check_kwargs = check_kwargs,
+            kwargs...
+        )
     end
     if !isempty(cneg)
-        out[cneg] .= apply(negconsequent(m), slice_dataset(d, cneg; allow_no_instances = true, return_view = true);
-                        check_args = check_args,
-                        check_kwargs = check_kwargs,
-                        kwargs...
-                    )
+        out[cneg] .= apply(
+            negconsequent(m),
+            slice_dataset(d, cneg; return_view = true);
+            check_args = check_args,
+            check_kwargs = check_kwargs,
+            kwargs...
+        )
     end
     out
 end

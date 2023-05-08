@@ -246,7 +246,8 @@ function check(
             #     push!(forget_list, ψ)
             # end
             if !hasformula(memo_structure, ψ)
-                tok = token(ψ)
+                l = ReentrantLock()
+                lock(l)
                 memo_structure[ψ] = begin
                     if tok isa SoleLogics.AbstractOperator
                         collect(SoleLogics.collateworlds(fr, tok, map(f->memo_structure[f], children(ψ))))
@@ -256,6 +257,7 @@ function check(
                         error("Unexpected token encountered in _check: $(typeof(tok))")
                     end
                 end
+                unlock(l)
             end
             # @show syntaxstring(ψ), memo_structure[ψ]
         end
