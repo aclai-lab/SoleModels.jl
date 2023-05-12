@@ -58,6 +58,7 @@ function featcondbuilder(
         # a feature name (e.g. "min"),
         # an attribute inside feature's brackets (e.g. "[A189]"),
         # a remaining part (hopefully, a legal operator and then anything)
+        # NOTE: this could work too ^([^<>]*)\w*(<|>|<=|>=)\w*([^<>]*)$
         slices = string.(split(expression, r"((?<=\])|(?=\[))"))
 
         @assert length(slices) == 3 "Expression $expression is not formatted properly. " *
