@@ -43,7 +43,7 @@ A feature is a scalar function that can be computed on a world.
 A test operator is mathematical relationship linking obtained value from feature evaluation
 on corresponding attribute and threshold represented in FeatCondition structure
 
-Example: min(V1) \geq
+Example: min(V1) ≥
 
 See also
 [`AbstractCondition`](@ref),
@@ -81,7 +81,7 @@ FeatMetaCondition with a threshold value.
 It can be evaluated on an instance or a set of instances in a specific world and returns a
 boolean truth value (`true`/`false`).
 
-Example: min(V1) \geq 10
+Example: min(V1) ≥ 10
 Inside this world (e.g. this range), minimum of variable 1 is greater or equal than 10
 
 See also
