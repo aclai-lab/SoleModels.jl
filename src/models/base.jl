@@ -1092,7 +1092,7 @@ function apply(
         length(uncovered_idxs) == 0 && break
 
         # TODO
-        # uncovered_d = slice_dataset(d, uncovered_idxs; return_view = true))
+        # uncovered_d = slice_dataset(d, uncovered_idxs; return_view = true)
 
         idxs_sat = findall(
             check(antecedent(rule), d, check_args...; check_kwargs...) .== true # TODO: use check_antecedent?
