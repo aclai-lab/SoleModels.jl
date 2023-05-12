@@ -35,6 +35,9 @@ struct DimensionalFeaturedDataset{
     # Features and Aggregators
     grouped_featsnaggrs     :: G2
 
+    # Initial world(s)
+    initialworld :: Union{Nothing,W,AbstractWorldSet{<:W}}
+
     ########################################################################################
     
     function DimensionalFeaturedDataset{V,N,W}(
@@ -43,6 +46,7 @@ struct DimensionalFeaturedDataset{
         features::AbstractVector{<:AbstractFeature},
         grouped_featsaggrsnops::AbstractVector{<:AbstractDict{<:Aggregator,<:AbstractVector{<:TestOperatorFun}}};
         allow_no_instances = false,
+        initialworld = nothing,
     ) where {V,N,W<:AbstractWorld}
         ty = "DimensionalFeaturedDataset{$(V),$(N),$(W)}"
         features = collect(features)
@@ -59,7 +63,23 @@ struct DimensionalFeaturedDataset{
             sum(vcat([[length(test_ops) for test_ops in aggrs] for aggrs in grouped_featsaggrsnops]...)) > 0 "" *
             "Can't instantiate $(ty) with no test operator: $(grouped_featsaggrsnops)"
         grouped_featsnaggrs = features_grouped_featsaggrsnops2grouped_featsnaggrs(features, grouped_featsaggrsnops)
-        new{V,N,W,typeof(domain),FT,typeof(grouped_featsaggrsnops),typeof(grouped_featsnaggrs)}(domain, ontology, features, grouped_featsaggrsnops, grouped_featsnaggrs)
+        check_initialworld(DimensionalFeaturedDataset, initialworld, W)
+        new{
+            V,
+            N,
+            W,
+            typeof(domain),
+            FT,
+            typeof(grouped_featsaggrsnops),
+            typeof(grouped_featsnaggrs),
+        }(
+            domain,
+            ontology,
+            features,
+            grouped_featsaggrsnops,
+            grouped_featsnaggrs,
+            initialworld,
+        )
     end
 
     ########################################################################################
@@ -163,14 +183,19 @@ struct DimensionalFeaturedDataset{
         DimensionalFeaturedDataset{V}(domain, ontology, features, args...; kwargs...)
     end
 
+    preserves_type(::Any) = false
+    preserves_type(::CanonicalFeature) = true
+    preserves_type(::typeof(minimum)) = true # TODO fix
+    preserves_type(::typeof(maximum)) = true # TODO fix
+
     function DimensionalFeaturedDataset(
         domain           :: Union{PassiveDimensionalDataset{N,W},AbstractDimensionalDataset},
         ontology         :: Ontology{W},
         mixed_features   :: AbstractVector;
         kwargs...,
     ) where {N,W<:AbstractWorld}
-        domain = (domain isa AbstractDimensionalDataset ? PassiveDimensionalDataset{N,W}(domain) : domain)
-        @assert all((f)->(f isa CanonicalFeature && SoleModels.preserves_type(f)), mixed_features) "Please, specify the feature output type V upon construction, as in: DimensionalFeaturedDataset{V}(...)." # TODO highlight and improve
+        domain = (domain isa AbstractDimensionalDataset ? PassiveDimensionalDataset{dimensionality(domain),W}(domain) : domain)
+        @assert all((f)->(preserves_type(f)), mixed_features) "Please, specify the feature output type V upon construction, as in: DimensionalFeaturedDataset{V}(...)." # TODO highlight and improve
         V = eltype(domain)
         DimensionalFeaturedDataset{V}(domain, ontology, mixed_features; kwargs...)
     end
@@ -205,15 +230,20 @@ max_channel_size(X::DimensionalFeaturedDataset)          = max_channel_size(doma
 get_instance(X::DimensionalFeaturedDataset, args...)     = get_instance(domain(X), args...)
 
 _slice_dataset(X::DimensionalFeaturedDataset, inds::AbstractVector{<:Integer}, args...; kwargs...)    =
-    DimensionalFeaturedDataset(_slice_dataset(domain(X), inds, args...; kwargs...), ontology(X), features(X), X.grouped_featsaggrsnops)
+    DimensionalFeaturedDataset(_slice_dataset(domain(X), inds, args...; kwargs...), ontology(X), features(X), grouped_featsaggrsnops(X); initialworld = initialworld(X))
 
 frame(X::DimensionalFeaturedDataset, i_sample) = frame(domain(X), i_sample)
+initialworld(X::DimensionalFeaturedDataset) = X.initialworld
+function initialworld(X::DimensionalFeaturedDataset, i_sample)
+    initialworld(X) isa AbstractWorldSet ? initialworld(X)[i_sample] : initialworld(X)
+end
 
 function display_structure(X::DimensionalFeaturedDataset; indent_str = "")
     out = "$(typeof(X))\t$(Base.summarysize(X) / 1024 / 1024 |> x->round(x, digits=2)) MBs\n"
     out *= indent_str * "├ relations: \t$((length(relations(X))))\t$(relations(X))\n"
     out *= indent_str * "├ domain shape\t$(Base.size(domain(X)))\n"
-    out *= indent_str * "└ max_channel_size\t$(max_channel_size(X))"
+    out *= indent_str * "├ max_channel_size\t$(max_channel_size(X))"
+    out *= indent_str * "└ initialworld(s)\t$(initialworld(X))"
     out
 end
 

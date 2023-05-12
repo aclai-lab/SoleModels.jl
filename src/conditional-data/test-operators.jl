@@ -272,8 +272,6 @@ export MixedFeature, CanonicalFeature, canonical_geq, canonical_leq
 
 abstract type CanonicalFeature end
 
-preserves_type(::CanonicalFeature) = true
-
 # ⪴ and ⪳, that is, "*all* of the values on this world are at least, or at most ..."
 struct CanonicalFeatureGeq <: CanonicalFeature end; const canonical_geq  = CanonicalFeatureGeq();
 struct CanonicalFeatureLeq <: CanonicalFeature end; const canonical_leq  = CanonicalFeatureLeq();

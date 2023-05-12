@@ -15,8 +15,8 @@ end
 println("Julia version: ", VERSION)
 
 test_suites = [
-    ("Base", ["base.jl", ]),
-    ("Miscellaneous", ["misc.jl", ]),
+    ("Models", ["base.jl", ]),
+    ("Datasets", ["datasets.jl", ]),
 ]
 
 @testset "SoleModels.jl" begin
