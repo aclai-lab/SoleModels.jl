@@ -745,7 +745,7 @@ function apply(
     d::AbstractInterpretationSet,
     i_sample::Integer;
     check_args::Tuple = (),
-    check_kwargs::NamedTuple = (;),
+    check_kwargs::NamedTuple = (; use_memo = [Dict{SyntaxTree,WorldSet{worldtype(d)}}() for i in 1:nsamples(d)]),
     kwargs...
 )
     if check_antecedent(m, d, i_sample, check_args...; check_kwargs...) == true
@@ -930,7 +930,7 @@ function apply(
     d::AbstractInterpretationSet,
     i_sample::Integer;
     check_args::Tuple = (),
-    check_kwargs::NamedTuple = (;),
+    check_kwargs::NamedTuple = (; use_memo = [Dict{SyntaxTree,WorldSet{worldtype(d)}}() for i in 1:nsamples(d)]),
     kwargs...
 ) where {O}
     if check_antecedent(m, d, i_sample, check_args...; check_kwargs...) == true
@@ -1091,15 +1091,13 @@ function apply(
     for rule in rulebase(m)
         length(uncovered_idxs) == 0 && break
 
-        # TODO
-        # uncovered_d = slice_dataset(d, uncovered_idxs; return_view = true)
+        uncovered_d = slice_dataset(d, uncovered_idxs; return_view = true)
 
         idxs_sat = findall(
-            check(antecedent(rule), d, check_args...; check_kwargs...) .== true # TODO: use check_antecedent?
-            # check(antecedent(rule), uncovered_d, check_args...; check_kwargs...) .== true # TODO: use check_antecedent?
+            # check_antecedent(rule, d, check_args...; check_kwargs...) .== true
+            check_antecedent(rule, uncovered_d, check_args...; check_kwargs...) .== true
         )
-        # idxs_sat = uncovered_idxs[idxs_sat]
-
+        idxs_sat = uncovered_idxs[idxs_sat]
         uncovered_idxs = setdiff(uncovered_idxs, idxs_sat)
 
         map((i)->(pred[i] = outcome(consequent(rule))), idxs_sat)
@@ -1129,14 +1127,17 @@ function apply!(
     for (n, rule) in enumerate(rules)
         length(uncovered_idxs) == 0 && break
 
-        # TODO don't check everything (see apply above)
-        idxs_sat = findall(
-            check(antecedent(rule), d, check_args...; check_kwargs...) .== true # TODO: use check_antecedent?
-        )
-        map((i)->(pred[i] = outcome(consequent(rule))), idxs_sat)
-        delays[idxs_sat] .= (n-1)
+        uncovered_d = slice_dataset(d, uncovered_idxs; return_view = true)
 
+        idxs_sat = findall(
+            # check_antecedent(rule, d, check_args...; check_kwargs...) .== true
+            check_antecedent(rule, uncovered_d, check_args...; check_kwargs...) .== true
+        )
+        idxs_sat = uncovered_idxs[idxs_sat]
         uncovered_idxs = setdiff(uncovered_idxs, idxs_sat)
+
+        delays[idxs_sat] .= (n-1)
+        map((i)->(pred[i] = outcome(consequent(rule))), idxs_sat)
     end
 
     if length(uncovered_idxs) != 0
