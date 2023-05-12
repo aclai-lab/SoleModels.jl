@@ -4,6 +4,21 @@ import SoleLogics: negation, propositions
 
 import Base: isequal, hash, in, isfinite, length
 
+"""
+    abstract type AbstractCondition end
+
+AbstractCondition represent a condition that can be wrapped in Proposition structure.
+Particularly, a condition can be interpreted on worlds of instances of a conditional dataset
+and it returns a boolean truth value (`true`/`false`).
+
+See also
+[`Proposition`](@ref),
+[`isequal`](@ref),
+[`hash`](@ref),
+[`syntaxstring`](@ref),
+[`FeatMetaCondition`](@ref),
+[`FeatCondition`](@ref).
+"""
 abstract type AbstractCondition end # TODO parametric?
 
 function syntaxstring(c::AbstractCondition; kwargs...)
@@ -17,6 +32,24 @@ Base.hash(a::AbstractCondition) = Base.hash(syntaxstring(a))
 
 # TODO add TruthType: T as in:
 #  struct FeatMetaCondition{F<:AbstractFeature,T,O<:TestOperatorFun} <: AbstractCondition
+"""
+    struct FeatMetaCondition{F<:AbstractFeature,O<:TestOperatorFun} <: AbstractCondition
+        feature::F
+        test_operator::O
+    end
+
+FeatMetaCondition is a condition that represents (feature, test operator) couple.
+A feature is a scalar function that can be computed on a world.
+A test operator is mathematical relationship linking obtained value from feature evaluation
+on corresponding attribute and threshold represented in FeatCondition structure
+
+Example: min(V1) \geq
+
+See also
+[`AbstractCondition`](@ref),
+[`negation`](@ref),
+[`FeatCondition`](@ref).
+"""
 struct FeatMetaCondition{F<:AbstractFeature,O<:TestOperatorFun} <: AbstractCondition
 
   # Feature: a scalar function that can be computed on a world
@@ -37,6 +70,25 @@ syntaxstring(m::FeatMetaCondition; kwargs...) =
 
 ############################################################################################
 
+"""
+    struct FeatCondition{U,M<:FeatMetaCondition} <: AbstractCondition
+        metacond::M
+        a::U
+    end
+
+FeatCondition is a condition that characterizes a fact of the real world associating a
+FeatMetaCondition with a threshold value.
+It can be evaluated on an instance or a set of instances in a specific world and returns a
+boolean truth value (`true`/`false`).
+
+Example: min(V1) \geq 10
+Inside this world (e.g. this range), minimum of variable 1 is greater or equal than 10
+
+See also
+[`AbstractCondition`](@ref),
+[`negation`](@ref),
+[`FeatMetaCondition`](@ref).
+"""
 struct FeatCondition{U,M<:FeatMetaCondition} <: AbstractCondition
 
   # Metacondition
