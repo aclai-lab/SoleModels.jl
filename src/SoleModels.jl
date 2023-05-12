@@ -35,13 +35,11 @@ export printmodel, displaymodel
 include("models/print.jl")
 
 # TODO export?
-export immediate_submodels, unroll_rules, immediate_rules
+export immediatesubmodels, unrollrules, immediaterules
 
 include("models/symbolic-utils.jl")
 
 include("machine-learning.jl")
-
-include("models/linear-forms.jl")
 
 include("models/rule-evaluation.jl")
 
@@ -53,6 +51,8 @@ export AbstractFeature,
         SingleAttributeSoftMin, SingleAttributeSoftMax,
         SingleAttributeGenericFeature, MultiAttributeFeature,
         NamedFeature, ExternalFWDFeature
+
+export propositions
 
 export compute_feature
 

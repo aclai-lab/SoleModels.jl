@@ -155,6 +155,7 @@ worldtype(X::SupportedFeaturedDataset{V,W}) where {V,W} = W
 usesmemo(X::SupportedFeaturedDataset) = usesmemo(support(X))
 
 frame(X::SupportedFeaturedDataset, i_sample) = frame(fd(X), i_sample)
+initialworld(X::SupportedFeaturedDataset, args...) = initialworld(fd(X), args...)
 
 function _slice_dataset(X::SupportedFeaturedDataset, inds::AbstractVector{<:Integer}, args...; kwargs...)
     SupportedFeaturedDataset(

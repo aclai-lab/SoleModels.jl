@@ -1,6 +1,7 @@
 using SoleLogics: AbstractKripkeStructure, AbstractInterpretationSet, AbstractFrame
-import SoleLogics: frame, check, accessibles, allworlds
-export check, accessibles, representatives, allworlds
+import SoleLogics: frame, check
+import SoleLogics: accessibles, allworlds, nworlds, initialworld
+export check, accessibles, allworlds, representatives
 
 abstract type AbstractConditionalDataset{
     W<:AbstractWorld,
@@ -15,6 +16,8 @@ worldtype(d::AbstractConditionalDataset) = worldtype(typeof(d))
 frametype(::Type{<:AbstractConditionalDataset{W,A,T,FR}}) where {W,A,T,FR} = FR
 frametype(d::AbstractConditionalDataset) = frametype(typeof(d))
 
+# TODO move these to the interface of AbstractInterpretationSet
+
 function frame(
     X::AbstractConditionalDataset{W,A,T},
     i_sample
@@ -23,8 +26,19 @@ function frame(
 end
 
 accessibles(X::AbstractConditionalDataset, i_sample, args...) = accessibles(frame(X, i_sample), args...)
-representatives(X::AbstractConditionalDataset, i_sample, args...) = representatives(frame(X, i_sample), args...)
 allworlds(X::AbstractConditionalDataset, i_sample, args...) = allworlds(frame(X, i_sample), args...)
+nworlds(X::AbstractConditionalDataset, i_sample) = nworlds(frame(X, i_sample))
+
+representatives(X::AbstractConditionalDataset, i_sample, args...) = representatives(frame(X, i_sample), args...)
+
+# TODO initialworld is at model-level, not at frame-level?
+
+function initialworld(
+    X::AbstractConditionalDataset{W,A,T},
+    i_sample
+) where {W<:AbstractWorld,A<:AbstractCondition,T<:TruthValue}
+    error("Please, provide method initialworld(::$(typeof(X)), ::$(typeof(i_sample))).")
+end
 
 # TODO from here onwards
 

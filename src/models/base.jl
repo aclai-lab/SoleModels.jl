@@ -1,6 +1,7 @@
 import Base: convert, length, getindex, isopen
 import SoleLogics: check, syntaxstring
 using SoleData: slice_dataset
+using SoleLogics: LeftmostLinearForm, LeftmostConjunctiveForm, LeftmostDisjunctiveForm
 
 # Util
 typename(::Type{T}) where T = eval(nameof(T))
@@ -39,7 +40,7 @@ function check(
     kwargs...
 )
     map(
-        i_sample->check(c, slice_dataset(d, [i_sample]), args...; kwargs...)[1],
+        i_sample->check(c, slice_dataset(d, [i_sample]; return_view = true), args...; kwargs...)[1],
         1:nsamples(d)
     )
 end
@@ -125,13 +126,13 @@ formula(c::LogicalTruthCondition) = c.formula
 function check(c::LogicalTruthCondition, i::AbstractInterpretation, args...; kwargs...)
     tops(check(formula(c), i, args...; kwargs...))
 end
-function check(c::LogicalTruthCondition, d::AbstractInterpretationSet, args...; kwargs...)
-    # TODO use get_instance instead?
-    map(
-        i_sample->tops(
-            check(formula(c), slice_dataset(d, [i_sample]), args...; kwargs...)[1]
-        ), 1:nsamples(d)
-    )
+function check(
+    c::LogicalTruthCondition,
+    d::AbstractInterpretationSet,
+    args...;
+    kwargs...,
+)
+    map(tops, check(formula(c), d, args...; kwargs...))
 end
 
 ############################################################################################
@@ -224,7 +225,7 @@ end
         m::AbstractModel,
         d::AbstractInterpretationSet;
         check_args::Tuple = (),
-        check_kwargs::NamedTuple = (;),
+        check_kwargs::NamedTuple = (; use_memo = [Dict{SyntaxTree,WorldSet{worldtype(d)}}() for i in 1:nsamples(d)]),
         functional_args::Tuple = (),
         functional_kwargs::NamedTuple = (;),
         kwargs...
@@ -288,11 +289,11 @@ Symbolic models provide a form of transparent and interpretable modeling.
 
 Instead, a model is said to be functional when it encodes an algebraic mathematical
 function (e.g., a neural network).
-TODO explain unroll_rules/cascade/rules A symbolic model is one where the computation has a *rule-base structure*.
+TODO explain unrollrules/cascade/rules A symbolic model is one where the computation has a *rule-base structure*.
 
 See also
 [`apply`](@ref),
-[`unroll_rules`](@ref),
+[`unrollrules`](@ref),
 [`AbstractModel`](@ref).
 """
 issymbolic(::AbstractModel) = false
@@ -744,7 +745,7 @@ function apply(
     d::AbstractInterpretationSet,
     i_sample::Integer;
     check_args::Tuple = (),
-    check_kwargs::NamedTuple = (;),
+    check_kwargs::NamedTuple = (; use_memo = [Dict{SyntaxTree,WorldSet{worldtype(d)}}() for i in 1:nsamples(d)]),
     kwargs...
 )
     if check_antecedent(m, d, i_sample, check_args...; check_kwargs...) == true
@@ -762,6 +763,35 @@ end
 function formula(m::Rule{O,<:Union{LogicalTruthCondition,TrueCondition}}) where {O}
     formula(antecedent(m))
 end
+
+# Helpers
+function conjuncts(m::Rule{O,<:LogicalTruthCondition{<:LeftmostConjunctiveForm}}) where {O}
+    conjuncts(formula(m))
+end
+function nconjuncts(m::Rule{O,<:LogicalTruthCondition{<:LeftmostConjunctiveForm}}) where {O}
+    nconjuncts(formula(m))
+end
+function disjuncts(m::Rule{O,<:LogicalTruthCondition{<:LeftmostDisjunctiveForm}}) where {O}
+    disjuncts(formula(m))
+end
+function ndisjuncts(m::Rule{O,<:LogicalTruthCondition{<:LeftmostDisjunctiveForm}}) where {O}
+    ndisjuncts(formula(m))
+end
+
+# Helper
+function Base.getindex(
+    m::Rule{O,C},
+    idxs::AbstractVector{<:Integer},
+) where {O,SS<:LeftmostLinearForm,C<:LogicalTruthCondition{SS}}
+    Rule{O,C}(
+        LogicalTruthCondition{SS}(begin
+            ants = children(formula(m))
+            SS(ants[idxs])
+        end),
+        consequent(m)
+    )
+end
+
 
 ############################################################################################
 
@@ -900,7 +930,7 @@ function apply(
     d::AbstractInterpretationSet,
     i_sample::Integer;
     check_args::Tuple = (),
-    check_kwargs::NamedTuple = (;),
+    check_kwargs::NamedTuple = (; use_memo = [Dict{SyntaxTree,WorldSet{worldtype(d)}}() for i in 1:nsamples(d)]),
     kwargs...
 ) where {O}
     if check_antecedent(m, d, i_sample, check_args...; check_kwargs...) == true
@@ -922,29 +952,44 @@ function apply(
     m::Branch{O,<:LogicalTruthCondition},
     d::AbstractInterpretationSet;
     check_args::Tuple = (),
-    check_kwargs::NamedTuple = (;),
+    check_kwargs::NamedTuple = (; use_memo = [Dict{SyntaxTree,WorldSet{worldtype(d)}}() for i in 1:nsamples(d)]),
     kwargs...
 ) where {O}
     cs = check_antecedent(m, d, check_args...; check_kwargs...)
     cpos = findall((c)->c==true, cs)
     cneg = findall((c)->c==false, cs)
-    out = fill(true, length(cs))
-    out[cpos] = apply(posconsequent(m), slice_dataset(d, cpos);
-                    check_args = check_args,
-                    check_kwargs = check_kwargs,
-                    kwargs...
-                )
-    out[cneg] = apply(negconsequent(m), slice_dataset(d, cneg);
-                    check_args = check_args,
-                    check_kwargs = check_kwargs,
-                    kwargs...
-                )
+    out = Array{outputtype(m)}(undef,length(cs))
+    if !isempty(cpos)
+        out[cpos] .= apply(
+            posconsequent(m),
+            slice_dataset(d, cpos; return_view = true);
+            check_args = check_args,
+            check_kwargs = check_kwargs,
+            kwargs...
+        )
+    end
+    if !isempty(cneg)
+        out[cneg] .= apply(
+            negconsequent(m),
+            slice_dataset(d, cneg; return_view = true);
+            check_args = check_args,
+            check_kwargs = check_kwargs,
+            kwargs...
+        )
+    end
     out
 end
 
 # Helper
 function formula(m::Branch{O,<:Union{LogicalTruthCondition,TrueCondition}}) where {O}
     formula(antecedent(m))
+end
+
+function Base.getindex(
+    m::Branch{O,<:LogicalTruthCondition{<:LeftmostLinearForm}},
+    args...
+) where {O}
+    return Base.getindex(formula(m), args...)
 end
 
 ############################################################################################
@@ -1024,7 +1069,6 @@ function apply(
     i::AbstractInterpretation;
     check_args::Tuple = (),
     check_kwargs::NamedTuple = (;),
-    kwargs...
 )
     for rule in rulebase(m)
         if check(m, i, check_args...; check_kwargs...)
@@ -1038,8 +1082,7 @@ function apply(
     m::DecisionList{O},
     d::AbstractInterpretationSet;
     check_args::Tuple = (),
-    check_kwargs::NamedTuple = (;),
-    kwargs...
+    check_kwargs::NamedTuple = (; use_memo = [Dict{SyntaxTree,WorldSet{worldtype(d)}}() for i in 1:nsamples(d)]),
 ) where {O}
     nsamp = nsamples(d)
     pred = Vector{O}(undef, nsamp)
@@ -1048,10 +1091,14 @@ function apply(
     for rule in rulebase(m)
         length(uncovered_idxs) == 0 && break
 
+        uncovered_d = slice_dataset(d, uncovered_idxs; return_view = true)
+
         idxs_sat = findall(
-            check(antecedent(rule),d, check_args...; check_kwargs...) .== true
+            # check_antecedent(rule, d, check_args...; check_kwargs...) .== true
+            check_antecedent(rule, uncovered_d, check_args...; check_kwargs...) .== true
         )
-        uncovered_idxs = setdiff(uncovered_idxs,idxs_sat)
+        idxs_sat = uncovered_idxs[idxs_sat]
+        uncovered_idxs = setdiff(uncovered_idxs, idxs_sat)
 
         map((i)->(pred[i] = outcome(consequent(rule))), idxs_sat)
     end
@@ -1060,6 +1107,85 @@ function apply(
         map((i)->(pred[i] = outcome(defaultconsequent(m))), uncovered_idxs)
 
     return pred
+end
+
+#TODO: write apply! for the other models
+#TODO write in docstring that possible values for compute_metrics are: :append, true, false
+function apply!(
+    m::DecisionList{O},
+    d::AbstractInterpretationSet;
+    check_args::Tuple = (),
+    check_kwargs::NamedTuple = (; use_memo = [Dict{SyntaxTree,WorldSet{worldtype(d)}}() for i in 1:nsamples(d)]),
+    compute_metrics::Union{Symbol,Bool} = false,
+) where {O}
+    nsamp = nsamples(d)
+    pred = Vector{O}(undef, nsamp)
+    delays = Vector{Integer}(undef, nsamp)
+    uncovered_idxs = 1:nsamp
+    rules = rulebase(m)
+
+    for (n, rule) in enumerate(rules)
+        length(uncovered_idxs) == 0 && break
+
+        uncovered_d = slice_dataset(d, uncovered_idxs; return_view = true)
+
+        idxs_sat = findall(
+            # check_antecedent(rule, d, check_args...; check_kwargs...) .== true
+            check_antecedent(rule, uncovered_d, check_args...; check_kwargs...) .== true
+        )
+        idxs_sat = uncovered_idxs[idxs_sat]
+        uncovered_idxs = setdiff(uncovered_idxs, idxs_sat)
+
+        delays[idxs_sat] .= (n-1)
+        map((i)->(pred[i] = outcome(consequent(rule))), idxs_sat)
+    end
+
+    if length(uncovered_idxs) != 0
+        map((i)->(pred[i] = outcome(defaultconsequent(m))), uncovered_idxs)
+        length(rules) == 0 ? (delays .= 0) : (delays[uncovered_idxs] .= length(rules))
+    end
+
+    (length(rules) != 0) && (delays = delays ./ length(rules))
+
+    iprev = info(m)
+    inew = compute_metrics == false ? iprev : begin
+        if :delays ∉ keys(iprev)
+            merge(iprev, (; delays = delays))
+        else
+            prev = iprev[:delays]
+            ntwithout = (; [p for p in pairs(nt) if p[1] != :delays]...)
+            if compute_metrics == :append
+                merge(ntwithout,(; delays = [prev..., delays...]))
+            elseif compute_metrics == true
+                merge(ntwithout,(; delays = delays))
+            end
+        end
+    end
+
+    inewnew = begin
+        if :pred ∉ keys(inew)
+            merge(inew, (; pred = pred))
+        else
+            prev = inew[:pred]
+            ntwithout = (; [p for p in pairs(nt) if p[1] != :pred]...)
+            if compute_metrics == :append
+                merge(ntwithout,(; pred = [prev..., pred...]))
+            elseif compute_metrics == true
+                merge(ntwithout,(; pred = pred))
+            end
+        end
+    end
+
+    return DecisionList(rules, defaultconsequent(m), inewnew)
+end
+
+# TODO: if delays not in info(m) ?
+function meandelaydl(m::DecisionList)
+    i = info(m)
+
+    if :delays in keys(i)
+        return mean(i[:delays])
+    end
 end
 
 ############################################################################################
@@ -1112,7 +1238,7 @@ struct DecisionTree{
     info::NamedTuple
 
     function DecisionTree(
-        root::Union{FFM,Branch{O,C,Union{<:Branch{<:O,C2},FFM}}},
+        root::Union{FFM,Branch{O,C,Union{Branch{<:O,C2},FFM}}},
         info::NamedTuple = (;),
     ) where {O, C<:AbstractBooleanCondition, C2<:C, FFM<:FinalModel{<:O}}
         new{O,C,FFM}(root, info)
@@ -1142,21 +1268,29 @@ end
 root(m::DecisionTree) = m.root
 
 conditiontype(::Type{M}) where {M<:DecisionTree{O,C}} where {O,C} = C
+conditiontype(::Type{M}) where {M<:DecisionTree{O,C,FFM}} where {O,C,FFM} = C
 conditiontype(m::DecisionTree) = conditiontype(typeof(m))
 
 issymbolic(::DecisionTree) = true
 
-conditiontype(::Type{M}) where {M<:DecisionTree{O,C,FFM}} where {O,C,FFM} = C
-conditiontype(m::DecisionTree) = conditiontype(typeof(m))
-
 isopen(::DecisionTree) = false
 
+# TODO join these two or note that they are kept separate due to possible dispatch ambiguities.
 function apply(
     m::DecisionTree,
-    id::Union{AbstractInterpretation,AbstractInterpretationSet};
+    #id::Union{AbstractInterpretation,AbstractInterpretationSet};
+    id::AbstractInterpretation;
     kwargs...
 )
     apply(root(m), id; kwargs...)
+end
+
+function apply(
+    m::DecisionTree,
+    d::AbstractInterpretationSet;
+    kwargs...,
+)
+    apply(root(m), d; kwargs...)
 end
 
 ############################################################################################
@@ -1206,12 +1340,22 @@ conditiontype(m::DecisionForest) = conditiontype(typeof(m))
 
 issymbolic(::DecisionForest) = false
 
+# TODO check these two.
 function apply(
     f::DecisionForest,
-    id::Union{AbstractInterpretation,AbstractInterpretationSet};
+    id::AbstractInterpretation;
     kwargs...
 )
-    best_guess([apply(t, id; kwargs...) for t in trees(f)])
+    best_guess([apply(t, d; kwargs...) for t in trees(f)])
+end
+
+function apply(
+    f::DecisionForest,
+    d::AbstractInterpretationSet;
+    kwargs...
+)
+    pred = hcat([apply(t, d; kwargs...) for t in trees(f)]...)
+    return [best_guess(pred[i,:]) for i in 1:size(pred,1)]
 end
 
 ############################################################################################
