@@ -47,9 +47,14 @@ const _BASE_FEATURES = Dict{String, Function}(
 # - threshold is always considered as real;
 function featcondbuilder(
     expression::String;
-    opening_bracket::Symbol = OPENING_BRACKET,
-    closing_bracket::Symbol = CLOSING_BRACKET
+    opening_bracket::Union{String,Symbol} = OPENING_BRACKET,
+    closing_bracket::Union{String,Symbol} = CLOSING_BRACKET
 )
+    @assert length(string(opening_bracket)) == 1 || length(string(closing_bracket))
+        "Brackets must be a single-character symbol."
+    opening_bracket = Symbol(opening_bracket)
+    closing_bracket = Symbol(closing_bracket)
+
     # Get a string;
     # return (if possible) a Tuple containing 4 substrings:
     #   [feature, attribute, operator, threshold].
