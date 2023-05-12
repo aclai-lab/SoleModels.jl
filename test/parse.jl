@@ -1,0 +1,5 @@
+@test_nowarn SoleModels.parsecondition("min[189] <= 250")
+@test_nowarn SoleModels.parsecondition("  min[189]    > 250.2  ")
+@test_nowarn SoleModels.parsecondition("minimum[189]    > 250.2")
+@test_nowarn SoleModels.featvaltype(SoleModels.feature(SoleModels.parsecondition("mean[189]    > 250.2"; featvaltype = Float64)))
+@test_throws AssertionError SoleModels.parsecondition("mean189]    > 250.2")

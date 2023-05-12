@@ -10,6 +10,7 @@ include("minify.jl")
 include("features.jl")
 include("test-operators.jl")
 include("conditions.jl")
+include("parse-condition.jl")
 include("representatives.jl")
 include("datasets.jl")
 

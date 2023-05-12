@@ -1,3 +1,5 @@
+using StatsBase
+
 #= ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Code purpose ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Given a string "min[A189] <= 250", build the corresponding FeatCondition.
 
@@ -8,13 +10,13 @@ In the example:
 
 This can be done by integrating this code with SoleLogics parsing system:
     SoleLogics.parseformulatree(
-        "min[189] <= 250 ∧ min[189] <= 250", proposition_parser = featcondbuilder);
+        "min[189] <= 250 ∧ min[189] <= 250", proposition_parser = parsecondition);
     as you notice, featconbuilder is passed to parseformulatree to interpret
     each proposition found as Proposition{FeatCondition} instead of Proposition{String}.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ =#
 
 #= ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Limitations ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Here are listed the current limitations in featcondbuilder: in other words,
+Here are listed the current limitations in parsecondition: in other words,
 the limitations that has to be considered when converting a string
 shaped like "feature[attribute] operator threshold" into a FeatCondition.
 
@@ -35,9 +37,16 @@ const _CLOSING_BRACKET = "]"
 const OPENING_BRACKET = Symbol(_OPENING_BRACKET)
 const CLOSING_BRACKET = Symbol(_CLOSING_BRACKET)
 
-const _BASE_FEATURES = Dict{String, Function}(
-    "min" => ((x) -> SingleAttributeMin{Real}(x)),
-    "max" => ((x) -> SingleAttributeMax{Real}(x))
+# Shortcuts for feature names
+const _BASE_FEATURES = Dict{String,Union{Type,Function}}(
+    #
+    "minimum" => SingleAttributeMin,
+    "min"     => SingleAttributeMin,
+    "maximum" => SingleAttributeMax,
+    "max"     => SingleAttributeMax,
+    #
+    "avg"     => StatsBase.mean,
+    "mean"    => StatsBase.mean,
 )
 
 # A FeatCondition constructor that can be integrated with SoleLogics' parsing methods;
@@ -45,20 +54,24 @@ const _BASE_FEATURES = Dict{String, Function}(
 # - features are only "min" (SingleAttributeMin) and "max" (SingleAttributeMax)
 # - attribute is always considered as integer;
 # - threshold is always considered as real;
-function featcondbuilder(
+function parsecondition(
     expression::String;
+    featvaltype = Real,
     opening_bracket::Union{String,Symbol} = OPENING_BRACKET,
-    closing_bracket::Union{String,Symbol} = CLOSING_BRACKET
+    closing_bracket::Union{String,Symbol} = CLOSING_BRACKET,
+    additional_shortcuts = Dict{String,Union{Type,Function}}()
 )
     @assert length(string(opening_bracket)) == 1 || length(string(closing_bracket))
         "Brackets must be a single-character symbol."
     opening_bracket = Symbol(opening_bracket)
     closing_bracket = Symbol(closing_bracket)
 
+    featdict = merge(_BASE_FEATURES, additional_shortcuts)
+
     # Get a string;
     # return (if possible) a Tuple containing 4 substrings:
     #   [feature, attribute, operator, threshold].
-    function _cut(expression::String)
+    function _cut(expression::String)::NTuple{4, String}
         # 3 slices are found initially, thanks to the following regex, in this order:
         # a feature name (e.g. "min"),
         # an attribute inside feature's brackets (e.g. "[A189]"),
@@ -74,21 +87,41 @@ function featcondbuilder(
             string(slices[2][end]) == string(closing_bracket))
             "Malformed brackets in $(slices[2])."
 
-        #NOTE: a space between operator and threhsold MUST exist
+        # NOTE: a space between operator and threhsold MUST exist
         feature = slices[1]
         attribute = string(chop(slices[2], head=1, tail=1))
-        operator, threshold = string.(split(strip(slices[3]), " "))
+        test_operator, threshold = string.(split(strip(slices[3]), " "))
 
-        return (feature, attribute, operator, threshold)
+        return (feature, attribute, test_operator, threshold)
     end
 
-    # Get feature, operator and threshold string;
-    # return a FeatCondition.
-    function _absorb(fctokens::NTuple{4, String})
-        feature  = _BASE_FEATURES[fctokens[1]](parse(Int,fctokens[2]))
-        metacond = SoleModels.FeatMetaCondition(feature, eval(Meta.parse(fctokens[3])))
-        return SoleModels.FeatCondition(metacond, parse(Float64,fctokens[4]))
-    end
+    (_feature, _attribute, _test_operator, _threshold) = _cut(expression)
 
-    return Proposition(_absorb(_cut(expression)));
+    i_attr = parse(Int, _attribute)
+    feature = begin
+        if haskey(featdict, lowercase(_feature))
+            # If it is a known feature get it as
+            #  a type (e.g., `SingleAttributeMin`), or Julia function (e.g., `minimum`).
+            feat_or_fun = featdict[lowercase(_feature)]
+            feat_or_fun = begin
+                # If it is a function, wrap it into a SingleAttributeGenericFeature
+                #  otherwise, it is a feature, and it is used as a constructor.
+                if feat_or_fun isa Function
+                    SingleAttributeGenericFeature{featvaltype}(i_attr, feat_or_fun)
+                else
+                    feat_or_fun{featvaltype}(i_attr)
+                end
+            end
+            feat_or_fun
+        else
+            # If it is not a known feature, interpret it as a Julia function,
+            #  and wrap it into a SingleAttributeGenericFeature.
+            f = eval(Meta.parse(_feature))
+            SingleAttributeGenericFeature{featvaltype}(i_attr, f)
+        end
+    end
+    test_operator = eval(Meta.parse(_test_operator))
+    metacond = FeatMetaCondition(feature, test_operator)
+
+    return FeatCondition(metacond, parse(Float64, _threshold))
 end
