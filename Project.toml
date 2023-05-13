@@ -21,7 +21,6 @@ StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
 Suppressor = "fd094767-a336-5f1f-9728-57cf17d0bbfb"
 
 [compat]
-julia = "1"
 BenchmarkTools = "1"
 ComputedFieldTypes = "1"
 DataStructures = "0.18"
@@ -32,8 +31,9 @@ Reexport = "1"
 Revise = "3"
 SoleBase = "0.9"
 SoleLogics = "0.2"
-StatsBase = "0.33"
+StatsBase = "0.33, 0.34"
 Suppressor = "0.2"
+julia = "1"
 
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
