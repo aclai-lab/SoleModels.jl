@@ -66,6 +66,13 @@ See also
 [`Label`](@ref).
 """
 function best_guess(
+    labels::AbstractVector{<:Label},
+    weights::Union{Nothing,AbstractVector} = nothing;
+    suppress_parity_warning = false,
+) end
+
+# Classification: (weighted) majority vote
+function best_guess(
     labels::AbstractVector{<:CLabel},
     weights::Union{Nothing,AbstractVector} = nothing;
     suppress_parity_warning = false,
@@ -94,6 +101,7 @@ function best_guess(
     argmax(counts)
 end
 
+# Regression: (weighted) mean (or other central tendency measure?)
 function best_guess(
     labels::AbstractVector{<:RLabel},
     weights::Union{Nothing,AbstractVector} = nothing;
