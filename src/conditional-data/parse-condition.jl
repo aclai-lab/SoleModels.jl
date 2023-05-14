@@ -1,33 +1,19 @@
 using StatsBase
 
 #= ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Code purpose ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Given a string "min[A189] <= 250", build the corresponding FeatCondition.
+Given a string "min[A189] <= 250", build the corresponding
+FeatCondition using a method `parsecondition`.
 
-In the example:
-1) feature          is      SingleAttributeMin(189)
-2) metacondition    is      SoleModels.FeatMetaCondition(feature, >)
-3) threshold        is      250
+A FeatCondition is built of three parts
+    1) feature          is      SingleAttributeMin(189),
+    2) metacondition    is      SoleModels.FeatMetaCondition(feature, >),
+    3) threshold        is      250,
+which are assembled by the constructor SoleModels.FeatCondition(metacondition, threshold).
 
-This can be done by integrating this code with SoleLogics parsing system:
+We want to recognize Proposition{FeatCondition} while parsing an expression;
+this can be done by integrating `parsecondition` with SoleLogics parsing system:
     SoleLogics.parseformulatree(
         "min[189] <= 250 ∧ min[189] <= 250", proposition_parser = parsecondition);
-    as you notice, featconbuilder is passed to parseformulatree to interpret
-    each proposition found as Proposition{FeatCondition} instead of Proposition{String}.
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ =#
-
-#= ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Limitations ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Here are listed the current limitations in parsecondition: in other words,
-the limitations that has to be considered when converting a string
-shaped like "feature[attribute] operator threshold" into a FeatCondition.
-
-- Legal features are only "min" and "max" (see _BASE_FEATURES).
-- In "min[A189] <= 250", a space between "<=" and "250" is required:
-    this is because otherwise we don't know when the operator string finishes;
-    a solution could be to take a vector of legal operators from the user, and provide
-    a default one.
-- In "min[A189] <= 250", "min" has to be written exactly like this ("min  " is illegal).
-- Features are always Type{Real}.
-- Thresholds are always Type{Float64}.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ =#
 
 # Feature brackets
@@ -72,37 +58,39 @@ function parsecondition(
     # return (if possible) a Tuple containing 4 substrings:
     #   [feature, attribute, operator, threshold].
     function _cut(expression::String)::NTuple{4, String}
-        # 3 slices are found initially, thanks to the following regex, in this order:
-        # a feature name (e.g. "min"),
-        # an attribute inside feature's brackets (e.g. "[A189]"),
-        # a remaining part (hopefully, a legal operator and then anything)
-        # NOTE: this could work too ^([^<>]*)\w*(<|>|<=|>=)\w*([^<>]*)$
-        slices = string.(split(expression, r"((?<=\])|(?=\[))"))
+        # 4 slices are found initially in this order:
+        #   1) a feature name (e.g. "min"),
+        #   2) an attribute inside feature's brackets (e.g. "[A189]"),
+        #   3) an operator ("<=", ">=", "<" or ">"),
+        #   4) a threshold value.
+        # Regex is (consider "[", "]" as `opening_bracket` and `closing_bracket`):
+        # (\w*) *(\[.*\]) *(<=|>=|<|>) *(\d*).
 
-        @assert length(slices) == 3 "Expression $expression is not formatted properly. " *
+        r = Regex("(\\w*) *(\\$(opening_bracket).*\\$(closing_bracket)) *(<=|>=|<|>)(.*)")
+        slices = string.(match(r, expression))
+
+        @assert length(slices) == 4 "Expression $expression is not formatted properly. " *
             "Correct formatting is: feature$(opening_bracket)attribute" *
             "$(closing_bracket) operator threshold."
+
+        slices = strip.(slices)
 
         @assert (string(slices[2][1]) == string(opening_bracket) &&
             string(slices[2][end]) == string(closing_bracket))
             "Malformed brackets in $(slices[2])."
 
-        # NOTE: a space between operator and threhsold MUST exist
-        feature = slices[1]
-        attribute = string(chop(slices[2], head=1, tail=1))
-        test_operator, threshold = string.(split(strip(slices[3]), " "))
-
-        return (feature, attribute, test_operator, threshold)
+        # Return tuple is: (feature, attribute, test_operator, threshold)
+        return (slices[1], string(chop(slices[2], head=1, tail=1)), slices[3], slices[4])
     end
 
     (_feature, _attribute, _test_operator, _threshold) = _cut(expression)
 
     i_attr = parse(Int, _attribute)
     feature = begin
-        if haskey(featdict, lowercase(_feature))
+        if haskey(featdict, strip(lowercase(_feature)))
             # If it is a known feature get it as
             #  a type (e.g., `SingleAttributeMin`), or Julia function (e.g., `minimum`).
-            feat_or_fun = featdict[lowercase(_feature)]
+            feat_or_fun = featdict[strip(lowercase(_feature))]
             feat_or_fun = begin
                 # If it is a function, wrap it into a SingleAttributeGenericFeature
                 #  otherwise, it is a feature, and it is used as a constructor.
