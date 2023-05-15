@@ -51,7 +51,7 @@ Each `FeatCondition` is shaped as follows (whitespaces are not relevant):
 **feature_name opening_bracket attribute closing_bracket operator threshold.**
 
 * *feature_name* can be a julia built-in method such as `minimum` or `maximum` (visit
-    @LINK TO DOC HERE@ to see which features are available by default), or a custom
+    TODO: LINK TO DOC HERE to see which features are available by default), or a custom
     valid function whose (only) argument type is the same as `featvaltype`;
 * *opening_bracket* and *closing_bracket* wraps the attribute; are defaulted to `[`, `]`;
 * *attribute* is a key label to access data of `featvaltype` type;
