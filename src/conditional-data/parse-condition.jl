@@ -35,11 +35,41 @@ const _BASE_FEATURES = Dict{String,Union{Type,Function}}(
     "mean"    => StatsBase.mean,
 )
 
-# A FeatCondition constructor that can be integrated with SoleLogics' parsing methods;
-# at the moment:
-# - features are only "min" (SingleAttributeMin) and "max" (SingleAttributeMax)
-# - attribute is always considered as integer;
-# - threshold is always considered as real;
+"""
+    parsecondition(
+        expression::String;
+        featvaltype = Real,
+        opening_bracket::Union{String,Symbol} = OPENING_BRACKET,
+        closing_bracket::Union{String,Symbol} = CLOSING_BRACKET,
+        additional_shortcuts = Dict{String,Union{Type,Function}}()
+    )
+
+Returns a `FeatCondition` which is the result of parsing `expression`.
+This can be integrated with `TODO: gotta go, write about parseformulatree here`
+Each `FeatCondition` is shaped as follows (whitespaces are not relevant):
+
+**feature_name opening_bracket attribute closing_bracket operator threshold.**
+
+* *feature_name* can be a julia built-in method such as `minimum` or `maximum` (visit
+    @LINK TO DOC HERE@ to see which features are available by default), or a custom
+    valid function whose (only) argument type is the same as attribute's wrapped data type;
+* *opening_bracket* and *closing_bracket* wraps the attribute; are defaulted to `[`, `]`;
+* *attribute* is a key label to access data of a certain type (TODO: fix this wording);
+* *operator* is an element of `[<=, >=, <, >]`;
+* *threshold* is a value to be compared with attribute's wrapped data.
+
+# Examples
+```julia-repl
+julia> SoleModels.parsecondition("min[1] <= 32")
+SoleModels.FeatCondition{Float64, SoleModels.FeatMetaCondition{SingleAttributeMin{Real},
+typeof(<=)}}(SoleModels.FeatMetaCondition{SingleAttributeMin{Real}, typeof(<=)}
+(SingleAttributeMin{Real}(1), <=), 32.0)
+
+julia> parseformulatree("min[1] <= 15 ∧ max[1] >= 85", proposition_parser=parsecondition)
+TODO: write result here (I still need to pull from SoleLogics. Complications occurred.)
+```
+
+"""
 function parsecondition(
     expression::String;
     featvaltype = Real,
@@ -65,15 +95,15 @@ function parsecondition(
         #   4) a threshold value.
         # Regex is (consider "[", "]" as `opening_bracket` and `closing_bracket`):
         # (\w*) *(\[.*\]) *(<=|>=|<|>) *(\d*).
-
+        expression = filter(x -> !isspace(x), expression)
         r = Regex("(\\w*) *(\\$(opening_bracket).*\\$(closing_bracket)) *(<=|>=|<|>)(.*)")
         slices = string.(match(r, expression))
 
-        @assert length(slices) == 4 "Expression $expression is not formatted properly. " *
+        # Assert for malformed strings (e.g. "123.4<avg[189]>250.2")
+        @assert sum([length(x) for x in slices]) == length(expression) &&
+            length(slices) == 4 "Expression $expression is not formatted properly. " *
             "Correct formatting is: feature$(opening_bracket)attribute" *
             "$(closing_bracket) operator threshold."
-
-        slices = strip.(slices)
 
         @assert (string(slices[2][1]) == string(opening_bracket) &&
             string(slices[2][end]) == string(closing_bracket))
