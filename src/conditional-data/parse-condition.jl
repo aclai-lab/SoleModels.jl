@@ -45,18 +45,26 @@ const _BASE_FEATURES = Dict{String,Union{Type,Function}}(
     )
 
 Returns a `FeatCondition` which is the result of parsing `expression`.
-This can be integrated with `TODO: gotta go, write about parseformulatree here`
+This can be integrated with `SoleLogics` parsing system (see Examples section).
 Each `FeatCondition` is shaped as follows (whitespaces are not relevant):
 
 **feature_name opening_bracket attribute closing_bracket operator threshold.**
 
 * *feature_name* can be a julia built-in method such as `minimum` or `maximum` (visit
     @LINK TO DOC HERE@ to see which features are available by default), or a custom
-    valid function whose (only) argument type is the same as attribute's wrapped data type;
+    valid function whose (only) argument type is the same as `featvaltype`;
 * *opening_bracket* and *closing_bracket* wraps the attribute; are defaulted to `[`, `]`;
-* *attribute* is a key label to access data of a certain type (TODO: fix this wording);
+* *attribute* is a key label to access data of `featvaltype` type;
 * *operator* is an element of `[<=, >=, <, >]`;
-* *threshold* is a value to be compared with attribute's wrapped data.
+* *threshold* is a value to be compared with the data wrapped by attribute.
+
+# Arguments
+- `expression::String`: the string to be parsed;
+- `featvaltype`: type of the value wrapped by the feature;
+- `opening_bracket::Union{String,Symbol} = $(OPENING_BRACKET)`: feature's opening bracket;
+- `closing_bracket::Union{String,Symbol} = $(CLOSING_BRACKET)`: feature's closing bracket;
+- `additional_shortcuts = Dict{String,Union{Type,Function}}`: mapping of strings
+    to functions, needed to correctly recognize functions that are not available by default.
 
 # Examples
 ```julia-repl
@@ -65,10 +73,9 @@ SoleModels.FeatCondition{Float64, SoleModels.FeatMetaCondition{SingleAttributeMi
 typeof(<=)}}(SoleModels.FeatMetaCondition{SingleAttributeMin{Real}, typeof(<=)}
 (SingleAttributeMin{Real}(1), <=), 32.0)
 
-julia> parseformulatree("min[1] <= 15 ∧ max[1] >= 85", proposition_parser=parsecondition)
-TODO: write result here (I still need to pull from SoleLogics. Complications occurred.)
+julia> parseformulatree("min[A1] <= 15 ∧ max[A1] >= 85", proposition_parser=parsecondition)
+TODO: this example doesn't work (can't update SoleLogics).
 ```
-
 """
 function parsecondition(
     expression::String;
