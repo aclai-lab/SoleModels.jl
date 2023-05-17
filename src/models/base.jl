@@ -1,16 +1,7 @@
 import Base: convert, length, getindex, isopen
 import SoleLogics: check, syntaxstring
 using SoleData: slice_dataset
-# using SoleLogics: LeftmostLinearForm, LeftmostConjunctiveForm, LeftmostDisjunctiveForm # This should be uncommented (commented to avoid error while compiling)
-
-struct LeftmostLinearForm # This line must be deleted (inserted to avoid error while compiling)
-end # This line must be deleted
-
-struct LeftmostConjunctiveForm # This line must be deleted
-end # This line must be deleted
-
-struct LeftmostDisjunctiveForm # This line must be deleted
-end # This line must be deleted
+using SoleLogics: LeftmostLinearForm, LeftmostConjunctiveForm, LeftmostDisjunctiveForm
 
 # Util
 typename(::Type{T}) where T = eval(nameof(T))

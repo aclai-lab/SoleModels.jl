@@ -7,6 +7,13 @@ import SoleLogics: frame
 
 include("minify.jl")
 
+# Feature brackets
+const UNIVARIATEFEATURE_OPENING_BRACKET = "["
+const UNIVARIATEFEATURE_CLOSING_BRACKET = "]"
+
+# Default prefix for variables
+const UNIVARIATEFEATURE_VARPREFIX = "V"
+
 include("features.jl")
 include("test-operators.jl")
 include("conditions.jl")

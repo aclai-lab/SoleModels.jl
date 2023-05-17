@@ -65,8 +65,7 @@ function attribute_name(
     kwargs...,
 )
     if isnothing(attribute_names_map)
-        # Default prefix for "V" (for "variable")
-        attribute_name_prefix = isnothing(attribute_name_prefix) ? "V" : attribute_name_prefix
+        attribute_name_prefix = isnothing(attribute_name_prefix) ? UNIVARIATEFEATURE_VARPREFIX : attribute_name_prefix
         "$(attribute_name_prefix)$(i_attribute(f))"
     else
         @assert isnothing(attribute_name_prefix)
@@ -110,7 +109,7 @@ function compute_feature(f::SingleAttributeMin{U}, inst::AbstractDimensionalInst
 end
 function syntaxstring(f::SingleAttributeMin; kwargs...)
     n = attribute_name(f; kwargs...)
-    "min($n)"
+    "min$UNIVARIATEFEATURE_OPENING_BRACKET$n$UNIVARIATEFEATURE_CLOSING_BRACKET"
 end
 
 struct SingleAttributeMax{U} <: SingleAttributeFeature{U}
@@ -129,7 +128,7 @@ function compute_feature(f::SingleAttributeMax{U}, inst::AbstractDimensionalInst
 end
 function syntaxstring(f::SingleAttributeMax; kwargs...)
     n = attribute_name(f; kwargs...)
-    "max($n)"
+    "max$UNIVARIATEFEATURE_OPENING_BRACKET$n$UNIVARIATEFEATURE_CLOSING_BRACKET"
 end
 
 ############################################################################################
@@ -149,7 +148,7 @@ alpha(f::SingleAttributeSoftMin) = f.alpha
 function syntaxstring(f::SingleAttributeSoftMin; kwargs...)
     "min" *
         utils.subscriptnumber(rstrip(rstrip(string(f.alpha*100), '0'), '.')) *
-        "($(attribute_name(f; kwargs...)))"
+        "$UNIVARIATEFEATURE_OPENING_BRACKET$(attribute_name(f; kwargs...))$UNIVARIATEFEATURE_CLOSING_BRACKET"
 end
 
 function compute_feature(f::SingleAttributeSoftMin{U}, inst::AbstractDimensionalInstance{T}) where {U<:Real,T}
@@ -171,7 +170,7 @@ alpha(f::SingleAttributeSoftMax) = f.alpha
 function syntaxstring(f::SingleAttributeSoftMax; kwargs...)
     "max" *
         utils.subscriptnumber(rstrip(rstrip(string(f.alpha*100), '0'), '.')) *
-        "($(attribute_name(f; kwargs...)))"
+        "$UNIVARIATEFEATURE_OPENING_BRACKET$(attribute_name(f; kwargs...))$UNIVARIATEFEATURE_CLOSING_BRACKET"
 end
 
 # TODO simplify OneWorld case:
@@ -195,7 +194,7 @@ function compute_feature(f::SingleAttributeGenericFeature{U}, inst::AbstractDime
     (f.f(SoleBase.vectorize(get_instance_attribute(inst,f.i_attribute));))::U
 end
 function syntaxstring(f::SingleAttributeGenericFeature; kwargs...)
-    "$(f.f)($(attribute_name(f; kwargs...)))"
+    "$(f.f)$UNIVARIATEFEATURE_OPENING_BRACKET$(attribute_name(f; kwargs...))$UNIVARIATEFEATURE_CLOSING_BRACKET"
 end
 
 ############################################################################################

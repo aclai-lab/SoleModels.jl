@@ -16,12 +16,8 @@ this can be done by integrating `parsecondition` with SoleLogics parsing system:
         "min[189] <= 250 ∧ min[189] <= 250", proposition_parser = parsecondition);
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ =#
 
-# Feature brackets
-const _OPENING_BRACKET = "["
-const _CLOSING_BRACKET = "]"
-
-const OPENING_BRACKET = Symbol(_OPENING_BRACKET)
-const CLOSING_BRACKET = Symbol(_CLOSING_BRACKET)
+const UVF_OPENING_BRACKET = Symbol(UNIVARIATEFEATURE_OPENING_BRACKET)
+const UVF_CLOSING_BRACKET = Symbol(UNIVARIATEFEATURE_CLOSING_BRACKET)
 
 # Shortcuts for feature names
 const _BASE_FEATURES = Dict{String,Union{Type,Function}}(
@@ -39,21 +35,21 @@ const _BASE_FEATURES = Dict{String,Union{Type,Function}}(
     parsecondition(
         expression::String;
         featvaltype = Real,
-        opening_bracket::Union{String,Symbol} = OPENING_BRACKET,
-        closing_bracket::Union{String,Symbol} = CLOSING_BRACKET,
+        opening_bracket::Union{String,Symbol} = UVF_OPENING_BRACKET,
+        closing_bracket::Union{String,Symbol} = UVF_CLOSING_BRACKET,
         additional_shortcuts = Dict{String,Union{Type,Function}}()
     )
 
-Returns a `FeatCondition` which is the result of parsing `expression`.
-This can be integrated with `SoleLogics` parsing system (see Examples section).
+Return a `FeatCondition` which is the result of parsing `expression`.
+This can be integrated with the `SoleLogics` parsing system (see Examples section).
 Each `FeatCondition` is shaped as follows (whitespaces are not relevant):
 
-**feature_name opening_bracket attribute closing_bracket operator threshold.**
+**feature\\_name opening\\_bracket attribute closing\\_bracket operator threshold.**
 
-* *feature_name* can be a julia built-in method such as `minimum` or `maximum` (visit
-    TODO: LINK TO DOC HERE to see which features are available by default), or a custom
-    valid function whose (only) argument type is the same as `featvaltype`;
-* *opening_bracket* and *closing_bracket* wraps the attribute; are defaulted to `[`, `]`;
+* *feature\\_name* can be a julia Function (such as `minimum` or `maximum`),
+    whose return type is `featvaltype`;
+* *opening\\_bracket* and *closing\\_bracket* wrap the attribute; defaulted
+    to `$(repr(UVF_OPENING_BRACKET))`, `$(repr(UVF_CLOSING_BRACKET))`;
 * *attribute* is a key label to access data of `featvaltype` type;
 * *operator* is an element of `[<=, >=, <, >]`;
 * *threshold* is a value to be compared with the data wrapped by attribute.
@@ -61,27 +57,25 @@ Each `FeatCondition` is shaped as follows (whitespaces are not relevant):
 # Arguments
 - `expression::String`: the string to be parsed;
 - `featvaltype`: type of the value wrapped by the feature;
-- `opening_bracket::Union{String,Symbol} = $(OPENING_BRACKET)`: feature's opening bracket;
-- `closing_bracket::Union{String,Symbol} = $(CLOSING_BRACKET)`: feature's closing bracket;
+- `opening_bracket::Union{String,Symbol} = $(repr(UVF_OPENING_BRACKET))`: the feature's opening bracket;
+- `closing_bracket::Union{String,Symbol} = $(repr(UVF_CLOSING_BRACKET))`: the feature's closing bracket;
 - `additional_shortcuts = Dict{String,Union{Type,Function}}`: mapping of strings
     to functions, needed to correctly recognize functions that are not available by default.
 
 # Examples
 ```julia-repl
-julia> SoleModels.parsecondition("min[1] <= 32")
-SoleModels.FeatCondition{Float64, SoleModels.FeatMetaCondition{SingleAttributeMin{Real},
-typeof(<=)}}(SoleModels.FeatMetaCondition{SingleAttributeMin{Real}, typeof(<=)}
-(SingleAttributeMin{Real}(1), <=), 32.0)
+julia> syntaxstring(SoleModels.parsecondition("min[1] <= 32"))
+"min[V1] <= 32.0"
 
-julia> parseformulatree("min[A1] <= 15 ∧ max[A1] >= 85", proposition_parser=parsecondition)
-TODO: this example doesn't work (can't update SoleLogics).
+julia> syntaxstring(parseformulatree("min[1] <= 15 ∧ max[1] >= 85"; proposition_parser=(x)->parsecondition(x; featvaltype = Int64,)))
+"min[V1] <= 15 ∧ max[V1] >= 85"
 ```
 """
 function parsecondition(
     expression::String;
     featvaltype = Real,
-    opening_bracket::Union{String,Symbol} = OPENING_BRACKET,
-    closing_bracket::Union{String,Symbol} = CLOSING_BRACKET,
+    opening_bracket::Union{String,Symbol} = UVF_OPENING_BRACKET,
+    closing_bracket::Union{String,Symbol} = UVF_CLOSING_BRACKET,
     additional_shortcuts = Dict{String,Union{Type,Function}}()
 )
     @assert length(string(opening_bracket)) == 1 || length(string(closing_bracket))
@@ -148,5 +142,5 @@ function parsecondition(
     test_operator = eval(Meta.parse(_test_operator))
     metacond = FeatMetaCondition(feature, test_operator)
 
-    return FeatCondition(metacond, parse(Float64, _threshold))
+    return FeatCondition(metacond, parse(featvaltype, _threshold))
 end
