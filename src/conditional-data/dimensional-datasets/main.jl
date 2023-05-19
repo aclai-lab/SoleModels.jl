@@ -18,7 +18,7 @@ export nfeatures, nrelations,
 export AbstractWorld, AbstractRelation
 export AbstractWorldSet, WorldSet
 
-export Ontology, worldtype, world_types
+export Ontology, worldtype
 
 import Base: size, show, getindex, iterate, length, push!
 

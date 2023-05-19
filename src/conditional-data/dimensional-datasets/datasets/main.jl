@@ -234,7 +234,7 @@ function check(
     # hasmemo(::ActiveFeaturedDataset) = false
     # hasmemo(X)TODO
 
-    # φ = normalize(φ) # TODO normalize formula and/or use a dedicate memoization structure that normalizes functions
+    # φ = normalize(φ; profile = :modelchecking) # TODO normalize formula and/or use a dedicate memoization structure that normalizes functions
 
     fr = frame(X, i_sample)
 
@@ -299,7 +299,7 @@ end
 #         end
 #     end
 
-#     # φ = normalize(φ) # TODO normalize formula and/or use a dedicate memoization structure that normalizes functions
+#     # φ = normalize(φ; profile = :modelchecking) # TODO normalize formula and/or use a dedicate memoization structure that normalizes functions
 
 #     fr = frame(X, i_sample)
 

@@ -103,7 +103,13 @@ struct DimensionalFeaturedDataset{
         kwargs...,
     ) where {V,N,W<:AbstractWorld}
         domain = (domain isa AbstractDimensionalDataset ? PassiveDimensionalDataset{N,W}(domain) : domain)
+
+        @assert all(isa.(mixed_features, MixedFeature)) "Unknown feature encountered!" *
+            " $(filter(f->!isa(f, MixedFeature), mixed_features)), " *
+            " $(typeof.(filter(f->!isa(f, MixedFeature), mixed_features)))"
+
         mixed_features = Vector{MixedFeature}(mixed_features)
+
         _features, featsnops = begin
             _features = AbstractFeature[]
             featsnops = Vector{<:TestOperatorFun}[]
@@ -113,15 +119,29 @@ struct DimensionalFeaturedDataset{
             cnv_feat(cf::Tuple{TestOperatorFun,AbstractFeature}) = ([cf[1]], cf[2])
             # single-attribute features
             cnv_feat(cf::Any) = cf
+            cnv_feat(cf::CanonicalFeature) = cf
             cnv_feat(cf::Function) = ([≥, ≤], cf)
             cnv_feat(cf::Tuple{TestOperatorFun,Function}) = ([cf[1]], cf[2])
 
             mixed_features = cnv_feat.(mixed_features)
 
-            readymade_cfs          = filter(x->isa(x, Tuple{<:AbstractVector{<:TestOperatorFun},AbstractFeature}), mixed_features)
-            attribute_specific_cfs = filter(x->isa(x, CanonicalFeature) || isa(x, Tuple{<:AbstractVector{<:TestOperatorFun},Function}), mixed_features)
+            readymade_cfs          = filter(x->
+                # isa(x, Tuple{<:AbstractVector{<:TestOperatorFun},AbstractFeature}),
+                isa(x, Tuple{AbstractVector,AbstractFeature}),
+                mixed_features,
+            )
+            attribute_specific_cfs = filter(x->
+                isa(x, CanonicalFeature) ||
+                # isa(x, Tuple{<:AbstractVector{<:TestOperatorFun},Function}) ||
+                (isa(x, Tuple{AbstractVector,Function}) && !isa(x, Tuple{AbstractVector,AbstractFeature})),
+                mixed_features,
+            )
 
-            @assert length(readymade_cfs) + length(attribute_specific_cfs) == length(mixed_features) "Unexpected mixed_features: $(filter(x->(! (x in readymade_cfs) && ! (x in attribute_specific_cfs)), mixed_features))"
+            @assert length(readymade_cfs) + length(attribute_specific_cfs) == length(mixed_features) "" *
+                "Unexpected" *
+                " mixed_features. $(mixed_features)." *
+                " $(filter(x->(! (x in readymade_cfs) && ! (x in attribute_specific_cfs)), mixed_features))." *
+                " $(length(readymade_cfs)) + $(length(attribute_specific_cfs)) == $(length(mixed_features))."
 
             for (test_ops,cf) in readymade_cfs
                 push!(_features, cf)
