@@ -148,13 +148,13 @@ struct DimensionalFeaturedDataset{
                 push!(featsnops, test_ops)
             end
 
-            single_attr_feats_n_featsnops(i_attr,cf::SoleModels.CanonicalFeatureGeq) = ([≥],SoleModels.SingleAttributeMin{V}(i_attr))
-            single_attr_feats_n_featsnops(i_attr,cf::SoleModels.CanonicalFeatureLeq) = ([≤],SoleModels.SingleAttributeMax{V}(i_attr))
-            single_attr_feats_n_featsnops(i_attr,cf::SoleModels.CanonicalFeatureGeqSoft) = ([≥],SoleModels.SingleAttributeSoftMin{V}(i_attr, cf.alpha))
-            single_attr_feats_n_featsnops(i_attr,cf::SoleModels.CanonicalFeatureLeqSoft) = ([≤],SoleModels.SingleAttributeSoftMax{V}(i_attr, cf.alpha))
-            single_attr_feats_n_featsnops(i_attr,(test_ops,cf)::Tuple{<:AbstractVector{<:TestOperatorFun},typeof(minimum)}) = (test_ops,SingleAttributeMin{V}(i_attr))
-            single_attr_feats_n_featsnops(i_attr,(test_ops,cf)::Tuple{<:AbstractVector{<:TestOperatorFun},typeof(maximum)}) = (test_ops,SingleAttributeMax{V}(i_attr))
-            single_attr_feats_n_featsnops(i_attr,(test_ops,cf)::Tuple{<:AbstractVector{<:TestOperatorFun},Function})        = (test_ops,SingleAttributeGenericFeature{V}(i_attr, (x)->(V(cf(x)))))
+            single_attr_feats_n_featsnops(i_attr,cf::SoleModels.CanonicalFeatureGeq) = ([≥],SoleModels.UnivariateMin{V}(i_attr))
+            single_attr_feats_n_featsnops(i_attr,cf::SoleModels.CanonicalFeatureLeq) = ([≤],SoleModels.UnivariateMax{V}(i_attr))
+            single_attr_feats_n_featsnops(i_attr,cf::SoleModels.CanonicalFeatureGeqSoft) = ([≥],SoleModels.UnivariateSoftMin{V}(i_attr, cf.alpha))
+            single_attr_feats_n_featsnops(i_attr,cf::SoleModels.CanonicalFeatureLeqSoft) = ([≤],SoleModels.UnivariateSoftMax{V}(i_attr, cf.alpha))
+            single_attr_feats_n_featsnops(i_attr,(test_ops,cf)::Tuple{<:AbstractVector{<:TestOperatorFun},typeof(minimum)}) = (test_ops,UnivariateMin{V}(i_attr))
+            single_attr_feats_n_featsnops(i_attr,(test_ops,cf)::Tuple{<:AbstractVector{<:TestOperatorFun},typeof(maximum)}) = (test_ops,UnivariateMax{V}(i_attr))
+            single_attr_feats_n_featsnops(i_attr,(test_ops,cf)::Tuple{<:AbstractVector{<:TestOperatorFun},Function})        = (test_ops,UnivariateGenericFeature{V}(i_attr, (x)->(V(cf(x)))))
             single_attr_feats_n_featsnops(i_attr,::Any) = throw_n_log("Unknown mixed_feature type: $(cf), $(typeof(cf))")
 
             for i_attr in 1:nattributes(domain)

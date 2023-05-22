@@ -50,11 +50,11 @@ include("models/rule-evaluation.jl")
 
 # TODO avoid?
 export AbstractFeature,
-        DimensionalFeature, SingleAttributeFeature,
-        SingleAttributeNamedFeature,
-        SingleAttributeMin, SingleAttributeMax,
-        SingleAttributeSoftMin, SingleAttributeSoftMax,
-        SingleAttributeGenericFeature, MultiAttributeFeature,
+        DimensionalFeature, UnivariateFeature,
+        UnivariateNamedFeature,
+        UnivariateMin, UnivariateMax,
+        UnivariateSoftMin, UnivariateSoftMax,
+        UnivariateGenericFeature, MultivariateFeature,
         NamedFeature, ExternalFWDFeature
 
 export propositions

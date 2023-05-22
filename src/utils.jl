@@ -19,7 +19,7 @@ end
 
 # Source: https://stackoverflow.com/questions/46671965/printing-variable-subscripts-in-julia/46674866
 # '₀'
-subscriptnumber(i::Int) = begin
+function subscriptnumber(i::Integer)
     join([
         (if i < 0
             [Char(0x208B)]
@@ -29,7 +29,7 @@ subscriptnumber(i::Int) = begin
 end
 # https://www.w3.org/TR/xml-entity-names/020.html
 # '․', 'ₑ', '₋'
-subscriptnumber(s::AbstractString) = begin
+function subscriptnumber(s::AbstractString)
     char_to_subscript(ch) = begin
         if ch == 'e'
             'ₑ'

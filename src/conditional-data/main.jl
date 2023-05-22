@@ -5,6 +5,7 @@ using SoleLogics: AbstractWorld, IdentityRel
 import SoleLogics: syntaxstring
 import SoleLogics: frame
 
+# Minification interface for lossless data compression
 include("minify.jl")
 
 include("features.jl")
