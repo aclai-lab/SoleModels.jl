@@ -149,10 +149,10 @@ function parsecondition(
             #  a type (e.g., `UnivariateMin`), or Julia function (e.g., `minimum`).
             feat_or_fun = featdict[strip(lowercase(_feature))]
             feat_or_fun = begin
-                # If it is a function, wrap it into a UnivariateGenericFeature
+                # If it is a function, wrap it into a UnivariateFeature
                 #  otherwise, it is a feature, and it is used as a constructor.
                 if feat_or_fun isa Function
-                    UnivariateGenericFeature{featvaltype}(i_attr, feat_or_fun)
+                    UnivariateFeature{featvaltype}(i_attr, feat_or_fun)
                 else
                     feat_or_fun{featvaltype}(i_attr)
                 end
@@ -160,9 +160,9 @@ function parsecondition(
             feat_or_fun
         else
             # If it is not a known feature, interpret it as a Julia function,
-            #  and wrap it into a UnivariateGenericFeature.
+            #  and wrap it into a UnivariateFeature.
             f = eval(Meta.parse(_feature))
-            UnivariateGenericFeature{featvaltype}(i_attr, f)
+            UnivariateFeature{featvaltype}(i_attr, f)
         end
     end
     test_operator = eval(Meta.parse(_test_operator))

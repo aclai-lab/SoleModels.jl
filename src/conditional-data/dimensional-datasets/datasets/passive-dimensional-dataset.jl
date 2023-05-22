@@ -65,7 +65,7 @@ end
     args...,
 ) where {N,W<:AbstractWorld,U}
     w_values = interpret_world(w, get_instance(X.d, i_sample))
-    compute_feature(f, w_values)::U
+    computefeature(f, w_values)::U
 end
 
 Base.size(X::PassiveDimensionalDataset)                 = Base.size(X.d)

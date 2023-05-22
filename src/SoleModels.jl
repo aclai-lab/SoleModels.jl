@@ -50,16 +50,16 @@ include("models/rule-evaluation.jl")
 
 # TODO avoid?
 export AbstractFeature,
-        DimensionalFeature, UnivariateFeature,
+        DimensionalFeature, AbstractUnivariateFeature,
         UnivariateNamedFeature,
         UnivariateMin, UnivariateMax,
         UnivariateSoftMin, UnivariateSoftMax,
-        UnivariateGenericFeature, MultivariateFeature,
+        UnivariateFeature, MultivariateFeature,
         NamedFeature, ExternalFWDFeature
 
 export propositions
 
-export compute_feature
+export computefeature
 
 export parsecondition
 
