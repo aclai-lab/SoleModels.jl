@@ -5,6 +5,7 @@ using SoleLogics: AbstractWorld, IdentityRel
 import SoleLogics: syntaxstring
 import SoleLogics: frame
 
+# Minification interface for lossless data compression
 include("minify.jl")
 
 # Feature brackets
@@ -18,9 +19,9 @@ include("features.jl")
 include("test-operators.jl")
 include("conditions.jl")
 include("parse-condition.jl")
+
 include("representatives.jl")
 include("datasets.jl")
-
 include("dimensional-datasets/main.jl")
 
 include("random.jl")

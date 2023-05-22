@@ -10,6 +10,7 @@ using SoleLogics: ⊤, ¬, ∧
 
 using FunctionWrappers: FunctionWrapper
 using StatsBase
+using ThreadSafeDicts
 
 include("utils.jl")
 
@@ -34,22 +35,26 @@ export printmodel, displaymodel
 
 include("models/print.jl")
 
-# TODO export?
-export immediatesubmodels, unrollrules, immediaterules
+export immediatesubmodels, listimmediaterules
+export listrules
 
 include("models/symbolic-utils.jl")
 
+export Label, bestguess
+
 include("machine-learning.jl")
+
+export rulemetrics
 
 include("models/rule-evaluation.jl")
 
 # TODO avoid?
 export AbstractFeature,
-        DimensionalFeature, SingleAttributeFeature,
-        SingleAttributeNamedFeature,
-        SingleAttributeMin, SingleAttributeMax,
-        SingleAttributeSoftMin, SingleAttributeSoftMax,
-        SingleAttributeGenericFeature, MultiAttributeFeature,
+        DimensionalFeature, UnivariateFeature,
+        UnivariateNamedFeature,
+        UnivariateMin, UnivariateMax,
+        UnivariateSoftMin, UnivariateSoftMax,
+        UnivariateGenericFeature, MultivariateFeature,
         NamedFeature, ExternalFWDFeature
 
 export propositions

@@ -6,7 +6,7 @@ import SoleData: nframes
 # Multi-modal learning in this context is allowed by defining learning functions on so-called
 #  `multi-frame datasets`. These are essentially vectors of modal datasets
 ############################################################################################
-export get_world_types
+export worldtypes
 
 struct MultiFrameModalDataset{MD<:AbstractConditionalDataset}
     frames  :: Vector{<:MD}
@@ -48,7 +48,7 @@ nfeatures(X::MultiFrameModalDataset) = map(nfeatures, frames(X)) # Note: used fo
 nfeatures(X::MultiFrameModalDataset,  i_frame::Integer) = nfeatures(get_frame(X, i_frame))
 nrelations(X::MultiFrameModalDataset, i_frame::Integer) = nrelations(get_frame(X, i_frame))
 worldtype(X::MultiFrameModalDataset,  i_frame::Integer) = worldtype(get_frame(X, i_frame))
-get_world_types(X::MultiFrameModalDataset) = Vector{Type{<:AbstractWorld}}(worldtype.(frames(X)))
+worldtypes(X::MultiFrameModalDataset) = Vector{Type{<:AbstractWorld}}(worldtype.(frames(X)))
 
 get_instance(X::MultiFrameModalDataset,  i_frame::Integer, idx_i::Integer, args...)  = get_instance(get_frame(X, i_frame), idx_i, args...)
 # slice_dataset(X::MultiFrameModalDataset, i_frame::Integer, inds::AbstractVector{<:Integer}, args...)  = slice_dataset(get_frame(X, i_frame), inds, args...; kwargs...)

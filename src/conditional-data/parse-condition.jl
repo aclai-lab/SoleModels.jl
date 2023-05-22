@@ -5,7 +5,7 @@ Given a string "min[A189] <= 250", build the corresponding
 FeatCondition using a method `parsecondition`.
 
 A FeatCondition is built of three parts
-    1) feature          is      SingleAttributeMin(189),
+    1) feature          is      UnivariateMin(189),
     2) metacondition    is      SoleModels.FeatMetaCondition(feature, >),
     3) threshold        is      250,
 which are assembled by the constructor SoleModels.FeatCondition(metacondition, threshold).
@@ -22,10 +22,10 @@ const UVF_CLOSING_BRACKET = Symbol(UNIVARIATEFEATURE_CLOSING_BRACKET)
 # Shortcuts for feature names
 const _BASE_FEATURES = Dict{String,Union{Type,Function}}(
     #
-    "minimum" => SingleAttributeMin,
-    "min"     => SingleAttributeMin,
-    "maximum" => SingleAttributeMax,
-    "max"     => SingleAttributeMax,
+    "minimum" => UnivariateMin,
+    "min"     => UnivariateMin,
+    "maximum" => UnivariateMax,
+    "max"     => UnivariateMax,
     #
     "avg"     => StatsBase.mean,
     "mean"    => StatsBase.mean,
@@ -73,13 +73,19 @@ julia> syntaxstring(parseformulatree("min[1] <= 15 ∧ max[1] >= 85"; propositio
 """
 function parsecondition(
     expression::String;
-    featvaltype = Real,
+    featvaltype::Union{Nothing,Type} = nothing,
     opening_bracket::Union{String,Symbol} = UVF_OPENING_BRACKET,
     closing_bracket::Union{String,Symbol} = UVF_CLOSING_BRACKET,
     additional_shortcuts = Dict{String,Union{Type,Function}}()
 )
+    if isnothing(featvaltype)
+        @warn "Please, specify a type for the feature values (featvaltype = ...)." *
+            " Float64 will be used, but note that this may raise type errors."
+        featvaltype = Float64
+    end
+
     @assert length(string(opening_bracket)) == 1 || length(string(closing_bracket))
-        "Brackets must be a single-character symbol."
+        "Brackets must be single-character strings."
     opening_bracket = Symbol(opening_bracket)
     closing_bracket = Symbol(closing_bracket)
 
@@ -116,17 +122,37 @@ function parsecondition(
 
     (_feature, _attribute, _test_operator, _threshold) = _cut(expression)
 
+    threshold, featvaltype = begin
+        if isconcretetype(featvaltype)
+            parse(featvaltype, _threshold), featvaltype
+        else
+            threshold = nothing
+            # threshold = isnothing(threshold) ? tryparse(Int, _threshold)     : threshold
+            threshold = isnothing(threshold) ? tryparse(Float64, _threshold) : threshold
+            if threshold isa featvaltype
+                @warn "Please, specify a concrete type for the feature values" *
+                    " (featvaltype = ...); $(typeof(threshold)) was inferred."
+            else
+                error("Could not correctly infer feature value type from" *
+                    " threshold $(repr(_threshold)) ($(typeof(threshold)) was inferred)." *
+                    " Please, specify a concrete type for the feature values" *
+                    " (featvaltype = ...).")
+            end
+            threshold, typeof(threshold)
+        end
+    end
+
     i_attr = parse(Int, _attribute)
     feature = begin
         if haskey(featdict, strip(lowercase(_feature)))
             # If it is a known feature get it as
-            #  a type (e.g., `SingleAttributeMin`), or Julia function (e.g., `minimum`).
+            #  a type (e.g., `UnivariateMin`), or Julia function (e.g., `minimum`).
             feat_or_fun = featdict[strip(lowercase(_feature))]
             feat_or_fun = begin
-                # If it is a function, wrap it into a SingleAttributeGenericFeature
+                # If it is a function, wrap it into a UnivariateGenericFeature
                 #  otherwise, it is a feature, and it is used as a constructor.
                 if feat_or_fun isa Function
-                    SingleAttributeGenericFeature{featvaltype}(i_attr, feat_or_fun)
+                    UnivariateGenericFeature{featvaltype}(i_attr, feat_or_fun)
                 else
                     feat_or_fun{featvaltype}(i_attr)
                 end
@@ -134,13 +160,13 @@ function parsecondition(
             feat_or_fun
         else
             # If it is not a known feature, interpret it as a Julia function,
-            #  and wrap it into a SingleAttributeGenericFeature.
+            #  and wrap it into a UnivariateGenericFeature.
             f = eval(Meta.parse(_feature))
-            SingleAttributeGenericFeature{featvaltype}(i_attr, f)
+            UnivariateGenericFeature{featvaltype}(i_attr, f)
         end
     end
     test_operator = eval(Meta.parse(_test_operator))
     metacond = FeatMetaCondition(feature, test_operator)
 
-    return FeatCondition(metacond, parse(featvaltype, _threshold))
+    return FeatCondition(metacond, threshold)
 end

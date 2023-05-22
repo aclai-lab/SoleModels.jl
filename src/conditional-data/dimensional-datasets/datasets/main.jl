@@ -224,7 +224,7 @@ function check(
 
     memo_structure = begin
         if isnothing(use_memo)
-            Dict{SyntaxTree,WorldSet{W}}()
+            ThreadSafeDict{SyntaxTree,WorldSet{W}}()
         else
             use_memo[i_sample]
         end
@@ -234,7 +234,7 @@ function check(
     # hasmemo(::ActiveFeaturedDataset) = false
     # hasmemo(X)TODO
 
-    # φ = normalize(φ) # TODO normalize formula and/or use a dedicate memoization structure that normalizes functions
+    # φ = normalize(φ; profile = :modelchecking) # TODO normalize formula and/or use a dedicate memoization structure that normalizes functions
 
     fr = frame(X, i_sample)
 
@@ -298,13 +298,13 @@ end
 
 #     memo_structure = begin
 #         if isnothing(use_memo)
-#             Dict{SyntaxTree,V}()
+#             ThreadSafeDict{SyntaxTree,V}()
 #         else
 #             use_memo[i_sample]
 #         end
 #     end
 
-#     # φ = normalize(φ) # TODO normalize formula and/or use a dedicate memoization structure that normalizes functions
+#     # φ = normalize(φ; profile = :modelchecking) # TODO normalize formula and/or use a dedicate memoization structure that normalizes functions
 
 #     fr = frame(X, i_sample)
 

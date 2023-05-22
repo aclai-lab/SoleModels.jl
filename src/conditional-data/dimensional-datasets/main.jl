@@ -18,7 +18,7 @@ export nfeatures, nrelations,
 export AbstractWorld, AbstractRelation
 export AbstractWorldSet, WorldSet
 
-export Ontology, worldtype, world_types
+export Ontology, worldtype
 
 import Base: size, show, getindex, iterate, length, push!
 
@@ -50,6 +50,7 @@ import SoleModels: representatives, FeatMetaCondition, FeatCondition
 import SoleModels: minify
 
 using SoleModels: AbstractMultiModalFrame
+using ThreadSafeDicts
 
 
 # Concrete type for ontologies

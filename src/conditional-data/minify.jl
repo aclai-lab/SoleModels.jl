@@ -1,5 +1,16 @@
+"""
+    minify(dataset::D1)::Tuple{D2,Function} where {D1,D2}
 
-function minify(d::AbstractVector{T}) where {T<:Union{Number,Missing,Nothing}}
+Return a *minified* version of a dataset, as well as a backmap for reverting to the
+original dataset.
+Dataset minification remaps each scalar values in the dataset to a new value such
+that the overall order of the values is preserved;
+the output dataset is smaller in size, since it relies on values of type
+UInt8, UInt16, UInt32, etc.
+"""
+function minify(
+    d::AbstractArray{T}
+) where {T<:Union{Real,Missing,Nothing}}
     vals = unique(d)
     n_unique_vals = length(vals)
     new_T = UInt8
@@ -22,8 +33,10 @@ function minify(d::AbstractVector{T}) where {T<:Union{Number,Missing,Nothing}}
 end
 
 
-function minify(d::AbstractVector{<:MID}) where {MID<:Array}
-    @assert all((x)->(eltype(x) <: Union{Number,Missing,Nothing}), d)
+function minify(
+    d::AbstractVector{<:MID}
+) where {MID<:Array}
+    @assert all((x)->(eltype(x) <: Union{Real,Missing,Nothing}), d)
     vals = unique(Iterators.flatten(d))
     n_unique_vals = length(vals)
     new_T = UInt8
@@ -45,7 +58,9 @@ function minify(d::AbstractVector{<:MID}) where {MID<:Array}
 end
 
 
-function minify(d::AbstractVector{<:MID}) where {ID,MID<:Dict{<:ID,T where T<:Union{Number,Missing,Nothing}}}
+function minify(
+    d::AbstractVector{<:MID}
+) where {ID,T<:Union{Real,Missing,Nothing},MID<:Dict{<:ID,T}}
     vals = unique(Iterators.flatten([values(x) for x in d]))
     n_unique_vals = length(vals)
     new_T = UInt8
