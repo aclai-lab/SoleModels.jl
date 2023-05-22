@@ -238,6 +238,7 @@ function check(
 
     fr = frame(X, i_sample)
 
+    # TODO avoid using when memo is nothing
     if !hasformula(memo_structure, φ)
         for ψ in unique(SoleLogics.subformulas(φ))
             # @show ψ
@@ -273,11 +274,15 @@ function check(
     #     end
     # end
 
-    if isnothing(initialworld)
-        return length(memo_structure[φ]) > 0
-    else
-        return initialworld in memo_structure[φ]
+    ret = begin
+        if isnothing(initialworld)
+            length(memo_structure[φ]) > 0
+        else
+            initialworld in memo_structure[φ]
+        end
     end
+
+    return ret
 end
 
 ############################################################################################

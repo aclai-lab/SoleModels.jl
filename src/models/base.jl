@@ -40,7 +40,7 @@ function check(
     kwargs...
 )
     map(
-        i_sample->check(c, slice_dataset(d, [i_sample]), args...; kwargs...)[1],
+        i_sample->check(c, slice_dataset(d, [i_sample]; return_view = true), args...; kwargs...)[1],
         1:nsamples(d)
     )
 end
@@ -745,7 +745,7 @@ function apply(
     d::AbstractInterpretationSet,
     i_sample::Integer;
     check_args::Tuple = (),
-    check_kwargs::NamedTuple = (;),
+    check_kwargs::NamedTuple = (; use_memo = [Dict{SyntaxTree,WorldSet{worldtype(d)}}() for i in 1:nsamples(d)]),
     kwargs...
 )
     if check_antecedent(m, d, i_sample, check_args...; check_kwargs...) == true
@@ -764,6 +764,7 @@ function formula(m::Rule{O,<:Union{LogicalTruthCondition,TrueCondition}}) where 
     formula(antecedent(m))
 end
 
+# Helpers
 function conjuncts(m::Rule{O,<:LogicalTruthCondition{<:LeftmostConjunctiveForm}}) where {O}
     conjuncts(formula(m))
 end
@@ -777,11 +778,11 @@ function ndisjuncts(m::Rule{O,<:LogicalTruthCondition{<:LeftmostDisjunctiveForm}
     ndisjuncts(formula(m))
 end
 
-#=
+# Helper
 function Base.getindex(
     m::Rule{O,C},
     idxs::AbstractVector{<:Integer},
-) where {O,C<:LogicalTruthCondition{SS},SS<:LeftmostLinearForm}
+) where {O,SS<:LeftmostLinearForm,C<:LogicalTruthCondition{SS}}
     Rule{O,C}(
         LogicalTruthCondition{SS}(begin
             ants = children(formula(m))
@@ -790,8 +791,7 @@ function Base.getindex(
         consequent(m)
     )
 end
-Base.getindex(m::Rule{O,C}, args...) where {O,C<:TrueCondition} = m
-=#
+
 
 ############################################################################################
 
@@ -930,7 +930,7 @@ function apply(
     d::AbstractInterpretationSet,
     i_sample::Integer;
     check_args::Tuple = (),
-    check_kwargs::NamedTuple = (;),
+    check_kwargs::NamedTuple = (; use_memo = [Dict{SyntaxTree,WorldSet{worldtype(d)}}() for i in 1:nsamples(d)]),
     kwargs...
 ) where {O}
     if check_antecedent(m, d, i_sample, check_args...; check_kwargs...) == true
@@ -958,20 +958,24 @@ function apply(
     cs = check_antecedent(m, d, check_args...; check_kwargs...)
     cpos = findall((c)->c==true, cs)
     cneg = findall((c)->c==false, cs)
-    out = Array{outputtype(m)}(undef,length(cs)) #fill(outputtype(m), length(cs))
+    out = Array{outputtype(m)}(undef,length(cs))
     if !isempty(cpos)
-        out[cpos] .= apply(posconsequent(m), slice_dataset(d, cpos; allow_no_instances = true, return_view = true);
-                        check_args = check_args,
-                        check_kwargs = check_kwargs,
-                        kwargs...
-                    )
+        out[cpos] .= apply(
+            posconsequent(m),
+            slice_dataset(d, cpos; return_view = true);
+            check_args = check_args,
+            check_kwargs = check_kwargs,
+            kwargs...
+        )
     end
     if !isempty(cneg)
-        out[cneg] .= apply(negconsequent(m), slice_dataset(d, cneg; allow_no_instances = true, return_view = true);
-                        check_args = check_args,
-                        check_kwargs = check_kwargs,
-                        kwargs...
-                    )
+        out[cneg] .= apply(
+            negconsequent(m),
+            slice_dataset(d, cneg; return_view = true);
+            check_args = check_args,
+            check_kwargs = check_kwargs,
+            kwargs...
+        )
     end
     out
 end
@@ -1087,9 +1091,13 @@ function apply(
     for rule in rulebase(m)
         length(uncovered_idxs) == 0 && break
 
+        uncovered_d = slice_dataset(d, uncovered_idxs; return_view = true)
+
         idxs_sat = findall(
-            check(antecedent(rule), d, check_args...; check_kwargs...) .== true
+            # check_antecedent(rule, d, check_args...; check_kwargs...) .== true
+            check_antecedent(rule, uncovered_d, check_args...; check_kwargs...) .== true
         )
+        idxs_sat = uncovered_idxs[idxs_sat]
         uncovered_idxs = setdiff(uncovered_idxs, idxs_sat)
 
         map((i)->(pred[i] = outcome(consequent(rule))), idxs_sat)
@@ -1119,13 +1127,17 @@ function apply!(
     for (n, rule) in enumerate(rules)
         length(uncovered_idxs) == 0 && break
 
-        idxs_sat = findall(
-            check(antecedent(rule), d, check_args...; check_kwargs...) .== true
-        )
-        map((i)->(pred[i] = outcome(consequent(rule))), idxs_sat)
-        delays[idxs_sat] .= (n-1)
+        uncovered_d = slice_dataset(d, uncovered_idxs; return_view = true)
 
+        idxs_sat = findall(
+            # check_antecedent(rule, d, check_args...; check_kwargs...) .== true
+            check_antecedent(rule, uncovered_d, check_args...; check_kwargs...) .== true
+        )
+        idxs_sat = uncovered_idxs[idxs_sat]
         uncovered_idxs = setdiff(uncovered_idxs, idxs_sat)
+
+        delays[idxs_sat] .= (n-1)
+        map((i)->(pred[i] = outcome(consequent(rule))), idxs_sat)
     end
 
     if length(uncovered_idxs) != 0
@@ -1263,6 +1275,7 @@ issymbolic(::DecisionTree) = true
 
 isopen(::DecisionTree) = false
 
+# TODO join these two or note that they are kept separate due to possible dispatch ambiguities.
 function apply(
     m::DecisionTree,
     #id::Union{AbstractInterpretation,AbstractInterpretationSet};
@@ -1327,6 +1340,7 @@ conditiontype(m::DecisionForest) = conditiontype(typeof(m))
 
 issymbolic(::DecisionForest) = false
 
+# TODO check these two.
 function apply(
     f::DecisionForest,
     id::AbstractInterpretation;

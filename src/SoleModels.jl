@@ -61,6 +61,8 @@ export propositions
 
 export compute_feature
 
+export parsecondition
+
 include("conditional-data/main.jl")
 
 end
