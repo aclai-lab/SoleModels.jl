@@ -111,7 +111,7 @@ struct FeaturedDataset{
     FR<:AbstractFrame{W,Bool},
     FT<:AbstractFeature{V},
     FWD<:AbstractFWD{V,W,FR},
-    G1<:AbstractVector{<:AbstractDict{<:Aggregator,<:AbstractVector{<:TestOperatorFun}}},
+    G1<:AbstractVector{<:AbstractDict{<:Aggregator,<:AbstractVector{<:TestOperator}}},
     G2<:AbstractVector{<:AbstractVector{Tuple{<:Integer,<:Aggregator}}},
 } <: ActiveFeaturedDataset{V,W,FR,FT}
     
@@ -137,7 +137,7 @@ struct FeaturedDataset{
         fwd                     :: FWD,
         relations               :: AbstractVector{<:AbstractRelation},
         features                :: AbstractVector{FT},
-        grouped_featsaggrsnops  :: AbstractVector{<:AbstractDict{<:Aggregator,<:AbstractVector{<:TestOperatorFun}}};
+        grouped_featsaggrsnops  :: AbstractVector{<:AbstractDict{<:Aggregator,<:AbstractVector{<:TestOperator}}};
         allow_no_instances = false,
         initialworld = nothing,
     ) where {V,W<:AbstractWorld,FR<:AbstractFrame{W,Bool},FWD<:AbstractFWD{V,W,FR},FT<:AbstractFeature{V}}
@@ -191,7 +191,7 @@ struct FeaturedDataset{
         fwd                    :: AbstractFWD{V,W},
         relations              :: AbstractVector{<:AbstractRelation},
         features               :: AbstractVector{<:AbstractFeature},
-        grouped_featsaggrsnops_or_featsnops, # AbstractVector{<:AbstractDict{<:Aggregator,<:AbstractVector{<:TestOperatorFun}}}
+        grouped_featsaggrsnops_or_featsnops, # AbstractVector{<:AbstractDict{<:Aggregator,<:AbstractVector{<:TestOperator}}}
         args...;
         kwargs...,
     ) where {V,W}
@@ -202,7 +202,7 @@ struct FeaturedDataset{
         fwd                    :: AbstractFWD{V,W},
         relations              :: AbstractVector{<:AbstractRelation},
         features               :: AbstractVector{<:AbstractFeature},
-        grouped_featsnops      :: AbstractVector{<:AbstractVector{<:TestOperatorFun}},
+        grouped_featsnops      :: AbstractVector{<:AbstractVector{<:TestOperator}},
         args...;
         kwargs...,
     ) where {V,W<:AbstractWorld}

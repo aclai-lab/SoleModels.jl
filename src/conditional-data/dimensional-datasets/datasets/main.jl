@@ -6,7 +6,7 @@ import SoleLogics: alphabet
 import SoleLogics: initialworld
 
 using SoleModels: CanonicalFeatureGeq, CanonicalFeatureGeqSoft, CanonicalFeatureLeq, CanonicalFeatureLeqSoft
-using SoleModels: evaluate_thresh_decision, existential_aggregator, aggregator_bottom, aggregator_to_binary
+using SoleModels: apply_test_operator, existential_aggregator, aggregator_bottom, aggregator_to_binary
 # import SoleLogics: check
 import SoleModels: check
 using SoleModels: BoundedExplicitConditionalAlphabet
@@ -20,15 +20,15 @@ import Base: eltype
 
 # Convenience functions
 function grouped_featsnops2grouped_featsaggrsnops(
-    grouped_featsnops::AbstractVector{<:AbstractVector{<:TestOperatorFun}}
-)::AbstractVector{<:AbstractDict{<:Aggregator,<:AbstractVector{<:TestOperatorFun}}}
-    grouped_featsaggrsnops = Dict{<:Aggregator,<:AbstractVector{<:TestOperatorFun}}[]
+    grouped_featsnops::AbstractVector{<:AbstractVector{<:TestOperator}}
+)::AbstractVector{<:AbstractDict{<:Aggregator,<:AbstractVector{<:TestOperator}}}
+    grouped_featsaggrsnops = Dict{<:Aggregator,<:AbstractVector{<:TestOperator}}[]
     for (i_feature, test_operators) in enumerate(grouped_featsnops)
-        aggrsnops = Dict{Aggregator,AbstractVector{<:TestOperatorFun}}()
+        aggrsnops = Dict{Aggregator,AbstractVector{<:TestOperator}}()
         for test_operator in test_operators
             aggregator = existential_aggregator(test_operator)
             if (!haskey(aggrsnops, aggregator))
-                aggrsnops[aggregator] = TestOperatorFun[]
+                aggrsnops[aggregator] = TestOperator[]
             end
             push!(aggrsnops[aggregator], test_operator)
         end
@@ -38,8 +38,8 @@ function grouped_featsnops2grouped_featsaggrsnops(
 end
 
 function grouped_featsaggrsnops2grouped_featsnops(
-    grouped_featsaggrsnops::AbstractVector{<:AbstractDict{<:Aggregator,<:AbstractVector{<:TestOperatorFun}}}
-)::AbstractVector{<:AbstractVector{<:TestOperatorFun}}
+    grouped_featsaggrsnops::AbstractVector{<:AbstractDict{<:Aggregator,<:AbstractVector{<:TestOperator}}}
+)::AbstractVector{<:AbstractVector{<:TestOperator}}
     grouped_featsnops = [begin
         vcat(values(grouped_featsaggrsnops)...)
     end for grouped_featsaggrsnops in grouped_featsaggrsnops]
@@ -196,7 +196,7 @@ include("generic-supporting-datasets.jl")
     w::W,
 ) where {W<:AbstractWorld}
     c = atom(p)
-    evaluate_thresh_decision(SoleModels.test_operator(c), X[i_sample, w, SoleModels.feature(c)], SoleModels.threshold(c))
+    apply_test_operator(SoleModels.test_operator(c), X[i_sample, w, SoleModels.feature(c)], SoleModels.threshold(c))
 end
 
 

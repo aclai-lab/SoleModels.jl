@@ -1,3 +1,48 @@
+
+export MixedFeature, CanonicalFeature, canonical_geq, canonical_leq
+
+abstract type CanonicalFeature end
+
+# ⪴ and ⪳, that is, "*all* of the values on this world are at least, or at most ..."
+struct CanonicalFeatureGeq <: CanonicalFeature end; const canonical_geq  = CanonicalFeatureGeq();
+struct CanonicalFeatureLeq <: CanonicalFeature end; const canonical_leq  = CanonicalFeatureLeq();
+
+export canonical_geq_95, canonical_geq_90, canonical_geq_85, canonical_geq_80, canonical_geq_75, canonical_geq_70, canonical_geq_60,
+       canonical_leq_95, canonical_leq_90, canonical_leq_85, canonical_leq_80, canonical_leq_75, canonical_leq_70, canonical_leq_60
+
+# ⪴_α and ⪳_α, that is, "*at least α⋅100 percent* of the values on this world are at least, or at most ..."
+
+struct CanonicalFeatureGeqSoft  <: CanonicalFeature
+  alpha :: AbstractFloat
+  CanonicalFeatureGeqSoft(a::T) where {T<:Real} = (a > 0 && a < 1) ? new(a) : throw_n_log("Invalid instantiation for test operator: CanonicalFeatureGeqSoft($(a))")
+end;
+struct CanonicalFeatureLeqSoft  <: CanonicalFeature
+  alpha :: AbstractFloat
+  CanonicalFeatureLeqSoft(a::T) where {T<:Real} = (a > 0 && a < 1) ? new(a) : throw_n_log("Invalid instantiation for test operator: CanonicalFeatureLeqSoft($(a))")
+end;
+
+const canonical_geq_95  = CanonicalFeatureGeqSoft((Rational(95,100)));
+const canonical_geq_90  = CanonicalFeatureGeqSoft((Rational(90,100)));
+const canonical_geq_85  = CanonicalFeatureGeqSoft((Rational(85,100)));
+const canonical_geq_80  = CanonicalFeatureGeqSoft((Rational(80,100)));
+const canonical_geq_75  = CanonicalFeatureGeqSoft((Rational(75,100)));
+const canonical_geq_70  = CanonicalFeatureGeqSoft((Rational(70,100)));
+const canonical_geq_60  = CanonicalFeatureGeqSoft((Rational(60,100)));
+
+const canonical_leq_95  = CanonicalFeatureLeqSoft((Rational(95,100)));
+const canonical_leq_90  = CanonicalFeatureLeqSoft((Rational(90,100)));
+const canonical_leq_85  = CanonicalFeatureLeqSoft((Rational(85,100)));
+const canonical_leq_80  = CanonicalFeatureLeqSoft((Rational(80,100)));
+const canonical_leq_75  = CanonicalFeatureLeqSoft((Rational(75,100)));
+const canonical_leq_70  = CanonicalFeatureLeqSoft((Rational(70,100)));
+const canonical_leq_60  = CanonicalFeatureLeqSoft((Rational(60,100)));
+
+
+const MixedFeature = Union{AbstractFeature,CanonicalFeature,Function,Tuple{TestOperator,Function},Tuple{TestOperator,AbstractFeature}}
+
+############################################################################################
+
+
 using SoleLogics: AbstractAlphabet
 using Random
 import SoleLogics: negation, propositions
@@ -16,8 +61,8 @@ Base.hash(a::AbstractCondition) = Base.hash(syntaxstring(a))
 ############################################################################################
 
 # TODO add TruthType: T as in:
-#  struct FeatMetaCondition{F<:AbstractFeature,T,O<:TestOperatorFun} <: AbstractCondition
-struct FeatMetaCondition{F<:AbstractFeature,O<:TestOperatorFun} <: AbstractCondition
+#  struct FeatMetaCondition{F<:AbstractFeature,T,O<:TestOperator} <: AbstractCondition
+struct FeatMetaCondition{F<:AbstractFeature,O<:TestOperator} <: AbstractCondition
 
   # Feature: a scalar function that can be computed on a world
   feature::F
@@ -30,7 +75,7 @@ end
 feature(m::FeatMetaCondition) = m.feature
 test_operator(m::FeatMetaCondition) = m.test_operator
 
-negation(m::FeatMetaCondition) = FeatMetaCondition(feature(m), test_operator_inverse(test_operator(m)))
+negation(m::FeatMetaCondition) = FeatMetaCondition(feature(m), inverse_test_operator(test_operator(m)))
 
 syntaxstring(m::FeatMetaCondition; kwargs...) =
     "$(_syntaxstring_feature_test_operator_pair(feature(m), test_operator(m); kwargs...)) ⍰"
@@ -43,25 +88,25 @@ struct FeatCondition{U,M<:FeatMetaCondition} <: AbstractCondition
   metacond::M
 
   # Threshold value
-  a::U
+  threshold::U
 
   function FeatCondition(
       metacond       :: M,
-      a              :: U
+      threshold      :: U
   ) where {M<:FeatMetaCondition,U}
-      new{U,M}(metacond, a)
+      new{U,M}(metacond, threshold)
   end
 
   function FeatCondition(
       condition      :: FeatCondition{U,M},
-      a              :: U
+      threshold      :: U
   ) where {M<:FeatMetaCondition,U}
-      new{U,M}(condition.metacond, a)
+      new{U,M}(condition.metacond, threshold)
   end
 
   function FeatCondition(
       feature       :: AbstractFeature,
-      test_operator :: TestOperatorFun,
+      test_operator :: TestOperator,
       threshold     :: U
   ) where {U}
       metacond = FeatMetaCondition(feature, test_operator)
@@ -70,7 +115,7 @@ struct FeatCondition{U,M<:FeatMetaCondition} <: AbstractCondition
 end
 
 metacond(c::FeatCondition) = c.metacond
-threshold(c::FeatCondition) = c.a
+threshold(c::FeatCondition) = c.threshold
 
 feature(c::FeatCondition) = feature(metacond(c))
 test_operator(c::FeatCondition) = test_operator(metacond(c))
@@ -205,7 +250,7 @@ end
 
 function _syntaxstring_feature_test_operator_pair(
     feature::AbstractFeature,
-    test_operator::TestOperatorFun;
+    test_operator::TestOperator;
     use_feature_abbreviations::Bool = false,
     kwargs...,
 )

@@ -41,6 +41,7 @@ import SoleData: nattributes, max_channel_size, get_instance,
        instance_channel_size
 
 using SoleModels
+using SoleModels: Aggregator
 
 using SoleLogics: AbstractFrame, AbstractDimensionalFrame, FullDimensionalFrame
 using SoleModels: AbstractConditionalDataset, AbstractCondition

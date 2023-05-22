@@ -6,7 +6,7 @@ import Base: rand
         a::BoundedExplicitConditionalAlphabet;
         metaconditions::Union{Nothing,FeatMetaCondition,AbstractVector{<:FeatMetaCondition}} = nothing,
         feature::Union{Nothing,AbstractFeature,AbstractVector{<:AbstractFeature}} = nothing,
-        test_operator::Union{Nothing,TestOperatorFun,AbstractVector{<:TestOperatorFun}} = nothing,
+        test_operator::Union{Nothing,TestOperator,AbstractVector{<:TestOperator}} = nothing,
     )::Proposition
 
 Randomly samples a `Proposition` (holding a `FeatCondition`) from conditional alphabet `a`,
@@ -29,13 +29,13 @@ function Base.rand(
     a::BoundedExplicitConditionalAlphabet;
     metaconditions::Union{Nothing,FeatMetaCondition,AbstractVector{<:FeatMetaCondition}} = nothing,
     features::Union{Nothing,AbstractFeature,AbstractVector{<:AbstractFeature}} = nothing,
-    test_operators::Union{Nothing,TestOperatorFun,AbstractVector{<:TestOperatorFun}} = nothing,
+    test_operators::Union{Nothing,TestOperator,AbstractVector{<:TestOperator}} = nothing,
 )::Proposition
 
     # Transform values to singletons
     metaconditions = metaconditions isa FeatMetaCondition ? [metaconditions] : metaconditions
     features = features isa AbstractFeature ? [features] : features
-    test_operators = test_operators isa TestOperatorFun ? [test_operators] : test_operators
+    test_operators = test_operators isa TestOperator ? [test_operators] : test_operators
 
     @assert !(!isnothing(metaconditions) &&
         (!isnothing(features) || !isnothing(test_operators))) "" *

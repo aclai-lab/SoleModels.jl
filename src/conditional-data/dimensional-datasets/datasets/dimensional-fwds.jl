@@ -348,7 +348,7 @@ const FWDFeatureSlice{T} = Union{
 function apply_aggregator(fwdslice::FWDFeatureSlice{T}, worlds::Any, aggregator::Agg) where {T,Agg<:Aggregator}
     
     # TODO try reduce(aggregator, worlds; init=ModalLogic.bottom(aggregator, T))
-    # TODO remove this aggregator_to_binary...
+    # TODO remove this SoleModels.aggregator_to_binary...
     
     if length(worlds |> collect) == 0
         aggregator_bottom(aggregator, T)
@@ -356,7 +356,7 @@ function apply_aggregator(fwdslice::FWDFeatureSlice{T}, worlds::Any, aggregator:
         aggregator((w)->fwd_channel_interpret_world(fwdslice, w), worlds)
     end
 
-    # opt = aggregator_to_binary(aggregator)
+    # opt = SoleModels.aggregator_to_binary(aggregator)
     # gamma = ModalLogic.bottom(aggregator, T)
     # for w in worlds
     #   e = fwd_channel_interpret_world(fwdslice, w)
