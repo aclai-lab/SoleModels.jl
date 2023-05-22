@@ -7,14 +7,12 @@ import Base: isequal, hash, in, isfinite, length
 """
     abstract type AbstractCondition end
 
-AbstractCondition represent a condition that can be wrapped in Proposition structure.
-Particularly, a condition can be interpreted on worlds of instances of a conditional dataset
-and it returns a boolean truth value (`true`/`false`).
+Abstract type for representing conditions that can be interpreted and evaluated
+on worlds of instances of a conditional dataset. In logical contexts,
+these are wrapped into `Proposition`s.
 
 See also
 [`Proposition`](@ref),
-[`isequal`](@ref),
-[`hash`](@ref),
 [`syntaxstring`](@ref),
 [`FeatMetaCondition`](@ref),
 [`FeatCondition`](@ref).
@@ -30,20 +28,21 @@ Base.hash(a::AbstractCondition) = Base.hash(syntaxstring(a))
 
 ############################################################################################
 
-# TODO add TruthType: T as in:
-#  struct FeatMetaCondition{F<:AbstractFeature,T,O<:TestOperatorFun} <: AbstractCondition
 """
     struct FeatMetaCondition{F<:AbstractFeature,O<:TestOperatorFun} <: AbstractCondition
         feature::F
         test_operator::O
     end
 
-FeatMetaCondition is a condition that represents (feature, test operator) couple.
-A feature is a scalar function that can be computed on a world.
-A test operator is mathematical relationship linking obtained value from feature evaluation
-on corresponding attribute and threshold represented in FeatCondition structure
+A metacondition representing a scalar comparison method.
+A feature is a scalar function that can be computed on a world
+of an instance of a conditional dataset.
+A test operator is a binary mathematical relation, comparing the computed feature value
+and an external threshold value (see `FeatCondition`). A metacondition can also be used
+for representing the infinite set of conditions that arise with a free threshold
+(see `UnboundedExplicitConditionalAlphabet`).
 
-Example: min(V1) ≥
+Example: $\{min(V1) ≥ a, a ∈ \mathbb{R}\}$
 
 See also
 [`AbstractCondition`](@ref),
@@ -76,13 +75,13 @@ syntaxstring(m::FeatMetaCondition; kwargs...) =
         a::U
     end
 
-FeatCondition is a condition that characterizes a fact of the real world associating a
-FeatMetaCondition with a threshold value.
-It can be evaluated on an instance or a set of instances in a specific world and returns a
-boolean truth value (`true`/`false`).
+A scalar condition comparing a computed feature value (see `FeatMetaCondition`)
+and a threshold value `a`.
+It can be evaluated on a world
+of an instance of a conditional dataset.
 
-Example: min(V1) ≥ 10
-Inside this world (e.g. this range), minimum of variable 1 is greater or equal than 10
+Example: $min(V1) ≥ 10$, which translates to
+"Within this world the minimum of variable 1 is greater or equal than 10."
 
 See also
 [`AbstractCondition`](@ref),
