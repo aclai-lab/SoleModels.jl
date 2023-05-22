@@ -9,7 +9,7 @@ import Base: rand
         test_operator::Union{Nothing,TestOperator,AbstractVector{<:TestOperator}} = nothing,
     )::Proposition
 
-Randomly samples a `Proposition` (holding a `FeatCondition`) from conditional alphabet `a`,
+Randomly sample a `Proposition` holding a `FeatCondition` from conditional alphabet `a`,
 such that:
 - if `metaconditions` are specified, then the set of metaconditions (feature-operator pairs)
 is limited to `metaconditions`;
@@ -17,6 +17,8 @@ is limited to `metaconditions`;
 is limited to those with `feature`;
 - if `test_operator` is specified, then the set of metaconditions (feature-operator pairs)
 is limited to those with `test_operator`.
+
+TODO Examples
 
 See also
 [`BoundedExplicitConditionalAlphabet`](@ref),

@@ -21,7 +21,14 @@ See also
 abstract type AbstractCondition end # TODO parametric?
 
 function syntaxstring(c::AbstractCondition; kwargs...)
-    error("Please, provide method syntaxstring(::$(typeof(c)); kwargs...). Note that this value must be unique.")
+    error("Please, provide method syntaxstring(::$(typeof(c)); kwargs...)." *
+        " Note that this value must be unique.")
+end
+
+function Base.show(io::IO, c::AbstractCondition)
+    # print(io, "Feature of type $(typeof(c))\n\t-> $(syntaxstring(c))")
+    print(io, "$(typeof(c)): $(syntaxstring(c))")
+    # print(io, "$(syntaxstring(c))")
 end
 
 Base.isequal(a::AbstractCondition, b::AbstractCondition) = syntaxstring(a) == syntaxstring(b) # nameof(x) == nameof(feature)
@@ -41,9 +48,7 @@ of an instance of a conditional dataset.
 A test operator is a binary mathematical relation, comparing the computed feature value
 and an external threshold value (see `FeatCondition`). A metacondition can also be used
 for representing the infinite set of conditions that arise with a free threshold
-(see `UnboundedExplicitConditionalAlphabet`).
-
-Example: $\{min(V1) ≥ a, a ∈ \mathbb{R}\}$
+(see `UnboundedExplicitConditionalAlphabet`): \${min(V1) ≥ a, a ∈ ℝ}\$.
 
 See also
 [`AbstractCondition`](@ref),
@@ -66,7 +71,25 @@ test_operator(m::FeatMetaCondition) = m.test_operator
 negation(m::FeatMetaCondition) = FeatMetaCondition(feature(m), inverse_test_operator(test_operator(m)))
 
 syntaxstring(m::FeatMetaCondition; kwargs...) =
-    "$(_syntaxstring_feature_test_operator_pair(feature(m), test_operator(m); kwargs...)) ⍰"
+    "$(_syntaxstring_metacondition(m; kwargs...)) ⍰"
+
+function _syntaxstring_metacondition(
+    m::FeatMetaCondition;
+    use_feature_abbreviations::Bool = false,
+    kwargs...,
+)
+    if use_feature_abbreviations
+        _st_featop_abbr(feature(m), test_operator(m); kwargs...)
+    else
+        _st_featop_name(feature(m), test_operator(m); kwargs...)
+    end
+end
+
+_st_featop_name(feature::AbstractFeature,   test_operator::TestOperator; kwargs...)     = "$(syntaxstring(feature; kwargs...)) $(test_operator)"
+
+# Abbreviations
+
+_st_featop_abbr(feature::AbstractFeature,   test_operator::TestOperator; kwargs...)     = _st_featop_name(feature, test_operator; kwargs...)
 
 ############################################################################################
 
@@ -81,8 +104,8 @@ and a threshold value `a`.
 It can be evaluated on a world
 of an instance of a conditional dataset.
 
-Example: $min(V1) ≥ 10$, which translates to
-"Within this world the minimum of variable 1 is greater or equal than 10."
+Example: \$min(V1) ≥ 10\$, which translates to
+"Within this world, the minimum of variable 1 is greater or equal than 10."
 
 See also
 [`AbstractCondition`](@ref),
@@ -130,7 +153,7 @@ test_operator(c::FeatCondition) = test_operator(metacond(c))
 negation(c::FeatCondition) = FeatCondition(negation(metacond(c)), threshold(c))
 
 syntaxstring(m::FeatCondition; threshold_decimals = nothing, kwargs...) =
-    "$(_syntaxstring_feature_test_operator_pair(feature(m), test_operator(m))) $((isnothing(threshold_decimals) ? threshold(m) : round(threshold(m); digits=threshold_decimals)))"
+    "$(_syntaxstring_metacondition(metacond(m); kwargs...)) $((isnothing(threshold_decimals) ? threshold(m) : round(threshold(m); digits=threshold_decimals)))"
 
 ############################################################################################
 
@@ -153,7 +176,7 @@ abstract type AbstractConditionalAlphabet{C<:FeatCondition} <: AbstractAlphabet{
 
 An infinite alphabet of conditions induced from a finite set of metaconditions.
 For example, if `metaconditions = [FeatMetaCondition(UnivariateMin(1), ≥)]`,
-the alphabet represents the (infinite) set: \${min(V1) ≥ a, a ∈ ℝ}\$. # TODO display math
+the alphabet represents the (infinite) set: \${min(V1) ≥ a, a ∈ ℝ}\$.
 
 See also
 [`BoundedExplicitConditionalAlphabet`](@ref),
@@ -254,31 +277,3 @@ function Base.in(p::Proposition{<:FeatCondition}, a::BoundedExplicitConditionalA
 end
 
 ############################################################################################
-
-function _syntaxstring_feature_test_operator_pair(
-    feature::AbstractFeature,
-    test_operator::TestOperator;
-    use_feature_abbreviations::Bool = false,
-    kwargs...,
-)
-    if use_feature_abbreviations
-        _syntaxstring_feature_test_operator_pair_abbr(feature, test_operator; kwargs...)
-    else
-        "$(syntaxstring(feature; kwargs...)) $(test_operator)"
-    end
-end
-
-_syntaxstring_feature_test_operator_pair_abbr(feature::UnivariateMin,     test_operator::typeof(≥); kwargs...)        = "$(attribute_name(feature; kwargs...)) ⪴"
-_syntaxstring_feature_test_operator_pair_abbr(feature::UnivariateMax,     test_operator::typeof(≤); kwargs...)        = "$(attribute_name(feature; kwargs...)) ⪳"
-_syntaxstring_feature_test_operator_pair_abbr(feature::UnivariateSoftMin, test_operator::typeof(≥); kwargs...)        = "$(attribute_name(feature; kwargs...)) $("⪴" * utils.subscriptnumber(rstrip(rstrip(string(alpha(feature)*100), '0'), '.')))"
-_syntaxstring_feature_test_operator_pair_abbr(feature::UnivariateSoftMax, test_operator::typeof(≤); kwargs...)        = "$(attribute_name(feature; kwargs...)) $("⪳" * utils.subscriptnumber(rstrip(rstrip(string(alpha(feature)*100), '0'), '.')))"
-
-_syntaxstring_feature_test_operator_pair_abbr(feature::UnivariateMin,     test_operator::typeof(<); kwargs...)        = "$(attribute_name(feature; kwargs...)) ⪶"
-_syntaxstring_feature_test_operator_pair_abbr(feature::UnivariateMax,     test_operator::typeof(>); kwargs...)        = "$(attribute_name(feature; kwargs...)) ⪵"
-_syntaxstring_feature_test_operator_pair_abbr(feature::UnivariateSoftMin, test_operator::typeof(<); kwargs...)        = "$(attribute_name(feature; kwargs...)) $("⪶" * utils.subscriptnumber(rstrip(rstrip(string(alpha(feature)*100), '0'), '.')))"
-_syntaxstring_feature_test_operator_pair_abbr(feature::UnivariateSoftMax, test_operator::typeof(>); kwargs...)        = "$(attribute_name(feature; kwargs...)) $("⪵" * utils.subscriptnumber(rstrip(rstrip(string(alpha(feature)*100), '0'), '.')))"
-
-_syntaxstring_feature_test_operator_pair_abbr(feature::UnivariateMin,     test_operator::typeof(≤); kwargs...)        = "$(attribute_name(feature; kwargs...)) ↘"
-_syntaxstring_feature_test_operator_pair_abbr(feature::UnivariateMax,     test_operator::typeof(≥); kwargs...)        = "$(attribute_name(feature; kwargs...)) ↗"
-_syntaxstring_feature_test_operator_pair_abbr(feature::UnivariateSoftMin, test_operator::typeof(≤); kwargs...)        = "$(attribute_name(feature; kwargs...)) $("↘" * utils.subscriptnumber(rstrip(rstrip(string(alpha(feature)*100), '0'), '.')))"
-_syntaxstring_feature_test_operator_pair_abbr(feature::UnivariateSoftMax, test_operator::typeof(≥); kwargs...)        = "$(attribute_name(feature; kwargs...)) $("↗" * utils.subscriptnumber(rstrip(rstrip(string(alpha(feature)*100), '0'), '.')))"

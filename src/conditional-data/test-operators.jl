@@ -1,4 +1,4 @@
-export inverse_test_operator, dual_test_operator
+export inverse_test_operator, dual_test_operator,
         apply_test_operator,
         TestOperator
 
@@ -19,7 +19,7 @@ const TestOperator = Function
 Apply a test operator by simply passing the feature value and threshold to
 the (binary) test operator function.
 """
-@inline apply_test_operator(
+@inline function apply_test_operator(
     operator::TestOperator,
     featval::T,
     threshold::T

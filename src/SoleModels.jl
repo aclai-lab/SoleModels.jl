@@ -65,4 +65,6 @@ export parsecondition
 
 include("conditional-data/main.jl")
 
+include("dimensional-datasets/main.jl")
+
 end

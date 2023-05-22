@@ -1,3 +1,15 @@
+
+include("dimensional-features.jl")
+include("dimensional-conditions.jl")
+include("parse-dimensional-condition.jl")
+
+include("dimensional-representatives/Full0DFrame.jl")
+include("dimensional-representatives/Full1DFrame.jl")
+include("dimensional-representatives/Full1DFrame+IA.jl")
+include("dimensional-representatives/Full1DFrame+RCC.jl")
+include("dimensional-representatives/Full2DFrame.jl")
+
+
 module ModalLogic
 
 export nfeatures, nrelations,

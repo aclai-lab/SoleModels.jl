@@ -9,11 +9,11 @@ import SoleLogics: frame
 include("minify.jl")
 
 # Feature brackets
-const UNIVARIATEFEATURE_OPENING_BRACKET = "["
-const UNIVARIATEFEATURE_CLOSING_BRACKET = "]"
+const UVF_OPENING_BRACKET = "["
+const UVF_CLOSING_BRACKET = "]"
 
 # Default prefix for variables
-const UNIVARIATEFEATURE_VARPREFIX = "V"
+const UVF_VARPREFIX = "V"
 
 include("features.jl")
 include("test-operators.jl")
@@ -28,10 +28,7 @@ include("canonical-conditions.jl") # TODO fix
 
 const MixedFeature = Union{AbstractFeature,CanonicalFeature,Function,Tuple{TestOperator,Function},Tuple{TestOperator,AbstractFeature}}
 
-include("parse-condition.jl")
-
 include("representatives.jl")
 include("datasets.jl")
-include("dimensional-datasets/main.jl")
 
 include("random.jl")
