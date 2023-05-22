@@ -62,7 +62,7 @@ abstract type AbstractLogicalBooleanCondition <: AbstractBooleanCondition end
 """
     formula(c::AbstractLogicalBooleanCondition)::AbstractFormula
 
-Returns the logical formula (see [`SoleLogics`](@ref) package) of a given
+Return the logical formula (see [`SoleLogics`](@ref) package) of a given
 logical boolean condition.
 
 See also
@@ -124,7 +124,7 @@ end
 formula(c::LogicalTruthCondition) = c.formula
 
 function check(c::LogicalTruthCondition, i::AbstractInterpretation, args...; kwargs...)
-    tops(check(formula(c), i, args...; kwargs...))
+    istop(check(formula(c), i, args...; kwargs...))
 end
 function check(
     c::LogicalTruthCondition,
@@ -132,7 +132,7 @@ function check(
     args...;
     kwargs...,
 )
-    map(tops, check(formula(c), d, args...; kwargs...))
+    map(istop, check(formula(c), d, args...; kwargs...))
 end
 
 ############################################################################################
@@ -166,7 +166,7 @@ abstract type AbstractModel{O} end
     outcometype(::Type{<:AbstractModel{O}}) where {O} = O
     outcometype(m::AbstractModel) = outcometype(typeof(m))
 
-Returns the outcome type of a model (type).
+Return the outcome type of a model (type).
 
 See also [`AbstractModel`](@ref).
 """
@@ -181,7 +181,7 @@ Otherwise, the model can output `nothing` values and is referred to as *open*.
 """
     isopen(::AbstractModel)::Bool
 
-Returns whether a model is open.
+Return whether a model is open.
 $(doc_open_model)
 [`Rule`](@ref) is an example of an *open* model, while [`Branch`](@ref)
 is an example of *closed* model.
@@ -193,7 +193,7 @@ isopen(::AbstractModel) = true
 """
     outputtype(m::AbstractModel)
 
-Returns a supertype for the outputs obtained when `apply`ing a model.
+Return a supertype for the outputs obtained when `apply`ing a model.
 The result depends on whether the model is open or closed:
 
     outputtype(M::AbstractModel{O}) = isopen(M) ? Union{Nothing,O} : O
@@ -225,19 +225,19 @@ end
         m::AbstractModel,
         d::AbstractInterpretationSet;
         check_args::Tuple = (),
-        check_kwargs::NamedTuple = (; use_memo = [Dict{SyntaxTree,WorldSet{worldtype(d)}}() for i in 1:nsamples(d)]),
+        check_kwargs::NamedTuple = (; use_memo = [ThreadSafeDict{SyntaxTree,WorldSet{worldtype(d)}}() for i in 1:nsamples(d)]),
         functional_args::Tuple = (),
         functional_kwargs::NamedTuple = (;),
         kwargs...
     )::AbstractVector{<:outputtype(m)}
 
-Returns the output prediction of the model on an instance, or on each instance of a dataset.
-The predictions can be `nothing` if the model is *open*
+Return the output prediction of the model on an instance, or on each instance of a dataset.
+The predictions can be `nothing` if the model is *open*.
 
-`check_args` and `check_kwargs` are kwargs that can influence check's behavior at the time
+`check_args` and `check_kwargs` can influence check's behavior at the time
 of its computation (see [`check`](@ref))
 
-`functional_args` and `functional_kwargs` are kwargs that can influence FunctionModel's
+`functional_args` and `functional_kwargs` can influence FunctionModel's
 behavior when the corresponding function is applied to AbstractInterpretation (see
 [`FunctionModel`](@ref), [`AbstractInterpretation`](@ref))
 
@@ -282,18 +282,18 @@ end
 """
     issymbolic(::AbstractModel)::Bool
 
-Returns whether a model is symbolic or not.
+Return whether a model is symbolic or not.
 A model is said to be `symbolic` when its application relies on checking formulas
 of a certain logical language (see [`SoleLogics`](@ref) package) on the instance.
 Symbolic models provide a form of transparent and interpretable modeling.
 
 Instead, a model is said to be functional when it encodes an algebraic mathematical
 function (e.g., a neural network).
-TODO explain unrollrules/cascade/rules A symbolic model is one where the computation has a *rule-base structure*.
+TODO explain listrules/cascade/rules A symbolic model is one where the computation has a *rule-base structure*.
 
 See also
 [`apply`](@ref),
-[`unrollrules`](@ref),
+[`listrules`](@ref),
 [`AbstractModel`](@ref).
 """
 issymbolic(::AbstractModel) = false
@@ -301,7 +301,7 @@ issymbolic(::AbstractModel) = false
 """
     info(m::AbstractModel)::NamedTuple = m.info
 
-Returns the `info` structure for model `m`; this structure is used
+Return the `info` structure for model `m`; this structure is used
 for storing additional information that does not affect the model's behavior.
 This structure can hold, for example, information
 about the model's statistical performance during the learning phase.
@@ -526,7 +526,7 @@ abstract type ConstrainedModel{O,FM<:AbstractModel} <: AbstractModel{O} end
 """
     feasiblemodelstype(m::AbstractModel)
 
-Returns a `Union` of the Feasible Models (`FM`) allowed in the sub-tree of any
+Return a `Union` of the Feasible Models (`FM`) allowed in the sub-tree of any
 AbstractModel. Note that for a `ConstrainedModel{O,FM<:AbstractModel}`, it
 simply returns `FM`.
 
@@ -670,7 +670,7 @@ end
 """
     antecedent(m::Union{Rule,Branch})::AbstractBooleanCondition
 
-Returns the antecedent of a rule/branch;
+Return the antecedent of a rule/branch;
 that is, the condition to be evaluated upon applying the model.
 
 See also
@@ -685,7 +685,7 @@ antecedent(m::Rule) = m.antecedent
 """
     consequent(m::Rule)::AbstractModel
 
-Returns the consequent of a rule.
+Return the consequent of a rule.
 
 See also
 [`antecedent`](@ref),
@@ -867,7 +867,7 @@ antecedent(m::Branch) = m.antecedent
 """
     posconsequent(m::Branch)::AbstractModel
 
-Returns the positive consequent of a branch;
+Return the positive consequent of a branch;
 that is, the model to be applied if the antecedent evaluates to `true`.
 
 See also
@@ -879,7 +879,7 @@ posconsequent(m::Branch) = m.posconsequent
 """
     negconsequent(m::Branch)::AbstractModel
 
-Returns the negative consequent of a branch;
+Return the negative consequent of a branch;
 that is, the model to be applied if the antecedent evaluates to `false`.
 
 See also
@@ -952,7 +952,7 @@ function apply(
     m::Branch{O,<:LogicalTruthCondition},
     d::AbstractInterpretationSet;
     check_args::Tuple = (),
-    check_kwargs::NamedTuple = (; use_memo = [Dict{SyntaxTree,WorldSet{worldtype(d)}}() for i in 1:nsamples(d)]),
+    check_kwargs::NamedTuple = (; use_memo = [ThreadSafeDict{SyntaxTree,WorldSet{worldtype(d)}}() for i in 1:nsamples(d)]),
     kwargs...
 ) where {O}
     cs = check_antecedent(m, d, check_args...; check_kwargs...)
@@ -1078,7 +1078,7 @@ function apply(
     m::DecisionList{O},
     d::AbstractInterpretationSet;
     check_args::Tuple = (),
-    check_kwargs::NamedTuple = (; use_memo = [Dict{SyntaxTree,WorldSet{worldtype(d)}}() for i in 1:nsamples(d)]),
+    check_kwargs::NamedTuple = (; use_memo = [ThreadSafeDict{SyntaxTree,WorldSet{worldtype(d)}}() for i in 1:nsamples(d)]),
 ) where {O}
     nsamp = nsamples(d)
     pred = Vector{O}(undef, nsamp)
@@ -1107,7 +1107,7 @@ function apply!(
     m::DecisionList{O},
     d::AbstractInterpretationSet;
     check_args::Tuple = (),
-    check_kwargs::NamedTuple = (; use_memo = [Dict{SyntaxTree,WorldSet{worldtype(d)}}() for i in 1:nsamples(d)]),
+    check_kwargs::NamedTuple = (; use_memo = [ThreadSafeDict{SyntaxTree,WorldSet{worldtype(d)}}() for i in 1:nsamples(d)]),
     compute_metrics::Union{Symbol,Bool} = false,
 ) where {O}
     nsamp = nsamples(d)
@@ -1332,7 +1332,7 @@ function apply(
     id::AbstractInterpretation;
     kwargs...
 )
-    best_guess([apply(t, d; kwargs...) for t in trees(f)])
+    bestguess([apply(t, d; kwargs...) for t in trees(f)])
 end
 
 function apply(
@@ -1341,7 +1341,7 @@ function apply(
     kwargs...
 )
     pred = hcat([apply(t, d; kwargs...) for t in trees(f)]...)
-    return [best_guess(pred[i,:]) for i in 1:size(pred,1)]
+    return [bestguess(pred[i,:]) for i in 1:size(pred,1)]
 end
 
 ############################################################################################

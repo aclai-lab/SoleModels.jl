@@ -3,6 +3,7 @@ using SoleModels
 using SoleLogics
 using Test
 using Random
+using ThreadSafeDicts
 
 function run_tests(list)
     println("\n" * ("#"^50))

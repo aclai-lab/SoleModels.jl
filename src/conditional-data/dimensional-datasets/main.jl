@@ -50,6 +50,7 @@ import SoleModels: representatives, FeatMetaCondition, FeatCondition
 import SoleModels: minify
 
 using SoleModels: AbstractMultiModalFrame
+using ThreadSafeDicts
 
 
 # Concrete type for ontologies

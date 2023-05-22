@@ -16,9 +16,9 @@ struct GenericSupportingDataset{
     function GenericSupportingDataset(
         fd :: FeaturedDataset{V,W,FR},
     ) where {V,W<:AbstractWorld,FR<:AbstractFrame{W,Bool}}
-        memo = Vector{Dict{AbstractFormula,Vector{W}}}(undef, nsamples(fd))
+        memo = Vector{ThreadSafeDict{AbstractFormula,Vector{W}}}(undef, nsamples(fd))
         for i_sample in 1:nsamples(fd)
-            memo[i_sample] = Dict{AbstractFormula,Vector{W}}()
+            memo[i_sample] = ThreadSafeDict{AbstractFormula,Vector{W}}()
         end
         GenericSupportingDataset{W,FR,typeof(memo)}(memo)
     end
@@ -58,9 +58,9 @@ struct ChainedFeaturedSupportingDataset{
     function ChainedFeaturedSupportingDataset(
         fd :: FeaturedDataset{V,W,FR},
     ) where {V,W<:AbstractWorld,FR<:AbstractFrame{W,Bool}}
-        memo = Vector{Dict{AbstractFormula,Vector{W}}}(undef, nsamples(fd))
+        memo = Vector{ThreadSafeDict{AbstractFormula,Vector{W}}}(undef, nsamples(fd))
         for i_sample in 1:nsamples(fd)
-            memo[i_sample] = Dict{AbstractFormula,Vector{W}}()
+            memo[i_sample] = ThreadSafeDict{AbstractFormula,Vector{W}}()
         end
         ChainedFeaturedSupportingDataset{V,W,FR,typeof(memo)}(memo)
     end

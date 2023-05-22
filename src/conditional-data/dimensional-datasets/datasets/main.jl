@@ -224,7 +224,7 @@ function check(
 
     memo_structure = begin
         if isnothing(use_memo)
-            Dict{SyntaxTree,WorldSet{W}}()
+            ThreadSafeDict{SyntaxTree,WorldSet{W}}()
         else
             use_memo[i_sample]
         end
@@ -293,7 +293,7 @@ end
 
 #     memo_structure = begin
 #         if isnothing(use_memo)
-#             Dict{SyntaxTree,V}()
+#             ThreadSafeDict{SyntaxTree,V}()
 #         else
 #             use_memo[i_sample]
 #         end
