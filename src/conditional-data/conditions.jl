@@ -1,54 +1,23 @@
 
-export MixedFeature, CanonicalFeature, canonical_geq, canonical_leq
-
-abstract type CanonicalFeature end
-
-# ⪴ and ⪳, that is, "*all* of the values on this world are at least, or at most ..."
-struct CanonicalFeatureGeq <: CanonicalFeature end; const canonical_geq  = CanonicalFeatureGeq();
-struct CanonicalFeatureLeq <: CanonicalFeature end; const canonical_leq  = CanonicalFeatureLeq();
-
-export canonical_geq_95, canonical_geq_90, canonical_geq_85, canonical_geq_80, canonical_geq_75, canonical_geq_70, canonical_geq_60,
-       canonical_leq_95, canonical_leq_90, canonical_leq_85, canonical_leq_80, canonical_leq_75, canonical_leq_70, canonical_leq_60
-
-# ⪴_α and ⪳_α, that is, "*at least α⋅100 percent* of the values on this world are at least, or at most ..."
-
-struct CanonicalFeatureGeqSoft  <: CanonicalFeature
-  alpha :: AbstractFloat
-  CanonicalFeatureGeqSoft(a::T) where {T<:Real} = (a > 0 && a < 1) ? new(a) : throw_n_log("Invalid instantiation for test operator: CanonicalFeatureGeqSoft($(a))")
-end;
-struct CanonicalFeatureLeqSoft  <: CanonicalFeature
-  alpha :: AbstractFloat
-  CanonicalFeatureLeqSoft(a::T) where {T<:Real} = (a > 0 && a < 1) ? new(a) : throw_n_log("Invalid instantiation for test operator: CanonicalFeatureLeqSoft($(a))")
-end;
-
-const canonical_geq_95  = CanonicalFeatureGeqSoft((Rational(95,100)));
-const canonical_geq_90  = CanonicalFeatureGeqSoft((Rational(90,100)));
-const canonical_geq_85  = CanonicalFeatureGeqSoft((Rational(85,100)));
-const canonical_geq_80  = CanonicalFeatureGeqSoft((Rational(80,100)));
-const canonical_geq_75  = CanonicalFeatureGeqSoft((Rational(75,100)));
-const canonical_geq_70  = CanonicalFeatureGeqSoft((Rational(70,100)));
-const canonical_geq_60  = CanonicalFeatureGeqSoft((Rational(60,100)));
-
-const canonical_leq_95  = CanonicalFeatureLeqSoft((Rational(95,100)));
-const canonical_leq_90  = CanonicalFeatureLeqSoft((Rational(90,100)));
-const canonical_leq_85  = CanonicalFeatureLeqSoft((Rational(85,100)));
-const canonical_leq_80  = CanonicalFeatureLeqSoft((Rational(80,100)));
-const canonical_leq_75  = CanonicalFeatureLeqSoft((Rational(75,100)));
-const canonical_leq_70  = CanonicalFeatureLeqSoft((Rational(70,100)));
-const canonical_leq_60  = CanonicalFeatureLeqSoft((Rational(60,100)));
-
-
-const MixedFeature = Union{AbstractFeature,CanonicalFeature,Function,Tuple{TestOperator,Function},Tuple{TestOperator,AbstractFeature}}
-
-############################################################################################
-
-
 using SoleLogics: AbstractAlphabet
 using Random
 import SoleLogics: negation, propositions
 
 import Base: isequal, hash, in, isfinite, length
 
+"""
+    abstract type AbstractCondition end
+
+Abstract type for representing conditions that can be interpreted and evaluated
+on worlds of instances of a conditional dataset. In logical contexts,
+these are wrapped into `Proposition`s.
+
+See also
+[`Proposition`](@ref),
+[`syntaxstring`](@ref),
+[`FeatMetaCondition`](@ref),
+[`FeatCondition`](@ref).
+"""
 abstract type AbstractCondition end # TODO parametric?
 
 function syntaxstring(c::AbstractCondition; kwargs...)
@@ -60,8 +29,27 @@ Base.hash(a::AbstractCondition) = Base.hash(syntaxstring(a))
 
 ############################################################################################
 
-# TODO add TruthType: T as in:
-#  struct FeatMetaCondition{F<:AbstractFeature,T,O<:TestOperator} <: AbstractCondition
+"""
+    struct FeatMetaCondition{F<:AbstractFeature,O<:TestOperator} <: AbstractCondition
+        feature::F
+        test_operator::O
+    end
+
+A metacondition representing a scalar comparison method.
+A feature is a scalar function that can be computed on a world
+of an instance of a conditional dataset.
+A test operator is a binary mathematical relation, comparing the computed feature value
+and an external threshold value (see `FeatCondition`). A metacondition can also be used
+for representing the infinite set of conditions that arise with a free threshold
+(see `UnboundedExplicitConditionalAlphabet`).
+
+Example: $\{min(V1) ≥ a, a ∈ \mathbb{R}\}$
+
+See also
+[`AbstractCondition`](@ref),
+[`negation`](@ref),
+[`FeatCondition`](@ref).
+"""
 struct FeatMetaCondition{F<:AbstractFeature,O<:TestOperator} <: AbstractCondition
 
   # Feature: a scalar function that can be computed on a world
@@ -82,6 +70,25 @@ syntaxstring(m::FeatMetaCondition; kwargs...) =
 
 ############################################################################################
 
+"""
+    struct FeatCondition{U,M<:FeatMetaCondition} <: AbstractCondition
+        metacond::M
+        a::U
+    end
+
+A scalar condition comparing a computed feature value (see `FeatMetaCondition`)
+and a threshold value `a`.
+It can be evaluated on a world
+of an instance of a conditional dataset.
+
+Example: $min(V1) ≥ 10$, which translates to
+"Within this world the minimum of variable 1 is greater or equal than 10."
+
+See also
+[`AbstractCondition`](@ref),
+[`negation`](@ref),
+[`FeatMetaCondition`](@ref).
+"""
 struct FeatCondition{U,M<:FeatMetaCondition} <: AbstractCondition
 
   # Metacondition

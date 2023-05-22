@@ -18,6 +18,16 @@ const UNIVARIATEFEATURE_VARPREFIX = "V"
 include("features.jl")
 include("test-operators.jl")
 include("conditions.jl")
+
+export MixedFeature, CanonicalFeature, canonical_geq, canonical_leq
+
+export canonical_geq_95, canonical_geq_90, canonical_geq_85, canonical_geq_80, canonical_geq_75, canonical_geq_70, canonical_geq_60,
+       canonical_leq_95, canonical_leq_90, canonical_leq_85, canonical_leq_80, canonical_leq_75, canonical_leq_70, canonical_leq_60
+
+include("canonical-conditions.jl") # TODO fix
+
+const MixedFeature = Union{AbstractFeature,CanonicalFeature,Function,Tuple{TestOperator,Function},Tuple{TestOperator,AbstractFeature}}
+
 include("parse-condition.jl")
 
 include("representatives.jl")
