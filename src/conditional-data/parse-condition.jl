@@ -73,13 +73,19 @@ julia> syntaxstring(parseformulatree("min[1] <= 15 ∧ max[1] >= 85"; propositio
 """
 function parsecondition(
     expression::String;
-    featvaltype = Real,
+    featvaltype::Union{Nothing,Type} = nothing,
     opening_bracket::Union{String,Symbol} = UVF_OPENING_BRACKET,
     closing_bracket::Union{String,Symbol} = UVF_CLOSING_BRACKET,
     additional_shortcuts = Dict{String,Union{Type,Function}}()
 )
+    if isnothing(featvaltype)
+        @warn "Please, specify a type for the feature values (featvaltype = ...)." *
+            " Float64 will be used, but note that this may raise type errors."
+        featvaltype = Float64
+    end
+
     @assert length(string(opening_bracket)) == 1 || length(string(closing_bracket))
-        "Brackets must be a single-character symbol."
+        "Brackets must be single-character strings."
     opening_bracket = Symbol(opening_bracket)
     closing_bracket = Symbol(closing_bracket)
 
@@ -116,6 +122,26 @@ function parsecondition(
 
     (_feature, _attribute, _test_operator, _threshold) = _cut(expression)
 
+    threshold, featvaltype = begin
+        if isconcretetype(featvaltype)
+            parse(featvaltype, _threshold), featvaltype
+        else
+            threshold = nothing
+            # threshold = isnothing(threshold) ? tryparse(Int, _threshold)     : threshold
+            threshold = isnothing(threshold) ? tryparse(Float64, _threshold) : threshold
+            if threshold isa featvaltype
+                @warn "Please, specify a concrete type for the feature values" *
+                    " (featvaltype = ...); $(typeof(threshold)) was inferred."
+            else
+                error("Could not correctly infer feature value type from" *
+                    " threshold $(repr(_threshold)) ($(typeof(threshold)) was inferred)." *
+                    " Please, specify a concrete type for the feature values" *
+                    " (featvaltype = ...).")
+            end
+            threshold, typeof(threshold)
+        end
+    end
+
     i_attr = parse(Int, _attribute)
     feature = begin
         if haskey(featdict, strip(lowercase(_feature)))
@@ -142,5 +168,5 @@ function parsecondition(
     test_operator = eval(Meta.parse(_test_operator))
     metacond = FeatMetaCondition(feature, test_operator)
 
-    return FeatCondition(metacond, parse(featvaltype, _threshold))
+    return FeatCondition(metacond, threshold)
 end
