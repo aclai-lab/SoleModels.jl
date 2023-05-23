@@ -2,11 +2,17 @@ module DimensionalDatasets
 
 import SoleLogics: worldtype
 
+using SoleModels.utils
+
 # Feature brackets
 const UVF_OPENING_BRACKET = "["
 const UVF_CLOSING_BRACKET = "]"
 # Default prefix for variables
 const UVF_VARPREFIX = "V"
+
+export UnivariateMin, UnivariateMax,
+        UnivariateSoftMin, UnivariateSoftMax,
+        MultivariateFeature
 
 # Features for dimensional datasets
 include("dimensional-features.jl")
