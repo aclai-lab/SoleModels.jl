@@ -148,13 +148,13 @@ struct DimensionalFeaturedDataset{
                 push!(featsnops, test_ops)
             end
 
-            single_attr_feats_n_featsnops(i_attr,cf::SoleModels.CanonicalFeatureGeq) = ([≥],SoleModels.UnivariateMin{V}(i_attr))
-            single_attr_feats_n_featsnops(i_attr,cf::SoleModels.CanonicalFeatureLeq) = ([≤],SoleModels.UnivariateMax{V}(i_attr))
-            single_attr_feats_n_featsnops(i_attr,cf::SoleModels.CanonicalFeatureGeqSoft) = ([≥],SoleModels.UnivariateSoftMin{V}(i_attr, cf.alpha))
-            single_attr_feats_n_featsnops(i_attr,cf::SoleModels.CanonicalFeatureLeqSoft) = ([≤],SoleModels.UnivariateSoftMax{V}(i_attr, cf.alpha))
-            single_attr_feats_n_featsnops(i_attr,(test_ops,cf)::Tuple{<:AbstractVector{<:TestOperator},typeof(minimum)}) = (test_ops,UnivariateMin{V}(i_attr))
-            single_attr_feats_n_featsnops(i_attr,(test_ops,cf)::Tuple{<:AbstractVector{<:TestOperator},typeof(maximum)}) = (test_ops,UnivariateMax{V}(i_attr))
-            single_attr_feats_n_featsnops(i_attr,(test_ops,cf)::Tuple{<:AbstractVector{<:TestOperator},Function})        = (test_ops,UnivariateFeature{V}(i_attr, (x)->(V(cf(x)))))
+            single_attr_feats_n_featsnops(i_attr,cf::SoleModels.CanonicalFeatureGeq) = ([≥],DimensionalDatasets.UnivariateMin{V}(i_attr))
+            single_attr_feats_n_featsnops(i_attr,cf::SoleModels.CanonicalFeatureLeq) = ([≤],DimensionalDatasets.UnivariateMax{V}(i_attr))
+            single_attr_feats_n_featsnops(i_attr,cf::SoleModels.CanonicalFeatureGeqSoft) = ([≥],DimensionalDatasets.UnivariateSoftMin{V}(i_attr, cf.alpha))
+            single_attr_feats_n_featsnops(i_attr,cf::SoleModels.CanonicalFeatureLeqSoft) = ([≤],DimensionalDatasets.UnivariateSoftMax{V}(i_attr, cf.alpha))
+            single_attr_feats_n_featsnops(i_attr,(test_ops,cf)::Tuple{<:AbstractVector{<:TestOperator},typeof(minimum)}) = (test_ops,DimensionalDatasets.UnivariateMin{V}(i_attr))
+            single_attr_feats_n_featsnops(i_attr,(test_ops,cf)::Tuple{<:AbstractVector{<:TestOperator},typeof(maximum)}) = (test_ops,DimensionalDatasets.UnivariateMax{V}(i_attr))
+            single_attr_feats_n_featsnops(i_attr,(test_ops,cf)::Tuple{<:AbstractVector{<:TestOperator},Function})        = (test_ops,DimensionalDatasets.UnivariateFeature{V}(i_attr, (x)->(V(cf(x)))))
             single_attr_feats_n_featsnops(i_attr,::Any) = throw_n_log("Unknown mixed_feature type: $(cf), $(typeof(cf))")
 
             for i_attr in 1:nattributes(domain)

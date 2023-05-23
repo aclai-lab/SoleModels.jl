@@ -1,4 +1,6 @@
-using SoleData: AbstractDimensionalChannel, get_instance_attribute
+import SoleModels: AbstractFeature, computefeature
+
+using SoleData: AbstractDimensionalChannel, channelvariable
 
 import Base: isequal, hash, show
 import SoleLogics: syntaxstring
@@ -137,7 +139,7 @@ struct UnivariateFeature{U} <: AbstractUnivariateFeature{U}
     f::Function
 end
 function computefeature(f::UnivariateFeature{U}, channel::AbstractDimensionalChannel{T}) where {U<:Real,T}
-    (f.f(SoleBase.vectorize(get_instance_attribute(channel, f.i_attribute));))::U
+    (f.f(SoleBase.vectorize(channelvariable(channel, f.i_attribute));))::U
 end
 featurename(f::UnivariateFeature) = string(f.f)
 
@@ -192,7 +194,7 @@ struct UnivariateMin{U} <: AbstractUnivariateFeature{U}
     end
 end
 function computefeature(f::UnivariateMin{U}, channel::AbstractDimensionalChannel{T}) where {U<:Real,T}
-    (minimum(get_instance_attribute(channel, f.i_attribute)))::U
+    (minimum(channelvariable(channel, f.i_attribute)))::U
 end
 featurename(f::UnivariateMin) = "min"
 
@@ -221,7 +223,7 @@ struct UnivariateMax{U} <: AbstractUnivariateFeature{U}
     end
 end
 function computefeature(f::UnivariateMax{U}, channel::AbstractDimensionalChannel{T}) where {U<:Real,T}
-    (maximum(get_instance_attribute(channel, f.i_attribute)))::U
+    (maximum(channelvariable(channel, f.i_attribute)))::U
 end
 featurename(f::UnivariateMax) = "max"
 
@@ -254,7 +256,7 @@ end
 alpha(f::UnivariateSoftMin) = f.alpha
 featurename(f::UnivariateSoftMin) = "min" * utils.subscriptnumber(rstrip(rstrip(string(f.alpha*100), '0'), '.'))
 function computefeature(f::UnivariateSoftMin{U}, channel::AbstractDimensionalChannel{T}) where {U<:Real,T}
-    utils.softminimum(get_instance_attribute(channel, f.i_attribute), f.alpha)::U
+    utils.softminimum(channelvariable(channel, f.i_attribute), f.alpha)::U
 end
 
 
@@ -284,15 +286,15 @@ end
 alpha(f::UnivariateSoftMax) = f.alpha
 featurename(f::UnivariateSoftMax) = "max" * utils.subscriptnumber(rstrip(rstrip(string(f.alpha*100), '0'), '.'))
 function computefeature(f::UnivariateSoftMax{U}, channel::AbstractDimensionalChannel{T}) where {U<:Real,T}
-    utils.softmaximum(get_instance_attribute(channel, f.i_attribute), f.alpha)::U
+    utils.softmaximum(channelvariable(channel, f.i_attribute), f.alpha)::U
 end
 
 # simplified propositional cases:
 function computefeature(f::UnivariateSoftMin{U}, channel::AbstractDimensionalChannel{T,1}) where {U<:Real,T}
-    get_instance_attribute(channel, f.i_attribute)::U
+    channelvariable(channel, f.i_attribute)::U
 end
 function computefeature(f::UnivariateSoftMax{U}, channel::AbstractDimensionalChannel{T,1}) where {U<:Real,T}
-    get_instance_attribute(channel, f.i_attribute)::U
+    channelvariable(channel, f.i_attribute)::U
 end
 
 ############################################################################################

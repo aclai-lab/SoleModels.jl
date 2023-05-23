@@ -61,20 +61,26 @@ export propositions
 
 export computefeature
 
-export parsecondition
-
 include("conditional-data/main.jl")
 
 export nsamples, nframes, frames, nfeatures
 
+export get_ontology,
+       get_interval_ontology
+
+export DimensionalFeaturedDataset, FeaturedDataset, SupportedFeaturedDataset
+
+export parsecondition
+
 include("dimensional-datasets/main.jl")
+
+using .DimensionalDatasets: parsecondition
 
 using .DimensionalDatasets: nfeatures, nrelations,
                             #
                             relations,
                             #
                             GenericModalDataset,
-                            ActiveMultiFrameConditionalDataset,
                             AbstractActiveFeaturedDataset,
                             DimensionalFeaturedDataset,
                             FeaturedDataset,

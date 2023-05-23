@@ -7,15 +7,10 @@ import SoleLogics: frame
 
 import SoleData: nsamples, nfeatures
 import SoleData: nframes, frames, hasnans, _slice_dataset
+# import SoleData: frame # TODO
 
 # Minification interface for lossless data compression
 include("minify.jl")
-
-# Feature brackets
-const UVF_OPENING_BRACKET = "["
-const UVF_CLOSING_BRACKET = "]"
-# Default prefix for variables
-const UVF_VARPREFIX = "V"
 
 # Scalar features to be computed on worlds of dataset instances
 include("features.jl")
@@ -49,13 +44,25 @@ include("representatives.jl")
 # Datasets where the instances are Kripke models with conditional alphabets
 include("conditional-datasets.jl")
 
-export nframes, frames, getframe,
+include("active-featured-dataset.jl")
+
+export nframes, frames, frame,
         display_structure,
         MultiFrameConditionalDataset,
         worldtypes
 
+# #
+# # TODO figure out which convert function works best:
+# convert(::Type{<:MultiFrameConditionalDataset{T}}, X::MD) where {T,MD<:AbstractConditionalDataset{T}} = MultiFrameConditionalDataset{MD}([X])
+# convert(::Type{<:MultiFrameConditionalDataset}, X::AbstractConditionalDataset) = MultiFrameConditionalDataset([X])
+
 # Multi-frame version of conditional datasets, for representing multimodal datasets
 include("multi-frame-conditional-datasets.jl") # TODO define interface
+
+const ActiveMultiFrameConditionalDataset{T} = MultiFrameConditionalDataset{<:AbstractActiveFeaturedDataset{<:T}}
+
+# TODO decide how to name this.
+getframe = frame
 
 # include("featured-datasets.jl") TODO?
 

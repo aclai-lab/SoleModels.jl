@@ -1,8 +1,8 @@
 using Test
-using SoleModels
 using StatsBase
-using SoleModels.DimensionalDatasets
 using SoleLogics
+using SoleModels
+using SoleModels.DimensionalDatasets
 
 X = Array(reshape(1.0:180.0, 3,3,2,10))
 
