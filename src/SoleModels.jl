@@ -65,6 +65,34 @@ export parsecondition
 
 include("conditional-data/main.jl")
 
+export nsamples, nframes, frames, nfeatures
+
 include("dimensional-datasets/main.jl")
+
+using .DimensionalDatasets: nfeatures, nrelations,
+                            #
+                            relations,
+                            #
+                            GenericModalDataset,
+                            ActiveMultiFrameConditionalDataset,
+                            AbstractActiveFeaturedDataset,
+                            DimensionalFeaturedDataset,
+                            FeaturedDataset,
+                            SupportedFeaturedDataset
+
+using .DimensionalDatasets: AbstractWorld, AbstractRelation
+using .DimensionalDatasets: AbstractWorldSet, WorldSet
+using .DimensionalDatasets: FullDimensionalFrame
+
+using .DimensionalDatasets: Ontology, worldtype
+
+using .DimensionalDatasets: get_ontology,
+                            get_interval_ontology
+
+using .DimensionalDatasets: OneWorld, OneWorldOntology
+
+using .DimensionalDatasets: Interval, Interval2D
+
+using .DimensionalDatasets: IARelations
 
 end

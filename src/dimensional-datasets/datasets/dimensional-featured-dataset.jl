@@ -17,7 +17,7 @@ struct DimensionalFeaturedDataset{
     FT<:AbstractFeature{V},
     G1<:AbstractVector{<:AbstractDict{<:Aggregator,<:AbstractVector{<:TestOperator}}},
     G2<:AbstractVector{<:AbstractVector{Tuple{<:Integer,<:Aggregator}}},
-} <: ActiveFeaturedDataset{V,W,FullDimensionalFrame{N,W,Bool},FT}
+} <: AbstractActiveFeaturedDataset{V,W,FullDimensionalFrame{N,W,Bool},FT}
 
     # Core data (a dimensional domain)
     domain                  :: D

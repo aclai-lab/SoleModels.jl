@@ -57,7 +57,7 @@ function check(
 end
 
 """
-    abstract type ActiveConditionalDataset{
+    abstract type AbstractActiveConditionalDataset{
         W<:AbstractWorld,
         A<:AbstractCondition,
         T<:TruthValue,
@@ -72,13 +72,13 @@ See also
 [`AbstractConditionalDataset`](@ref),
 [`AbstractCondition`](@ref).
 """
-abstract type ActiveConditionalDataset{
+abstract type AbstractActiveConditionalDataset{
     W<:AbstractWorld,
     A<:AbstractCondition,
     T<:TruthValue,
     FR<:AbstractFrame{W,T},
 } <: AbstractConditionalDataset{W,A,T,FR} end
 
-function alphabet(X::ActiveConditionalDataset)
+function alphabet(X::AbstractActiveConditionalDataset)
     error("Please, provide method alphabet(::$(typeof(X))).")
 end

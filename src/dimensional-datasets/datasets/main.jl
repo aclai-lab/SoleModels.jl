@@ -16,7 +16,9 @@ import SoleData: dimensionality
 import Base: eltype
 
 import SoleModels: featvaltype
-import SoleModels: frame
+import SoleModels: display_structure, frame
+import SoleModels: nsamples, nfeatures
+import SoleModels: nframes, frames, hasnans, _slice_dataset
 
 ############################################################################################
 
@@ -100,31 +102,31 @@ end
 #  etc. While learning a model can be done only with active modal datasets, testing a model
 #  can be done with both active and passive modal datasets.
 #
-abstract type ActiveFeaturedDataset{
+abstract type AbstractActiveFeaturedDataset{
     V<:Number,
     W<:AbstractWorld,
     FR<:AbstractFrame{W,Bool},
     FT<:AbstractFeature{V}
-} <: AbstractConditionalDataset{W,AbstractCondition,Bool,FR} end
+} <: AbstractActiveConditionalDataset{W,AbstractCondition,Bool,FR} end
 
-featvaltype(::Type{<:ActiveFeaturedDataset{V}}) where {V} = V
-featvaltype(d::ActiveFeaturedDataset) = featvaltype(typeof(d))
+featvaltype(::Type{<:AbstractActiveFeaturedDataset{V}}) where {V} = V
+featvaltype(d::AbstractActiveFeaturedDataset) = featvaltype(typeof(d))
 
-featuretype(::Type{<:ActiveFeaturedDataset{V,W,FR,FT}}) where {V,W,FR,FT} = FT
-featuretype(d::ActiveFeaturedDataset) = featuretype(typeof(d))
+featuretype(::Type{<:AbstractActiveFeaturedDataset{V,W,FR,FT}}) where {V,W,FR,FT} = FT
+featuretype(d::AbstractActiveFeaturedDataset) = featuretype(typeof(d))
 
-function grouped_featsaggrsnops(X::ActiveFeaturedDataset)
+function grouped_featsaggrsnops(X::AbstractActiveFeaturedDataset)
     return error("Please, provide method grouped_featsaggrsnops(::$(typeof(X))).")
 end
 
-function grouped_metaconditions(X::ActiveFeaturedDataset)
+function grouped_metaconditions(X::AbstractActiveFeaturedDataset)
     grouped_featsnops = grouped_featsaggrsnops2grouped_featsnops(grouped_featsaggrsnops(X))
     [begin
         (feat,[FeatMetaCondition(feat,op) for op in ops])
     end for (feat,ops) in zip(features(X),grouped_featsnops)]
 end
 
-function alphabet(X::ActiveFeaturedDataset)
+function alphabet(X::AbstractActiveFeaturedDataset)
     conds = vcat([begin
         thresholds = unique([
                 X[i_sample, w, feature]
@@ -138,27 +140,27 @@ function alphabet(X::ActiveFeaturedDataset)
 end
 
 
-# Base.length(X::ActiveFeaturedDataset) = nsamples(X)
-# Base.iterate(X::ActiveFeaturedDataset, state=1) = state > nsamples(X) ? nothing : (get_instance(X, state), state+1)
+# Base.length(X::AbstractActiveFeaturedDataset) = nsamples(X)
+# Base.iterate(X::AbstractActiveFeaturedDataset, state=1) = state > nsamples(X) ? nothing : (get_instance(X, state), state+1)
 
-function find_feature_id(X::ActiveFeaturedDataset, feature::AbstractFeature)
+function find_feature_id(X::AbstractActiveFeaturedDataset, feature::AbstractFeature)
     id = findfirst(x->(Base.isequal(x, feature)), features(X))
     if isnothing(id)
-        error("Could not find feature $(feature) in ActiveFeaturedDataset of type $(typeof(X)).")
+        error("Could not find feature $(feature) in AbstractActiveFeaturedDataset of type $(typeof(X)).")
     end
     id
 end
-function find_relation_id(X::ActiveFeaturedDataset, relation::AbstractRelation)
+function find_relation_id(X::AbstractActiveFeaturedDataset, relation::AbstractRelation)
     id = findfirst(x->x==relation, relations(X))
     if isnothing(id)
-        error("Could not find relation $(relation) in ActiveFeaturedDataset of type $(typeof(X)).")
+        error("Could not find relation $(relation) in AbstractActiveFeaturedDataset of type $(typeof(X)).")
     end
     id
 end
 
 
 # By default an active modal dataset cannot be minified
-isminifiable(::ActiveFeaturedDataset) = false
+isminifiable(::AbstractActiveFeaturedDataset) = false
 
 include("passive-dimensional-dataset.jl")
 
@@ -230,7 +232,7 @@ function check(
     end
 
     # forget_list = Vector{SoleLogics.FNode}()
-    # hasmemo(::ActiveFeaturedDataset) = false
+    # hasmemo(::AbstractActiveFeaturedDataset) = false
     # hasmemo(X)TODO
 
     # φ = normalize(φ; profile = :modelchecking) # TODO normalize formula and/or use a dedicate memoization structure that normalizes functions

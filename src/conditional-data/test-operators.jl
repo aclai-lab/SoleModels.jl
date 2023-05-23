@@ -1,6 +1,3 @@
-export inverse_test_operator, dual_test_operator,
-        apply_test_operator,
-        TestOperator
 
 using SoleLogics: TruthValue
 

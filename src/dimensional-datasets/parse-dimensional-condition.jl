@@ -111,8 +111,9 @@ function parsecondition(
             " (expression = $(repr(expression)))"
     end
 
-    @assert length(string(opening_bracket)) == 1 || length(string(closing_bracket))
-        "Brackets must be single-character strings."
+    @assert length(opening_bracket) == 1 || length(closing_bracket)
+        "Brackets must be single-character strings!" *
+        " $(repr(opening_bracket)) and $(repr(closing_bracket)) encountered."
 
     featdict = merge(BASE_FEATURE_ALIASES, custom_feature_aliases)
 
@@ -134,7 +135,7 @@ function parsecondition(
 
         # Assert for malformed strings (e.g. "123.4<avg[V189]>250.2")
         @assert length(slices) == 4 "Could not parse condition from" *
-            " expression `$expression`."
+            " expression $(repr(expression))."
 
         (slices[1], slices[2], slices[3], slices[4])
     end

@@ -288,10 +288,10 @@ function computefeature(f::UnivariateSoftMax{U}, channel::AbstractDimensionalCha
 end
 
 # simplified propositional cases:
-function computefeature(f::UnivariateSoftMin{U}, channel::AbstractDimensionalChannel{T,2}) where {U,T}
+function computefeature(f::UnivariateSoftMin{U}, channel::AbstractDimensionalChannel{T,1}) where {U<:Real,T}
     get_instance_attribute(channel, f.i_attribute)::U
 end
-function computefeature(f::UnivariateSoftMax{U}, channel::AbstractDimensionalChannel{T,2}) where {U,T}
+function computefeature(f::UnivariateSoftMax{U}, channel::AbstractDimensionalChannel{T,1}) where {U<:Real,T}
     get_instance_attribute(channel, f.i_attribute)::U
 end
 

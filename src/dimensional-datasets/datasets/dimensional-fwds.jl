@@ -190,7 +190,7 @@ fwd_channel_interpret_world(fwc::Interval2DFeaturedChannel{T}, w::Interval2D) wh
     fwc[w.x.x, w.x.y, w.y.x, w.y.y]
 
 const FWDFeatureSlice{T} = Union{
-    # FWDFeatureSlice(DimensionalFeaturedDataset{T where T,0,ModalLogic.OneWorld})
+    # FWDFeatureSlice(DimensionalFeaturedDataset{T where T,0,OneWorld})
     T, # Note: should be, but it throws error OneWorldFeaturedChannel{T},
     IntervalFeaturedChannel{T},
     Interval2DFeaturedChannel{T},
@@ -347,7 +347,7 @@ const FWDFeatureSlice{T} = Union{
 # TODO add AbstractWorldSet type
 function apply_aggregator(fwdslice::FWDFeatureSlice{T}, worlds::Any, aggregator::Agg) where {T,Agg<:Aggregator}
     
-    # TODO try reduce(aggregator, worlds; init=ModalLogic.bottom(aggregator, T))
+    # TODO try reduce(aggregator, worlds; init=bottom(aggregator, T))
     # TODO remove this SoleModels.aggregator_to_binary...
     
     if length(worlds |> collect) == 0
@@ -357,7 +357,7 @@ function apply_aggregator(fwdslice::FWDFeatureSlice{T}, worlds::Any, aggregator:
     end
 
     # opt = SoleModels.aggregator_to_binary(aggregator)
-    # gamma = ModalLogic.bottom(aggregator, T)
+    # gamma = bottom(aggregator, T)
     # for w in worlds
     #   e = fwd_channel_interpret_world(fwdslice, w)
     #   gamma = opt(gamma,e)

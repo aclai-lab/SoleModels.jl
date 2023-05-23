@@ -50,7 +50,7 @@
 #   C<:AbstractCondition, # Nota che le non sono! Quando checcki formule, devi avere vere condizioni.
 #   PCD<:PassiveFeaturedDataset{U,W,C},
 #   AL<:AbstractConditionalAlphabet{C}, # Però questo alfabeto può essere implementato come un vettore di MetaCondition's, che induce un alfabeto infinito di AbstractCondition's
-# } <: ActiveConditionalDataset{M}
+# } <: AbstractActiveConditionalDataset{M}
 #   cd:PCD
 #   alphabet::AL
 # end
@@ -62,7 +62,7 @@
 # # TODO from here onwards
 
 # {
-#   ConditionalDatasetWithMemo <: ActiveConditionalDataset che wrappa:
+#   ConditionalDatasetWithMemo <: AbstractActiveConditionalDataset che wrappa:
 #     dataset::ConditionalDataset
 #     H::ConditionalDatasetMemoStructure
 #   end

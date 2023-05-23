@@ -9,28 +9,10 @@ include("dimensional-representatives/Full1DFrame+IA.jl")
 include("dimensional-representatives/Full1DFrame+RCC.jl")
 include("dimensional-representatives/Full2DFrame.jl")
 
+export get_ontology,
+       get_interval_ontology
 
-module ModalLogic
-
-export nfeatures, nrelations,
-       nframes, frames, get_frame,
-       display_structure,
-       #
-       relations,
-       #
-       GenericModalDataset,
-       ActiveMultiFrameModalDataset,
-       MultiFrameModalDataset,
-       ActiveFeaturedDataset,
-       DimensionalFeaturedDataset,
-       FeaturedDataset,
-       SupportedFeaturedDataset
-
-# Reexport from SoleLogics:
-export AbstractWorld, AbstractRelation
-export AbstractWorldSet, WorldSet
-
-export Ontology, worldtype
+module DimensionalDatasets
 
 import Base: size, show, getindex, iterate, length, push!
 
@@ -42,6 +24,7 @@ using Logging: @logmsg
 using SoleBase: LogOverview, LogDebug, LogDetail, throw_n_log
 
 using SoleLogics
+using SoleLogics: FullDimensionalFrame
 using SoleLogics: AbstractRelation, AbstractWorld
 import SoleLogics: worldtype
 
@@ -62,39 +45,33 @@ import SoleLogics: accessibles, allworlds
 import SoleModels: representatives, FeatMetaCondition, FeatCondition
 import SoleModels: minify
 
+import SoleModels: nfeatures, nrelations
+
+using SoleModels: MultiFrameConditionalDataset, AbstractActiveConditionalDataset
+
 using SoleModels: AbstractMultiModalFrame
 using ThreadSafeDicts
 
+using SoleLogics: AbstractRelation
+
+############################################################################################
 
 # Concrete type for ontologies
 include("ontology.jl")
 
 # Dataset structures
-# 
 include("datasets/main.jl")
 # 
 include("gamma-access.jl")
 
-export worldtypes
-# 
-# Define the multi-modal version of modal datasets (basically, a vector of datasets with the
-#  same number of instances)
-# 
-include("multi-frame-dataset.jl")
-# 
-# TODO figure out which convert function works best: convert(::Type{<:MultiFrameModalDataset{T}}, X::MD) where {T,MD<:AbstractConditionalDataset{T}} = MultiFrameModalDataset{MD}([X])
-# convert(::Type{<:MultiFrameModalDataset}, X::AbstractConditionalDataset) = MultiFrameModalDataset([X])
-# 
-const ActiveMultiFrameModalDataset{T} = MultiFrameModalDataset{<:ActiveFeaturedDataset{<:T}}
 #
-const GenericModalDataset = Union{AbstractDimensionalDataset,AbstractConditionalDataset,MultiFrameModalDataset}
+# TODO figure out which convert function works best: convert(::Type{<:MultiFrameConditionalDataset{T}}, X::MD) where {T,MD<:AbstractConditionalDataset{T}} = MultiFrameConditionalDataset{MD}([X])
+# convert(::Type{<:MultiFrameConditionalDataset}, X::AbstractConditionalDataset) = MultiFrameConditionalDataset([X])
 # 
-
-using SoleLogics: AbstractRelation
-export get_ontology,
-       get_interval_ontology
-
-export OneWorld
+const ActiveMultiFrameConditionalDataset{T} = MultiFrameConditionalDataset{<:AbstractActiveFeaturedDataset{<:T}}
+#
+const GenericModalDataset = Union{AbstractDimensionalDataset,AbstractConditionalDataset,MultiFrameConditionalDataset}
+# 
 
 # Dimensional Ontologies
 include("dimensional-ontologies.jl")

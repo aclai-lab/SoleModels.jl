@@ -12,7 +12,7 @@
 #  question whether a proposition (e.g., minimum(A1) ≥ 10) holds onto a given world and instance;
 #  however, an fwd table can be implemented in many ways, mainly depending on the world type.
 # 
-# Note that this structure does not constitute a ActiveFeaturedDataset (see FeaturedDataset a few lines below)
+# Note that this structure does not constitute a AbstractActiveFeaturedDataset (see FeaturedDataset a few lines below)
 # 
 ############################################################################################
 
@@ -113,7 +113,7 @@ struct FeaturedDataset{
     FWD<:AbstractFWD{V,W,FR},
     G1<:AbstractVector{<:AbstractDict{<:Aggregator,<:AbstractVector{<:TestOperator}}},
     G2<:AbstractVector{<:AbstractVector{Tuple{<:Integer,<:Aggregator}}},
-} <: ActiveFeaturedDataset{V,W,FR,FT}
+} <: AbstractActiveFeaturedDataset{V,W,FR,FT}
     
     # Core data (fwd lookup table)
     fwd                     :: FWD
