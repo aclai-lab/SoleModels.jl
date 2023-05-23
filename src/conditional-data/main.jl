@@ -30,5 +30,6 @@ const MixedFeature = Union{AbstractFeature,CanonicalFeature,Function,Tuple{TestO
 
 include("representatives.jl")
 include("datasets.jl")
+include("featured-datasets.jl")
 
 include("random.jl")

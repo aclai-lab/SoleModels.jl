@@ -74,6 +74,8 @@ include("ontology.jl")
 include("datasets/main.jl")
 # 
 include("gamma-access.jl")
+
+export worldtypes
 # 
 # Define the multi-modal version of modal datasets (basically, a vector of datasets with the
 #  same number of instances)
@@ -88,9 +90,15 @@ const ActiveMultiFrameModalDataset{T} = MultiFrameModalDataset{<:ActiveFeaturedD
 const GenericModalDataset = Union{AbstractDimensionalDataset,AbstractConditionalDataset,MultiFrameModalDataset}
 # 
 
+using SoleLogics: AbstractRelation
+export get_ontology,
+       get_interval_ontology
+
+export OneWorld
+
 # Dimensional Ontologies
 include("dimensional-ontologies.jl")
 
 ############################################################################################
 
-end # module
+end

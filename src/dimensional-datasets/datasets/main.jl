@@ -7,7 +7,6 @@ import SoleLogics: initialworld
 
 using SoleModels: CanonicalFeatureGeq, CanonicalFeatureGeqSoft, CanonicalFeatureLeq, CanonicalFeatureLeqSoft
 using SoleModels: apply_test_operator, existential_aggregator, aggregator_bottom, aggregator_to_binary
-# import SoleLogics: check
 import SoleModels: check
 using SoleModels: BoundedExplicitConditionalAlphabet
 
@@ -15,6 +14,9 @@ import SoleData: get_instance, instance, max_channel_size, channel_size, nattrib
 import SoleData: dimensionality
 
 import Base: eltype
+
+import SoleModels: featvaltype
+import SoleModels: frame
 
 ############################################################################################
 
@@ -104,9 +106,6 @@ abstract type ActiveFeaturedDataset{
     FR<:AbstractFrame{W,Bool},
     FT<:AbstractFeature{V}
 } <: AbstractConditionalDataset{W,AbstractCondition,Bool,FR} end
-
-import SoleModels: featvaltype
-import SoleModels: frame
 
 featvaltype(::Type{<:ActiveFeaturedDataset{V}}) where {V} = V
 featvaltype(d::ActiveFeaturedDataset) = featvaltype(typeof(d))

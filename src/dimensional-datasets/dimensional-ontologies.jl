@@ -1,13 +1,9 @@
-using SoleLogics: AbstractRelation
-
 ############################################################################################
 # Ontologies
 ############################################################################################
 
 # Here are the definitions for world types and relations for known modal logics
 #
-export get_ontology,
-       get_interval_ontology
 
 get_ontology(N::Integer, args...) = get_ontology(Val(N), args...)
 get_ontology(::Val{0}, args...) = OneWorldOntology
@@ -73,8 +69,6 @@ get_interval_ontology(N::Val, relations::Union{Symbol,AbstractVector{<:AbstractR
 
 ############################################################################################
 # Dimensionality: 0
-
-export OneWorld
 
 # Dimensional world type: it can be interpreted on dimensional instances.
 interpret_world(::OneWorld, instance::DimensionalInstance{T,1}) where {T} = instance

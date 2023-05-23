@@ -101,12 +101,14 @@ function parsecondition(
     attribute_name_prefix::Union{Nothing,String} = nothing,
 )
     @assert isnothing(attribute_names_map) || isnothing(attribute_name_prefix) "" *
-        "Cannot parse attribute with both attribute_names_map and attribute_name_prefix."
+        "Cannot parse attribute with both attribute_names_map and attribute_name_prefix." *
+        " (expression = $(repr(expression)))"
 
     if isnothing(featvaltype)
         featvaltype = DEFAULT_FEATVALTYPE
         @warn "Please, specify a type for the feature values (featvaltype = ...)." *
-            " $(featvaltype) will be used, but note that this may raise type errors."
+            " $(featvaltype) will be used, but note that this may raise type errors." *
+            " (expression = $(repr(expression)))"
     end
 
     @assert length(string(opening_bracket)) == 1 || length(string(closing_bracket))

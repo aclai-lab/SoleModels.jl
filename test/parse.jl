@@ -18,7 +18,7 @@
 @test_nowarn SoleModels.featvaltype(SoleModels.feature(SoleModels.parsecondition("mean[V11]<1.0e100"; featvaltype = Float64))) == Float64
 
 @test_nowarn SoleModels.parsecondition("max[V15] <= 723"; featvaltype = Float64)
-@test_nowarn SoleModels.parsecondition("mean[V16] == 54.2")
+@test_nowarn SoleModels.parsecondition("mean[V16] == 54.2"; featvaltype = Float64)
 
 @test_throws Exception SoleModels.parsecondition("5345.4 < avg [V13]    < 32.2 < 12.2")
 @test_throws AssertionError SoleModels.parsecondition("avg [V14] < 12.2 <= 6127.2")

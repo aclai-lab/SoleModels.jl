@@ -6,7 +6,6 @@ import SoleData: nframes
 # Multi-modal learning in this context is allowed by defining learning functions on so-called
 #  `multi-frame datasets`. These are essentially vectors of modal datasets
 ############################################################################################
-export worldtypes
 
 struct MultiFrameModalDataset{MD<:AbstractConditionalDataset}
     frames  :: Vector{<:MD}
