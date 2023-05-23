@@ -6,8 +6,7 @@ import SoleLogics: alphabet
 import SoleLogics: initialworld
 
 using SoleModels: CanonicalFeatureGeq, CanonicalFeatureGeqSoft, CanonicalFeatureLeq, CanonicalFeatureLeqSoft
-using SoleModels: evaluate_thresh_decision, existential_aggregator, aggregator_bottom, aggregator_to_binary
-# import SoleLogics: check
+using SoleModels: apply_test_operator, existential_aggregator, aggregator_bottom, aggregator_to_binary
 import SoleModels: check
 using SoleModels: BoundedExplicitConditionalAlphabet
 
@@ -16,19 +15,24 @@ import SoleData: dimensionality
 
 import Base: eltype
 
+import SoleModels: featvaltype
+import SoleModels: display_structure, frame
+import SoleModels: nsamples, nfeatures
+import SoleModels: nframes, frames, hasnans, _slice_dataset
+
 ############################################################################################
 
 # Convenience functions
 function grouped_featsnops2grouped_featsaggrsnops(
-    grouped_featsnops::AbstractVector{<:AbstractVector{<:TestOperatorFun}}
-)::AbstractVector{<:AbstractDict{<:Aggregator,<:AbstractVector{<:TestOperatorFun}}}
-    grouped_featsaggrsnops = Dict{<:Aggregator,<:AbstractVector{<:TestOperatorFun}}[]
+    grouped_featsnops::AbstractVector{<:AbstractVector{<:TestOperator}}
+)::AbstractVector{<:AbstractDict{<:Aggregator,<:AbstractVector{<:TestOperator}}}
+    grouped_featsaggrsnops = Dict{<:Aggregator,<:AbstractVector{<:TestOperator}}[]
     for (i_feature, test_operators) in enumerate(grouped_featsnops)
-        aggrsnops = Dict{Aggregator,AbstractVector{<:TestOperatorFun}}()
+        aggrsnops = Dict{Aggregator,AbstractVector{<:TestOperator}}()
         for test_operator in test_operators
             aggregator = existential_aggregator(test_operator)
             if (!haskey(aggrsnops, aggregator))
-                aggrsnops[aggregator] = TestOperatorFun[]
+                aggrsnops[aggregator] = TestOperator[]
             end
             push!(aggrsnops[aggregator], test_operator)
         end
@@ -38,8 +42,8 @@ function grouped_featsnops2grouped_featsaggrsnops(
 end
 
 function grouped_featsaggrsnops2grouped_featsnops(
-    grouped_featsaggrsnops::AbstractVector{<:AbstractDict{<:Aggregator,<:AbstractVector{<:TestOperatorFun}}}
-)::AbstractVector{<:AbstractVector{<:TestOperatorFun}}
+    grouped_featsaggrsnops::AbstractVector{<:AbstractDict{<:Aggregator,<:AbstractVector{<:TestOperator}}}
+)::AbstractVector{<:AbstractVector{<:TestOperator}}
     grouped_featsnops = [begin
         vcat(values(grouped_featsaggrsnops)...)
     end for grouped_featsaggrsnops in grouped_featsaggrsnops]
@@ -98,34 +102,31 @@ end
 #  etc. While learning a model can be done only with active modal datasets, testing a model
 #  can be done with both active and passive modal datasets.
 #
-abstract type ActiveFeaturedDataset{
+abstract type AbstractActiveFeaturedDataset{
     V<:Number,
     W<:AbstractWorld,
     FR<:AbstractFrame{W,Bool},
     FT<:AbstractFeature{V}
-} <: AbstractConditionalDataset{W,AbstractCondition,Bool,FR} end
+} <: AbstractActiveConditionalDataset{W,AbstractCondition,Bool,FR} end
 
-import SoleModels: featvaltype
-import SoleModels: frame
+featvaltype(::Type{<:AbstractActiveFeaturedDataset{V}}) where {V} = V
+featvaltype(d::AbstractActiveFeaturedDataset) = featvaltype(typeof(d))
 
-featvaltype(::Type{<:ActiveFeaturedDataset{V}}) where {V} = V
-featvaltype(d::ActiveFeaturedDataset) = featvaltype(typeof(d))
+featuretype(::Type{<:AbstractActiveFeaturedDataset{V,W,FR,FT}}) where {V,W,FR,FT} = FT
+featuretype(d::AbstractActiveFeaturedDataset) = featuretype(typeof(d))
 
-featuretype(::Type{<:ActiveFeaturedDataset{V,W,FR,FT}}) where {V,W,FR,FT} = FT
-featuretype(d::ActiveFeaturedDataset) = featuretype(typeof(d))
-
-function grouped_featsaggrsnops(X::ActiveFeaturedDataset)
+function grouped_featsaggrsnops(X::AbstractActiveFeaturedDataset)
     return error("Please, provide method grouped_featsaggrsnops(::$(typeof(X))).")
 end
 
-function grouped_metaconditions(X::ActiveFeaturedDataset)
+function grouped_metaconditions(X::AbstractActiveFeaturedDataset)
     grouped_featsnops = grouped_featsaggrsnops2grouped_featsnops(grouped_featsaggrsnops(X))
     [begin
         (feat,[FeatMetaCondition(feat,op) for op in ops])
     end for (feat,ops) in zip(features(X),grouped_featsnops)]
 end
 
-function alphabet(X::ActiveFeaturedDataset)
+function alphabet(X::AbstractActiveFeaturedDataset)
     conds = vcat([begin
         thresholds = unique([
                 X[i_sample, w, feature]
@@ -139,27 +140,27 @@ function alphabet(X::ActiveFeaturedDataset)
 end
 
 
-# Base.length(X::ActiveFeaturedDataset) = nsamples(X)
-# Base.iterate(X::ActiveFeaturedDataset, state=1) = state > nsamples(X) ? nothing : (get_instance(X, state), state+1)
+# Base.length(X::AbstractActiveFeaturedDataset) = nsamples(X)
+# Base.iterate(X::AbstractActiveFeaturedDataset, state=1) = state > nsamples(X) ? nothing : (get_instance(X, state), state+1)
 
-function find_feature_id(X::ActiveFeaturedDataset, feature::AbstractFeature)
+function find_feature_id(X::AbstractActiveFeaturedDataset, feature::AbstractFeature)
     id = findfirst(x->(Base.isequal(x, feature)), features(X))
     if isnothing(id)
-        error("Could not find feature $(feature) in ActiveFeaturedDataset of type $(typeof(X)).")
+        error("Could not find feature $(feature) in AbstractActiveFeaturedDataset of type $(typeof(X)).")
     end
     id
 end
-function find_relation_id(X::ActiveFeaturedDataset, relation::AbstractRelation)
+function find_relation_id(X::AbstractActiveFeaturedDataset, relation::AbstractRelation)
     id = findfirst(x->x==relation, relations(X))
     if isnothing(id)
-        error("Could not find relation $(relation) in ActiveFeaturedDataset of type $(typeof(X)).")
+        error("Could not find relation $(relation) in AbstractActiveFeaturedDataset of type $(typeof(X)).")
     end
     id
 end
 
 
 # By default an active modal dataset cannot be minified
-isminifiable(::ActiveFeaturedDataset) = false
+isminifiable(::AbstractActiveFeaturedDataset) = false
 
 include("passive-dimensional-dataset.jl")
 
@@ -196,7 +197,7 @@ include("generic-supporting-datasets.jl")
     w::W,
 ) where {W<:AbstractWorld}
     c = atom(p)
-    evaluate_thresh_decision(SoleModels.test_operator(c), X[i_sample, w, SoleModels.feature(c)], SoleModels.threshold(c))
+    apply_test_operator(SoleModels.test_operator(c), X[i_sample, w, SoleModels.feature(c)], SoleModels.threshold(c))
 end
 
 
@@ -231,7 +232,7 @@ function check(
     end
 
     # forget_list = Vector{SoleLogics.FNode}()
-    # hasmemo(::ActiveFeaturedDataset) = false
+    # hasmemo(::AbstractActiveFeaturedDataset) = false
     # hasmemo(X)TODO
 
     # φ = normalize(φ; profile = :modelchecking) # TODO normalize formula and/or use a dedicate memoization structure that normalizes functions

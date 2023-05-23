@@ -15,9 +15,9 @@ struct DimensionalFeaturedDataset{
     W<:AbstractWorld,
     D<:PassiveDimensionalDataset{N,W},
     FT<:AbstractFeature{V},
-    G1<:AbstractVector{<:AbstractDict{<:Aggregator,<:AbstractVector{<:TestOperatorFun}}},
+    G1<:AbstractVector{<:AbstractDict{<:Aggregator,<:AbstractVector{<:TestOperator}}},
     G2<:AbstractVector{<:AbstractVector{Tuple{<:Integer,<:Aggregator}}},
-} <: ActiveFeaturedDataset{V,W,FullDimensionalFrame{N,W,Bool},FT}
+} <: AbstractActiveFeaturedDataset{V,W,FullDimensionalFrame{N,W,Bool},FT}
 
     # Core data (a dimensional domain)
     domain                  :: D
@@ -44,7 +44,7 @@ struct DimensionalFeaturedDataset{
         domain::PassiveDimensionalDataset{N},
         ontology::Ontology{W},
         features::AbstractVector{<:AbstractFeature},
-        grouped_featsaggrsnops::AbstractVector{<:AbstractDict{<:Aggregator,<:AbstractVector{<:TestOperatorFun}}};
+        grouped_featsaggrsnops::AbstractVector{<:AbstractDict{<:Aggregator,<:AbstractVector{<:TestOperator}}};
         allow_no_instances = false,
         initialworld = nothing,
     ) where {V,N,W<:AbstractWorld}
@@ -112,27 +112,27 @@ struct DimensionalFeaturedDataset{
 
         _features, featsnops = begin
             _features = AbstractFeature[]
-            featsnops = Vector{<:TestOperatorFun}[]
+            featsnops = Vector{<:TestOperator}[]
 
             # readymade features
             cnv_feat(cf::AbstractFeature) = ([≥, ≤], cf)
-            cnv_feat(cf::Tuple{TestOperatorFun,AbstractFeature}) = ([cf[1]], cf[2])
+            cnv_feat(cf::Tuple{TestOperator,AbstractFeature}) = ([cf[1]], cf[2])
             # single-attribute features
             cnv_feat(cf::Any) = cf
             cnv_feat(cf::CanonicalFeature) = cf
             cnv_feat(cf::Function) = ([≥, ≤], cf)
-            cnv_feat(cf::Tuple{TestOperatorFun,Function}) = ([cf[1]], cf[2])
+            cnv_feat(cf::Tuple{TestOperator,Function}) = ([cf[1]], cf[2])
 
             mixed_features = cnv_feat.(mixed_features)
 
             readymade_cfs          = filter(x->
-                # isa(x, Tuple{<:AbstractVector{<:TestOperatorFun},AbstractFeature}),
+                # isa(x, Tuple{<:AbstractVector{<:TestOperator},AbstractFeature}),
                 isa(x, Tuple{AbstractVector,AbstractFeature}),
                 mixed_features,
             )
             attribute_specific_cfs = filter(x->
                 isa(x, CanonicalFeature) ||
-                # isa(x, Tuple{<:AbstractVector{<:TestOperatorFun},Function}) ||
+                # isa(x, Tuple{<:AbstractVector{<:TestOperator},Function}) ||
                 (isa(x, Tuple{AbstractVector,Function}) && !isa(x, Tuple{AbstractVector,AbstractFeature})),
                 mixed_features,
             )
@@ -152,9 +152,9 @@ struct DimensionalFeaturedDataset{
             single_attr_feats_n_featsnops(i_attr,cf::SoleModels.CanonicalFeatureLeq) = ([≤],SoleModels.UnivariateMax{V}(i_attr))
             single_attr_feats_n_featsnops(i_attr,cf::SoleModels.CanonicalFeatureGeqSoft) = ([≥],SoleModels.UnivariateSoftMin{V}(i_attr, cf.alpha))
             single_attr_feats_n_featsnops(i_attr,cf::SoleModels.CanonicalFeatureLeqSoft) = ([≤],SoleModels.UnivariateSoftMax{V}(i_attr, cf.alpha))
-            single_attr_feats_n_featsnops(i_attr,(test_ops,cf)::Tuple{<:AbstractVector{<:TestOperatorFun},typeof(minimum)}) = (test_ops,UnivariateMin{V}(i_attr))
-            single_attr_feats_n_featsnops(i_attr,(test_ops,cf)::Tuple{<:AbstractVector{<:TestOperatorFun},typeof(maximum)}) = (test_ops,UnivariateMax{V}(i_attr))
-            single_attr_feats_n_featsnops(i_attr,(test_ops,cf)::Tuple{<:AbstractVector{<:TestOperatorFun},Function})        = (test_ops,UnivariateGenericFeature{V}(i_attr, (x)->(V(cf(x)))))
+            single_attr_feats_n_featsnops(i_attr,(test_ops,cf)::Tuple{<:AbstractVector{<:TestOperator},typeof(minimum)}) = (test_ops,UnivariateMin{V}(i_attr))
+            single_attr_feats_n_featsnops(i_attr,(test_ops,cf)::Tuple{<:AbstractVector{<:TestOperator},typeof(maximum)}) = (test_ops,UnivariateMax{V}(i_attr))
+            single_attr_feats_n_featsnops(i_attr,(test_ops,cf)::Tuple{<:AbstractVector{<:TestOperator},Function})        = (test_ops,UnivariateFeature{V}(i_attr, (x)->(V(cf(x)))))
             single_attr_feats_n_featsnops(i_attr,::Any) = throw_n_log("Unknown mixed_feature type: $(cf), $(typeof(cf))")
 
             for i_attr in 1:nattributes(domain)

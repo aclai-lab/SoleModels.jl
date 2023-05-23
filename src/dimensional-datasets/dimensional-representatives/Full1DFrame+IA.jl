@@ -12,7 +12,7 @@ using SoleLogics: _IA_AorO, _IA_AiorOi, _IA_DorBorE, _IA_DiorBiorEi, _IA_I, IA72
 
 ############################################################################################
 # When defining `representatives` for minimum & maximum features, we find that we can
-#  categorized  interval relations according to their behavior.
+#  categorize interval relations according to their behavior.
 # Consider the decision ⟨R⟩ (minimum(A1) ≥ 10) evaluated on a world w = (x,y):
 #  - With R = identityrel, it requires computing minimum(A1) on w;
 #  - With R = globalrel, it requires computing maximum(A1) on 1:(X(fr)+1) (the largest world);

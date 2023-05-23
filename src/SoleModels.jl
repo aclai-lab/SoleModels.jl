@@ -50,19 +50,49 @@ include("models/rule-evaluation.jl")
 
 # TODO avoid?
 export AbstractFeature,
-        DimensionalFeature, UnivariateFeature,
+        DimensionalFeature, AbstractUnivariateFeature,
         UnivariateNamedFeature,
         UnivariateMin, UnivariateMax,
         UnivariateSoftMin, UnivariateSoftMax,
-        UnivariateGenericFeature, MultivariateFeature,
+        UnivariateFeature, MultivariateFeature,
         NamedFeature, ExternalFWDFeature
 
 export propositions
 
-export compute_feature
+export computefeature
 
 export parsecondition
 
 include("conditional-data/main.jl")
+
+export nsamples, nframes, frames, nfeatures
+
+include("dimensional-datasets/main.jl")
+
+using .DimensionalDatasets: nfeatures, nrelations,
+                            #
+                            relations,
+                            #
+                            GenericModalDataset,
+                            ActiveMultiFrameConditionalDataset,
+                            AbstractActiveFeaturedDataset,
+                            DimensionalFeaturedDataset,
+                            FeaturedDataset,
+                            SupportedFeaturedDataset
+
+using .DimensionalDatasets: AbstractWorld, AbstractRelation
+using .DimensionalDatasets: AbstractWorldSet, WorldSet
+using .DimensionalDatasets: FullDimensionalFrame
+
+using .DimensionalDatasets: Ontology, worldtype
+
+using .DimensionalDatasets: get_ontology,
+                            get_interval_ontology
+
+using .DimensionalDatasets: OneWorld, OneWorldOntology
+
+using .DimensionalDatasets: Interval, Interval2D
+
+using .DimensionalDatasets: IARelations
 
 end
