@@ -1,5 +1,5 @@
 
-using SoleData: AbstractDimensionalInstance, get_instance_attribute
+using SoleData: AbstractDimensionalInstance, instance
 
 import Base: isequal, hash
 
@@ -106,7 +106,7 @@ struct SingleAttributeMin{U} <: SingleAttributeFeature{U}
     end
 end
 function compute_feature(f::SingleAttributeMin{U}, inst::AbstractDimensionalInstance{T}) where {U<:Real,T}
-    (minimum(get_instance_attribute(inst,f.i_attribute)))::U
+    (minimum(instance(inst,f.i_attribute)))::U
 end
 function syntaxstring(f::SingleAttributeMin; kwargs...)
     n = attribute_name(f; kwargs...)
@@ -125,7 +125,7 @@ struct SingleAttributeMax{U} <: SingleAttributeFeature{U}
     end
 end
 function compute_feature(f::SingleAttributeMax{U}, inst::AbstractDimensionalInstance{T}) where {U<:Real,T}
-    (maximum(get_instance_attribute(inst,f.i_attribute)))::U
+    (maximum(instance(inst,f.i_attribute)))::U
 end
 function syntaxstring(f::SingleAttributeMax; kwargs...)
     n = attribute_name(f; kwargs...)
@@ -153,7 +153,7 @@ function syntaxstring(f::SingleAttributeSoftMin; kwargs...)
 end
 
 function compute_feature(f::SingleAttributeSoftMin{U}, inst::AbstractDimensionalInstance{T}) where {U<:Real,T}
-    utils.softminimum(get_instance_attribute(inst,f.i_attribute), f.alpha)::U
+    utils.softminimum(instance(inst,f.i_attribute), f.alpha)::U
 end
 struct SingleAttributeSoftMax{U,T<:AbstractFloat} <: SingleAttributeFeature{U}
     i_attribute::Integer
@@ -165,7 +165,7 @@ struct SingleAttributeSoftMax{U,T<:AbstractFloat} <: SingleAttributeFeature{U}
     end
 end
 function compute_feature(f::SingleAttributeSoftMax{U}, inst::AbstractDimensionalInstance{T}) where {U<:Real,T}
-    utils.softmaximum(get_instance_attribute(inst,f.i_attribute), f.alpha)::U
+    utils.softmaximum(instance(inst,f.i_attribute), f.alpha)::U
 end
 alpha(f::SingleAttributeSoftMax) = f.alpha
 function syntaxstring(f::SingleAttributeSoftMax; kwargs...)
@@ -176,10 +176,10 @@ end
 
 # TODO simplify OneWorld case:
 # function compute_feature(f::SingleAttributeSoftMin, inst::AbstractDimensionalInstance{T}) where {T}
-#     get_instance_attribute(inst,f.i_attribute)::T
+#     instance(inst,f.i_attribute)::T
 # end
 # function compute_feature(f::SingleAttributeSoftMax, inst::AbstractDimensionalInstance{T}) where {T}
-#     get_instance_attribute(inst,f.i_attribute)::T
+#     instance(inst,f.i_attribute)::T
 # end
 # Note: Maybe features should dispatch on WorldType, (as well or on the type of underlying data?)
 
@@ -192,7 +192,7 @@ struct SingleAttributeGenericFeature{U} <: SingleAttributeFeature{U}
     f::Function
 end
 function compute_feature(f::SingleAttributeGenericFeature{U}, inst::AbstractDimensionalInstance{T}) where {U<:Real,T}
-    (f.f(SoleBase.vectorize(get_instance_attribute(inst,f.i_attribute));))::U
+    (f.f(SoleBase.vectorize(instance(inst,f.i_attribute));))::U
 end
 function syntaxstring(f::SingleAttributeGenericFeature; kwargs...)
     "$(f.f)($(attribute_name(f; kwargs...)))"
