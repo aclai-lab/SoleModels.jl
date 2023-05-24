@@ -42,7 +42,7 @@ and an external threshold value (see `FeatCondition`). A metacondition can also 
 for representing the infinite set of conditions that arise with a free threshold
 (see `UnboundedExplicitConditionalAlphabet`).
 
-Example: $\{min(V1) ≥ a, a ∈ \mathbb{R}\}$
+Example: \$\\{min(V1) ≥ a, a ∈ \\mathbb{R}\\}\$
 
 See also
 [`AbstractCondition`](@ref),
@@ -80,7 +80,7 @@ and a threshold value `a`.
 It can be evaluated on a world
 of an instance of a conditional dataset.
 
-Example: $min(V1) ≥ 10$, which translates to
+Example: \$ min(V1) ≥ 10 \$, which translates to
 "Within this world the minimum of variable 1 is greater or equal than 10."
 
 See also

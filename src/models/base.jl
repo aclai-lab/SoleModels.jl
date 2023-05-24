@@ -1352,10 +1352,11 @@ end
 function apply(
     f::DecisionForest,
     d::AbstractInterpretationSet;
+    suppress_parity_warning = false,
     kwargs...
 )
     pred = hcat([apply(t, d; kwargs...) for t in trees(f)]...)
-    return [best_guess(pred[i,:]) for i in 1:size(pred,1)]
+    return [best_guess(pred[i,:]; suppress_parity_warning = suppress_parity_warning) for i in 1:size(pred,1)]
 end
 
 ############################################################################################
