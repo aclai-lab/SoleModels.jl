@@ -1,4 +1,5 @@
-using SoleLogics: AbstractRelation
+using SoleLogics: AbstractWorld, AbstractRelation
+using SoleModels: AbstractFeature, Aggregator
 
 ############################################################################################
 

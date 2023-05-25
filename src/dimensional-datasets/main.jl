@@ -1,81 +1,66 @@
-
-include("dimensional-features.jl")
-include("dimensional-conditions.jl")
-include("parse-dimensional-condition.jl")
-
-include("dimensional-representatives/Full0DFrame.jl")
-include("dimensional-representatives/Full1DFrame.jl")
-include("dimensional-representatives/Full1DFrame+IA.jl")
-include("dimensional-representatives/Full1DFrame+RCC.jl")
-include("dimensional-representatives/Full2DFrame.jl")
-
-export get_ontology,
-       get_interval_ontology
-
 module DimensionalDatasets
 
-import Base: size, show, getindex, iterate, length, push!
-
-using BenchmarkTools
-using ComputedFieldTypes
-using DataStructures
-
-using Logging: @logmsg
-using SoleBase: LogOverview, LogDebug, LogDetail, throw_n_log
-
-using SoleLogics
-using SoleLogics: FullDimensionalFrame
-using SoleLogics: AbstractRelation, AbstractWorld
 import SoleLogics: worldtype
 
-using SoleData: _isnan
-import SoleData: hasnans
+using SoleModels.utils
 
-import SoleData: nsamples
-import SoleData: nattributes, max_channel_size, get_instance,
-       instance_channel_size
+# Feature brackets
+const UVF_OPENING_BRACKET = "["
+const UVF_CLOSING_BRACKET = "]"
+# Default prefix for variables
+const UVF_VARPREFIX = "V"
 
-using SoleModels
-using SoleModels: Aggregator
+export UnivariateMin, UnivariateMax,
+        UnivariateSoftMin, UnivariateSoftMax,
+        MultivariateFeature
 
-using SoleLogics: AbstractFrame, AbstractDimensionalFrame, FullDimensionalFrame
-using SoleModels: AbstractConditionalDataset, AbstractCondition
+# Features for dimensional datasets
+include("dimensional-features.jl")
 
-import SoleLogics: accessibles, allworlds
-import SoleModels: representatives, FeatMetaCondition, FeatCondition
-import SoleModels: minify
+export parsecondition
 
-import SoleModels: nfeatures, nrelations
-
-using SoleModels: MultiFrameConditionalDataset, AbstractActiveConditionalDataset
-
-using SoleModels: AbstractMultiModalFrame
-using ThreadSafeDicts
-
-using SoleLogics: AbstractRelation
-
-############################################################################################
+# Conditions on features for dimensional datasets
+include("parse-dimensional-condition.jl")
 
 # Concrete type for ontologies
-include("ontology.jl")
+include("ontology.jl") # TODO frame inside the ontology?
+
+export DimensionalFeaturedDataset, FeaturedDataset, SupportedFeaturedDataset
 
 # Dataset structures
 include("datasets/main.jl")
-# 
+
+const GenericModalDataset = Union{AbstractDimensionalDataset,AbstractConditionalDataset,MultiFrameConditionalDataset}
+
+# TODO?
 include("gamma-access.jl")
 
-#
-# TODO figure out which convert function works best: convert(::Type{<:MultiFrameConditionalDataset{T}}, X::MD) where {T,MD<:AbstractConditionalDataset{T}} = MultiFrameConditionalDataset{MD}([X])
-# convert(::Type{<:MultiFrameConditionalDataset}, X::AbstractConditionalDataset) = MultiFrameConditionalDataset([X])
-# 
-const ActiveMultiFrameConditionalDataset{T} = MultiFrameConditionalDataset{<:AbstractActiveFeaturedDataset{<:T}}
-#
-const GenericModalDataset = Union{AbstractDimensionalDataset,AbstractConditionalDataset,MultiFrameConditionalDataset}
-# 
-
-# Dimensional Ontologies
+# Dimensional ontologies
 include("dimensional-ontologies.jl")
 
-############################################################################################
+using SoleLogics: Full0DFrame, Full1DFrame, Full2DFrame
+using SoleLogics: X, Y, Z
+
+# Representatives for dimensional frames
+include("representatives/Full0DFrame.jl")
+include("representatives/Full1DFrame.jl")
+include("representatives/Full1DFrame+IA.jl")
+include("representatives/Full1DFrame+RCC.jl")
+include("representatives/Full2DFrame.jl")
+
+_st_featop_abbr(f::UnivariateMin,     ::typeof(≥); kwargs...) = "$(attribute_name(f; kwargs...)) ⪴"
+_st_featop_abbr(f::UnivariateMax,     ::typeof(≤); kwargs...) = "$(attribute_name(f; kwargs...)) ⪳"
+_st_featop_abbr(f::UnivariateSoftMin, ::typeof(≥); kwargs...) = "$(attribute_name(f; kwargs...)) $("⪴" * utils.subscriptnumber(rstrip(rstrip(string(alpha(f)*100), '0'), '.')))"
+_st_featop_abbr(f::UnivariateSoftMax, ::typeof(≤); kwargs...) = "$(attribute_name(f; kwargs...)) $("⪳" * utils.subscriptnumber(rstrip(rstrip(string(alpha(f)*100), '0'), '.')))"
+
+_st_featop_abbr(f::UnivariateMin,     ::typeof(<); kwargs...) = "$(attribute_name(f; kwargs...)) ⪶"
+_st_featop_abbr(f::UnivariateMax,     ::typeof(>); kwargs...) = "$(attribute_name(f; kwargs...)) ⪵"
+_st_featop_abbr(f::UnivariateSoftMin, ::typeof(<); kwargs...) = "$(attribute_name(f; kwargs...)) $("⪶" * utils.subscriptnumber(rstrip(rstrip(string(alpha(f)*100), '0'), '.')))"
+_st_featop_abbr(f::UnivariateSoftMax, ::typeof(>); kwargs...) = "$(attribute_name(f; kwargs...)) $("⪵" * utils.subscriptnumber(rstrip(rstrip(string(alpha(f)*100), '0'), '.')))"
+
+_st_featop_abbr(f::UnivariateMin,     ::typeof(≤); kwargs...) = "$(attribute_name(f; kwargs...)) ↘"
+_st_featop_abbr(f::UnivariateMax,     ::typeof(≥); kwargs...) = "$(attribute_name(f; kwargs...)) ↗"
+_st_featop_abbr(f::UnivariateSoftMin, ::typeof(≤); kwargs...) = "$(attribute_name(f; kwargs...)) $("↘" * utils.subscriptnumber(rstrip(rstrip(string(alpha(f)*100), '0'), '.')))"
+_st_featop_abbr(f::UnivariateSoftMax, ::typeof(≥); kwargs...) = "$(attribute_name(f; kwargs...)) $("↗" * utils.subscriptnumber(rstrip(rstrip(string(alpha(f)*100), '0'), '.')))"
 
 end

@@ -85,7 +85,6 @@ struct BoundedExplicitConditionalAlphabet{C<:FeatCondition} <: AbstractCondition
                 " number of `metaconditions` and `thresholds`" *
                 " ($(metaconditions) != $(thresholds)).")
         grouped_featconditions = collect(zip(metaconditions, thresholds))
-        # M = SoleBase._typejoin(typeof.(metaconditions)...)
         BoundedExplicitConditionalAlphabet{C}(grouped_featconditions)
     end
 

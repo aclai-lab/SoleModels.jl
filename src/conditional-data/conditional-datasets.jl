@@ -1,5 +1,5 @@
 using SoleLogics: AbstractKripkeStructure, AbstractInterpretationSet, AbstractFrame
-import SoleLogics: frame, check
+import SoleLogics: alphabet, frame, check
 import SoleLogics: accessibles, allworlds, nworlds, initialworld
 import SoleLogics: worldtype, frametype
 export check, accessibles, allworlds, representatives
@@ -55,6 +55,11 @@ function check(
 )::T where {W<:AbstractWorld,A<:AbstractCondition,T<:TruthValue}
     error("Please, provide method check(f::$(typeof(f)), X::$(typeof(X)), i_sample::$(typeof(i_sample)), w::$(typeof(w))).")
 end
+
+function display_structure(X::AbstractConditionalDataset; kwargs...)
+    error("Please, provide method display_structure(X::$(typeof(X)); kwargs...).")
+end
+
 
 """
     abstract type AbstractActiveConditionalDataset{
