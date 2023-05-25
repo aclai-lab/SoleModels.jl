@@ -80,7 +80,7 @@ parsing of the attribute name; please, refer to `attribute_name` for their behav
 julia> syntaxstring(SoleModels.parsecondition("min[V1] <= 32"))
 "min[V1] <= 32.0"
 
-julia> syntaxstring(parseformulatree("min[V1] <= 15 ∧ max[V1] >= 85"; proposition_parser=(x)->parsecondition(x; featvaltype = Int64,)))
+julia> syntaxstring(parseformulatree("min[V1] <= 15 ∧ max[V1] >= 85"; proposition_parser=(x)->parsecondition(x; featvaltype = Int64)))
 "min[V1] <= 15 ∧ max[V1] >= 85"
 ```
 
