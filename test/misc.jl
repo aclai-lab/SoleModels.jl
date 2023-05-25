@@ -8,7 +8,7 @@ using SoleModels
 using SoleModels: AbstractModel
 using SoleModels: ConstantModel, FinalModel
 using SoleModels: LogicalTruthCondition, TrueCondition
-using SoleModels: unrollrules, formula, displaymodel, submodels
+using SoleModels: listrules, formula, displaymodel, submodels
 
 io = IOBuffer()
 
@@ -507,40 +507,40 @@ YES
 """
 
 ############################################################################################
-############################ Testing unrollrules ##########################################
+############################ Testing listrules ##########################################
 ############################################################################################
 
-@test_nowarn unrollrules(outcome_int)
-@test_nowarn unrollrules(outcome_float)
-@test_nowarn unrollrules(outcome_string)
-@test_nowarn unrollrules(outcome_string2)
-@test_nowarn unrollrules(cmodel_string)
+@test_nowarn listrules(outcome_int)
+@test_nowarn listrules(outcome_float)
+@test_nowarn listrules(outcome_string)
+@test_nowarn listrules(outcome_string2)
+@test_nowarn listrules(cmodel_string)
 
-@test unrollrules(outcome_int) isa Vector{<:ConstantModel}
-@test unrollrules(outcome_float) isa Vector{<:ConstantModel}
-@test unrollrules(outcome_string) isa Vector{<:ConstantModel}
-@test unrollrules(outcome_string2) isa Vector{<:ConstantModel}
-@test unrollrules(cmodel_string) isa Vector{<:ConstantModel}
+@test listrules(outcome_int) isa Vector{<:ConstantModel}
+@test listrules(outcome_float) isa Vector{<:ConstantModel}
+@test listrules(outcome_string) isa Vector{<:ConstantModel}
+@test listrules(outcome_string2) isa Vector{<:ConstantModel}
+@test listrules(cmodel_string) isa Vector{<:ConstantModel}
 
 
-@test_nowarn unrollrules(rule_r)
-@test_nowarn ruleset = unrollrules(branch_r)
-@test_broken unrollrules(dlmodel)
+@test_nowarn listrules(rule_r)
+@test_nowarn ruleset = listrules(branch_r)
+@test_broken listrules(dlmodel)
 
-@test unrollrules(r1_string) isa Vector{<:Rule}
-@test join(displaymodel.(unrollrules(r1_string); header = false)) == """
+@test listrules(r1_string) isa Vector{<:Rule}
+@test join(displaymodel.(listrules(r1_string); header = false)) == """
 ┐(r ∧ s) ∧ t
 └ ✔ YES
 """
 
-@test unrollrules(r2_string) isa Vector{<:Rule}
-@test join(displaymodel.(unrollrules(r2_string); header = false)) == """
+@test listrules(r2_string) isa Vector{<:Rule}
+@test join(displaymodel.(listrules(r2_string); header = false)) == """
 ┐¬(r)
 └ ✔ YES
 """
 
-@test unrollrules(d1_string) isa Vector{<:Rule}
-@test join(displaymodel.(unrollrules(d1_string); header = false)) == """
+@test listrules(d1_string) isa Vector{<:Rule}
+@test join(displaymodel.(listrules(d1_string); header = false)) == """
 ┐(r ∧ s) ∧ t
 └ ✔ YES
 ┐(¬((r ∧ s) ∧ t)) ∧ (¬(r))
@@ -549,24 +549,24 @@ YES
 └ ✔ YES
 """
 
-@test unrollrules(b_nsx) isa Vector{<:Rule}
-@test join(displaymodel.(unrollrules(b_nsx); header = false)) == """
+@test listrules(b_nsx) isa Vector{<:Rule}
+@test join(displaymodel.(listrules(b_nsx); header = false)) == """
 ┐q
 └ ✔ YES
 ┐¬(q)
 └ ✔ NO
 """
 
-@test unrollrules(b_fsx) isa Vector{<:Rule}
-@test join(displaymodel.(unrollrules(b_fsx); header = false)) == """
+@test listrules(b_fsx) isa Vector{<:Rule}
+@test join(displaymodel.(listrules(b_fsx); header = false)) == """
 ┐s
 └ ✔ YES
 ┐¬(s)
 └ ✔ NO
 """
 
-@test unrollrules(b_fdx) isa Vector{<:Rule}
-@test join(displaymodel.(unrollrules(b_fdx); header = false)) == """
+@test listrules(b_fdx) isa Vector{<:Rule}
+@test join(displaymodel.(listrules(b_fdx); header = false)) == """
 ┐(t) ∧ (q)
 └ ✔ YES
 ┐(t) ∧ (¬(q))
@@ -575,8 +575,8 @@ YES
 └ ✔ YES
 """
 
-@test unrollrules(b_p) isa Vector{<:Rule}
-@test join(displaymodel.(unrollrules(b_p); header = false)) == """
+@test listrules(b_p) isa Vector{<:Rule}
+@test join(displaymodel.(listrules(b_p); header = false)) == """
 ┐(r) ∧ (s)
 └ ✔ YES
 ┐(r) ∧ (¬(s))
@@ -589,8 +589,8 @@ YES
 └ ✔ YES
 """
 
-@test unrollrules(dt1) isa Vector{<:Rule}
-@test join(displaymodel.(unrollrules(dt1); header = false)) == """
+@test listrules(dt1) isa Vector{<:Rule}
+@test join(displaymodel.(listrules(dt1); header = false)) == """
 ┐(r) ∧ (s)
 └ ✔ YES
 ┐(r) ∧ (¬(s))
@@ -603,8 +603,8 @@ YES
 └ ✔ YES
 """
 
-@test unrollrules(dt2) isa Vector{<:Rule}
-@test join(displaymodel.(unrollrules(dt2); header = false)) == """
+@test listrules(dt2) isa Vector{<:Rule}
+@test join(displaymodel.(listrules(dt2); header = false)) == """
 ┐(t) ∧ (q)
 └ ✔ YES
 ┐(t) ∧ (¬(q))
@@ -613,8 +613,8 @@ YES
 └ ✔ YES
 """
 
-@test unrollrules(msm) isa Vector{<:Rule}
-@test join(displaymodel.(unrollrules(msm); header = false)) == """
+@test listrules(msm) isa Vector{<:Rule}
+@test join(displaymodel.(listrules(msm); header = false)) == """
 ┐q
 └ ✔ 2
 ┐¬(q)

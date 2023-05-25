@@ -13,7 +13,7 @@
 #  the fly and store it for later calls).
 # 
 # We define an abstract type for explicit modal dataset with support lookup tables
-# remove: abstract type ExplicitModalDatasetWithSupport{V,W,FR} <: ActiveFeaturedDataset{V,W,FR,FT} end
+# remove: abstract type ExplicitModalDatasetWithSupport{V,W,FR} <: AbstractActiveFeaturedDataset{V,W,FR,FT} end
 # And an abstract type for support lookup tables
 abstract type AbstractSupport{V,W} end
 
@@ -68,7 +68,7 @@ struct SupportedFeaturedDataset{
     FR<:AbstractFrame{W,Bool},
     FT<:AbstractFeature{V},
     S<:FeaturedSupportingDataset{V,W,FR},
-} <: ActiveFeaturedDataset{V,W,FR,FT}
+} <: AbstractActiveFeaturedDataset{V,W,FR,FT}
 
     # Core dataset
     fd                 :: FeaturedDataset{V,W,FR,FT}

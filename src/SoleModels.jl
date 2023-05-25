@@ -10,6 +10,7 @@ using SoleLogics: ⊤, ¬, ∧
 
 using FunctionWrappers: FunctionWrapper
 using StatsBase
+using ThreadSafeDicts
 
 include("utils.jl")
 
@@ -34,28 +35,72 @@ export printmodel, displaymodel
 
 include("models/print.jl")
 
-# TODO export?
-export immediatesubmodels, unrollrules, immediaterules
+export immediatesubmodels, listimmediaterules
+export listrules
 
 include("models/symbolic-utils.jl")
 
+export Label, bestguess
+
 include("machine-learning.jl")
+
+export rulemetrics
 
 include("models/rule-evaluation.jl")
 
 # TODO avoid?
 export AbstractFeature,
-        DimensionalFeature, SingleAttributeFeature,
-        SingleAttributeNamedFeature,
-        SingleAttributeMin, SingleAttributeMax,
-        SingleAttributeSoftMin, SingleAttributeSoftMax,
-        SingleAttributeGenericFeature, MultiAttributeFeature,
+        DimensionalFeature, AbstractUnivariateFeature,
+        UnivariateNamedFeature,
+        UnivariateFeature,
         NamedFeature, ExternalFWDFeature
 
 export propositions
 
-export compute_feature
+export computefeature
 
 include("conditional-data/main.jl")
+
+export nsamples, nframes, frames, nfeatures
+
+export get_ontology,
+       get_interval_ontology
+
+export DimensionalFeaturedDataset, FeaturedDataset, SupportedFeaturedDataset
+
+export parsecondition
+
+export UnivariateMin, UnivariateMax,
+        UnivariateSoftMin, UnivariateSoftMax,
+        MultivariateFeature
+
+include("dimensional-datasets/main.jl")
+
+using .DimensionalDatasets: parsecondition
+
+using .DimensionalDatasets: nfeatures, nrelations,
+                            #
+                            relations,
+                            #
+                            GenericModalDataset,
+                            AbstractActiveFeaturedDataset,
+                            DimensionalFeaturedDataset,
+                            FeaturedDataset,
+                            SupportedFeaturedDataset
+
+using .DimensionalDatasets: AbstractWorld, AbstractRelation
+using .DimensionalDatasets: AbstractWorldSet, WorldSet
+using .DimensionalDatasets: FullDimensionalFrame
+
+using .DimensionalDatasets: Ontology, worldtype
+
+using .DimensionalDatasets: get_ontology,
+                            get_interval_ontology
+
+using .DimensionalDatasets: OneWorld, OneWorldOntology
+
+using .DimensionalDatasets: Interval, Interval2D
+
+using .DimensionalDatasets: IARelations
 
 end

@@ -15,18 +15,6 @@ using SoleLogics: TruthValue
 #  enumerate decisions for, as it doesn't have objects for storing the logic (relations, features, etc.).
 # Dimensional datasets are passive.
 
-# function get_interval_worldtype(N::Integer)
-#     if N == 0
-#         OneWorld
-#     elseif N == 0
-#         Interval
-#     elseif N == 0
-#         Interval2D
-#     else
-#         error("TODO")
-#     end
-# end
-
 struct PassiveDimensionalDataset{
     N,
     W<:AbstractWorld,
@@ -48,7 +36,7 @@ struct PassiveDimensionalDataset{
     function PassiveDimensionalDataset{N,W,DOM}(
         d::DOM,
     ) where {N,W<:AbstractWorld,DOM<:AbstractDimensionalDataset}
-        FR = _frametype(d)
+        FR = typeof(_frame(d))
         _W = worldtype(FR)
         @assert W <: _W "This should hold: $(W) <: $(_W)"
         PassiveDimensionalDataset{N,_W,DOM,FR}(d)
@@ -64,7 +52,7 @@ struct PassiveDimensionalDataset{
         d::AbstractDimensionalDataset,
         # worldtype::Type{<:AbstractWorld},
     )
-        W = worldtype(_frametype(d))
+        W = worldtype(_frame(d))
         PassiveDimensionalDataset{dimensionality(d),W}(d)
     end
 end
@@ -77,7 +65,7 @@ end
     args...,
 ) where {N,W<:AbstractWorld,U}
     w_values = interpret_world(w, get_instance(X.d, i_sample))
-    compute_feature(f, w_values)::U
+    computefeature(f, w_values)::U
 end
 
 Base.size(X::PassiveDimensionalDataset)                 = Base.size(X.d)
@@ -102,5 +90,5 @@ frame(X::PassiveDimensionalDataset, i_sample) = _frame(X.d, i_sample)
 
 ############################################################################################
 
-_frametype(X::Union{UniformDimensionalDataset,AbstractArray}) = typeof(FullDimensionalFrame(channel_size(X))) # TODO dirty but works
-_frame(X::Union{UniformDimensionalDataset,AbstractArray}, i_sample) = FullDimensionalFrame(channel_size(X)) # TODO dirty but works
+_frame(X::Union{UniformDimensionalDataset,AbstractArray}, i_sample) = _frame(X)
+_frame(X::Union{UniformDimensionalDataset,AbstractArray}) = FullDimensionalFrame(channel_size(X))

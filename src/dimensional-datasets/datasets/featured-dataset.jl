@@ -12,7 +12,7 @@
 #  question whether a proposition (e.g., minimum(A1) ≥ 10) holds onto a given world and instance;
 #  however, an fwd table can be implemented in many ways, mainly depending on the world type.
 # 
-# Note that this structure does not constitute a ActiveFeaturedDataset (see FeaturedDataset a few lines below)
+# Note that this structure does not constitute a AbstractActiveFeaturedDataset (see FeaturedDataset a few lines below)
 # 
 ############################################################################################
 
@@ -111,9 +111,9 @@ struct FeaturedDataset{
     FR<:AbstractFrame{W,Bool},
     FT<:AbstractFeature{V},
     FWD<:AbstractFWD{V,W,FR},
-    G1<:AbstractVector{<:AbstractDict{<:Aggregator,<:AbstractVector{<:TestOperatorFun}}},
+    G1<:AbstractVector{<:AbstractDict{<:Aggregator,<:AbstractVector{<:TestOperator}}},
     G2<:AbstractVector{<:AbstractVector{Tuple{<:Integer,<:Aggregator}}},
-} <: ActiveFeaturedDataset{V,W,FR,FT}
+} <: AbstractActiveFeaturedDataset{V,W,FR,FT}
     
     # Core data (fwd lookup table)
     fwd                     :: FWD
@@ -137,7 +137,7 @@ struct FeaturedDataset{
         fwd                     :: FWD,
         relations               :: AbstractVector{<:AbstractRelation},
         features                :: AbstractVector{FT},
-        grouped_featsaggrsnops  :: AbstractVector{<:AbstractDict{<:Aggregator,<:AbstractVector{<:TestOperatorFun}}};
+        grouped_featsaggrsnops  :: AbstractVector{<:AbstractDict{<:Aggregator,<:AbstractVector{<:TestOperator}}};
         allow_no_instances = false,
         initialworld = nothing,
     ) where {V,W<:AbstractWorld,FR<:AbstractFrame{W,Bool},FWD<:AbstractFWD{V,W,FR},FT<:AbstractFeature{V}}
@@ -191,7 +191,7 @@ struct FeaturedDataset{
         fwd                    :: AbstractFWD{V,W},
         relations              :: AbstractVector{<:AbstractRelation},
         features               :: AbstractVector{<:AbstractFeature},
-        grouped_featsaggrsnops_or_featsnops, # AbstractVector{<:AbstractDict{<:Aggregator,<:AbstractVector{<:TestOperatorFun}}}
+        grouped_featsaggrsnops_or_featsnops, # AbstractVector{<:AbstractDict{<:Aggregator,<:AbstractVector{<:TestOperator}}}
         args...;
         kwargs...,
     ) where {V,W}
@@ -202,7 +202,7 @@ struct FeaturedDataset{
         fwd                    :: AbstractFWD{V,W},
         relations              :: AbstractVector{<:AbstractRelation},
         features               :: AbstractVector{<:AbstractFeature},
-        grouped_featsnops      :: AbstractVector{<:AbstractVector{<:TestOperatorFun}},
+        grouped_featsnops      :: AbstractVector{<:AbstractVector{<:TestOperator}},
         args...;
         kwargs...,
     ) where {V,W<:AbstractWorld}

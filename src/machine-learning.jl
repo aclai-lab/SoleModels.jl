@@ -5,7 +5,7 @@ doc_supervised_ml = """
     const RLabel  = AbstractFloat
     const Label   = Union{CLabel,RLabel}
 
-Types for supervised machine learning labels: classification and regression.
+Types for supervised machine learning labels (classification and regression).
 """
 
 """$(doc_supervised_ml)"""
@@ -20,11 +20,8 @@ const _CLabel = Integer # (classification labels are internally represented as i
 const _Label  = Union{_CLabel,RLabel}
 
 const AssociationRule{F} = Rule{F} where {F<:AbstractFormula}
-const ClassificationRule = Rule{CLabel}
-const RegressionRule = Rule{RLabel}
-
-# const ClassificationRule{C} = Rule{C} where {C<:CLabel}
-# const RegressionRule{C} = Rule{C} where {C<:CLabel}
+const ClassificationRule{L} = Rule{L} where {L<:CLabel}
+const RegressionRule{L} = Rule{L} where {L<:RLabel}
 
 ############################################################################################
 
@@ -48,14 +45,14 @@ end
 ############################################################################################
 
 """
-    best_guess(
+    bestguess(
         labels::AbstractVector{<:Label},
         weights::Union{Nothing,AbstractVector} = nothing;
         suppress_parity_warning = false,
     )
 
-Computes the best guess for a set of labels; that is, the label that best approximates the
-labels provided. For classification labels, this returns the majority class; for
+Return the best guess for a set of labels; that is, the label that best approximates the
+labels provided. For classification labels, this function returns the majority class; for
 regression labels, the average value.
 If no labels are provided, `nothing` is returned.
 The computation can be weighted.
@@ -65,7 +62,14 @@ See also
 [`RLabel`](@ref),
 [`Label`](@ref).
 """
-function best_guess(
+function bestguess(
+    labels::AbstractVector{<:Label},
+    weights::Union{Nothing,AbstractVector} = nothing;
+    suppress_parity_warning = false,
+) end
+
+# Classification: (weighted) majority vote
+function bestguess(
     labels::AbstractVector{<:CLabel},
     weights::Union{Nothing,AbstractVector} = nothing;
     suppress_parity_warning = false,
@@ -86,7 +90,7 @@ function best_guess(
     end
 
     if !suppress_parity_warning && sum(counts[argmax(counts)] .== values(counts)) > 1
-        println("Warning: parity encountered in best_guess.")
+        println("Warning: parity encountered in bestguess.")
         println("Counts ($(length(labels)) elements): $(counts)")
         println("Argmax: $(argmax(counts))")
         println("Max: $(counts[argmax(counts)]) (sum = $(sum(values(counts))))")
@@ -94,7 +98,8 @@ function best_guess(
     argmax(counts)
 end
 
-function best_guess(
+# Regression: (weighted) mean (or other central tendency measure?)
+function bestguess(
     labels::AbstractVector{<:RLabel},
     weights::Union{Nothing,AbstractVector} = nothing;
     suppress_parity_warning = false,
@@ -109,12 +114,22 @@ end
 ############################################################################################
 
 # Default weights are optimized using FillArrays
+"""
+    default_weights(n::Integer)::AbstractVector{<:Number}
+
+Return a default weight vector of `n` values.
+"""
 function default_weights(n::Integer)
     Ones{Int64}(n)
 end
 default_weights(Y::AbstractVector) = default_weights(length(Y))
 
-# Returns class rebalancing weights (classification case)
+# Class rebalancing weights (classification case)
+"""
+    default_weights(Y::AbstractVector{L}) where {L<:CLabel}::AbstractVector{<:Number}
+
+Return a class-rebalancing weight vector, given a label vector `Y`.
+"""
 function balanced_weights(Y::AbstractVector{L}) where {L<:CLabel}
     class_counts_dict = countmap(Y)
     if length(unique(values(class_counts)_dict)) == 1 # balanced case

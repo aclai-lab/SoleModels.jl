@@ -50,7 +50,7 @@ printmodel(m::AbstractModel; kwargs...) = printmodel(stdout, m; kwargs...)
 """$(doc_printdisplay_model)"""
 function displaymodel(
     m::AbstractModel;
-    header = true,
+    header = :brief,
     indentation_str = "",
     indentation = default_indentation,
     depth = 0,
@@ -93,35 +93,47 @@ end
 
 function displaymodel(
     m::ConstantModel;
-    header = true,
+    header = :brief,
     indentation_str = "",
     show_subtree_info = false,
     kwargs...,
 )
     io = IOBuffer()
-    !header || println(io, "$(indentation_str)$(typeof(m))$((length(info(m)) == 0) ?
+    if header != false
+        _typestr = string(header == true ? typeof(m) :
+            header == :brief ? nameof(typeof(m)) :
+                error("Unexpected value for parameter header: $(header).")
+        )
+        println(io, "$(indentation_str)$(_typestr)$((length(info(m)) == 0) ?
         "" : "\n$(indentation_str)Info: $(info(m))")")
+    end
     println(io, "$(outcome(m))")
     String(take!(io))
 end
 
 function displaymodel(
     m::FunctionModel;
-    header = true,
+    header = :brief,
     indentation_str = "",
     show_subtree_info = false,
     kwargs...,
 )
     io = IOBuffer()
-    !header || println(io, "$(indentation_str)$(typeof(m))$((length(info(m)) == 0) ?
+    if header != false
+        _typestr = string(header == true ? typeof(m) :
+            header == :brief ? nameof(typeof(m)) :
+                error("Unexpected value for parameter header: $(header).")
+        )
+        println(io, "$(indentation_str)$(_typestr)$((length(info(m)) == 0) ?
         "" : "\n$(indentation_str)Info: $(info(m))")")
+    end
     println(io, "$(f(m))")
     String(take!(io))
 end
 
 function displaymodel(
     m::Rule;
-    header = true,
+    header = :brief,
     indentation_str = "",
     indentation = default_indentation,
     depth = 0,
@@ -138,8 +150,14 @@ function displaymodel(
         indentation_last_first,
         indentation_last_space
     ) = indentation
-    !header || println(io, "$(indentation_str)$(typeof(m))$((length(info(m)) == 0) ?
+    if header != false
+        _typestr = string(header == true ? typeof(m) :
+            header == :brief ? nameof(typeof(m)) :
+                error("Unexpected value for parameter header: $(header).")
+        )
+        println(io, "$(indentation_str)$(_typestr)$((length(info(m)) == 0) ?
         "" : "\n$(indentation_str)Info: $(info(m))")")
+    end
     ########################################################################################
     if isnothing(max_depth) || depth < max_depth
         pipe = "$(indentation_list_children)"
@@ -159,7 +177,7 @@ end
 
 function displaymodel(
     m::Branch;
-    header = true,
+    header = :brief,
     indentation_str = "",
     indentation = default_indentation,
     depth = 0,
@@ -176,8 +194,14 @@ function displaymodel(
         indentation_last_first,
         indentation_last_space
     ) = indentation
-    !header || println(io, "$(indentation_str)$(typeof(m))$((length(info(m)) == 0) ?
+    if header != false
+        _typestr = string(header == true ? typeof(m) :
+            header == :brief ? nameof(typeof(m)) :
+                error("Unexpected value for parameter header: $(header).")
+        )
+        println(io, "$(indentation_str)$(_typestr)$((length(info(m)) == 0) ?
         "" : "\n$(indentation_str)Info: $(info(m))")")
+    end
     ########################################################################################
     if isnothing(max_depth) || depth < max_depth
         pipe = "$(indentation_list_children) "
@@ -199,7 +223,7 @@ end
 
 function displaymodel(
     m::DecisionList;
-    header = true,
+    header = :brief,
     indentation_str = "",
     indentation = default_indentation,
     depth = 0,
@@ -216,8 +240,14 @@ function displaymodel(
         indentation_last_first,
         indentation_last_space
     ) = indentation
-    !header || println(io, "$(indentation_str)$(typeof(m))$((length(info(m)) == 0) ?
+    if header != false
+        _typestr = string(header == true ? typeof(m) :
+            header == :brief ? nameof(typeof(m)) :
+                error("Unexpected value for parameter header: $(header).")
+        )
+        println(io, "$(indentation_str)$(_typestr)$((length(info(m)) == 0) ?
         "" : "\n$(indentation_str)Info: $(info(m))")")
+    end
     ########################################################################################
     if isnothing(max_depth) || depth < max_depth
         println(io, "$(indentation_list_children)")
@@ -246,7 +276,7 @@ end
 
 function displaymodel(
     m::DecisionTree;
-    header = true,
+    header = :brief,
     indentation_str = "",
     indentation = default_indentation,
     depth = 0,
@@ -263,8 +293,14 @@ function displaymodel(
         indentation_last_first,
         indentation_last_space
     ) = indentation
-    !header || println(io, "$(indentation_str)$(typeof(m))$((length(info(m)) == 0) ?
+    if header != false
+        _typestr = string(header == true ? typeof(m) :
+            header == :brief ? nameof(typeof(m)) :
+                error("Unexpected value for parameter header: $(header).")
+        )
+        println(io, "$(indentation_str)$(_typestr)$((length(info(m)) == 0) ?
         "" : "\n$(indentation_str)Info: $(info(m))")")
+    end
     ########################################################################################
     subm_str = @_display_submodel root(m) indentation_str indentation depth max_depth show_subtree_info syntaxstring_kwargs kwargs
     print(io, subm_str)
@@ -273,7 +309,7 @@ end
 
 function displaymodel(
     m::DecisionForest;
-    header = true,
+    header = :brief,
     indentation_str = "",
     indentation = default_indentation,
     depth = 0,
@@ -290,8 +326,14 @@ function displaymodel(
         indentation_last_first,
         indentation_last_space
     ) = indentation
-    !header || println(io, "$(indentation_str)$(typeof(m))$((length(info(m)) == 0) ?
+    if header != false
+        _typestr = string(header == true ? typeof(m) :
+            header == :brief ? nameof(typeof(m)) :
+                error("Unexpected value for parameter header: $(header).")
+        )
+        println(io, "$(indentation_str)$(_typestr)$((length(info(m)) == 0) ?
         "" : "\n$(indentation_str)Info: $(info(m))")")
+    end
     ########################################################################################
     for tree in trees(m)
         subm_str = @_display_submodel tree indentation_str indentation depth max_depth show_subtree_info syntaxstring_kwargs kwargs
@@ -302,7 +344,7 @@ end
 
 function displaymodel(
     m::MixedSymbolicModel;
-    header = true,
+    header = :brief,
     indentation_str = "",
     indentation = default_indentation,
     depth = 0,
@@ -319,8 +361,14 @@ function displaymodel(
         indentation_last_first,
         indentation_last_space
     ) = indentation
-    !header || println(io, "$(indentation_str)$(typeof(m))$((length(info(m)) == 0) ?
+    if header != false
+        _typestr = string(header == true ? typeof(m) :
+            header == :brief ? nameof(typeof(m)) :
+                error("Unexpected value for parameter header: $(header).")
+        )
+        println(io, "$(indentation_str)$(_typestr)$((length(info(m)) == 0) ?
         "" : "\n$(indentation_str)Info: $(info(m))")")
+    end
     ########################################################################################
     subm_str = @_display_submodel root(m) indentation_str indentation depth max_depth show_subtree_info syntaxstring_kwargs kwargs
     print(io, subm_str)

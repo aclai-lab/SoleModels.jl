@@ -1,4 +1,6 @@
-using SoleLogics: AbstractRelation
+using SoleLogics: AbstractRelation, AbstractWorld, FullDimensionalFrame
+using SoleLogics: OneWorld, Interval, Interval2D
+using SoleLogics: FullDimensionalFrame
 
 world2frametype = Dict([
     OneWorld => FullDimensionalFrame{0,OneWorld,Bool},

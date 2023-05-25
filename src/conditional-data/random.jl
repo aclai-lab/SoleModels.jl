@@ -6,10 +6,10 @@ import Base: rand
         a::BoundedExplicitConditionalAlphabet;
         metaconditions::Union{Nothing,FeatMetaCondition,AbstractVector{<:FeatMetaCondition}} = nothing,
         feature::Union{Nothing,AbstractFeature,AbstractVector{<:AbstractFeature}} = nothing,
-        test_operator::Union{Nothing,TestOperatorFun,AbstractVector{<:TestOperatorFun}} = nothing,
+        test_operator::Union{Nothing,TestOperator,AbstractVector{<:TestOperator}} = nothing,
     )::Proposition
 
-Randomly samples a `Proposition` (holding a `FeatCondition`) from conditional alphabet `a`,
+Randomly sample a `Proposition` holding a `FeatCondition` from conditional alphabet `a`,
 such that:
 - if `metaconditions` are specified, then the set of metaconditions (feature-operator pairs)
 is limited to `metaconditions`;
@@ -17,6 +17,8 @@ is limited to `metaconditions`;
 is limited to those with `feature`;
 - if `test_operator` is specified, then the set of metaconditions (feature-operator pairs)
 is limited to those with `test_operator`.
+
+TODO Examples
 
 See also
 [`BoundedExplicitConditionalAlphabet`](@ref),
@@ -29,13 +31,13 @@ function Base.rand(
     a::BoundedExplicitConditionalAlphabet;
     metaconditions::Union{Nothing,FeatMetaCondition,AbstractVector{<:FeatMetaCondition}} = nothing,
     features::Union{Nothing,AbstractFeature,AbstractVector{<:AbstractFeature}} = nothing,
-    test_operators::Union{Nothing,TestOperatorFun,AbstractVector{<:TestOperatorFun}} = nothing,
+    test_operators::Union{Nothing,TestOperator,AbstractVector{<:TestOperator}} = nothing,
 )::Proposition
 
     # Transform values to singletons
     metaconditions = metaconditions isa FeatMetaCondition ? [metaconditions] : metaconditions
     features = features isa AbstractFeature ? [features] : features
-    test_operators = test_operators isa TestOperatorFun ? [test_operators] : test_operators
+    test_operators = test_operators isa TestOperator ? [test_operators] : test_operators
 
     @assert !(!isnothing(metaconditions) &&
         (!isnothing(features) || !isnothing(test_operators))) "" *
