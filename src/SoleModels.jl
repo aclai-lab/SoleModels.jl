@@ -48,59 +48,68 @@ export rulemetrics
 
 include("models/rule-evaluation.jl")
 
-# TODO avoid?
+export minify, isminifiable
+
+# Minification interface for lossless data compression
+include("utils/minify.jl")
+
 export AbstractFeature,
-        DimensionalFeature, AbstractUnivariateFeature,
-        UnivariateNamedFeature,
-        UnivariateFeature,
         NamedFeature, ExternalFWDFeature
 
 export propositions
 
 export computefeature
 
-include("conditional-data/main.jl")
+# Definitions for logical datasets (i.e., logisets)
+include("datasets/base/main.jl")
 
-export nsamples, nframes, frames, nfeatures
+# include("datasets/scalar-datasets/main.jl")
 
-export get_ontology,
-       get_interval_ontology
+# export nsamples, nframes, frames, nfeatures
 
-export DimensionalFeaturedDataset, FeaturedDataset, SupportedFeaturedDataset
+# export get_ontology,
+#        get_interval_ontology
 
-export parsecondition
+# export DimensionalLogiset, Logiset, SupportedScalarLogiset
 
-export UnivariateMin, UnivariateMax,
-        UnivariateSoftMin, UnivariateSoftMax,
-        MultivariateFeature
+# export parsecondition
 
-include("dimensional-datasets/main.jl")
+# export UnivariateMin, UnivariateMax,
+#         UnivariateSoftMin, UnivariateSoftMax,
+#         MultivariateFeature
 
-using .DimensionalDatasets: parsecondition
+# export DimensionalFeature, AbstractUnivariateFeature,
+#         UnivariateNamedFeature,
+#         UnivariateFeature
 
-using .DimensionalDatasets: nfeatures, nrelations,
-                            #
-                            relations,
-                            #
-                            GenericModalDataset,
-                            AbstractActiveFeaturedDataset,
-                            DimensionalFeaturedDataset,
-                            FeaturedDataset,
-                            SupportedFeaturedDataset
+# include("datasets/dimensional-datasets/main.jl")
 
-using .DimensionalDatasets: AbstractWorld, AbstractRelation
-using .DimensionalDatasets: AbstractWorldSet, WorldSet
-using .DimensionalDatasets: FullDimensionalFrame
+# using .DimensionalDatasets: parsecondition
 
-using .DimensionalDatasets: Ontology, worldtype
+# using .DimensionalDatasets: nfeatures, nrelations,
+#                             #
+#                             relations,
+#                             #
+#                             GenericModalDataset,
+#                             AbstractLogiset,
+#                             AbstractActiveScalarLogiset,
+#                             DimensionalLogiset,
+#                             Logiset,
+#                             SupportedScalarLogiset
 
-using .DimensionalDatasets: get_ontology,
-                            get_interval_ontology
+# using .DimensionalDatasets: AbstractWorld, AbstractRelation
+# using .DimensionalDatasets: AbstractWorldSet, WorldSet
+# using .DimensionalDatasets: FullDimensionalFrame
 
-using .DimensionalDatasets: OneWorld, OneWorldOntology
+# using .DimensionalDatasets: Ontology, worldtype
 
-using .DimensionalDatasets: Interval, Interval2D
+# using .DimensionalDatasets: get_ontology,
+#                             get_interval_ontology
 
-using .DimensionalDatasets: IARelations
+# using .DimensionalDatasets: OneWorld, OneWorldOntology
+
+# using .DimensionalDatasets: Interval, Interval2D
+
+# using .DimensionalDatasets: IARelations
 
 end
