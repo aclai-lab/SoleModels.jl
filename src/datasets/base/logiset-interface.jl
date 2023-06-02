@@ -36,21 +36,21 @@ abstract type AbstractLogiset{
 
 function evaluatecondition(
     X::AbstractLogiset{W,V,F,T},
-    i_sample,
+    i_instance,
     w::W,
     c::AbstractCondition,
 )::T where {W<:AbstractWorld,V,F<:AbstractFeature{V},T<:TruthValue}
-    error("Please, provide method evaluatecondition(X::$(typeof(X)), i_sample::$(typeof(i_sample)), w::$(typeof(w)), c::$(typeof(c))).")
+    error("Please, provide method evaluatecondition(X::$(typeof(X)), i_instance::$(typeof(i_instance)), w::$(typeof(w)), c::$(typeof(c))).")
 end
 
 function check(
     f::AbstractFormula,
     X::AbstractLogiset{W,V,F,T},
-    i_sample,
+    i_instance,
     w::W,
 )::T where {W<:AbstractWorld,V,F<:AbstractFeature{V},T<:TruthValue}
     # TODO implement once for all.
-    error("Please, provide method check(f::$(typeof(f)), X::$(typeof(X)), i_sample::$(typeof(i_sample)), w::$(typeof(w))).")
+    error("Please, provide method check(f::$(typeof(f)), X::$(typeof(X)), i_instance::$(typeof(i_instance)), w::$(typeof(w))).")
 end
 
 function displaystructure(X::AbstractLogiset; kwargs...)::String
@@ -60,11 +60,11 @@ end
 function check(
     p::Proposition{A},
     X::AbstractLogiset{W,V,F,T},
-    i_sample,
+    i_instance,
     w::W,
 )::T where {W<:AbstractWorld,V,F<:AbstractFeature{V},T<:TruthValue,A<:AbstractCondition}
     cond = atom(p)
-    evaluatecondition(X, i_sample, w, cond)
+    evaluatecondition(X, i_instance, w, cond)
 end
 
 function Base.show(io::IO, X::AbstractLogiset; kwargs...)
@@ -85,23 +85,23 @@ end
 
 function featvalue(
     X::AbstractLogiset{W},
-    i_sample,
+    i_instance,
     w::W,
     f::AbstractFeature,
 ) where {W<:AbstractWorld}
-    error("Please, provide method featvalue(::$(typeof(X)), i_sample::$(typeof(i_sample)), w::$(typeof(w)), f::$(typeof(f))).")
+    error("Please, provide method featvalue(::$(typeof(X)), i_instance::$(typeof(i_instance)), w::$(typeof(w)), f::$(typeof(f))).")
 end
 
 isminifiable(::AbstractLogiset) = false
 
 function initialworld(
     X::AbstractLogiset{W,V,F,T},
-    i_sample
+    i_instance
 ) where {W<:AbstractWorld,V,F<:AbstractFeature{V},T<:TruthValue}
-    error("Please, provide method initialworld(::$(typeof(X)), i_sample::$(typeof(i_sample))).")
+    error("Please, provide method initialworld(::$(typeof(X)), i_instance::$(typeof(i_instance))).")
 end
 
-representatives(X::AbstractLogiset, i_sample, args...) = representatives(frame(X, i_sample), args...)
+representatives(X::AbstractLogiset, i_instance, args...) = representatives(frame(X, i_instance), args...)
 
 ############################################################################################
 # Helpers

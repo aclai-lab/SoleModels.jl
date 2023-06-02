@@ -33,3 +33,10 @@ end
 
 Base.isequal(a::AbstractCondition, b::AbstractCondition) = syntaxstring(a) == syntaxstring(b) # nameof(x) == nameof(feature)
 Base.hash(a::AbstractCondition) = Base.hash(syntaxstring(a))
+
+function parsecondition(
+    expression::String;
+    kwargs...
+)
+    error("Please, provide method parsecondition(expression::$(typeof(expression)); kwargs...).")
+end

@@ -3,11 +3,11 @@
 @inline function check(
     p::Proposition{<:ScalarCondition},
     X::AbstractScalarLogiset{W},
-    i_sample::Integer,
+    i_instance::Integer,
     w::W,
 ) where {W<:AbstractWorld}
     c = atom(p)
-    apply_test_operator(SoleModels.test_operator(c), X[i_sample, w, SoleModels.feature(c)], SoleModels.threshold(c))
+    apply_test_operator(SoleModels.test_operator(c), X[i_instance, w, SoleModels.feature(c)], SoleModels.threshold(c))
 end
 
 
@@ -23,8 +23,8 @@ hasformula(memo_structure::AbstractDict{SyntaxTree}, φ::AbstractFormula) = hask
 function check(
     φ::SoleLogics.AbstractFormula,
     X::AbstractLogiset{W,<:AbstractFeature,<:Number,FR},
-    i_sample::Integer;
-    initialworld::Union{Nothing,W,AbstractVector{<:W}} = SoleLogics.initialworld(X, i_sample),
+    i_instance::Integer;
+    initialworld::Union{Nothing,W,AbstractVector{<:W}} = SoleLogics.initialworld(X, i_instance),
     # use_memo::Union{Nothing,AbstractVector{<:AbstractDict{<:F,<:T}}} = nothing,
     # use_memo::Union{Nothing,AbstractVector{<:AbstractDict{<:F,<:WorldSet{W}}}} = nothing,
     use_memo::Union{Nothing,AbstractVector{<:AbstractDict{<:F,<:WorldSet}}} = nothing,
@@ -37,7 +37,7 @@ function check(
         if isnothing(use_memo)
             ThreadSafeDict{SyntaxTree,WorldSet{W}}()
         else
-            use_memo[i_sample]
+            use_memo[i_instance]
         end
     end
 
@@ -47,7 +47,7 @@ function check(
 
     # φ = normalize(φ; profile = :modelchecking) # TODO normalize formula and/or use a dedicate memoization structure that normalizes functions
 
-    fr = frame(X, i_sample)
+    fr = frame(X, i_instance)
 
     # TODO avoid using when memo is nothing
     if !hasformula(memo_structure, φ)
@@ -63,7 +63,7 @@ function check(
                     if tok isa SoleLogics.AbstractOperator
                         collect(SoleLogics.collateworlds(fr, tok, map(f->memo_structure[f], children(ψ))))
                     elseif tok isa Proposition
-                        filter(w->check(tok, X, i_sample, w), collect(allworlds(fr)))
+                        filter(w->check(tok, X, i_instance, w), collect(allworlds(fr)))
                     else
                         error("Unexpected token encountered in _check: $(typeof(tok))")
                     end
@@ -101,7 +101,7 @@ end
 # function compute_chained_threshold(
 #     φ::SoleLogics.AbstractFormula,
 #     X::SupportedScalarLogiset{V,W,FR},
-#     i_sample;
+#     i_instance;
 #     use_memo::Union{Nothing,AbstractVector{<:AbstractDict{F,T}}} = nothing,
 # ) where {V<:Number,W<:AbstractWorld,T<:Bool,FR<:AbstractMultiModalFrame{W,T},F<:SoleLogics.AbstractFormula}
 
@@ -111,13 +111,13 @@ end
 #         if isnothing(use_memo)
 #             ThreadSafeDict{SyntaxTree,V}()
 #         else
-#             use_memo[i_sample]
+#             use_memo[i_instance]
 #         end
 #     end
 
 #     # φ = normalize(φ; profile = :modelchecking) # TODO normalize formula and/or use a dedicate memoization structure that normalizes functions
 
-#     fr = frame(X, i_sample)
+#     fr = frame(X, i_instance)
 
 #     if !hasformula(memo_structure, φ)
 #         for ψ in unique(SoleLogics.subformulas(φ))
@@ -128,10 +128,10 @@ end
 #                         featcond = atom(token(children(φ)[1]))
 #                         if tok isa DiamondRelationalOperator
 #                             # (L) f > a <-> max(acc) > a
-#                             onestep_accessible_aggregation(X, i_sample, w, relation(tok), feature(featcond), existential_aggregator(test_operator(featcond)))
+#                             onestep_accessible_aggregation(X, i_instance, w, relation(tok), feature(featcond), existential_aggregator(test_operator(featcond)))
 #                         elseif tok isa BoxRelationalOperator
 #                             # [L] f > a  <-> min(acc) > a <-> ! (min(acc) <= a) <-> ¬ <L> (f <= a)
-#                             onestep_accessible_aggregation(X, i_sample, w, relation(tok), feature(featcond), universal_aggregator(test_operator(featcond)))
+#                             onestep_accessible_aggregation(X, i_instance, w, relation(tok), feature(featcond), universal_aggregator(test_operator(featcond)))
 #                         else
 #                             error("Unexpected operator encountered in onestep_collateworlds: $(typeof(tok))")
 #                         end

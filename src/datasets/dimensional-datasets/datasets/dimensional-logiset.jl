@@ -49,7 +49,7 @@ struct DimensionalLogiset{
         features = collect(features)
         FT = Union{typeof.(features)...}
         features = Vector{FT}(features)
-        @assert allow_no_instances || nsamples(domain) > 0 "" *
+        @assert allow_no_instances || ninstances(domain) > 0 "" *
             "Can't instantiate $(ty) with no instance. (domain's type $(typeof(domain)))"
         @assert length(features) == length(grouped_featsaggrsnops) "" *
             "Can't instantiate $(ty) with mismatching length(features) and" *
@@ -114,7 +114,7 @@ struct DimensionalLogiset{
             # readymade features
             cnv_feat(cf::AbstractFeature) = ([≥, ≤], cf)
             cnv_feat(cf::Tuple{TestOperator,AbstractFeature}) = ([cf[1]], cf[2])
-            # single-attribute features
+            # single-variable features
             cnv_feat(cf::Any) = cf
             cnv_feat(cf::CanonicalFeature) = cf
             cnv_feat(cf::Function) = ([≥, ≤], cf)
@@ -127,35 +127,35 @@ struct DimensionalLogiset{
                 isa(x, Tuple{AbstractVector,AbstractFeature}),
                 mixed_features,
             )
-            attribute_specific_cfs = filter(x->
+            variable_specific_cfs = filter(x->
                 isa(x, CanonicalFeature) ||
                 # isa(x, Tuple{<:AbstractVector{<:TestOperator},Function}) ||
                 (isa(x, Tuple{AbstractVector,Function}) && !isa(x, Tuple{AbstractVector,AbstractFeature})),
                 mixed_features,
             )
 
-            @assert length(readymade_cfs) + length(attribute_specific_cfs) == length(mixed_features) "" *
+            @assert length(readymade_cfs) + length(variable_specific_cfs) == length(mixed_features) "" *
                 "Unexpected" *
                 " mixed_features. $(mixed_features)." *
-                " $(filter(x->(! (x in readymade_cfs) && ! (x in attribute_specific_cfs)), mixed_features))." *
-                " $(length(readymade_cfs)) + $(length(attribute_specific_cfs)) == $(length(mixed_features))."
+                " $(filter(x->(! (x in readymade_cfs) && ! (x in variable_specific_cfs)), mixed_features))." *
+                " $(length(readymade_cfs)) + $(length(variable_specific_cfs)) == $(length(mixed_features))."
 
             for (test_ops,cf) in readymade_cfs
                 push!(_features, cf)
                 push!(featsnops, test_ops)
             end
 
-            single_attr_feats_n_featsnops(i_attr,cf::SoleModels.CanonicalFeatureGeq) = ([≥],DimensionalDatasets.UnivariateMin{V}(i_attr))
-            single_attr_feats_n_featsnops(i_attr,cf::SoleModels.CanonicalFeatureLeq) = ([≤],DimensionalDatasets.UnivariateMax{V}(i_attr))
-            single_attr_feats_n_featsnops(i_attr,cf::SoleModels.CanonicalFeatureGeqSoft) = ([≥],DimensionalDatasets.UnivariateSoftMin{V}(i_attr, cf.alpha))
-            single_attr_feats_n_featsnops(i_attr,cf::SoleModels.CanonicalFeatureLeqSoft) = ([≤],DimensionalDatasets.UnivariateSoftMax{V}(i_attr, cf.alpha))
-            single_attr_feats_n_featsnops(i_attr,(test_ops,cf)::Tuple{<:AbstractVector{<:TestOperator},typeof(minimum)}) = (test_ops,DimensionalDatasets.UnivariateMin{V}(i_attr))
-            single_attr_feats_n_featsnops(i_attr,(test_ops,cf)::Tuple{<:AbstractVector{<:TestOperator},typeof(maximum)}) = (test_ops,DimensionalDatasets.UnivariateMax{V}(i_attr))
-            single_attr_feats_n_featsnops(i_attr,(test_ops,cf)::Tuple{<:AbstractVector{<:TestOperator},Function})        = (test_ops,DimensionalDatasets.UnivariateFeature{V}(i_attr, (x)->(V(cf(x)))))
-            single_attr_feats_n_featsnops(i_attr,::Any) = throw_n_log("Unknown mixed_feature type: $(cf), $(typeof(cf))")
+            single_var_feats_n_featsnops(i_var,cf::SoleModels.CanonicalFeatureGeq) = ([≥],DimensionalDatasets.UnivariateMin{V}(i_var))
+            single_var_feats_n_featsnops(i_var,cf::SoleModels.CanonicalFeatureLeq) = ([≤],DimensionalDatasets.UnivariateMax{V}(i_var))
+            single_var_feats_n_featsnops(i_var,cf::SoleModels.CanonicalFeatureGeqSoft) = ([≥],DimensionalDatasets.UnivariateSoftMin{V}(i_var, cf.alpha))
+            single_var_feats_n_featsnops(i_var,cf::SoleModels.CanonicalFeatureLeqSoft) = ([≤],DimensionalDatasets.UnivariateSoftMax{V}(i_var, cf.alpha))
+            single_var_feats_n_featsnops(i_var,(test_ops,cf)::Tuple{<:AbstractVector{<:TestOperator},typeof(minimum)}) = (test_ops,DimensionalDatasets.UnivariateMin{V}(i_var))
+            single_var_feats_n_featsnops(i_var,(test_ops,cf)::Tuple{<:AbstractVector{<:TestOperator},typeof(maximum)}) = (test_ops,DimensionalDatasets.UnivariateMax{V}(i_var))
+            single_var_feats_n_featsnops(i_var,(test_ops,cf)::Tuple{<:AbstractVector{<:TestOperator},Function})        = (test_ops,DimensionalDatasets.UnivariateFeature{V}(i_var, (x)->(V(cf(x)))))
+            single_var_feats_n_featsnops(i_var,::Any) = throw_n_log("Unknown mixed_feature type: $(cf), $(typeof(cf))")
 
-            for i_attr in 1:nattributes(domain)
-                for (test_ops,cf) in map((cf)->single_attr_feats_n_featsnops(i_attr,cf),attribute_specific_cfs)
+            for i_var in 1:nvariables(domain)
+                for (test_ops,cf) in map((cf)->single_var_feats_n_featsnops(i_var,cf),variable_specific_cfs)
                     push!(featsnops, test_ops)
                     push!(_features, cf)
                 end
@@ -234,8 +234,8 @@ Base.size(X::DimensionalLogiset)              = Base.size(domain(X))
 dimensionality(X::DimensionalLogiset{V,N,W}) where {V,N,W} = N
 worldtype(X::DimensionalLogiset{V,N,W}) where {V,N,W} = W
 
-nsamples(X::DimensionalLogiset)               = nsamples(domain(X))
-nattributes(X::DimensionalLogiset)            = nattributes(domain(X))
+ninstances(X::DimensionalLogiset)               = ninstances(domain(X))
+nvariables(X::DimensionalLogiset)            = nvariables(domain(X))
 
 relations(X::DimensionalLogiset)              = relations(ontology(X))
 nrelations(X::DimensionalLogiset)             = length(relations(X))
@@ -249,10 +249,10 @@ get_instance(X::DimensionalLogiset, args...)     = get_instance(domain(X), args.
 _slice_dataset(X::DimensionalLogiset, inds::AbstractVector{<:Integer}, args...; kwargs...)    =
     DimensionalLogiset(_slice_dataset(domain(X), inds, args...; kwargs...), ontology(X), features(X), grouped_featsaggrsnops(X); initialworld = initialworld(X))
 
-frame(X::DimensionalLogiset, i_sample) = frame(domain(X), i_sample)
+frame(X::DimensionalLogiset, i_instance) = frame(domain(X), i_instance)
 initialworld(X::DimensionalLogiset) = X.initialworld
-function initialworld(X::DimensionalLogiset, i_sample)
-    initialworld(X) isa AbstractWorldSet ? initialworld(X)[i_sample] : initialworld(X)
+function initialworld(X::DimensionalLogiset, i_instance)
+    initialworld(X) isa AbstractWorldSet ? initialworld(X)[i_instance] : initialworld(X)
 end
 
 function displaystructure(X::DimensionalLogiset; indent_str = "")
@@ -260,8 +260,8 @@ function displaystructure(X::DimensionalLogiset; indent_str = "")
     out *= indent_str * "├ relations:\t($((nrelations(X))))\t[$(join(syntaxstring.(relations(X)), ", "))]\n"
     out *= indent_str * "├ features:\t($((nfeatures(X))))\t[$(join(syntaxstring.(features(X)), ", "))]\n"
     out *= indent_str * "├ domain shape:\t\t$(Base.size(domain(X)))\n"
-    out *= indent_str * "├ nsamples:\t\t$(nsamples(X))\n"
-    out *= indent_str * "├ nattributes:\t\t$(nattributes(X))\n"
+    out *= indent_str * "├ ninstances:\t\t$(ninstances(X))\n"
+    out *= indent_str * "├ nvariables:\t\t$(nvariables(X))\n"
     out *= indent_str * "├ max_channel_size:\t$(max_channel_size(X))\n"
     out *= indent_str * "└ initialworld(s):\t$(initialworld(X))"
     out

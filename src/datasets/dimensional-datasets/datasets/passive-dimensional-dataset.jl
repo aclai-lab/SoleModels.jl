@@ -1,5 +1,5 @@
 using SoleData: slice_dataset
-import SoleData: get_instance, nsamples, nattributes, channel_size, max_channel_size, dimensionality, eltype
+import SoleData: get_instance, ninstances, nvariables, channel_size, max_channel_size, dimensionality, eltype
 using SoleData: AbstractDimensionalDataset,
                 AbstractDimensionalInstance,
                 AbstractDimensionalChannel,
@@ -59,19 +59,19 @@ end
 
 @inline function Base.getindex(
     X::PassiveDimensionalDataset{N,W},
-    i_sample::Integer,
+    i_instance::Integer,
     w::W,
     f::AbstractFeature{U},
     args...,
 ) where {N,W<:AbstractWorld,U}
-    w_values = interpret_world(w, get_instance(X.d, i_sample))
+    w_values = interpret_world(w, get_instance(X.d, i_instance))
     computefeature(f, w_values)::U
 end
 
 Base.size(X::PassiveDimensionalDataset)                 = Base.size(X.d)
 
-nattributes(X::PassiveDimensionalDataset)               = nattributes(X.d)
-nsamples(X::PassiveDimensionalDataset)                  = nsamples(X.d)
+nvariables(X::PassiveDimensionalDataset)               = nvariables(X.d)
+ninstances(X::PassiveDimensionalDataset)                  = ninstances(X.d)
 channel_size(X::PassiveDimensionalDataset)              = channel_size(X.d)
 max_channel_size(X::PassiveDimensionalDataset)          = max_channel_size(X.d)
 dimensionality(X::PassiveDimensionalDataset)            = dimensionality(X.d)
@@ -86,9 +86,9 @@ hasnans(X::PassiveDimensionalDataset) = hasnans(X.d)
 
 worldtype(X::PassiveDimensionalDataset{N,W}) where {N,W} = W
 
-frame(X::PassiveDimensionalDataset, i_sample) = _frame(X.d, i_sample)
+frame(X::PassiveDimensionalDataset, i_instance) = _frame(X.d, i_instance)
 
 ############################################################################################
 
-_frame(X::Union{UniformDimensionalDataset,AbstractArray}, i_sample) = _frame(X)
+_frame(X::Union{UniformDimensionalDataset,AbstractArray}, i_instance) = _frame(X)
 _frame(X::Union{UniformDimensionalDataset,AbstractArray}) = FullDimensionalFrame(channel_size(X))

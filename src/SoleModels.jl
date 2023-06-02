@@ -58,14 +58,15 @@ export AbstractFeature,
 
 export propositions
 
-export computefeature
+export computefeature, parsecondition
+export frames
 
 # Definitions for logical datasets (i.e., logisets)
 include("datasets/base/main.jl")
 
 # include("datasets/scalar-datasets/main.jl")
 
-# export nsamples, nframes, frames, nfeatures
+# export ninstances, nframes, frames, nfeatures
 
 # export get_ontology,
 #        get_interval_ontology

@@ -16,9 +16,9 @@ struct GenericSupportingDataset{
     function GenericSupportingDataset(
         fd :: Logiset{V,W,FR},
     ) where {V,W<:AbstractWorld,FR<:AbstractFrame{W,Bool}}
-        memo = Vector{ThreadSafeDict{AbstractFormula,Vector{W}}}(undef, nsamples(fd))
-        for i_sample in 1:nsamples(fd)
-            memo[i_sample] = ThreadSafeDict{AbstractFormula,Vector{W}}()
+        memo = Vector{ThreadSafeDict{AbstractFormula,Vector{W}}}(undef, ninstances(fd))
+        for i_instance in 1:ninstances(fd)
+            memo[i_instance] = ThreadSafeDict{AbstractFormula,Vector{W}}()
         end
         GenericSupportingDataset{W,FR,typeof(memo)}(memo)
     end
@@ -58,9 +58,9 @@ struct ChainedFeaturedSupportingDataset{
     function ChainedFeaturedSupportingDataset(
         fd :: Logiset{V,W,FR},
     ) where {V,W<:AbstractWorld,FR<:AbstractFrame{W,Bool}}
-        memo = Vector{ThreadSafeDict{AbstractFormula,Vector{W}}}(undef, nsamples(fd))
-        for i_sample in 1:nsamples(fd)
-            memo[i_sample] = ThreadSafeDict{AbstractFormula,Vector{W}}()
+        memo = Vector{ThreadSafeDict{AbstractFormula,Vector{W}}}(undef, ninstances(fd))
+        for i_instance in 1:ninstances(fd)
+            memo[i_instance] = ThreadSafeDict{AbstractFormula,Vector{W}}()
         end
         ChainedFeaturedSupportingDataset{V,W,FR,typeof(memo)}(memo)
     end

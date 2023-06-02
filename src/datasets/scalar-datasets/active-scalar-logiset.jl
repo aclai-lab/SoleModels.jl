@@ -17,11 +17,11 @@ end
 function check(
     p::Proposition{<:ScalarCondition},
     X::AbstractScalarLogiset{W},
-    i_sample,
+    i_instance,
     w::W,
 ) where {W<:AbstractWorld}
     cond = atom(p)
-    featval = featvalue(X, i_sample, w, feature(cond))
+    featval = featvalue(X, i_instance, w, feature(cond))
     apply_test_operator(test_operator(cond), featval, threshold(cond))
 end
 
@@ -35,9 +35,9 @@ end
 function alphabet(X::AbstractScalarLogiset)
     conds = vcat([begin
         thresholds = unique([
-                X[i_sample, w, feature]
-                for i_sample in 1:nsamples(X)
-                    for w in allworlds(X, i_sample)
+                X[i_instance, w, feature]
+                for i_instance in 1:ninstances(X)
+                    for w in allworlds(X, i_instance)
             ])
         [(mc, thresholds) for mc in metaconditions]
     end for (feature, metaconditions) in grouped_metaconditions(X)]...)

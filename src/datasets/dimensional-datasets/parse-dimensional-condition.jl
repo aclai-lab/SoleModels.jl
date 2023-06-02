@@ -1,3 +1,5 @@
+import SoleModels: parsecondition
+
 using StatsBase
 
 #= ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Code purpose ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -38,8 +40,8 @@ DEFAULT_FEATVALTYPE = Float64
         opening_bracket::String = $(repr(UVF_OPENING_BRACKET)),
         closing_bracket::String = $(repr(UVF_CLOSING_BRACKET)),
         custom_feature_aliases = Dict{String,Union{Type,Function}}(),
-        attribute_names_map::Union{Nothing,AbstractDict,AbstractVector} = nothing,
-        attribute_name_prefix::Union{Nothing,String} = nothing,
+        variable_names_map::Union{Nothing,AbstractDict,AbstractVector} = nothing,
+        variable_name_prefix::Union{Nothing,String} = nothing,
     )::ScalarCondition
 
 Return a `ScalarCondition` which is the result of parsing `expression`.
@@ -72,8 +74,8 @@ where:
     custom features/functions;
     if not provided, `SoleModels.BASE_FEATURE_ALIASES` will be used.
 
-`attribute_names_map`, `attribute_name_prefix` can influence the
-parsing of the attribute name; please, refer to `attribute_name` for their behavior.
+`variable_names_map`, `variable_name_prefix` can influence the
+parsing of the variable name; please, refer to `variable_name` for their behavior.
 
 # Examples
 ```julia-repl
@@ -85,7 +87,7 @@ julia> syntaxstring(parseformulatree("min[V1] <= 15 ∧ max[V1] >= 85"; proposit
 ```
 
 See also
-[`attribute_name`](@ref),
+[`variable_name`](@ref),
 [`ScalarCondition`](@ref),
 [`ScalarMetaCondition`](@ref),
 [`parseformulatree`](@ref),
@@ -97,11 +99,11 @@ function parsecondition(
     opening_bracket::String = UVF_OPENING_BRACKET,
     closing_bracket::String = UVF_CLOSING_BRACKET,
     custom_feature_aliases = Dict{String,Union{Type,Function}}(),
-    attribute_names_map::Union{Nothing,AbstractDict,AbstractVector} = nothing,
-    attribute_name_prefix::Union{Nothing,String} = nothing,
+    variable_names_map::Union{Nothing,AbstractDict,AbstractVector} = nothing,
+    variable_name_prefix::Union{Nothing,String} = nothing,
 )
-    @assert isnothing(attribute_names_map) || isnothing(attribute_name_prefix) "" *
-        "Cannot parse attribute with both attribute_names_map and attribute_name_prefix." *
+    @assert isnothing(variable_names_map) || isnothing(variable_name_prefix) "" *
+        "Cannot parse variable with both variable_names_map and variable_name_prefix." *
         " (expression = $(repr(expression)))"
 
     if isnothing(featvaltype)
@@ -117,20 +119,20 @@ function parsecondition(
 
     featdict = merge(BASE_FEATURE_ALIASES, custom_feature_aliases)
 
-    (_feature, _attribute, _test_operator, _threshold) = begin
+    (_feature, _variable, _test_operator, _threshold) = begin
         # 4 slices are found initially in this order:
         #   1) a feature name (e.g. "min"),
-        #   2) an attribute inside feature's brackets (e.g. "[V189]"),
+        #   2) an variable inside feature's brackets (e.g. "[V189]"),
         #   3) a test operator ("<=", ">=", "<" or ">"),
         #   4) a threshold value.
         # Regex is more or less:
         # (\w*) *(\[.*\]) *(<=|>=|<|>) *(\d*).
-        attribute_name_prefix = isnothing(attribute_name_prefix) &&
-            isnothing(attribute_names_map) ? UVF_VARPREFIX : attribute_name_prefix
-        attribute_name_prefix = isnothing(attribute_name_prefix) ? "" : attribute_name_prefix
+        variable_name_prefix = isnothing(variable_name_prefix) &&
+            isnothing(variable_names_map) ? UVF_VARPREFIX : variable_name_prefix
+        variable_name_prefix = isnothing(variable_name_prefix) ? "" : variable_name_prefix
 
-        r = Regex("^\\s*(\\w+)\\s*\\$(opening_bracket)\\s*$(attribute_name_prefix)(\\S+)\\s*\\$(closing_bracket)\\s*([^\\s\\d]+)\\s*(\\S+)\\s*\$")
-        # r = Regex("^\\s*(\\w+)\\s*\\$(opening_bracket)\\s*$(attribute_name_prefix)(\\S+)\\s*\\$(closing_bracket)\\s*(\\S+)\\s+(\\S+)\\s*\$")
+        r = Regex("^\\s*(\\w+)\\s*\\$(opening_bracket)\\s*$(variable_name_prefix)(\\S+)\\s*\\$(closing_bracket)\\s*([^\\s\\d]+)\\s*(\\S+)\\s*\$")
+        # r = Regex("^\\s*(\\w+)\\s*\\$(opening_bracket)\\s*$(variable_name_prefix)(\\S+)\\s*\\$(closing_bracket)\\s*(\\S+)\\s+(\\S+)\\s*\$")
         slices = string.(match(r, expression))
 
         # Assert for malformed strings (e.g. "123.4<avg[V189]>250.2")
@@ -167,13 +169,13 @@ function parsecondition(
     end
 
     feature = begin
-        i_attr = begin
-            if isnothing(attribute_names_map)
-                parse(Int, _attribute)
-            elseif attribute_names_map isa Union{AbstractDict,AbstractVector}
-                findfirst(attribute_names_map, attribute)
+        i_var = begin
+            if isnothing(variable_names_map)
+                parse(Int, _variable)
+            elseif variable_names_map isa Union{AbstractDict,AbstractVector}
+                findfirst(variable_names_map, variable)
             else
-                error("Unexpected attribute_names_map of type $(typeof(attribute_names_map))" *
+                error("Unexpected variable_names_map of type $(typeof(variable_names_map))" *
                     " encountered.")
             end
         end
@@ -184,15 +186,15 @@ function parsecondition(
             # If it is a function, wrap it into a UnivariateFeature
             #  otherwise, it is a feature, and it is used as a constructor.
             if feat_or_fun isa Function
-                UnivariateFeature{featvaltype}(i_attr, feat_or_fun)
+                UnivariateFeature{featvaltype}(i_var, feat_or_fun)
             else
-                feat_or_fun{featvaltype}(i_attr)
+                feat_or_fun{featvaltype}(i_var)
             end
         else
             # If it is not a known feature, interpret it as a Julia function,
             #  and wrap it into a UnivariateFeature.
             f = eval(Meta.parse(_feature))
-            UnivariateFeature{featvaltype}(i_attr, f)
+            UnivariateFeature{featvaltype}(i_var, f)
         end
     end
 

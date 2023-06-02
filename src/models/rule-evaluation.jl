@@ -95,7 +95,7 @@ See also
 [`AbstractInterpretationSet`](@ref),
 [`Label`](@ref),
 [`evaluaterule`](@ref),
-[`nsamples`](@ref),
+[`ninstances`](@ref),
 [`outcometype`](@ref),
 [`consequent`](@ref).
 """
@@ -107,7 +107,7 @@ function rulemetrics(
     eval_result = evaluaterule(rule, X, Y)
     ys = eval_result[:ys]
     antsat = eval_result[:antsat]
-    n_instances = nsamples(X)
+    n_instances = ninstances(X)
     n_satisfy = sum(antsat)
 
     rule_support =  n_satisfy / n_instances

@@ -19,7 +19,7 @@ featvaltype(d::AbstractFeatureLookupSet) = featvaltype(typeof(d))
 """
     @inline function featvalue(
         featstruct  :: AbstractFeatureLookupSet{V,FR},
-        i_sample    :: Integer,
+        i_instance  :: Integer,
         w           :: W,
         feature     :: F,
     ) where {V,F<:AbstractFeature,W<:AbstractWorld,FR<:AbstractFrame{W}}
@@ -31,17 +31,17 @@ See also
 """
 function featvalue(
     featstruct  :: AbstractFeatureLookupSet{V,FR},
-    i_sample    :: Integer,
+    i_instance  :: Integer,
     w           :: W,
     feature     :: F,
 )::V where {V,F<:AbstractFeature,W<:AbstractWorld,FR<:AbstractFrame{W}}
-    error("Please, provide method featvalue(::$(typeof(featstruct)), i_sample::$(typeof(i_sample)), w::$(typeof(w)), feature::$(typeof(feature)))::$(V).")
+    error("Please, provide method featvalue(::$(typeof(featstruct)), i_instance::$(typeof(i_instance)), w::$(typeof(w)), feature::$(typeof(feature)))::$(V).")
 end
 
 """
     @inline function featvalue(
         featstruct  :: AbstractFeatureLookupSet{V,FR},
-        i_sample    :: Integer,
+        i_instance  :: Integer,
         w           :: W,
         i_feature   :: Integer,
     ) where {V,W<:AbstractWorld,FR<:AbstractFrame{W}}
@@ -53,11 +53,11 @@ See also
 """
 function featvalue(
     featstruct  :: AbstractFeatureLookupSet{V,FR},
-    i_sample    :: Integer,
+    i_instance  :: Integer,
     w           :: W,
     i_feature   :: Integer,
 )::V where {V,W<:AbstractWorld,FR<:AbstractFrame{W}}
-    error("Please, provide method featvalue(::$(typeof(featstruct)), i_sample::$(typeof(i_sample)), w::$(typeof(w)), i_feature::$(typeof(i_feature)))::$(V).")
+    error("Please, provide method featvalue(::$(typeof(featstruct)), i_instance::$(typeof(i_instance)), w::$(typeof(w)), i_feature::$(typeof(i_feature)))::$(V).")
 end
 
 @inline Base.getindex(featstruct::AbstractFeatureLookupSet, args...) = featvalue(featstruct, args...)
@@ -66,7 +66,7 @@ end
 ############################################################################################
 ############################################################################################
 
-# # The most generic featstruct structure is a matrix of dictionaries of size (nsamples × nfeatures)
+# # The most generic featstruct structure is a matrix of dictionaries of size (ninstances × nfeatures)
 # struct GenericFWD{
 #     V,
 #     F<:AbstractFeature{V},
@@ -79,40 +79,40 @@ end
 # end
 
 # Base.size(featstruct::GenericFWD{V}, args...) where {V} = size(featstruct.d, args...)
-# nsamples(featstruct::GenericFWD{V}) where {V}  = size(featstruct, 1)
+# ninstances(featstruct::GenericFWD{V}) where {V}  = size(featstruct, 1)
 # nfeatures(featstruct::GenericFWD{V}) where {V} = featstruct.d
 
 # # The matrix is initialized with #undef values
 # function fwd_init(::Type{GenericFWD}, X::AbstractLogiset{W,V}) where {W,V}
-#     d = Array{Dict{W,V}, 2}(undef, nsamples(X))
-#     for i in 1:nsamples
+#     d = Array{Dict{W,V}, 2}(undef, ninstances(X))
+#     for i in 1:ninstances
 #         d[i] = Dict{W,Array{V,1}}()
 #     end
 #     GenericFWD{V}(d, nfeatures(X))
 # end
 
 # # A function for initializing individual world slices
-# function fwd_init_world_slice(featstruct::GenericFWD{V}, i_sample::Integer, w::AbstractWorld) where {V}
-#     featstruct.d[i_sample][w] = Array{V,1}(undef, featstruct.nfeatures)
+# function fwd_init_world_slice(featstruct::GenericFWD{V}, i_instance::Integer, w::AbstractWorld) where {V}
+#     featstruct.d[i_instance][w] = Array{V,1}(undef, featstruct.nfeatures)
 # end
 
 # # A function for getting a threshold value from the lookup table
 # Base.@propagate_inbounds @inline featvalue(
 #     featstruct  :: GenericFWD{V},
-#     i_sample    :: Integer,
+#     i_instance  :: Integer,
 #     w           :: AbstractWorld,
-#     i_feature   :: Integer) where {V} = featstruct.d[i_sample][w][i_feature]
+#     i_feature   :: Integer) where {V} = featstruct.d[i_instance][w][i_feature]
 
 # # A function for setting a threshold value in the lookup table
-# Base.@propagate_inbounds @inline function fwd_set(featstruct::GenericFWD{V}, w::AbstractWorld, i_sample::Integer, i_feature::Integer, threshold::V) where {V}
-#     featstruct.d[i_sample][w][i_feature] = threshold
+# Base.@propagate_inbounds @inline function fwd_set(featstruct::GenericFWD{V}, w::AbstractWorld, i_instance::Integer, i_feature::Integer, threshold::V) where {V}
+#     featstruct.d[i_instance][w][i_feature] = threshold
 # end
 
 # # A function for setting threshold values for a single feature (from a feature slice, experimental)
 # Base.@propagate_inbounds @inline function fwd_set_feature(featstruct::GenericFWD{V}, i_feature::Integer, fwdslice::Any) where {V}
 #     throw_n_log("Warning! fwd_set_feature with GenericFWD is not yet implemented!")
-#     for ((i_sample,w),threshold::V) in read_fwdslice(fwdslice)
-#         featstruct.d[i_sample][w][i_feature] = threshold
+#     for ((i_instance,w),threshold::V) in read_fwdslice(fwdslice)
+#         featstruct.d[i_instance][w][i_feature] = threshold
 #     end
 # end
 
@@ -122,7 +122,7 @@ end
 # end
 
 # Others...
-# Base.@propagate_inbounds @inline fwdread_channeaoeu(featstruct::GenericFWD{V}, i_sample::Integer, i_feature::Integer) where {V} = TODO
+# Base.@propagate_inbounds @inline fwdread_channeaoeu(featstruct::GenericFWD{V}, i_instance::Integer, i_feature::Integer) where {V} = TODO
 # const GenericFeaturedChannel{V} = TODO
 # fwd_channel_interpret_world(fwc::GenericFeaturedChannel{V}, w::AbstractWorld) where {V} = TODO
 
@@ -168,8 +168,8 @@ struct Logiset{
     ) where {V,W<:AbstractWorld,FR<:AbstractFrame{W,Bool},FWD<:AbstractFeatureLookupSet{V,FR},F<:AbstractFeature{V}}
         features = collect(features)
         ty = "Logiset{$(V),$(W),$(FR),$(F)}"
-        @assert allow_no_instances || nsamples(featstruct) > 0     "Can't instantiate $(ty) with no instance. (featstruct's type $(typeof(featstruct)))"
-        @assert nfeatures(featstruct) == length(features)          "Can't instantiate $(ty) with different numbers of instances $(nsamples(featstruct)) and of features $(length(features))."
+        @assert allow_no_instances || ninstances(featstruct) > 0     "Can't instantiate $(ty) with no instance. (featstruct's type $(typeof(featstruct)))"
+        @assert nfeatures(featstruct) == length(features)          "Can't instantiate $(ty) with different numbers of instances $(ninstances(featstruct)) and of features $(length(features))."
         check_initialworld(Logiset, initialworld, W)
         new{
             V,
@@ -231,13 +231,13 @@ features(X::Logiset)               = X.features
 
 nfeatures(X::Logiset)              = length(features(X))
 nrelations(X::Logiset)             = length(relations(X))
-nsamples(X::Logiset)               = nsamples(featstruct(X))
+ninstances(X::Logiset)               = ninstances(featstruct(X))
 worldtype(X::Logiset{V,W}) where {V,W<:AbstractWorld} = W
 
-frame(X::Logiset, i_sample) = frame(featstruct(X), i_sample)
+frame(X::Logiset, i_instance) = frame(featstruct(X), i_instance)
 initialworld(X::Logiset) = X.initialworld
-function initialworld(X::Logiset, i_sample)
-    initialworld(X) isa AbstractWorldSet ? initialworld(X)[i_sample] : initialworld(X)
+function initialworld(X::Logiset, i_instance)
+    initialworld(X) isa AbstractWorldSet ? initialworld(X)[i_instance] : initialworld(X)
 end
 
 function _slice_dataset(X::Logiset, inds::AbstractVector{<:Integer}, args...; kwargs...)

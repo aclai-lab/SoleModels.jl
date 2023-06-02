@@ -9,7 +9,7 @@ import Base: size, ndims, getindex, setindex!
 abstract type AbstractUniformFullDimensionalFWD{T,N,W<:AbstractWorld,FR<:FullDimensionalFrame{N,W,Bool}} <: AbstractFeatureLookupSet{T,W,FR} end
 
 channel_size(fwd::AbstractUniformFullDimensionalFWD) = error("TODO add message inviting to add channel_size")
-frame(fwd::AbstractUniformFullDimensionalFWD, i_sample) = FullDimensionalFrame(channel_size(fwd))
+frame(fwd::AbstractUniformFullDimensionalFWD, i_instance) = FullDimensionalFrame(channel_size(fwd))
 
 ############################################################################################
 ############################################################################################
@@ -45,13 +45,13 @@ struct UniformFullDimensionalFWD{
 ############################################################################################
 
     function UniformFullDimensionalFWD(X::DimensionalLogiset{T,N,W}) where {T,N,W<:OneWorld}
-        UniformFullDimensionalFWD{T,W,N}(Array{T,2}(undef, nsamples(X), nfeatures(X)))
+        UniformFullDimensionalFWD{T,W,N}(Array{T,2}(undef, ninstances(X), nfeatures(X)))
     end
     function UniformFullDimensionalFWD(X::DimensionalLogiset{T,N,W}) where {T,N,W<:Interval}
-        UniformFullDimensionalFWD{T,W,N}(Array{T,4}(undef, max_channel_size(X)[1], max_channel_size(X)[1]+1, nsamples(X), nfeatures(X)))
+        UniformFullDimensionalFWD{T,W,N}(Array{T,4}(undef, max_channel_size(X)[1], max_channel_size(X)[1]+1, ninstances(X), nfeatures(X)))
     end
     function UniformFullDimensionalFWD(X::DimensionalLogiset{T,N,W}) where {T,N,W<:Interval2D}
-        UniformFullDimensionalFWD{T,W,N}(Array{T,6}(undef, max_channel_size(X)[1], max_channel_size(X)[1]+1, max_channel_size(X)[2], max_channel_size(X)[2]+1, nsamples(X), nfeatures(X)))
+        UniformFullDimensionalFWD{T,W,N}(Array{T,6}(undef, max_channel_size(X)[1], max_channel_size(X)[1]+1, max_channel_size(X)[2], max_channel_size(X)[2]+1, ninstances(X), nfeatures(X)))
     end
 
 end
@@ -59,7 +59,7 @@ end
 Base.size(fwd::UniformFullDimensionalFWD, args...) = size(fwd.d, args...)
 Base.ndims(fwd::UniformFullDimensionalFWD, args...) = ndims(fwd.d, args...)
 
-nsamples(fwd::UniformFullDimensionalFWD)  = size(fwd, ndims(fwd)-1)
+ninstances(fwd::UniformFullDimensionalFWD)  = size(fwd, ndims(fwd)-1)
 nfeatures(fwd::UniformFullDimensionalFWD) = size(fwd, ndims(fwd))
 
 ############################################################################################
@@ -75,14 +75,14 @@ function capacity(fwd::UniformFullDimensionalFWD{T,OneWorld}) where {T}
 end
 function capacity(fwd::UniformFullDimensionalFWD{T,<:Interval}) where {T}
     prod([
-        nsamples(fwd),
+        ninstances(fwd),
         nfeatures(fwd),
         div(size(fwd, 1)*(size(fwd, 2)),2),
     ])
 end
 function capacity(fwd::UniformFullDimensionalFWD{T,<:Interval2D}) where {T}
     prod([
-        nsamples(fwd),
+        ninstances(fwd),
         nfeatures(fwd),
         div(size(fwd, 1)*(size(fwd, 2)),2),
         div(size(fwd, 3)*(size(fwd, 4)),2),
@@ -106,7 +106,7 @@ end
 
 ############################################################################################
 
-function fwd_init_world_slice(fwd::UniformFullDimensionalFWD, i_sample::Integer, w::AbstractWorld)
+function fwd_init_world_slice(fwd::UniformFullDimensionalFWD, i_instance::Integer, w::AbstractWorld)
     nothing
 end
 
@@ -114,43 +114,43 @@ end
 
 @inline function Base.getindex(
     fwd         :: UniformFullDimensionalFWD{T,OneWorld},
-    i_sample    :: Integer,
+    i_instance  :: Integer,
     w           :: OneWorld,
     i_feature   :: Integer
 ) where {T}
-    fwd.d[i_sample, i_feature]
+    fwd.d[i_instance, i_feature]
 end
 
 @inline function Base.getindex(
     fwd         :: UniformFullDimensionalFWD{T,<:Interval},
-    i_sample    :: Integer,
+    i_instance  :: Integer,
     w           :: Interval,
     i_feature   :: Integer
 ) where {T}
-    fwd.d[w.x, w.y, i_sample, i_feature]
+    fwd.d[w.x, w.y, i_instance, i_feature]
 end
 
 @inline function Base.getindex(
     fwd         :: UniformFullDimensionalFWD{T,<:Interval2D},
-    i_sample    :: Integer,
+    i_instance  :: Integer,
     w           :: Interval2D,
     i_feature   :: Integer
 ) where {T}
-    fwd.d[w.x.x, w.x.y, w.y.x, w.y.y, i_sample, i_feature]
+    fwd.d[w.x.x, w.x.y, w.y.x, w.y.y, i_instance, i_feature]
 end
 
 ############################################################################################
 
-@inline function Base.setindex!(fwd::UniformFullDimensionalFWD{T,OneWorld}, threshold::T, w::OneWorld, i_sample::Integer, i_feature::Integer) where {T}
-    fwd.d[i_sample, i_feature] = threshold
+@inline function Base.setindex!(fwd::UniformFullDimensionalFWD{T,OneWorld}, threshold::T, w::OneWorld, i_instance::Integer, i_feature::Integer) where {T}
+    fwd.d[i_instance, i_feature] = threshold
 end
 
-@inline function Base.setindex!(fwd::UniformFullDimensionalFWD{T,<:Interval}, threshold::T, w::Interval, i_sample::Integer, i_feature::Integer) where {T}
-    fwd.d[w.x, w.y, i_sample, i_feature] = threshold
+@inline function Base.setindex!(fwd::UniformFullDimensionalFWD{T,<:Interval}, threshold::T, w::Interval, i_instance::Integer, i_feature::Integer) where {T}
+    fwd.d[w.x, w.y, i_instance, i_feature] = threshold
 end
 
-@inline function Base.setindex!(fwd::UniformFullDimensionalFWD{T,<:Interval2D}, threshold::T, w::Interval2D, i_sample::Integer, i_feature::Integer) where {T}
-    fwd.d[w.x.x, w.x.y, w.y.x, w.y.y, i_sample, i_feature] = threshold
+@inline function Base.setindex!(fwd::UniformFullDimensionalFWD{T,<:Interval2D}, threshold::T, w::Interval2D, i_instance::Integer, i_feature::Integer) where {T}
+    fwd.d[w.x.x, w.x.y, w.y.x, w.y.y, i_instance, i_feature] = threshold
 end
 
 ############################################################################################
@@ -175,16 +175,16 @@ Base.@propagate_inbounds @inline function fwdslice_set(fwd::UniformFullDimension
     fwd.d[:, i_feature] = fwdslice
 end
 
-Base.@propagate_inbounds @inline fwdread_channel(fwd::UniformFullDimensionalFWD{T,OneWorld}, i_sample::Integer, i_feature::Integer) where {T} =
-    fwd.d[i_sample, i_feature]
+Base.@propagate_inbounds @inline fwdread_channel(fwd::UniformFullDimensionalFWD{T,OneWorld}, i_instance::Integer, i_feature::Integer) where {T} =
+    fwd.d[i_instance, i_feature]
 const OneWorldFeaturedChannel{T} = T
 fwd_channel_interpret_world(fwc::T #=Note: should be OneWorldFeaturedChannel{T}, but it throws error =#, w::OneWorld) where {T} = fwc
 
 Base.@propagate_inbounds @inline function fwdslice_set(fwd::UniformFullDimensionalFWD{T,<:Interval}, i_feature::Integer, fwdslice::Array{T,3}) where {T}
     fwd.d[:, :, :, i_feature] = fwdslice
 end
-Base.@propagate_inbounds @inline fwdread_channel(fwd::UniformFullDimensionalFWD{T,<:Interval}, i_sample::Integer, i_feature::Integer) where {T} =
-    @views fwd.d[:,:,i_sample, i_feature]
+Base.@propagate_inbounds @inline fwdread_channel(fwd::UniformFullDimensionalFWD{T,<:Interval}, i_instance::Integer, i_feature::Integer) where {T} =
+    @views fwd.d[:,:,i_instance, i_feature]
 const IntervalFeaturedChannel{T} = AbstractArray{T,2}
 fwd_channel_interpret_world(fwc::IntervalFeaturedChannel{T}, w::Interval) where {T} =
     fwc[w.x, w.y]
@@ -193,8 +193,8 @@ fwd_channel_interpret_world(fwc::IntervalFeaturedChannel{T}, w::Interval) where 
 Base.@propagate_inbounds @inline function fwdslice_set(fwd::UniformFullDimensionalFWD{T,<:Interval2D}, i_feature::Integer, fwdslice::Array{T,5}) where {T}
     fwd.d[:, :, :, :, :, i_feature] = fwdslice
 end
-Base.@propagate_inbounds @inline fwdread_channel(fwd::UniformFullDimensionalFWD{T,<:Interval2D}, i_sample::Integer, i_feature::Integer) where {T} =
-    @views fwd.d[:,:,:,:,i_sample, i_feature]
+Base.@propagate_inbounds @inline fwdread_channel(fwd::UniformFullDimensionalFWD{T,<:Interval2D}, i_instance::Integer, i_feature::Integer) where {T} =
+    @views fwd.d[:,:,:,:,i_instance, i_feature]
 const Interval2DFeaturedChannel{T} = AbstractArray{T,4}
 fwd_channel_interpret_world(fwc::Interval2DFeaturedChannel{T}, w::Interval2D) where {T} =
     fwc[w.x.x, w.x.y, w.y.x, w.y.y]
@@ -213,14 +213,14 @@ const FWDFeatureSlice{T} = Union{
 
 # channel_size(fwd::OneWorldFWD) = ()
 
-# nsamples(fwd::OneWorldFWD)  = size(fwd.d, 1)
+# ninstances(fwd::OneWorldFWD)  = size(fwd.d, 1)
 # nfeatures(fwd::OneWorldFWD) = size(fwd.d, 2)
 
 # function fwd_init(::Type{OneWorldFWD}, X::DimensionalLogiset{T,0,OneWorld}) where {T}
-#     OneWorldFWD{T}(Array{T,2}(undef, nsamples(X), nfeatures(X)))
+#     OneWorldFWD{T}(Array{T,2}(undef, ninstances(X), nfeatures(X)))
 # end
 
-# function fwd_init_world_slice(fwd::OneWorldFWD, i_sample::Integer, w::AbstractWorld)
+# function fwd_init_world_slice(fwd::OneWorldFWD, i_instance::Integer, w::AbstractWorld)
 #     nothing
 # end
 
@@ -228,12 +228,12 @@ const FWDFeatureSlice{T} = Union{
 
 # Base.@propagate_inbounds @inline featvalue(
 #     fwd         :: OneWorldFWD{T},
-#     i_sample    :: Integer,
+#     i_instance  :: Integer,
 #     w           :: OneWorld,
-#     i_feature   :: Integer) where {T} = fwd.d[i_sample, i_feature]
+#     i_feature   :: Integer) where {T} = fwd.d[i_instance, i_feature]
 
-# @inline function Base.setindex!(fwd::OneWorldFWD{T},, threshold::T w::OneWorld, i_sample::Integer, i_feature::Integer) where {T}
-#     fwd.d[i_sample, i_feature] = threshold
+# @inline function Base.setindex!(fwd::OneWorldFWD{T},, threshold::T w::OneWorld, i_instance::Integer, i_feature::Integer) where {T}
+#     fwd.d[i_instance, i_feature] = threshold
 # end
 
 # function _slice_dataset(fwd::OneWorldFWD{T}, inds::AbstractVector{<:Integer}, return_view::Val = Val(false)) where {T}
@@ -244,13 +244,13 @@ const FWDFeatureSlice{T} = Union{
 #     fwd.d[:, i_feature] = fwdslice
 # end
 
-# Base.@propagate_inbounds @inline fwdread_channel(fwd::OneWorldFWD{T}, i_sample::Integer, i_feature::Integer) where {T} =
-#     fwd.d[i_sample, i_feature]
+# Base.@propagate_inbounds @inline fwdread_channel(fwd::OneWorldFWD{T}, i_instance::Integer, i_feature::Integer) where {T} =
+#     fwd.d[i_instance, i_feature]
 # const OneWorldFeaturedChannel{T} = T
 # fwd_channel_interpret_world(fwc::T #=Note: should be OneWorldFeaturedChannel{T}, but it throws error =#, w::OneWorld) where {T} = fwc
 
 ############################################################################################
-# FWD, Interval: 4D array (x × y × nsamples × nfeatures)
+# FWD, Interval: 4D array (x × y × ninstances × nfeatures)
 ############################################################################################
 
 # struct IntervalFWD{T} <: UniformFullDimensionalFWD{T,1,<:Interval}
@@ -259,14 +259,14 @@ const FWDFeatureSlice{T} = Union{
 
 # channel_size(fwd::IntervalFWD) = (size(fwd, 1),)
 
-# nsamples(fwd::IntervalFWD)  = size(fwd, 3)
+# ninstances(fwd::IntervalFWD)  = size(fwd, 3)
 # nfeatures(fwd::IntervalFWD) = size(fwd, 4)
 
 # function fwd_init(::Type{IntervalFWD}, X::DimensionalLogiset{T,1,<:Interval}) where {T}
-#     IntervalFWD{T}(Array{T,4}(undef, max_channel_size(X)[1], max_channel_size(X)[1]+1, nsamples(X), nfeatures(X)))
+#     IntervalFWD{T}(Array{T,4}(undef, max_channel_size(X)[1], max_channel_size(X)[1]+1, ninstances(X), nfeatures(X)))
 # end
 
-# function fwd_init_world_slice(fwd::IntervalFWD, i_sample::Integer, w::AbstractWorld)
+# function fwd_init_world_slice(fwd::IntervalFWD, i_instance::Integer, w::AbstractWorld)
 #     nothing
 # end
 
@@ -277,12 +277,12 @@ const FWDFeatureSlice{T} = Union{
 
 # Base.@propagate_inbounds @inline featvalue(
 #     fwd         :: IntervalFWD{T},
-#     i_sample    :: Integer,
+#     i_instance  :: Integer,
 #     w           :: Interval,
-#     i_feature   :: Integer) where {T} = fwd.d[w.x, w.y, i_sample, i_feature]
+#     i_feature   :: Integer) where {T} = fwd.d[w.x, w.y, i_instance, i_feature]
 
-# @inline function Base.setindex!(fwd::IntervalFWD{T},, threshold::T w::Interval, i_sample::Integer, i_feature::Integer) where {T}
-#     fwd.d[w.x, w.y, i_sample, i_feature] = threshold
+# @inline function Base.setindex!(fwd::IntervalFWD{T},, threshold::T w::Interval, i_instance::Integer, i_feature::Integer) where {T}
+#     fwd.d[w.x, w.y, i_instance, i_feature] = threshold
 # end
 
 # Base.@propagate_inbounds @inline function fwdslice_set(fwd::IntervalFWD{T}, i_feature::Integer, fwdslice::Array{T,3}) where {T}
@@ -292,14 +292,14 @@ const FWDFeatureSlice{T} = Union{
 # function _slice_dataset(fwd::IntervalFWD{T}, inds::AbstractVector{<:Integer}, return_view::Val = Val(false)) where {T}
 #     IntervalFWD{T}(if return_view == Val(true) @view fwd.d[:,:,inds,:] else fwd.d[:,:,inds,:] end)
 # end
-# Base.@propagate_inbounds @inline fwdread_channel(fwd::IntervalFWD{T}, i_sample::Integer, i_feature::Integer) where {T} =
-#     @views fwd.d[:,:,i_sample, i_feature]
+# Base.@propagate_inbounds @inline fwdread_channel(fwd::IntervalFWD{T}, i_instance::Integer, i_feature::Integer) where {T} =
+#     @views fwd.d[:,:,i_instance, i_feature]
 # const IntervalFeaturedChannel{T} = AbstractArray{T,2}
 # fwd_channel_interpret_world(fwc::IntervalFeaturedChannel{T}, w::Interval) where {T} =
 #     fwc[w.x, w.y]
 
 ############################################################################################
-# FWD, Interval: 6D array (x.x × x.y × y.x × y.y × nsamples × nfeatures)
+# FWD, Interval: 6D array (x.x × x.y × y.x × y.y × ninstances × nfeatures)
 ############################################################################################
 
 # struct Interval2DFWD{T} <: UniformFullDimensionalFWD{T,2,<:Interval2D}
@@ -308,15 +308,15 @@ const FWDFeatureSlice{T} = Union{
 
 # channel_size(fwd::Interval2DFWD) = (size(fwd, 1),size(fwd, 3))
 
-# nsamples(fwd::Interval2DFWD)  = size(fwd, 5)
+# ninstances(fwd::Interval2DFWD)  = size(fwd, 5)
 # nfeatures(fwd::Interval2DFWD) = size(fwd, 6)
 
 
 # function fwd_init(::Type{Interval2DFWD}, X::DimensionalLogiset{T,2,<:Interval2D}) where {T}
-#     Interval2DFWD{T}(Array{T,6}(undef, max_channel_size(X)[1], max_channel_size(X)[1]+1, max_channel_size(X)[2], max_channel_size(X)[2]+1, nsamples(X), nfeatures(X)))
+#     Interval2DFWD{T}(Array{T,6}(undef, max_channel_size(X)[1], max_channel_size(X)[1]+1, max_channel_size(X)[2], max_channel_size(X)[2]+1, ninstances(X), nfeatures(X)))
 # end
 
-# function fwd_init_world_slice(fwd::Interval2DFWD, i_sample::Integer, w::AbstractWorld)
+# function fwd_init_world_slice(fwd::Interval2DFWD, i_instance::Integer, w::AbstractWorld)
 #     nothing
 # end
 
@@ -327,12 +327,12 @@ const FWDFeatureSlice{T} = Union{
 
 # Base.@propagate_inbounds @inline featvalue(
 #     fwd         :: Interval2DFWD{T},
-#     i_sample    :: Integer,
+#     i_instance  :: Integer,
 #     w           :: Interval2D,
-#     i_feature   :: Integer) where {T} = fwd.d[w.x.x, w.x.y, w.y.x, w.y.y, i_sample, i_feature]
+#     i_feature   :: Integer) where {T} = fwd.d[w.x.x, w.x.y, w.y.x, w.y.y, i_instance, i_feature]
 
-# @inline function Base.setindex!(fwd::Interval2DFWD{T},, threshold::T w::Interval2D, i_sample::Integer, i_feature::Integer) where {T}
-#     fwd.d[w.x.x, w.x.y, w.y.x, w.y.y, i_sample, i_feature] = threshold
+# @inline function Base.setindex!(fwd::Interval2DFWD{T},, threshold::T w::Interval2D, i_instance::Integer, i_feature::Integer) where {T}
+#     fwd.d[w.x.x, w.x.y, w.y.x, w.y.y, i_instance, i_feature] = threshold
 # end
 
 # Base.@propagate_inbounds @inline function fwdslice_set(fwd::Interval2DFWD{T}, i_feature::Integer, fwdslice::Array{T,5}) where {T}
@@ -342,8 +342,8 @@ const FWDFeatureSlice{T} = Union{
 # function _slice_dataset(fwd::Interval2DFWD{T}, inds::AbstractVector{<:Integer}, return_view::Val = Val(false)) where {T}
 #     Interval2DFWD{T}(if return_view == Val(true) @view fwd.d[:,:,:,:,inds,:] else fwd.d[:,:,:,:,inds,:] end)
 # end
-# Base.@propagate_inbounds @inline fwdread_channel(fwd::Interval2DFWD{T}, i_sample::Integer, i_feature::Integer) where {T} =
-#     @views fwd.d[:,:,:,:,i_sample, i_feature]
+# Base.@propagate_inbounds @inline fwdread_channel(fwd::Interval2DFWD{T}, i_instance::Integer, i_feature::Integer) where {T} =
+#     @views fwd.d[:,:,:,:,i_instance, i_feature]
 # const Interval2DFeaturedChannel{T} = AbstractArray{T,4}
 # fwd_channel_interpret_world(fwc::Interval2DFeaturedChannel{T}, w::Interval2D) where {T} =
 #     fwc[w.x.x, w.x.y, w.y.x, w.y.y]

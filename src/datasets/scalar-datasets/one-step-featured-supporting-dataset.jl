@@ -35,7 +35,7 @@ struct OneStepFeaturedSupportingDataset{
         @assert nfeatsnaggrs(fwd_rs) == length(featsnaggrs)       "Can't instantiate $(ty) with unmatching nfeatsnaggrs for fwd_rs and provided featsnaggrs: $(nfeatsnaggrs(fwd_rs)) and $(length(featsnaggrs))"
         if fwd_gs != nothing
             @assert nfeatsnaggrs(fwd_gs) == length(featsnaggrs)   "Can't instantiate $(ty) with unmatching nfeatsnaggrs for fwd_gs and provided featsnaggrs: $(nfeatsnaggrs(fwd_gs)) and $(length(featsnaggrs))"
-            @assert nsamples(fwd_gs) == nsamples(fwd_rs)          "Can't instantiate $(ty) with unmatching nsamples for fwd_gs and fwd_rs support: $(nsamples(fwd_gs)) and $(nsamples(fwd_rs))"
+            @assert ninstances(fwd_gs) == ninstances(fwd_rs)          "Can't instantiate $(ty) with unmatching ninstances for fwd_gs and fwd_rs support: $(ninstances(fwd_gs)) and $(ninstances(fwd_rs))"
         end
         new{V,W,FR,VV,FWDRS,FWDGS,G}(fwd_rs, fwd_gs, featsnaggrs)
     end
@@ -71,7 +71,7 @@ struct OneStepFeaturedSupportingDataset{
             end
         end
 
-        _n_samples = nsamples(fd)
+        _n_instances = ninstances(fd)
         nrelations = length(_relations)
         nfeatsnaggrs = sum(length.(_grouped_featsnaggrs))
 
@@ -87,19 +87,19 @@ struct OneStepFeaturedSupportingDataset{
             end
         end
 
-        # p = Progress(_n_samples, 1, "Computing EMD supports...")
-        Threads.@threads for i_sample in 1:_n_samples
-            # @logmsg LogDebug "Instance $(i_sample)/$(_n_samples)"
+        # p = Progress(_n_instances, 1, "Computing EMD supports...")
+        Threads.@threads for i_instance in 1:_n_instances
+            # @logmsg LogDebug "Instance $(i_instance)/$(_n_instances)"
 
-            # if i_sample == 1 || ((i_sample+1) % (floor(Int, ((_n_samples)/4))+1)) == 0
-            #     @logmsg LogOverview "Instance $(i_sample)/$(_n_samples)"
+            # if i_instance == 1 || ((i_instance+1) % (floor(Int, ((_n_instances)/4))+1)) == 0
+            #     @logmsg LogOverview "Instance $(i_instance)/$(_n_instances)"
             # end
 
             for (i_feature,aggregators) in enumerate(_grouped_featsnaggrs)
                 feature = _features[i_feature]
                 # @logmsg LogDebug "Feature $(i_feature)"
 
-                fwdslice = fwdread_channel(_fwd, i_sample, i_feature)
+                fwdslice = fwdread_channel(_fwd, i_instance, i_feature)
 
                 # @logmsg LogDebug fwdslice
 
@@ -111,11 +111,11 @@ struct OneStepFeaturedSupportingDataset{
                     for (i_featsnaggr,aggr) in aggregators
                     # Threads.@threads for (i_featsnaggr,aggr) in aggregators
                         
-                        gamma = fwdslice_onestep_accessible_aggregation(fd, fwdslice, i_sample, globalrel, feature, aggr)
+                        gamma = fwdslice_onestep_accessible_aggregation(fd, fwdslice, i_instance, globalrel, feature, aggr)
 
                         # @logmsg LogDebug "Aggregator[$(i_featsnaggr)]=$(aggr)  -->  $(gamma)"
 
-                        fwd_gs[i_sample, i_featsnaggr] = gamma
+                        fwd_gs[i_instance, i_featsnaggr] = gamma
                     end
                 end
 
@@ -126,21 +126,21 @@ struct OneStepFeaturedSupportingDataset{
                         # @logmsg LogDebug "Relation $(i_relation)/$(nrelations)"
 
                         for (i_featsnaggr,aggr) in aggregators
-                            fwd_rs_init_world_slice(fwd_rs, i_sample, i_featsnaggr, i_relation)
+                            fwd_rs_init_world_slice(fwd_rs, i_instance, i_featsnaggr, i_relation)
                         end
 
-                        for w in allworlds(fd, i_sample)
+                        for w in allworlds(fd, i_instance)
 
                             # @logmsg LogDebug "World" w
 
                             # TODO optimize: all aggregators are likely reading the same raw values.
                             for (i_featsnaggr,aggr) in aggregators
                                 
-                                gamma = fwdslice_onestep_accessible_aggregation(fd, fwdslice, i_sample, w, relation, feature, aggr)
+                                gamma = fwdslice_onestep_accessible_aggregation(fd, fwdslice, i_instance, w, relation, feature, aggr)
 
                                 # @logmsg LogDebug "Aggregator" aggr gamma
 
-                                fwd_rs[i_sample, w, i_featsnaggr, i_relation] = gamma
+                                fwd_rs[i_instance, w, i_featsnaggr, i_relation] = gamma
                             end
                         end
                     end
@@ -156,7 +156,7 @@ fwd_rs(X::OneStepFeaturedSupportingDataset) = X.fwd_rs
 fwd_gs(X::OneStepFeaturedSupportingDataset) = X.fwd_gs
 featsnaggrs(X::OneStepFeaturedSupportingDataset) = X.featsnaggrs
 
-nsamples(X::OneStepFeaturedSupportingDataset) = nsamples(fwd_rs(X))
+ninstances(X::OneStepFeaturedSupportingDataset) = ninstances(fwd_rs(X))
 # nfeatsnaggrs(X::OneStepFeaturedSupportingDataset) = nfeatsnaggrs(fwd_rs(X))
 
 # TODO delegate to the two components...
@@ -164,7 +164,7 @@ function checksupportconsistency(
     fd::Logiset{V,W},
     X::OneStepFeaturedSupportingDataset{V,W},
 ) where {V,W<:AbstractWorld}
-    @assert nsamples(fd) == nsamples(X)                "Consistency check failed! Unmatching nsamples for fd and support: $(nsamples(fd)) and $(nsamples(X))"
+    @assert ninstances(fd) == ninstances(X)                "Consistency check failed! Unmatching ninstances for fd and support: $(ninstances(fd)) and $(ninstances(X))"
     # @assert nrelations(fd) == (nrelations(fwd_rs(X)) + (isnothing(fwd_gs(X)) ? 0 : 1))            "Consistency check failed! Unmatching nrelations for fd and support: $(nrelations(fd)) and $(nrelations(fwd_rs(X)))+$((isnothing(fwd_gs(X)) ? 0 : 1))"
     @assert nrelations(fd) >= nrelations(fwd_rs(X))            "Consistency check failed! Inconsistent nrelations for fd and support: $(nrelations(fd)) < $(nrelations(fwd_rs(X)))"
     _nfeatsnaggrs = nfeatsnaggrs(fd)
@@ -240,27 +240,27 @@ end
 function compute_global_gamma(
     X::OneStepFeaturedSupportingDataset{V,W},
     fd::Logiset{V,W},
-    i_sample::Integer,
+    i_instance::Integer,
     feature::AbstractFeature,
     aggregator::Aggregator,
     i_featsnaggr::Integer = find_featsnaggr_id(X, feature, aggregator),
 ) where {V,W<:AbstractWorld}
     _fwd_gs = fwd_gs(X)
     # @assert !isnothing(_fwd_gs) "Error. SupportedScalarLogiset must be built with compute_relation_glob = true for it to be ready to test global decisions."
-    if usesglobalmemo(X) && isnothing(_fwd_gs[i_sample, i_featsnaggr])
+    if usesglobalmemo(X) && isnothing(_fwd_gs[i_instance, i_featsnaggr])
         error("TODO finish this: memoization on the global table")
         # gamma = TODO...
         # i_feature = findfeature(fd, feature)
-        # fwdslice = fwdread_channel(fwd(fd), i_sample, i_feature)
-        _fwd_gs[i_sample, i_featsnaggr] = gamma
+        # fwdslice = fwdread_channel(fwd(fd), i_instance, i_feature)
+        _fwd_gs[i_instance, i_featsnaggr] = gamma
     end
-    _fwd_gs[i_sample, i_featsnaggr]
+    _fwd_gs[i_instance, i_featsnaggr]
 end
 
 function compute_modal_gamma(
     X::OneStepFeaturedSupportingDataset{V,W},
     fd::Logiset{V,W},
-    i_sample::Integer,
+    i_instance::Integer,
     w::W,
     r::AbstractRelation,
     feature::AbstractFeature,
@@ -269,11 +269,11 @@ function compute_modal_gamma(
     i_relation = nothing,
 )::V where {V,W<:AbstractWorld}
     _fwd_rs = fwd_rs(X)
-    if usesmodalmemo(X) && isnothing(_fwd_rs[i_sample, w, i_featsnaggr, i_relation])
+    if usesmodalmemo(X) && isnothing(_fwd_rs[i_instance, w, i_featsnaggr, i_relation])
         i_feature = findfeature(fd, feature)
-        fwdslice = fwdread_channel(fwd(fd), i_sample, i_feature)
-        gamma = fwdslice_onestep_accessible_aggregation(fd, fwdslice, i_sample, w, r, feature, aggregator)
-        fwd_rs[i_sample, w, i_featsnaggr, i_relation, gamma]
+        fwdslice = fwdread_channel(fwd(fd), i_instance, i_feature)
+        gamma = fwdslice_onestep_accessible_aggregation(fd, fwdslice, i_instance, w, r, feature, aggregator)
+        fwd_rs[i_instance, w, i_featsnaggr, i_relation, gamma]
     end
-    _fwd_rs[i_sample, w, i_featsnaggr, i_relation]
+    _fwd_rs[i_instance, w, i_featsnaggr, i_relation]
 end

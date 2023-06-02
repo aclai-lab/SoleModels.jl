@@ -17,7 +17,7 @@ using SoleLogics: AbstractFrame, AbstractDimensionalFrame, FullDimensionalFrame
 import SoleLogics: worldtype, accessibles, allworlds, alphabet, initialworld
 
 using SoleData
-import SoleData: _isnan, hasnans, nattributes, max_channel_size, channel_size
+import SoleData: _isnan, hasnans, nvariables, max_channel_size, channel_size
 import SoleData: instance, get_instance, slice_dataset, _slice_dataset
 import SoleData: dimensionality
 
@@ -29,7 +29,7 @@ using SoleModels: AbstractLogiset, AbstractMultiModalFrame
 using SoleModels: MultiFrameLogiset, AbstractLogiset
 using SoleModels: apply_test_operator, existential_aggregator, aggregator_bottom, aggregator_to_binary
 import SoleModels: representatives, ScalarMetaCondition, ScalarCondition, featvaltype
-import SoleModels: nsamples, nrelations, nfeatures, check, _slice_dataset, minify
+import SoleModels: ninstances, nrelations, nfeatures, check, _slice_dataset, minify
 import SoleModels: nframes, frames, displaystructure, frame
 import SoleModels: grouped_featsaggrsnops, features, grouped_metaconditions, alphabet, findfeature, findrelation, isminifiable
 

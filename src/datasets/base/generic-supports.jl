@@ -20,10 +20,10 @@ struct GenericRelationalSupport{
         _nfeatsnaggrs = nfeatsnaggrs(fd)
         _fwd_rs = begin
             if perform_initialization
-                _fwd_rs = Array{Dict{W,Union{V,Nothing}}, 3}(undef, nsamples(fd), _nfeatsnaggrs, nrelations(fd))
+                _fwd_rs = Array{Dict{W,Union{V,Nothing}}, 3}(undef, ninstances(fd), _nfeatsnaggrs, nrelations(fd))
                 fill!(_fwd_rs, nothing)
             else
-                Array{Dict{W,V}, 3}(undef, nsamples(fd), _nfeatsnaggrs, nrelations(fd))
+                Array{Dict{W,V}, 3}(undef, ninstances(fd), _nfeatsnaggrs, nrelations(fd))
             end
         end
         GenericRelationalSupport{V,W,FR}(_fwd_rs)
@@ -37,7 +37,7 @@ function hasnans(support::GenericRelationalSupport)
     any(map(d->(any(_isnan.(collect(values(d))))), support.d))
 end
 
-nsamples(support::GenericRelationalSupport)        = size(support, 1)
+ninstances(support::GenericRelationalSupport)        = size(support, 1)
 nfeatsnaggrs(support::GenericRelationalSupport)    = size(support, 2)
 nrelations(support::GenericRelationalSupport)      = size(support, 3)
 capacity(support::GenericRelationalSupport)        = Inf
@@ -45,19 +45,19 @@ nmemoizedvalues(support::GenericRelationalSupport) = sum(length.(support.d))
 
 @inline function Base.getindex(
     support      :: GenericRelationalSupport{V,W},
-    i_sample     :: Integer,
+    i_instance   :: Integer,
     w            :: W,
     i_featsnaggr :: Integer,
     i_relation   :: Integer
 ) where {V,W<:AbstractWorld}
-    support.d[i_sample, i_featsnaggr, i_relation][w]
+    support.d[i_instance, i_featsnaggr, i_relation][w]
 end
 Base.size(support::GenericRelationalSupport, args...) = size(support.d, args...)
 
-fwd_rs_init_world_slice(support::GenericRelationalSupport{V,W}, i_sample::Integer, i_featsnaggr::Integer, i_relation::Integer) where {V,W} =
-    support.d[i_sample, i_featsnaggr, i_relation] = Dict{W,V}()
-@inline function Base.setindex!(support::GenericRelationalSupport{V,W}, threshold::V, i_sample::Integer, w::AbstractWorld, i_featsnaggr::Integer, i_relation::Integer) where {V,W}
-    support.d[i_sample, i_featsnaggr, i_relation][w] = threshold
+fwd_rs_init_world_slice(support::GenericRelationalSupport{V,W}, i_instance::Integer, i_featsnaggr::Integer, i_relation::Integer) where {V,W} =
+    support.d[i_instance, i_featsnaggr, i_relation] = Dict{W,V}()
+@inline function Base.setindex!(support::GenericRelationalSupport{V,W}, threshold::V, i_instance::Integer, w::AbstractWorld, i_featsnaggr::Integer, i_relation::Integer) where {V,W}
+    support.d[i_instance, i_featsnaggr, i_relation][w] = threshold
 end
 function _slice_dataset(support::GenericRelationalSupport{V,W,FR}, inds::AbstractVector{<:Integer}, return_view::Val = Val(false)) where {V,W,FR}
     GenericRelationalSupport{V,W,FR}(if return_view == Val(true) @view support.d[inds,:,:] else support.d[inds,:,:] end)
@@ -79,7 +79,7 @@ struct GenericGlobalSupport{V,D<:AbstractArray{V,2}} <: AbstractGlobalSupport{V}
     function GenericGlobalSupport(fd::Logiset{V}) where {V}
         @assert worldtype(fd) != OneWorld "TODO adjust this note: note that you should not use a global support when not using global decisions"
         _nfeatsnaggrs = nfeatsnaggrs(fd)
-        GenericGlobalSupport{V}(Array{V,2}(undef, nsamples(fd), _nfeatsnaggrs))
+        GenericGlobalSupport{V}(Array{V,2}(undef, ninstances(fd), _nfeatsnaggrs))
     end
 end
 
@@ -93,16 +93,16 @@ function hasnans(support::GenericGlobalSupport)
     any(_isnan.(support.d))
 end
 
-nsamples(support::GenericGlobalSupport)  = size(support, 1)
+ninstances(support::GenericGlobalSupport)  = size(support, 1)
 nfeatsnaggrs(support::GenericGlobalSupport) = size(support, 2)
 Base.getindex(
     support      :: GenericGlobalSupport,
-    i_sample     :: Integer,
-    i_featsnaggr  :: Integer) = support.d[i_sample, i_featsnaggr]
+    i_instance   :: Integer,
+    i_featsnaggr  :: Integer) = support.d[i_instance, i_featsnaggr]
 Base.size(support::GenericGlobalSupport{V}, args...) where {V} = size(support.d, args...)
 
-Base.setindex!(support::GenericGlobalSupport{V}, threshold::V, i_sample::Integer, i_featsnaggr::Integer) where {V} =
-    support.d[i_sample, i_featsnaggr] = threshold
+Base.setindex!(support::GenericGlobalSupport{V}, threshold::V, i_instance::Integer, i_featsnaggr::Integer) where {V} =
+    support.d[i_instance, i_featsnaggr] = threshold
 function _slice_dataset(support::GenericGlobalSupport{V}, inds::AbstractVector{<:Integer}, return_view::Val = Val(false)) where {V}
     GenericGlobalSupport{V}(if return_view == Val(true) @view support.d[inds,:] else support.d[inds,:] end)
 end

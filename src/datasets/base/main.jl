@@ -1,4 +1,4 @@
-import SoleBase: frame
+import SoleLogics: frame
 
 using SoleLogics: OneWorld, Interval, Interval2D
 using SoleLogics: Full0DFrame, Full1DFrame, Full2DFrame
@@ -6,8 +6,8 @@ using SoleLogics: X, Y, Z
 using SoleLogics: AbstractWorld, IdentityRel
 import SoleLogics: syntaxstring
 
-import SoleData: nsamples, nfeatures
-import SoleData: nframes, frames, hasnans, _slice_dataset
+import SoleData: ninstances, nfeatures
+import SoleData: hasnans, _slice_dataset
 
 # Features to be computed on worlds of dataset instances
 include("features.jl")

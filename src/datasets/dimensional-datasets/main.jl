@@ -48,19 +48,19 @@ include("representatives/Full1DFrame+IA.jl")
 include("representatives/Full1DFrame+RCC.jl")
 include("representatives/Full2DFrame.jl")
 
-_st_featop_abbr(f::UnivariateMin,     ::typeof(≥); kwargs...) = "$(attribute_name(f; kwargs...)) ⪴"
-_st_featop_abbr(f::UnivariateMax,     ::typeof(≤); kwargs...) = "$(attribute_name(f; kwargs...)) ⪳"
-_st_featop_abbr(f::UnivariateSoftMin, ::typeof(≥); kwargs...) = "$(attribute_name(f; kwargs...)) $("⪴" * utils.subscriptnumber(rstrip(rstrip(string(alpha(f)*100), '0'), '.')))"
-_st_featop_abbr(f::UnivariateSoftMax, ::typeof(≤); kwargs...) = "$(attribute_name(f; kwargs...)) $("⪳" * utils.subscriptnumber(rstrip(rstrip(string(alpha(f)*100), '0'), '.')))"
+_st_featop_abbr(f::UnivariateMin,     ::typeof(≥); kwargs...) = "$(variable_name(f; kwargs...)) ⪴"
+_st_featop_abbr(f::UnivariateMax,     ::typeof(≤); kwargs...) = "$(variable_name(f; kwargs...)) ⪳"
+_st_featop_abbr(f::UnivariateSoftMin, ::typeof(≥); kwargs...) = "$(variable_name(f; kwargs...)) $("⪴" * utils.subscriptnumber(rstrip(rstrip(string(alpha(f)*100), '0'), '.')))"
+_st_featop_abbr(f::UnivariateSoftMax, ::typeof(≤); kwargs...) = "$(variable_name(f; kwargs...)) $("⪳" * utils.subscriptnumber(rstrip(rstrip(string(alpha(f)*100), '0'), '.')))"
 
-_st_featop_abbr(f::UnivariateMin,     ::typeof(<); kwargs...) = "$(attribute_name(f; kwargs...)) ⪶"
-_st_featop_abbr(f::UnivariateMax,     ::typeof(>); kwargs...) = "$(attribute_name(f; kwargs...)) ⪵"
-_st_featop_abbr(f::UnivariateSoftMin, ::typeof(<); kwargs...) = "$(attribute_name(f; kwargs...)) $("⪶" * utils.subscriptnumber(rstrip(rstrip(string(alpha(f)*100), '0'), '.')))"
-_st_featop_abbr(f::UnivariateSoftMax, ::typeof(>); kwargs...) = "$(attribute_name(f; kwargs...)) $("⪵" * utils.subscriptnumber(rstrip(rstrip(string(alpha(f)*100), '0'), '.')))"
+_st_featop_abbr(f::UnivariateMin,     ::typeof(<); kwargs...) = "$(variable_name(f; kwargs...)) ⪶"
+_st_featop_abbr(f::UnivariateMax,     ::typeof(>); kwargs...) = "$(variable_name(f; kwargs...)) ⪵"
+_st_featop_abbr(f::UnivariateSoftMin, ::typeof(<); kwargs...) = "$(variable_name(f; kwargs...)) $("⪶" * utils.subscriptnumber(rstrip(rstrip(string(alpha(f)*100), '0'), '.')))"
+_st_featop_abbr(f::UnivariateSoftMax, ::typeof(>); kwargs...) = "$(variable_name(f; kwargs...)) $("⪵" * utils.subscriptnumber(rstrip(rstrip(string(alpha(f)*100), '0'), '.')))"
 
-_st_featop_abbr(f::UnivariateMin,     ::typeof(≤); kwargs...) = "$(attribute_name(f; kwargs...)) ↘"
-_st_featop_abbr(f::UnivariateMax,     ::typeof(≥); kwargs...) = "$(attribute_name(f; kwargs...)) ↗"
-_st_featop_abbr(f::UnivariateSoftMin, ::typeof(≤); kwargs...) = "$(attribute_name(f; kwargs...)) $("↘" * utils.subscriptnumber(rstrip(rstrip(string(alpha(f)*100), '0'), '.')))"
-_st_featop_abbr(f::UnivariateSoftMax, ::typeof(≥); kwargs...) = "$(attribute_name(f; kwargs...)) $("↗" * utils.subscriptnumber(rstrip(rstrip(string(alpha(f)*100), '0'), '.')))"
+_st_featop_abbr(f::UnivariateMin,     ::typeof(≤); kwargs...) = "$(variable_name(f; kwargs...)) ↘"
+_st_featop_abbr(f::UnivariateMax,     ::typeof(≥); kwargs...) = "$(variable_name(f; kwargs...)) ↗"
+_st_featop_abbr(f::UnivariateSoftMin, ::typeof(≤); kwargs...) = "$(variable_name(f; kwargs...)) $("↘" * utils.subscriptnumber(rstrip(rstrip(string(alpha(f)*100), '0'), '.')))"
+_st_featop_abbr(f::UnivariateSoftMax, ::typeof(≥); kwargs...) = "$(variable_name(f; kwargs...)) $("↗" * utils.subscriptnumber(rstrip(rstrip(string(alpha(f)*100), '0'), '.')))"
 
 end

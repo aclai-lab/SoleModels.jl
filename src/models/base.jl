@@ -40,8 +40,8 @@ function check(
     kwargs...
 )
     map(
-        i_sample->check(c, slice_dataset(d, [i_sample]; return_view = true), args...; kwargs...)[1],
-        1:nsamples(d)
+        i_instance->check(c, slice_dataset(d, [i_instance]; return_view = true), args...; kwargs...)[1],
+        1:ninstances(d)
     )
 end
 
@@ -91,7 +91,7 @@ struct TrueCondition <: AbstractLogicalBooleanCondition end
 formula(::TrueCondition) = SyntaxTree(⊤)
 check(::TrueCondition, i::AbstractInterpretation, args...; kwargs...) = true
 check(::TrueCondition, d::AbstractInterpretationSet, args...; kwargs...) =
-    fill(true, nsamples(d))
+    fill(true, ninstances(d))
 
 """
     struct LogicalTruthCondition{F<:AbstractFormula} <: AbstractLogicalBooleanCondition
@@ -225,7 +225,7 @@ end
         m::AbstractModel,
         d::AbstractInterpretationSet;
         check_args::Tuple = (),
-        check_kwargs::NamedTuple = (; use_memo = [ThreadSafeDict{SyntaxTree,WorldSet{worldtype(d)}}() for i in 1:nsamples(d)]),
+        check_kwargs::NamedTuple = (; use_memo = [ThreadSafeDict{SyntaxTree,WorldSet{worldtype(d)}}() for i in 1:ninstances(d)]),
         functional_args::Tuple = (),
         functional_kwargs::NamedTuple = (;),
         kwargs...
@@ -264,10 +264,10 @@ end
 function apply(
     m::AbstractModel,
     d::AbstractInterpretationSet,
-    i_sample::Integer;
+    i_instance::Integer;
     kwargs...
 )::outputtype(m)
-    interpretation = get_instance(d, i_sample)
+    interpretation = get_instance(d, i_instance)
     apply(m, interpretation; kwargs...)
 end
 
@@ -276,7 +276,7 @@ function apply(
     d::AbstractInterpretationSet;
     kwargs...
 )::AbstractVector{<:outputtype(m)}
-    map(i_sample->apply(m, d, i_sample; kwargs...), 1:nsamples(d))
+    map(i_instance->apply(m, d, i_instance; kwargs...), 1:ninstances(d))
 end
 
 """
@@ -380,8 +380,8 @@ end
 outcome(m::ConstantModel) = m.outcome
 isopen(::ConstantModel) = false
 apply(m::ConstantModel, i::AbstractInterpretation; kwargs...) = outcome(m)
-apply(m::ConstantModel, d::AbstractInterpretationSet, i_sample::Integer; kwargs...) = outcome(m)
-apply(m::ConstantModel, d::AbstractInterpretationSet; kwargs...) = fill(outcome(m), nsamples(d))
+apply(m::ConstantModel, d::AbstractInterpretationSet, i_instance::Integer; kwargs...) = outcome(m)
+apply(m::ConstantModel, d::AbstractInterpretationSet; kwargs...) = fill(outcome(m), ninstances(d))
 
 convert(::Type{ConstantModel{O}}, o::O) where {O} = ConstantModel{O}(o)
 convert(::Type{<:AbstractModel{F}}, m::ConstantModel) where {F} = ConstantModel{F}(m)
@@ -463,17 +463,17 @@ end
 function apply(
     m::FunctionModel,
     d::AbstractInterpretationSet,
-    i_sample::Integer;
+    i_instance::Integer;
     functional_models_gets_single_instance::Bool = false,
     functional_args::Tuple = (),
     functional_kwargs::NamedTuple = (;),
     kwargs...,
 )
     if functional_models_gets_single_instance
-        interpretation = get_instance(d, i_sample)
+        interpretation = get_instance(d, i_instance)
         f(m)(interpretation, functional_args...; functional_kwargs...)
     else
-        f(m)(d, i_sample, functional_args...; functional_kwargs...)
+        f(m)(d, i_instance, functional_args...; functional_kwargs...)
     end
 end
 
@@ -743,13 +743,13 @@ end
 function apply(
     m::Rule,
     d::AbstractInterpretationSet,
-    i_sample::Integer;
+    i_instance::Integer;
     check_args::Tuple = (),
-    check_kwargs::NamedTuple = (; use_memo = [Dict{SyntaxTree,WorldSet{worldtype(d)}}() for i in 1:nsamples(d)]),
+    check_kwargs::NamedTuple = (; use_memo = [Dict{SyntaxTree,WorldSet{worldtype(d)}}() for i in 1:ninstances(d)]),
     kwargs...
 )
-    if check_antecedent(m, d, i_sample, check_args...; check_kwargs...) == true
-        apply(consequent(m), d, i_sample;
+    if check_antecedent(m, d, i_instance, check_args...; check_kwargs...) == true
+        apply(consequent(m), d, i_instance;
             check_args = check_args,
             check_kwargs = check_kwargs,
             kwargs...
@@ -928,19 +928,19 @@ end
 function apply(
     m::Branch{O,<:LogicalTruthCondition},
     d::AbstractInterpretationSet,
-    i_sample::Integer;
+    i_instance::Integer;
     check_args::Tuple = (),
-    check_kwargs::NamedTuple = (; use_memo = [Dict{SyntaxTree,WorldSet{worldtype(d)}}() for i in 1:nsamples(d)]),
+    check_kwargs::NamedTuple = (; use_memo = [Dict{SyntaxTree,WorldSet{worldtype(d)}}() for i in 1:ninstances(d)]),
     kwargs...
 ) where {O}
-    if check_antecedent(m, d, i_sample, check_args...; check_kwargs...) == true
-        apply(posconsequent(m), d, i_sample;
+    if check_antecedent(m, d, i_instance, check_args...; check_kwargs...) == true
+        apply(posconsequent(m), d, i_instance;
             check_args = check_args,
             check_kwargs = check_kwargs,
             kwargs...
         )
     else
-        apply(negconsequent(m), d, i_sample;
+        apply(negconsequent(m), d, i_instance;
             check_args = check_args,
             check_kwargs = check_kwargs,
             kwargs...
@@ -952,7 +952,7 @@ function apply(
     m::Branch{O,<:LogicalTruthCondition},
     d::AbstractInterpretationSet;
     check_args::Tuple = (),
-    check_kwargs::NamedTuple = (; use_memo = [ThreadSafeDict{SyntaxTree,WorldSet{worldtype(d)}}() for i in 1:nsamples(d)]),
+    check_kwargs::NamedTuple = (; use_memo = [ThreadSafeDict{SyntaxTree,WorldSet{worldtype(d)}}() for i in 1:ninstances(d)]),
     kwargs...
 ) where {O}
     cs = check_antecedent(m, d, check_args...; check_kwargs...)
@@ -1082,9 +1082,9 @@ function apply(
     m::DecisionList{O},
     d::AbstractInterpretationSet;
     check_args::Tuple = (),
-    check_kwargs::NamedTuple = (; use_memo = [ThreadSafeDict{SyntaxTree,WorldSet{worldtype(d)}}() for i in 1:nsamples(d)]),
+    check_kwargs::NamedTuple = (; use_memo = [ThreadSafeDict{SyntaxTree,WorldSet{worldtype(d)}}() for i in 1:ninstances(d)]),
 ) where {O}
-    nsamp = nsamples(d)
+    nsamp = ninstances(d)
     pred = Vector{O}(undef, nsamp)
     uncovered_idxs = 1:nsamp
 
@@ -1115,10 +1115,10 @@ function apply!(
     m::DecisionList{O},
     d::AbstractInterpretationSet;
     check_args::Tuple = (),
-    check_kwargs::NamedTuple = (; use_memo = [ThreadSafeDict{SyntaxTree,WorldSet{worldtype(d)}}() for i in 1:nsamples(d)]),
+    check_kwargs::NamedTuple = (; use_memo = [ThreadSafeDict{SyntaxTree,WorldSet{worldtype(d)}}() for i in 1:ninstances(d)]),
     compute_metrics::Union{Symbol,Bool} = false,
 ) where {O}
-    nsamp = nsamples(d)
+    nsamp = ninstances(d)
     pred = Vector{O}(undef, nsamp)
     delays = Vector{Integer}(undef, nsamp)
     uncovered_idxs = 1:nsamp

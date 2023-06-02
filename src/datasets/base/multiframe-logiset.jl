@@ -19,7 +19,7 @@ struct MultiFrameLogiset{MD<:AbstractLogiset}
     end
     function MultiFrameLogiset{MD}(Xs::AbstractVector) where {MD<:AbstractLogiset}
         Xs = collect(Xs)
-        @assert length(Xs) > 0 && length(unique(nsamples.(Xs))) == 1 "Can't create an empty MultiFrameLogiset or with mismatching number of samples (nframes: $(length(Xs)), frame_sizes: $(nsamples.(Xs)))."
+        @assert length(Xs) > 0 && length(unique(ninstances.(Xs))) == 1 "Can't create an empty MultiFrameLogiset or with mismatching number of instances (nframes: $(length(Xs)), frame_sizes: $(ninstances.(Xs)))."
         new{MD}(Xs)
     end
     function MultiFrameLogiset{MD}() where {MD<:AbstractLogiset}
@@ -39,14 +39,14 @@ end
 frames(X::MultiFrameLogiset) = X.frames
 
 Base.iterate(X::MultiFrameLogiset, state=1)                     = state > length(X) ? nothing : (get_instance(X, state), state+1)
-Base.length(X::MultiFrameLogiset)                               = nsamples(X)
+Base.length(X::MultiFrameLogiset)                               = ninstances(X)
 Base.push!(X::MultiFrameLogiset, f::AbstractLogiset) = push!(frames(X), f)
 
 Base.size(X::MultiFrameLogiset)                                 = map(size, frames(X))
 
 frame(X::MultiFrameLogiset, i_frame::Integer)                   = nframes(X) > 0 ? frames(X)[i_frame] : error("MultiFrameLogiset has no frame!")
 nframes(X::MultiFrameLogiset)                                   = length(frames(X))
-nsamples(X::MultiFrameLogiset)                                  = nsamples(frame(X, 1))
+ninstances(X::MultiFrameLogiset)                                  = ninstances(frame(X, 1))
 
 # max_channel_size(X::MultiFrameLogiset) = map(max_channel_size, frames(X)) # TODO: figure if this is useless or not. Note: channel_size doesn't make sense at this point.
 nfeatures(X::MultiFrameLogiset) = map(nfeatures, frames(X)) # Note: used for safety checks in fit_tree.jl

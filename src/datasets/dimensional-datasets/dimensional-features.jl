@@ -13,7 +13,7 @@ representing functions that can be computed on dimensional, geometrical worlds.
 Dimensional worlds are geometric entity that live in a *dimensional* context;
 for example, an `Interval` of a time series.
 As an example of a dimensional feature, consider min(V1),
-which computes the minimum for attribute 1 for a given world.
+which computes the minimum for variable 1 for a given world.
 The value of a feature for a given world can be then evaluated in a `Condition`,
  such as: min(V1) >= 10.
 
@@ -67,23 +67,23 @@ See also [`Interval`](@ref),
 """
 abstract type AbstractUnivariateFeature{U} <: DimensionalFeature{U} end
 
-i_attribute(f::AbstractUnivariateFeature) = f.i_attribute
+i_variable(f::AbstractUnivariateFeature) = f.i_variable
 
 """
-    function attribute_name(
+    function variable_name(
         f::AbstractUnivariateFeature;
-        attribute_names_map::Union{Nothing,AbstractDict,AbstractVector} = nothing,
-        attribute_name_prefix::Union{Nothing,String} = $(repr(UVF_VARPREFIX)),
+        variable_names_map::Union{Nothing,AbstractDict,AbstractVector} = nothing,
+        variable_name_prefix::Union{Nothing,String} = $(repr(UVF_VARPREFIX)),
     )::String
 
-Return the name of the attribute targeted by a univariate feature.
-By default, an attribute name is a number prefixed by $(repr(UVF_VARPREFIX));
-however, `attribute_names_map` or `attribute_name_prefix` can be used to
-customize attribute names.
-The prefix can be customized by specifying `attribute_name_prefix`.
+Return the name of the variable targeted by a univariate feature.
+By default, an variable name is a number prefixed by $(repr(UVF_VARPREFIX));
+however, `variable_names_map` or `variable_name_prefix` can be used to
+customize variable names.
+The prefix can be customized by specifying `variable_name_prefix`.
 Alternatively, a mapping from string to integer (either via a Dictionary or a Vector)
-can be passed as `attribute_names_map`.
-Note that only one in `attribute_names_map` and `attribute_name_prefix` should be provided.
+can be passed as `variable_names_map`.
+Note that only one in `variable_names_map` and `variable_name_prefix` should be provided.
 
 
 See also
@@ -91,18 +91,18 @@ See also
 [`ScalarCondition`](@ref),
 [`syntaxstring`](@ref).
 """
-function attribute_name(
+function variable_name(
     f::AbstractUnivariateFeature;
-    attribute_names_map::Union{Nothing,AbstractDict,AbstractVector} = nothing,
-    attribute_name_prefix::Union{Nothing,String} = nothing,
+    variable_names_map::Union{Nothing,AbstractDict,AbstractVector} = nothing,
+    variable_name_prefix::Union{Nothing,String} = nothing,
     kwargs..., # TODO remove this.
 )
-    if isnothing(attribute_names_map)
-        attribute_name_prefix = isnothing(attribute_name_prefix) ? UVF_VARPREFIX : attribute_name_prefix
-        "$(attribute_name_prefix)$(i_attribute(f))"
+    if isnothing(variable_names_map)
+        variable_name_prefix = isnothing(variable_name_prefix) ? UVF_VARPREFIX : variable_name_prefix
+        "$(variable_name_prefix)$(i_variable(f))"
     else
-        @assert isnothing(attribute_name_prefix)
-        "$(attribute_names_map[i_attribute(f)])"
+        @assert isnothing(variable_name_prefix)
+        "$(variable_names_map[i_variable(f)])"
     end
 end
 
@@ -111,7 +111,7 @@ function featurename(f::AbstractFeature; kwargs...)
 end
 
 function syntaxstring(f::AbstractUnivariateFeature; kwargs...)
-    n = attribute_name(f; kwargs...)
+    n = variable_name(f; kwargs...)
     ""
     "$(featurename(f))$UVF_OPENING_BRACKET$n$UVF_CLOSING_BRACKET"
 end
@@ -120,7 +120,7 @@ end
 
 """
     struct UnivariateFeature{U} <: AbstractUnivariateFeature{U}
-        i_attribute::Integer
+        i_variable::Integer
         f::Function
     end
 
@@ -135,17 +135,17 @@ See also [`Interval`](@ref),
 [`DimensionalFeature`](@ref), [`AbstractFeature`](@ref).
 """
 struct UnivariateFeature{U} <: AbstractUnivariateFeature{U}
-    i_attribute::Integer
+    i_variable::Integer
     f::Function
 end
 function computefeature(f::UnivariateFeature{U}, channel::AbstractDimensionalChannel{T}) where {U<:Real,T}
-    (f.f(SoleBase.vectorize(channelvariable(channel, f.i_attribute));))::U
+    (f.f(SoleBase.vectorize(channelvariable(channel, f.i_variable));))::U
 end
 featurename(f::UnivariateFeature) = string(f.f)
 
 """
     struct UnivariateNamedFeature{U} <: AbstractUnivariateFeature{U}
-        i_attribute::Integer
+        i_variable::Integer
         name::String
     end
 
@@ -157,7 +157,7 @@ See also [`Interval`](@ref),
 [`DimensionalFeature`](@ref), [`AbstractFeature`](@ref).
 """
 struct UnivariateNamedFeature{U} <: AbstractUnivariateFeature{U}
-    i_attribute::Integer
+    i_variable::Integer
     name::String
 end
 function computefeature(f::UnivariateNamedFeature, channel::AbstractDimensionalChannel{T}) where {T}
@@ -171,7 +171,7 @@ featurename(f::UnivariateNamedFeature) = f.name
 
 """
     struct UnivariateMin{U} <: AbstractUnivariateFeature{U}
-        i_attribute::Integer
+        i_variable::Integer
     end
 
 Notable univariate feature computing the minimum value for a given variable.
@@ -183,24 +183,24 @@ See also [`Interval`](@ref),
 [`DimensionalFeature`](@ref), [`AbstractFeature`](@ref).
 """
 struct UnivariateMin{U} <: AbstractUnivariateFeature{U}
-    i_attribute::Integer
-    function UnivariateMin{U}(i_attribute::Integer) where {U<:Real}
-        return new{U}(i_attribute)
+    i_variable::Integer
+    function UnivariateMin{U}(i_variable::Integer) where {U<:Real}
+        return new{U}(i_variable)
     end
-    function UnivariateMin(i_attribute::Integer)
+    function UnivariateMin(i_variable::Integer)
         @warn "Please specify the type of the feature for UnivariateMin." *
-            " For example: UnivariateMin{Float64}($(i_attribute))."
-        return UnivariateMin{Real}(i_attribute)
+            " For example: UnivariateMin{Float64}($(i_variable))."
+        return UnivariateMin{Real}(i_variable)
     end
 end
 function computefeature(f::UnivariateMin{U}, channel::AbstractDimensionalChannel{T}) where {U<:Real,T}
-    (minimum(channelvariable(channel, f.i_attribute)))::U
+    (minimum(channelvariable(channel, f.i_variable)))::U
 end
 featurename(f::UnivariateMin) = "min"
 
 """
     struct UnivariateMax{U} <: AbstractUnivariateFeature{U}
-        i_attribute::Integer
+        i_variable::Integer
     end
 
 Notable univariate feature computing the maximum value for a given variable.
@@ -212,18 +212,18 @@ See also [`Interval`](@ref),
 [`DimensionalFeature`](@ref), [`AbstractFeature`](@ref).
 """
 struct UnivariateMax{U} <: AbstractUnivariateFeature{U}
-    i_attribute::Integer
-    function UnivariateMax{U}(i_attribute::Integer) where {U<:Real}
-        return new{U}(i_attribute)
+    i_variable::Integer
+    function UnivariateMax{U}(i_variable::Integer) where {U<:Real}
+        return new{U}(i_variable)
     end
-    function UnivariateMax(i_attribute::Integer)
+    function UnivariateMax(i_variable::Integer)
         @warn "Please specify the type of the feature for UnivariateMax." *
-            " For example: UnivariateMax{Float64}($(i_attribute))."
-        return UnivariateMax{Real}(i_attribute)
+            " For example: UnivariateMax{Float64}($(i_variable))."
+        return UnivariateMax{Real}(i_variable)
     end
 end
 function computefeature(f::UnivariateMax{U}, channel::AbstractDimensionalChannel{T}) where {U<:Real,T}
-    (maximum(channelvariable(channel, f.i_attribute)))::U
+    (maximum(channelvariable(channel, f.i_variable)))::U
 end
 featurename(f::UnivariateMax) = "max"
 
@@ -232,7 +232,7 @@ featurename(f::UnivariateMax) = "max"
 
 """
     struct UnivariateSoftMin{U,T<:AbstractFloat} <: AbstractUnivariateFeature{U}
-        i_attribute::Integer
+        i_variable::Integer
         alpha::T
     end
 
@@ -245,24 +245,24 @@ See also [`Interval`](@ref),
 [`DimensionalFeature`](@ref), [`AbstractFeature`](@ref).
 """
 struct UnivariateSoftMin{U,T<:AbstractFloat} <: AbstractUnivariateFeature{U}
-    i_attribute::Integer
+    i_variable::Integer
     alpha::T
-    function UnivariateSoftMin{U}(i_attribute::Integer, alpha::T) where {U<:Real,T}
+    function UnivariateSoftMin{U}(i_variable::Integer, alpha::T) where {U<:Real,T}
         @assert !(alpha > 1.0 || alpha < 0.0) "Can't instantiate UnivariateSoftMin with alpha = $(alpha)"
         @assert !isone(alpha) "Can't instantiate UnivariateSoftMin with alpha = $(alpha). Use UnivariateMin instead!"
-        new{U,T}(i_attribute, alpha)
+        new{U,T}(i_variable, alpha)
     end
 end
 alpha(f::UnivariateSoftMin) = f.alpha
 featurename(f::UnivariateSoftMin) = "min" * utils.subscriptnumber(rstrip(rstrip(string(f.alpha*100), '0'), '.'))
 function computefeature(f::UnivariateSoftMin{U}, channel::AbstractDimensionalChannel{T}) where {U<:Real,T}
-    utils.softminimum(channelvariable(channel, f.i_attribute), f.alpha)::U
+    utils.softminimum(channelvariable(channel, f.i_variable), f.alpha)::U
 end
 
 
 """
     struct UnivariateSoftMax{U,T<:AbstractFloat} <: AbstractUnivariateFeature{U}
-        i_attribute::Integer
+        i_variable::Integer
         alpha::T
     end
 
@@ -275,26 +275,26 @@ See also [`Interval`](@ref),
 [`DimensionalFeature`](@ref), [`AbstractFeature`](@ref).
 """
 struct UnivariateSoftMax{U,T<:AbstractFloat} <: AbstractUnivariateFeature{U}
-    i_attribute::Integer
+    i_variable::Integer
     alpha::T
-    function UnivariateSoftMax{U}(i_attribute::Integer, alpha::T) where {U<:Real,T}
+    function UnivariateSoftMax{U}(i_variable::Integer, alpha::T) where {U<:Real,T}
         @assert !(alpha > 1.0 || alpha < 0.0) "Can't instantiate UnivariateSoftMax with alpha = $(alpha)"
         @assert !isone(alpha) "Can't instantiate UnivariateSoftMax with alpha = $(alpha). Use UnivariateMax instead!"
-        new{U,T}(i_attribute, alpha)
+        new{U,T}(i_variable, alpha)
     end
 end
 alpha(f::UnivariateSoftMax) = f.alpha
 featurename(f::UnivariateSoftMax) = "max" * utils.subscriptnumber(rstrip(rstrip(string(f.alpha*100), '0'), '.'))
 function computefeature(f::UnivariateSoftMax{U}, channel::AbstractDimensionalChannel{T}) where {U<:Real,T}
-    utils.softmaximum(channelvariable(channel, f.i_attribute), f.alpha)::U
+    utils.softmaximum(channelvariable(channel, f.i_variable), f.alpha)::U
 end
 
 # simplified propositional cases:
 function computefeature(f::UnivariateSoftMin{U}, channel::AbstractDimensionalChannel{T,1}) where {U<:Real,T}
-    channelvariable(channel, f.i_attribute)::U
+    channelvariable(channel, f.i_variable)::U
 end
 function computefeature(f::UnivariateSoftMax{U}, channel::AbstractDimensionalChannel{T,1}) where {U<:Real,T}
-    channelvariable(channel, f.i_attribute)::U
+    channelvariable(channel, f.i_variable)::U
 end
 
 ############################################################################################
