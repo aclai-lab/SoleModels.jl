@@ -26,7 +26,9 @@ include("random.jl")
 
 include("representatives.jl")
 
-include("scalar-memosets.jl")
+include("decisions.jl")
+
+include("memosets.jl")
 
 export UnivariateMin, UnivariateMax,
         UnivariateSoftMin, UnivariateSoftMax,

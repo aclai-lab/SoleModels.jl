@@ -37,7 +37,7 @@ include("multilogiset.jl")
 # Model checking algorithms for logisets and multilogisets
 include("check.jl")
 
-include("scalar-conditions/main.jl")
+include("scalar/main.jl")
 
 # # TODO figure out which convert function works best:
 # convert(::Type{<:MultiLogiset{T}}, X::MD) where {T,MD<:AbstractLogiset{T}} = MultiLogiset{MD}([X])
