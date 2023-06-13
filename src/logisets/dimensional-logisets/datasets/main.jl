@@ -49,7 +49,7 @@ include("passive-dimensional-datasets.jl")
 
 include("dimensional-logiset.jl")
 
-# World-specific featured world datasets and supports
+# Frame-specific featured world datasets and supports
 include("dimensional-fwds.jl")
 
 _default_fwd_type(::Type{<:FullDimensionalFrame}) = UniformFullDimensionalFWD

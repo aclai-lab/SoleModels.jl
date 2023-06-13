@@ -12,6 +12,9 @@ include("test-operators.jl")
 # Alphabets of conditions on the features, to be used in logical datasets
 include("conditions.jl")
 
+# Templates for formulas of scalar conditions (e.g., templates for ⊤, f ⋈ t, ⟨R⟩ f ⋈ t, etc.)
+include("templated-formulas.jl")
+
 export MixedFeature, CanonicalFeature, canonical_geq, canonical_leq
 
 export canonical_geq_95, canonical_geq_90, canonical_geq_85, canonical_geq_80, canonical_geq_75, canonical_geq_70, canonical_geq_60,
@@ -26,9 +29,9 @@ include("random.jl")
 
 include("representatives.jl")
 
-include("decisions.jl")
-
 include("memosets.jl")
+
+include("one-step-memoset.jl")
 
 export UnivariateMin, UnivariateMax,
         UnivariateSoftMin, UnivariateSoftMax,

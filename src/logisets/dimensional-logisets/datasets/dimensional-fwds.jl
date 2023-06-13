@@ -2,7 +2,7 @@ import Base: size, ndims, getindex, setindex!
 
 ############################################################################################
 ############################################################################################
-# world-specific FWD implementations
+# Frame-specific FWD implementations
 ############################################################################################
 ############################################################################################
 
@@ -28,11 +28,6 @@ struct UniformFullDimensionalFWD{
 
     # Features
     features                :: Vector{FT}
-
-    # Test operators associated with each feature, grouped by their respective aggregator
-    grouped_featsaggrsnops  :: G1
-
-    grouped_featsnaggrs     :: G2
 
     function UniformFullDimensionalFWD{T,W,N,D,FR}(d::D) where {T,W<:AbstractWorld,N,D<:AbstractArray{T},FR<:FullDimensionalFrame{N,W}}
         new{T,W,N,D,FR}(d)

@@ -54,6 +54,13 @@ end
 ############################################################################################
 
 """
+Abstract type for one-step memoization structure for checking formulas of type `⟨R⟩ (f ⋈ t)`.
+"""
+abstract type AbstractOneStepMemoset{W<:AbstractWorld,U,F<:AbstractFeature,FR<:AbstractFrame{W}} <: AbstractMemoset{W,U,F,FR}     end
+
+############################################################################################
+
+"""
 A generic, full memoization structure that works for any *crisp* logic;
 For each instance of a dataset,
 this structure associates formulas to the set of worlds where the
@@ -161,5 +168,3 @@ fullmemo(Xm::Memoset) = Xm
 hasnans(::Memoset) = false
 
 # Base.size(::Memoset) = ()
-
-############################################################################################

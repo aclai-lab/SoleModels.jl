@@ -125,6 +125,10 @@ nonscalar_supported_logiset = SupportedLogiset(nonscalar_logiset)
 @test_nowarn SoleModels.parsecondition(SoleModels.ScalarCondition, "p > 0.5"; featvaltype = String, featuretype = Feature)
 @test SoleModels.ScalarCondition(features[1], >, 0.5) == SoleModels.parsecondition(SoleModels.ScalarCondition, "p > 0.5"; featvaltype = String, featuretype = Feature)
 
+############################################################################################
+# Memoset's
+############################################################################################
+
 memoset = [ThreadSafeDict{SyntaxTree,WorldSet{W}}() for i_instance in 1:ninstances(bool_supported_logiset)]
 
 @test_nowarn check(φ, bool_logiset, 1, w)
@@ -135,9 +139,9 @@ memoset = [ThreadSafeDict{SyntaxTree,WorldSet{W}}() for i_instance in 1:ninstanc
 @test_logs (:warn,) check(φ, bool_supported_logiset, 1, w; use_memo = memoset)
 
 
-@test_nowarn bool_supported_logiset2 = SupportedLogiset(bool_logiset, memoset)
-@test_nowarn bool_supported_logiset2 = SupportedLogiset(bool_logiset, (memoset,))
-@test_nowarn bool_supported_logiset2 = SupportedLogiset(bool_logiset, [memoset])
+bool_supported_logiset2 = @test_nowarn SupportedLogiset(bool_logiset, memoset)
+bool_supported_logiset2 = @test_nowarn SupportedLogiset(bool_logiset, (memoset,))
+bool_supported_logiset2 = @test_nowarn SupportedLogiset(bool_logiset, [memoset])
 
 @test_throws AssertionError SupportedLogiset(bool_supported_logiset2)
 
@@ -169,3 +173,22 @@ memoset = [ThreadSafeDict{SyntaxTree,WorldSet{W}}() for i_instance in 1:ninstanc
 @time check(φ, scalar_logiset, 1, w; use_memo = nothing)
 @time check(φ, scalar_logiset, 1, w; use_memo = memoset)
 
+
+############################################################################################
+# Scalar memoset's
+############################################################################################
+
+using SoleModels: ScalarMetaCondition
+using SoleModels: ScalarOneStepRelationalMemoset, ScalarOneStepGlobalMemoset
+
+# metaconditions = [ScalarMetaCondition(features[1], >)]
+metaconditions = [ScalarMetaCondition(f, test_op) for f in features for test_op in [>,<]]
+
+@test_throws AssertionError ScalarOneStepGlobalMemoset{Interval,Float64}(metaconditions, rand(1,2))
+@test_nowarn ScalarOneStepGlobalMemoset{Interval,Float64}(metaconditions, rand(1,22))
+
+perform_initialization = true
+bool_relationalmemoset = @test_nowarn ScalarOneStepRelationalMemoset(bool_logiset, metaconditions, [globalrel], perform_initialization)
+bool_globalmemoset = @test_nowarn ScalarOneStepGlobalMemoset(bool_logiset, metaconditions, perform_initialization)
+
+@test_nowarn SupportedLogiset(bool_logiset, bool_relationalmemoset)

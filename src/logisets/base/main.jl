@@ -15,6 +15,9 @@ include("features.jl")
 # Conditions on the features, to be wrapped in Proposition's
 include("conditions.jl")
 
+# Templates for formulas of conditions (e.g., templates for ⊤, p, ⟨R⟩p, etc.)
+include("templated-formulas.jl")
+
 export check, accessibles, allworlds, representatives, initialworld
 
 # Interface for representative accessibles, for optimized model checking on specific frames
@@ -38,6 +41,30 @@ include("multilogiset.jl")
 include("check.jl")
 
 include("scalar/main.jl")
+
+function default_relmemoset_type(X::AbstractLogiset)
+    frames = [frame(X, i_instance) for i_instance in 1:ninstances(X)]
+    if allequal(frames) && first(unique(frames)) isa FullDimensionalFrame
+        UniformFullDimensionalRelationalSupport
+    else
+        ScalarOneStepRelationalMemoset
+    end
+end
+
+function default_onestep_memoset_type(X::AbstractLogiset)
+    if featvaltype(X) <: Real
+        ScalarOneStepMemoset
+    else
+        OneStepMemoset
+    end
+end
+function default_full_memoset_type(X::AbstractLogiset)
+    # if ...
+    #     ScalarMemoset TODO
+    # else
+        Memoset
+    # end
+end
 
 # # TODO figure out which convert function works best:
 # convert(::Type{<:MultiLogiset{T}}, X::MD) where {T,MD<:AbstractLogiset{T}} = MultiLogiset{MD}([X])

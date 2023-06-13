@@ -67,6 +67,9 @@ struct SupportedLogiset{
             "Please, provide cascading supports so that the full memoization set appears " *
             "last. $(@show typeof.(supports))"
 
+        @assert allequal([ninstances(base), ninstances.(supports)...]) "Consistency " *
+            "check failed! Mismatching ninstances for base and memoset(s): $(ninstances(base)) and $(ninstances.(supports))"
+
         N = length(supports)
         MS = typeof(supports)
         new{L,N,MS}(base, supports)
@@ -79,13 +82,59 @@ struct SupportedLogiset{
         SupportedLogiset(base, Tuple(supports))
     end
 
-    # Helper
+    # Helper (avoids ambiguities)
     function SupportedLogiset(
         base::AbstractLogiset,
+        firstsupport::Union{<:AbstractVector{<:AbstractDict},<:AbstractMemoset,<:SupportedLogiset},
         supports::Union{<:AbstractVector{<:AbstractDict},<:AbstractMemoset,<:SupportedLogiset}...
     )
+        SupportedLogiset(base, [firstsupport, supports...])
+    end
+
+    function SupportedLogiset(
+        base                             :: AbstractLogiset;
+        use_full_memoization             :: Union{Bool,Type{<:AbstractMemoset}} = true,
+        #
+        conditions                       :: Union{Nothing,AbstractVector{<:AbstractCondition}} = nothing,
+        relations                        :: Union{Nothing,AbstractVector{<:AbstractRelation}} = nothing,
+        use_onestep_memoization          :: Union{Bool,Type{<:AbstractOneStepMemoset}} = !isnothing(conditions) && !isnothing(relations),
+        onestep_precompute_globmemoset   :: Bool = (use_onestep_memoization != false),
+        onestep_precompute_globmemoset   :: Bool = false,
+    )
+        supports = []
+
+        @assert !xor(isnothing(conditions), isnothing(relations)) "Please, provide " *
+            "both conditions and relations in order to use a one-step memoset."
+
+        if use_onestep_memoization != false
+            onestep_memoset_type = (use_onestep_memoization isa Bool ? default_onestep_memoset_type(base) : use_onestep_memoization)
+            push!(supports,
+                onestep_memoset_type(
+                    base,
+                    conditions,
+                    relations,
+                    precompute_globmemoset = onestep_precompute_globmemoset,
+                    precompute_relmemoset = onestep_precompute_relmemoset
+                )
+            )
+        end
+
+        if use_full_memoization != false
+            full_memoset_type = (use_full_memoization isa Bool ? default_full_memoset_type(base) : use_full_memoization)
+            push!(supports, full_memoset_type(base))
+        end
+
         SupportedLogiset(base, supports)
     end
+
+    # TODO Helper
+    # function SupportedLogiset(
+    #     X                   :: ... AbstractActiveScalarLogiset{W,V,FT,Bool,FR};
+    #     kwargs...,
+    # ) where {V,FT<:AbstractFeature{V},W<:AbstractWorld,FR<:AbstractFrame{W}}
+    #     SupportedLogiset(Logiset(X); kwargs...)
+    # end
+
 end
 
 base(X::SupportedLogiset)     = X.base
@@ -130,7 +179,6 @@ function allfeatvalues(
 )
     allfeatvalues(base(X), i_instance, feature)
 end
-
 
 usesfullmemo(X::SupportedLogiset) = usesfullmemo(last(supports(X)))
 fullmemo(X::SupportedLogiset) = usesfullmemo(X) ? last(supports(X)) : error("This " *
@@ -201,9 +249,11 @@ end
 # grouped_featsnaggrs(X::SupportedLogiset)        = grouped_featsnaggrs(base(X))
 # nfeatures(X::SupportedLogiset)                  = nfeatures(base(X))
 # nrelations(X::SupportedLogiset)                 = nrelations(base(X))
-# ninstances(X::SupportedLogiset)                   = ninstances(base(X))
 # relations(X::SupportedLogiset)                  = relations(base(X))
 # fwd(X::SupportedLogiset)                        = fwd(base(X))
 # worldtype(X::SupportedLogiset{V,W}) where {V,W} = W
 
-# usesmemo(X::SupportedLogiset) = usesmemo(support(X))
+# initialworld(X::SupportedScalarLogiset, args...) = initialworld(base(X), args...)
+
+# TODO remove:
+support(X::SupportedLogiset) = first(supports(X))

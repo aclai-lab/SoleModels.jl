@@ -14,7 +14,7 @@ end
 ############################################################################################
 
 function onestep_accessible_aggregation(
-    X::SupportedScalarLogiset{VV,W},
+    X::SupportedScalarLogiset,
     i_instance::Integer,
     w::W,
     relation::AbstractRelation,
@@ -22,18 +22,18 @@ function onestep_accessible_aggregation(
     aggr::Aggregator,
     i_featsnaggr::Union{Nothing,Integer} = nothing,
     i_relation::Integer = findrelation(X, relation),
-) where {VV,V<:VV,W<:AbstractWorld}
+) where {V,W<:AbstractWorld}
     compute_modal_gamma(support(X), fd(X), i_instance, w, relation, feature, aggregator, i_featsnaggr, i_relation)
 end
 
 @inline function onestep_accessible_aggregation(
-    X::SupportedScalarLogiset{VV,W},
+    X::SupportedScalarLogiset,
     i_instance::Integer,
     r::GlobalRel,
     f::AbstractFeature{V},
     aggr::Aggregator,
     args...
-) where {VV,V<:VV,W<:AbstractWorld}
+) where {V,W<:AbstractWorld}
     compute_global_gamma(support(X), fd(X), i_instance, f, aggr, args...)
 end
 
@@ -68,7 +68,7 @@ end
 ############################################################################################
 
 function fwdslice_onestep_accessible_aggregation(
-    X::OneStepFeaturedMemoset{V,W},
+    X::ScalarOneStepMemoset{V,W},
     fd::Logiset{V,W},
     fwdslice::FWDFeatureSlice,
     i_instance::Integer,
@@ -86,7 +86,7 @@ function fwdslice_onestep_accessible_aggregation(
 end
 
 function fwdslice_onestep_accessible_aggregation(
-    X::OneStepFeaturedMemoset{V,W},
+    X::ScalarOneStepMemoset{V,W},
     fd::Logiset{V,W},
     fwdslice::FWDFeatureSlice,
     i_instance::Integer,

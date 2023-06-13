@@ -2,14 +2,14 @@ import Base: size, ndims, getindex, setindex!
 
 ############################################################################################
 ############################################################################################
-# world-specific FWD supports implementations
+# Frame-specific FWD supports implementations
 ############################################################################################
 ############################################################################################
 
 abstract type AbstractUniformFullDimensionalRelationalSupport{T,W<:AbstractWorld,FR<:AbstractFrame{W}} <: AbstractScalarOneStepRelationalMemoset{T,W,FR} end
 
 # TODO switch from nothing to missing?
-usesmemo(fwd_rs::AbstractUniformFullDimensionalRelationalSupport) = Nothing <: Base.eltype(fwd_rs.d)
+# usesmemo(fwd_rs::AbstractUniformFullDimensionalRelationalSupport) = Nothing <: Base.eltype(fwd_rs.d)
 capacity(fwd_rs::AbstractUniformFullDimensionalRelationalSupport) =
     error("Please, provide method capacity(...).")
 nmemoizedvalues(support::AbstractUniformFullDimensionalRelationalSupport) = (capacity(support) - count(isnothing, support.d))
@@ -28,6 +28,11 @@ struct UniformFullDimensionalRelationalSupport{
 } <: AbstractUniformFullDimensionalRelationalSupport{T,W,FullDimensionalFrame{N,W,Bool}}
     
     d :: D
+
+    # Test operators associated with each feature, grouped by their respective aggregator
+    grouped_featsaggrsnops  :: G1
+
+    grouped_featsnaggrs     :: G2
 
     function UniformFullDimensionalRelationalSupport{T,W,N,D}(d::D) where {T,W<:AbstractWorld,N,D<:AbstractArray{TT} where TT<:Union{T,Nothing}}
         new{T,W,N,D}(d)
