@@ -58,8 +58,8 @@ function displaymodel(
     show_subtree_info = false,
     syntaxstring_kwargs = (;),
 )
-    println("Please, provide method displaymodel(::$(typeof(m)); kwargs...)." *
-        " See help for displaymodel.")
+    println("Please, provide method displaymodel(::$(typeof(m)); kwargs...). " *
+        "See help for displaymodel.")
 end
 
 ############################################################################################

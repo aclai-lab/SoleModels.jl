@@ -2,49 +2,170 @@ using Test
 using StatsBase
 using SoleLogics
 using SoleModels
-using SoleModels.DimensionalDatasets
+using Graphs
+using Random
+using ThreadSafeDicts
 
-X = Array(reshape(1.0:180.0, 3,3,2,10))
+features = SoleModels.Feature.(string.('p':'z'))
+worlds = SoleLogics.World.(1:10)
+fr = SoleLogics.ExplicitCrispUniModalFrame(worlds, SimpleDiGraph(length(worlds), 4))
 
-ontology = get_interval_ontology(2)
-@test_nowarn DimensionalLogiset{Float64}(X, ontology, [SoleModels.canonical_geq, SoleModels.canonical_leq])
+i_instance = 1
 
-dfd = @test_nowarn DimensionalLogiset(X, ontology, [SoleModels.canonical_geq, SoleModels.canonical_leq])
+# Boolean
+rng = Random.MersenneTwister(1)
+bool_logiset = SoleModels.ExplicitBooleanLogiset([(Dict([w => sample(rng, features, 2, replace = false) for w in worlds]), fr)])
+bool_condition = SoleModels.ValueCondition(features[1])
 
-@test_nowarn DimensionalLogiset{Float64}(X, ontology, [minimum, maximum])
-dfd2 = @test_nowarn DimensionalLogiset(X, ontology, [minimum, maximum])
+@test [SoleModels.checkcondition(bool_condition, bool_logiset, i_instance, w)
+    for w in worlds] == Bool[0, 1, 1, 1, 0, 0, 0, 0, 0, 0]
 
-@test_throws AssertionError DimensionalLogiset(X, ontology, [StatsBase.mean])
+# Scalar (Float)
+rng = Random.MersenneTwister(1)
+scalar_logiset = SoleModels.ExplicitLogiset([(Dict([w => Dict([f => rand(rng) for f in features]) for w in worlds]), fr)])
+scalar_condition = SoleModels.ScalarCondition(features[1], >, 0.5)
 
+@test [SoleModels.checkcondition(scalar_condition, scalar_logiset, i_instance, w)
+    for w in worlds] == Bool[0, 0, 1, 1, 0, 1, 0, 1, 0, 0]
 
-@test_nowarn dfd |> alphabet |> propositions
-@test_nowarn length(alphabet(dfd))
-@test_nowarn length(collect(propositions(alphabet(dfd))))
-@test length(collect(propositions(alphabet(dfd))))*2 == length(collect(propositions(alphabet(dfd2))))
+# Non-scalar (Vector{Float})
+rng = Random.MersenneTwister(2)
+nonscalar_logiset = SoleModels.ExplicitLogiset([(Dict([w => Dict([f => rand(rng, rand(rng, 1:3)) for f in features]) for w in worlds]), fr)])
 
-@test all(((propositions(dfd |> SupportedScalarLogiset |> alphabet))) .==
-    ((propositions(dfd |> alphabet))))
+@test SoleModels.featvalue(nonscalar_logiset, 1, worlds[1], features[1]) == SoleModels.featvalue(features[1], nonscalar_logiset, 1, worlds[1])
 
+nonscalar_condition = SoleModels.FunctionalCondition(features[1], (vals)->length(vals) >= 2)
 
-dfd3 = @test_nowarn DimensionalLogiset{Float64}(X, ontology, [SoleModels.canonical_geq, SoleModels.canonical_leq]; initialworld = Interval2D((2,3),(2,3)))
-
-check(SyntaxTree(⊤), dfd, 1)
-check(SyntaxTree(⊤), dfd2, 1)
-check(SyntaxTree(⊤), dfd3, 1)
-
-
-
-X = Array(reshape(1.0:180.0, 3,3,2,10));
-
-
-d = DimensionalLogiset{UInt16}(
-X,
-get_ontology(2, :interval, :RCC5),
-[minimum, maximum];
-initialworld = SoleLogics.Interval2D((2,3),(2,3)),
-)
-@assert SoleLogics.Interval2D((2,3),(2,3)) == initialworld(d)
-@assert SoleLogics.Interval2D((2,3),(2,3)) == initialworld(d, 1)
+@test [SoleModels.checkcondition(nonscalar_condition, nonscalar_logiset, i_instance, w)
+    for w in worlds] == Bool[0, 1, 0, 0, 1, 1, 1, 0, 1, 1]
 
 
+multilogiset = MultiLogiset([bool_logiset, scalar_logiset, nonscalar_logiset])
+
+@test SoleModels.modalitytype(multilogiset) <:
+SoleModels.AbstractLogiset{SoleLogics.World{Int64}, U, SoleModels.Feature{String}, SoleLogics.ExplicitCrispUniModalFrame{SoleLogics.World{Int64}, SimpleDiGraph{Int64}}} where U
+
+SoleModels.AbstractLogiset{SoleLogics.World{Int64}, U, Feature{String}, SoleLogics.ExplicitCrispUniModalFrame{SoleLogics.World{Int64}, SimpleDiGraph{Int64}}} where U <: SoleModels.AbstractLogiset{SoleLogics.World{Int64}, U, Feature{String}, SoleLogics.ExplicitCrispUniModalFrame{SoleLogics.World{Int64}, SimpleDiGraph{Int64}}} where U
+
+
+@test_nowarn displaystructure(bool_logiset)
+@test_nowarn displaystructure(scalar_logiset)
+@test_nowarn displaystructure(multilogiset)
+
+
+############################################################################################
+
+for w in worlds
+    @test accessibles(fr, w) == accessibles(scalar_logiset, 1, w)
+    @test representatives(fr, w, scalar_condition) == representatives(scalar_logiset, 1, w, scalar_condition)
+end
+
+cond1 = SoleModels.ScalarCondition(features[1], >, 0.9)
+cond2 = SoleModels.ScalarCondition(features[2], >, 0.3)
+
+for w in worlds
+    @test (featvalue(scalar_logiset, 1, w, features[1]) > 0.9) == check(Proposition(cond1) ∧ ⊤, scalar_logiset, 1, w)
+    @test (featvalue(scalar_logiset, 1, w, features[2]) > 0.3) == check(Proposition(cond2) ∧ ⊤, scalar_logiset, 1, w)
+end
+
+# Propositional formula
+φ = ⊤ → Proposition(cond1) ∧ Proposition(cond2)
+for w in worlds
+    @test ((featvalue(scalar_logiset, 1, w, features[1]) > 0.9) && (featvalue(scalar_logiset, 1, w, features[2]) > 0.3)) == check(φ, scalar_logiset, 1, w)
+end
+
+# Modal formula
+φ = ◊(⊤ → Proposition(cond1) ∧ Proposition(cond2))
+for w in worlds
+    @test check(φ, scalar_logiset, 1, w) == (length(accessibles(fr, w)) > 0 && any([
+        ((featvalue(scalar_logiset, 1, v, features[1]) > 0.9) && (featvalue(scalar_logiset, 1, v, features[2]) > 0.3))
+    for v in accessibles(fr, w)]))
+end
+
+# Modal formula on multilogiset
+for w in worlds
+    @test check(φ, multilogiset, 2, 1, w) == (length(accessibles(fr, w)) > 0 && any([
+        ((featvalue(multilogiset, 2, 1, v, features[1]) > 0.9) && (featvalue(multilogiset, 2, 1, v, features[2]) > 0.3))
+    for v in accessibles(fr, w)]))
+end
+
+############################################################################################
+
+# Check with memoset
+
+w = worlds[1]
+W = worldtype(bool_logiset)
+bool_supported_logiset = SupportedLogiset(bool_logiset)
+scalar_supported_logiset = SupportedLogiset(scalar_logiset)
+nonscalar_supported_logiset = SupportedLogiset(nonscalar_logiset)
+
+@test SoleModels.featvalue(nonscalar_logiset, 1, worlds[1], features[1]) == SoleModels.featvalue(nonscalar_supported_logiset, 1, worlds[1], features[1])
+
+@test_nowarn displaystructure(bool_supported_logiset)
+@test_nowarn displaystructure(scalar_supported_logiset)
+@test_nowarn displaystructure(nonscalar_supported_logiset)
+
+@test_nowarn slicedataset(bool_logiset, [1])
+@test_nowarn slicedataset(bool_logiset, [1]; return_view = true)
+@test_nowarn slicedataset(bool_supported_logiset, [1])
+
+@test_nowarn SoleModels.allfeatvalues(bool_logiset)
+@test_nowarn SoleModels.allfeatvalues(bool_logiset, 1)
+@test_nowarn SoleModels.allfeatvalues(bool_logiset, 1, features[1])
+@test_nowarn SoleModels.allfeatvalues(bool_supported_logiset)
+@test_nowarn SoleModels.allfeatvalues(bool_supported_logiset, 1)
+@test_nowarn SoleModels.allfeatvalues(bool_supported_logiset, 1, features[1])
+
+@test SoleLogics.allworlds(bool_logiset, 1) == SoleLogics.allworlds(bool_supported_logiset, 1)
+@test SoleLogics.nworlds(bool_logiset, 1) == SoleLogics.nworlds(bool_supported_logiset, 1)
+@test SoleLogics.frame(bool_logiset, 1) == SoleLogics.frame(bool_supported_logiset, 1)
+
+
+@test_throws AssertionError SoleModels.parsecondition(SoleModels.ScalarCondition, "p > 0.5")
+@test_nowarn SoleModels.parsecondition(SoleModels.ScalarCondition, "p > 0.5"; featvaltype = String, featuretype = Feature)
+@test SoleModels.ScalarCondition(features[1], >, 0.5) == SoleModels.parsecondition(SoleModels.ScalarCondition, "p > 0.5"; featvaltype = String, featuretype = Feature)
+
+memoset = [ThreadSafeDict{SyntaxTree,WorldSet{W}}() for i_instance in 1:ninstances(bool_supported_logiset)]
+
+@test_nowarn check(φ, bool_logiset, 1, w)
+@test_nowarn check(φ, bool_logiset, 1, w; use_memo = nothing)
+@test_nowarn check(φ, bool_logiset, 1, w; use_memo = memoset)
+@test_nowarn check(φ, bool_supported_logiset, 1, w)
+@test_nowarn check(φ, bool_supported_logiset, 1, w; use_memo = nothing)
+@test_logs (:warn,) check(φ, bool_supported_logiset, 1, w; use_memo = memoset)
+
+
+@test_nowarn bool_supported_logiset2 = SupportedLogiset(bool_logiset, memoset)
+@test_nowarn bool_supported_logiset2 = SupportedLogiset(bool_logiset, (memoset,))
+@test_nowarn bool_supported_logiset2 = SupportedLogiset(bool_logiset, [memoset])
+
+@test_throws AssertionError SupportedLogiset(bool_supported_logiset2)
+
+@test_nowarn SupportedLogiset(bool_logiset, bool_supported_logiset2)
+
+@test_nowarn SupportedLogiset(bool_logiset, (bool_supported_logiset2,))
+@test_nowarn SupportedLogiset(bool_logiset, [bool_supported_logiset2])
+
+
+rng = Random.MersenneTwister(1)
+alph = ExplicitAlphabet([SoleModels.ScalarCondition(rand(rng, features), rand(rng, [>, <]), rand(rng)) for i in 1:10])
+syntaxstring.(alph)
+_formulas = [randformulatree(rng, 4, alph, [NEGATION, CONJUNCTION, IMPLICATION, DIAMOND, BOX]) for i in 1:10]
+syntaxstring.(_formulas)
+
+c1 = @test_nowarn [check(φ, bool_logiset, 1, w) for φ in _formulas]
+c2 = @test_nowarn [check(φ, bool_logiset, 1, w; use_memo = nothing) for φ in _formulas]
+c3 = @test_nowarn [check(φ, bool_logiset, 1, w; use_memo = memoset) for φ in _formulas]
+c4 = @test_nowarn [check(φ, bool_supported_logiset, 1, w) for φ in _formulas]
+c5 = @test_nowarn [check(φ, bool_supported_logiset, 1, w; use_memo = nothing) for φ in _formulas]
+# c6 = @test_logs (:warn,) [check(φ, bool_supported_logiset, 1, w; use_memo = memoset) for φ in _formulas]
+
+@test c1 == c2 == c3 == c4 == c5
+
+w = worlds[1]
+W = worldtype(scalar_logiset)
+memoset = [ThreadSafeDict{SyntaxTree,WorldSet{W}}() for i_instance in 1:ninstances(scalar_logiset)]
+@test_throws AssertionError check(φ, scalar_logiset, 1; use_memo = nothing)
+@time check(φ, scalar_logiset, 1, w; use_memo = nothing)
+@time check(φ, scalar_logiset, 1, w; use_memo = memoset)
 

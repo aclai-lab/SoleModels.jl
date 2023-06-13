@@ -1,4 +1,6 @@
-# *SoleModels.jl* – Symbolic Learning Models
+<div align="center"><a href="https://github.com/aclai-lab/Sole.jl"><img src="logo.png" alt="" title="This package is part of Sole.jl" width="200"></a></div>
+
+# SoleModels.jl – Symbolic Learning Models
 
 [![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://aclai-lab.github.io/SoleModels.jl/stable)
 [![Build Status](https://api.cirrus-ci.com/github/aclai-lab/SoleModels.jl.svg?branch=main)](https://cirrus-ci.com/github/aclai-lab/SoleModels.jl)

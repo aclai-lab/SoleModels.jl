@@ -1,6 +1,6 @@
 import Base: convert, length, getindex, isopen
 import SoleLogics: check, syntaxstring
-using SoleData: slice_dataset
+using SoleData: slicedataset
 using SoleLogics: LeftmostLinearForm, LeftmostConjunctiveForm, LeftmostDisjunctiveForm
 
 # Util
@@ -30,8 +30,8 @@ end
 
 # Check on a boolean condition
 function check(c::AbstractBooleanCondition, i::AbstractInterpretation, args...; kwargs...)
-    error("Please, provide method check(::$(typeof(c))," *
-        " i::$(typeof(i)), args...; kwargs...).")
+    error("Please, provide method check(::$(typeof(c)), " *
+        "i::$(typeof(i)), args...; kwargs...).")
 end
 function check(
     c::AbstractBooleanCondition,
@@ -40,7 +40,7 @@ function check(
     kwargs...
 )
     map(
-        i_instance->check(c, slice_dataset(d, [i_instance]; return_view = true), args...; kwargs...)[1],
+        i_instance->check(c, slicedataset(d, [i_instance]; return_view = true), args...; kwargs...)[1],
         1:ninstances(d)
     )
 end
@@ -570,16 +570,16 @@ function check_model_constraints(
 )
     I_O = outcometype(I_M)
     # FM_O = outcometype(FM)
-    @assert I_O <: FM_O "Can't instantiate $(M) with inner model outcometype" *
-        " $(I_O)! $(I_O) <: $(FM_O) should hold."
+    @assert I_O <: FM_O "Can't instantiate $(M) with inner model outcometype " *
+        "$(I_O)! $(I_O) <: $(FM_O) should hold."
     # @assert I_M <: FM || typename(I_M) <: typename(FM) "Can't instantiate $(M) with inner model $(I_M))! $(I_M) <: $(FM) || $(typename(I_M)) <: $(typename(FM)) should hold."
-    @assert I_M <: FM "Can't instantiate $(M) with inner model $(I_M))!" *
-        " $(I_M) <: $(FM) should hold."
+    @assert I_M <: FM "Can't instantiate $(M) with inner model $(I_M))! " *
+        "$(I_M) <: $(FM) should hold."
     if ! (I_M<:FinalModel{<:FM_O})
         # @assert I_M<:ConstrainedModel{FM_O,<:FM} "ConstrainedModels require I_M<:ConstrainedModel{O,<:FM}, but $(I_M) does not subtype $(ConstrainedModel{FM_O,<:FM})."
-        @assert I_M<:ConstrainedModel{<:FM_O,<:FM} "ConstrainedModels require" *
-            " I_M<:ConstrainedModel{<:O,<:FM}, but $(I_M) does not" *
-            " subtype $(ConstrainedModel{<:FM_O,<:FM})."
+        @assert I_M<:ConstrainedModel{<:FM_O,<:FM} "ConstrainedModels require " *
+            "I_M<:ConstrainedModel{<:O,<:FM}, but $(I_M) does not " *
+            "subtype $(ConstrainedModel{<:FM_O,<:FM})."
     end
 end
 
@@ -962,7 +962,7 @@ function apply(
     if !isempty(cpos)
         out[cpos] .= apply(
             posconsequent(m),
-            slice_dataset(d, cpos; return_view = true);
+            slicedataset(d, cpos; return_view = true);
             check_args = check_args,
             check_kwargs = check_kwargs,
             kwargs...
@@ -971,7 +971,7 @@ function apply(
     if !isempty(cneg)
         out[cneg] .= apply(
             negconsequent(m),
-            slice_dataset(d, cneg; return_view = true);
+            slicedataset(d, cneg; return_view = true);
             check_args = check_args,
             check_kwargs = check_kwargs,
             kwargs...
@@ -1091,7 +1091,7 @@ function apply(
     for rule in rulebase(m)
         length(uncovered_idxs) == 0 && break
 
-        uncovered_d = slice_dataset(d, uncovered_idxs; return_view = true)
+        uncovered_d = slicedataset(d, uncovered_idxs; return_view = true)
 
         idxs_sat = findall(
             # check_antecedent(rule, d, check_args...; check_kwargs...) .== true
@@ -1127,7 +1127,7 @@ function apply!(
     for (n, rule) in enumerate(rules)
         length(uncovered_idxs) == 0 && break
 
-        uncovered_d = slice_dataset(d, uncovered_idxs; return_view = true)
+        uncovered_d = slicedataset(d, uncovered_idxs; return_view = true)
 
         idxs_sat = findall(
             # check_antecedent(rule, d, check_args...; check_kwargs...) .== true
@@ -1256,10 +1256,10 @@ struct DecisionTree{
         FM = typeintersect(Union{propagate_feasiblemodels(M)}, AbstractModel{<:O})
         FFM = typeintersect(FM, FinalModel{<:O})
         @assert M <: Union{<:FFM,<:Branch{<:O,<:C,<:Union{Branch,FFM}}} "" *
-            "Cannot instantiate DecisionTree{$(O),$(C),$(FFM)}(...) with root of" *
-            " type $(typeof(root)). Note that the should be either a FinalNode or a" *
-            " bounded Branch." *
-            " $(M) <: $(Union{FinalModel,Branch{<:O,<:C,<:Union{Branch,FFM}}}) should hold."
+            "Cannot instantiate DecisionTree{$(O),$(C),$(FFM)}(...) with root of " *
+            "type $(typeof(root)). Note that the should be either a FinalNode or a " *
+            "bounded Branch. " *
+            "$(M) <: $(Union{FinalModel,Branch{<:O,<:C,<:Union{Branch,FFM}}}) should hold."
         check_model_constraints(DecisionTree{O}, typeof(root), FM, O)
         new{O,C,FFM}(root, info)
     end

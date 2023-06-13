@@ -11,6 +11,7 @@ using SoleLogics: ⊤, ¬, ∧
 using FunctionWrappers: FunctionWrapper
 using StatsBase
 using ThreadSafeDicts
+using Lazy
 
 include("utils.jl")
 
@@ -54,19 +55,19 @@ export minify, isminifiable
 include("utils/minify.jl")
 
 export AbstractFeature,
-        NamedFeature, ExternalFWDFeature
+        Feature, ExternalFWDFeature
 
 export propositions
 
-export computefeature, parsecondition
-export frames
+export parsecondition
+export modalities
+
+export Logiset, SupportedLogiset, slicedataset, concatdatasets
 
 # Definitions for logical datasets (i.e., logisets)
-include("datasets/base/main.jl")
+include("logisets/base/main.jl")
 
-# include("datasets/scalar-datasets/main.jl")
-
-# export ninstances, nframes, frames, nfeatures
+# export ninstances, nmodalities, modalities, nfeatures
 
 # export get_ontology,
 #        get_interval_ontology
@@ -79,11 +80,11 @@ include("datasets/base/main.jl")
 #         UnivariateSoftMin, UnivariateSoftMax,
 #         MultivariateFeature
 
-# export DimensionalFeature, AbstractUnivariateFeature,
+# export VarFeature, AbstractUnivariateFeature,
 #         UnivariateNamedFeature,
 #         UnivariateFeature
 
-# include("datasets/dimensional-datasets/main.jl")
+# include("logisets/dimensional-logisets/main.jl")
 
 # using .DimensionalDatasets: parsecondition
 
