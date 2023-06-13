@@ -1,6 +1,6 @@
 import Base: convert, length, getindex, isopen
 import SoleLogics: check, syntaxstring
-using SoleData: slice_dataset
+using SoleData: slicedataset
 using SoleLogics: LeftmostLinearForm, LeftmostConjunctiveForm, LeftmostDisjunctiveForm
 
 # Util
@@ -40,8 +40,8 @@ function check(
     kwargs...
 )
     map(
-        i_sample->check(c, slice_dataset(d, [i_sample]; return_view = true), args...; kwargs...)[1],
-        1:nsamples(d)
+        i_sample->check(c, slicedataset(d, [i_sample]; return_view = true), args...; kwargs...)[1],
+        1:ninstances(d)
     )
 end
 
@@ -91,7 +91,7 @@ struct TrueCondition <: AbstractLogicalBooleanCondition end
 formula(::TrueCondition) = SyntaxTree(⊤)
 check(::TrueCondition, i::AbstractInterpretation, args...; kwargs...) = true
 check(::TrueCondition, d::AbstractInterpretationSet, args...; kwargs...) =
-    fill(true, nsamples(d))
+    fill(true, ninstances(d))
 
 """
     struct LogicalTruthCondition{F<:AbstractFormula} <: AbstractLogicalBooleanCondition
@@ -225,7 +225,7 @@ end
         m::AbstractModel,
         d::AbstractInterpretationSet;
         check_args::Tuple = (),
-        check_kwargs::NamedTuple = (; use_memo = [ThreadSafeDict{SyntaxTree,WorldSet{worldtype(d)}}() for i in 1:nsamples(d)]),
+        check_kwargs::NamedTuple = (; use_memo = [ThreadSafeDict{SyntaxTree,WorldSet{worldtype(d)}}() for i in 1:ninstances(d)]),
         functional_args::Tuple = (),
         functional_kwargs::NamedTuple = (;),
         kwargs...
@@ -276,7 +276,7 @@ function apply(
     d::AbstractInterpretationSet;
     kwargs...
 )::AbstractVector{<:outputtype(m)}
-    map(i_sample->apply(m, d, i_sample; kwargs...), 1:nsamples(d))
+    map(i_sample->apply(m, d, i_sample; kwargs...), 1:ninstances(d))
 end
 
 """
@@ -381,7 +381,7 @@ outcome(m::ConstantModel) = m.outcome
 isopen(::ConstantModel) = false
 apply(m::ConstantModel, i::AbstractInterpretation; kwargs...) = outcome(m)
 apply(m::ConstantModel, d::AbstractInterpretationSet, i_sample::Integer; kwargs...) = outcome(m)
-apply(m::ConstantModel, d::AbstractInterpretationSet; kwargs...) = fill(outcome(m), nsamples(d))
+apply(m::ConstantModel, d::AbstractInterpretationSet; kwargs...) = fill(outcome(m), ninstances(d))
 
 convert(::Type{ConstantModel{O}}, o::O) where {O} = ConstantModel{O}(o)
 convert(::Type{<:AbstractModel{F}}, m::ConstantModel) where {F} = ConstantModel{F}(m)
@@ -745,7 +745,7 @@ function apply(
     d::AbstractInterpretationSet,
     i_sample::Integer;
     check_args::Tuple = (),
-    check_kwargs::NamedTuple = (; use_memo = [Dict{SyntaxTree,WorldSet{worldtype(d)}}() for i in 1:nsamples(d)]),
+    check_kwargs::NamedTuple = (; use_memo = [Dict{SyntaxTree,WorldSet{worldtype(d)}}() for i in 1:ninstances(d)]),
     kwargs...
 )
     if check_antecedent(m, d, i_sample, check_args...; check_kwargs...) == true
@@ -930,7 +930,7 @@ function apply(
     d::AbstractInterpretationSet,
     i_sample::Integer;
     check_args::Tuple = (),
-    check_kwargs::NamedTuple = (; use_memo = [Dict{SyntaxTree,WorldSet{worldtype(d)}}() for i in 1:nsamples(d)]),
+    check_kwargs::NamedTuple = (; use_memo = [Dict{SyntaxTree,WorldSet{worldtype(d)}}() for i in 1:ninstances(d)]),
     kwargs...
 ) where {O}
     if check_antecedent(m, d, i_sample, check_args...; check_kwargs...) == true
@@ -952,7 +952,7 @@ function apply(
     m::Branch{O,<:LogicalTruthCondition},
     d::AbstractInterpretationSet;
     check_args::Tuple = (),
-    check_kwargs::NamedTuple = (; use_memo = [ThreadSafeDict{SyntaxTree,WorldSet{worldtype(d)}}() for i in 1:nsamples(d)]),
+    check_kwargs::NamedTuple = (; use_memo = [ThreadSafeDict{SyntaxTree,WorldSet{worldtype(d)}}() for i in 1:ninstances(d)]),
     kwargs...
 ) where {O}
     cs = check_antecedent(m, d, check_args...; check_kwargs...)
@@ -962,7 +962,7 @@ function apply(
     if !isempty(cpos)
         out[cpos] .= apply(
             posconsequent(m),
-            slice_dataset(d, cpos; return_view = true);
+            slicedataset(d, cpos; return_view = true);
             check_args = check_args,
             check_kwargs = check_kwargs,
             kwargs...
@@ -971,7 +971,7 @@ function apply(
     if !isempty(cneg)
         out[cneg] .= apply(
             negconsequent(m),
-            slice_dataset(d, cneg; return_view = true);
+            slicedataset(d, cneg; return_view = true);
             check_args = check_args,
             check_kwargs = check_kwargs,
             kwargs...
@@ -1082,16 +1082,16 @@ function apply(
     m::DecisionList{O},
     d::AbstractInterpretationSet;
     check_args::Tuple = (),
-    check_kwargs::NamedTuple = (; use_memo = [ThreadSafeDict{SyntaxTree,WorldSet{worldtype(d)}}() for i in 1:nsamples(d)]),
+    check_kwargs::NamedTuple = (; use_memo = [ThreadSafeDict{SyntaxTree,WorldSet{worldtype(d)}}() for i in 1:ninstances(d)]),
 ) where {O}
-    nsamp = nsamples(d)
+    nsamp = ninstances(d)
     pred = Vector{O}(undef, nsamp)
     uncovered_idxs = 1:nsamp
 
     for rule in rulebase(m)
         length(uncovered_idxs) == 0 && break
 
-        uncovered_d = slice_dataset(d, uncovered_idxs; return_view = true)
+        uncovered_d = slicedataset(d, uncovered_idxs; return_view = true)
 
         idxs_sat = findall(
             # check_antecedent(rule, d, check_args...; check_kwargs...) .== true
@@ -1115,10 +1115,10 @@ function apply!(
     m::DecisionList{O},
     d::AbstractInterpretationSet;
     check_args::Tuple = (),
-    check_kwargs::NamedTuple = (; use_memo = [ThreadSafeDict{SyntaxTree,WorldSet{worldtype(d)}}() for i in 1:nsamples(d)]),
+    check_kwargs::NamedTuple = (; use_memo = [ThreadSafeDict{SyntaxTree,WorldSet{worldtype(d)}}() for i in 1:ninstances(d)]),
     compute_metrics::Union{Symbol,Bool} = false,
 ) where {O}
-    nsamp = nsamples(d)
+    nsamp = ninstances(d)
     pred = Vector{O}(undef, nsamp)
     delays = Vector{Integer}(undef, nsamp)
     uncovered_idxs = 1:nsamp
@@ -1127,7 +1127,7 @@ function apply!(
     for (n, rule) in enumerate(rules)
         length(uncovered_idxs) == 0 && break
 
-        uncovered_d = slice_dataset(d, uncovered_idxs; return_view = true)
+        uncovered_d = slicedataset(d, uncovered_idxs; return_view = true)
 
         idxs_sat = findall(
             # check_antecedent(rule, d, check_args...; check_kwargs...) .== true

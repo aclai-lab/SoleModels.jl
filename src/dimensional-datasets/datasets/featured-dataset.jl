@@ -35,20 +35,20 @@ end
 #  way of learning it is by considering the fallback fwd structure defined as follows.
 # TODO oh, but the implementation is broken due to a strange error (see https://discourse.julialang.org/t/tricky-too-many-parameters-for-type-error/25182 )
 
-# # The most generic fwd structure is a matrix of dictionaries of size (nsamples × nfeatures)
+# # The most generic fwd structure is a matrix of dictionaries of size (ninstances × nfeatures)
 # struct GenericFWD{V,W} <: AbstractFWD{V,W}
 #   d :: AbstractVector{<:AbstractDict{W,AbstractVector{V,1}},1}
 #   nfeatures :: Integer
 # end
 
-# nsamples(fwd::GenericFWD{V}) where {V}  = size(fwd, 1)
+# ninstances(fwd::GenericFWD{V}) where {V}  = size(fwd, 1)
 # nfeatures(fwd::GenericFWD{V}) where {V} = fwd.d
 # Base.size(fwd::GenericFWD{V}, args...) where {V} = size(fwd.d, args...)
 
 # # The matrix is initialized with #undef values
 # function fwd_init(::Type{GenericFWD}, X::DimensionalFeaturedDataset{V}) where {V}
-#     d = Array{Dict{W,V}, 2}(undef, nsamples(X))
-#     for i in 1:nsamples
+#     d = Array{Dict{W,V}, 2}(undef, ninstances(X))
+#     for i in 1:ninstances
 #         d[i] = Dict{W,Array{V,1}}()
 #     end
 #     GenericFWD{V}(d, nfeatures(X))
@@ -80,7 +80,7 @@ end
 # end
 
 # # A function for slicing the dataset
-# function _slice_dataset(fwd::GenericFWD{V}, inds::AbstractVector{<:Integer}, return_view::Val = Val(false)) where {V}
+# function instances(fwd::GenericFWD{V}, inds::AbstractVector{<:Integer}, return_view::Union{Val{true},Val{false}} = Val(false)) where {V}
 #     GenericFWD{V}(if return_view == Val(true) @view fwd.d[inds] else fwd.d[inds] end, fwd.nfeatures)
 # end
 
@@ -143,9 +143,9 @@ struct FeaturedDataset{
     ) where {V,W<:AbstractWorld,FR<:AbstractFrame{W,Bool},FWD<:AbstractFWD{V,W,FR},FT<:AbstractFeature{V}}
         features = collect(features)
         ty = "FeaturedDataset{$(V),$(W),$(FR),$(FT)}"
-        @assert allow_no_instances || nsamples(fwd) > 0     "Can't instantiate $(ty) with no instance. (fwd's type $(typeof(fwd)))"
+        @assert allow_no_instances || ninstances(fwd) > 0     "Can't instantiate $(ty) with no instance. (fwd's type $(typeof(fwd)))"
         @assert length(grouped_featsaggrsnops) > 0 && sum(length.(grouped_featsaggrsnops)) > 0 && sum(vcat([[length(test_ops) for test_ops in aggrs] for aggrs in grouped_featsaggrsnops]...)) > 0 "Can't instantiate $(ty) with no test operator: grouped_featsaggrsnops"
-        @assert nfeatures(fwd) == length(features)          "Can't instantiate $(ty) with different numbers of instances $(nsamples(fwd)) and of features $(length(features))."
+        @assert nfeatures(fwd) == length(features)          "Can't instantiate $(ty) with different numbers of instances $(ninstances(fwd)) and of features $(length(features))."
         grouped_featsnaggrs = features_grouped_featsaggrsnops2grouped_featsnaggrs(features, grouped_featsaggrsnops)
         check_initialworld(FeaturedDataset, initialworld, W)
         new{
@@ -231,7 +231,7 @@ struct FeaturedDataset{
 
             _features = features(X)
 
-            _n_samples = nsamples(X)
+            _n_samples = ninstances(X)
 
             # Load any (possible) external features
             if any(isa.(_features, ExternalFWDFeature))
@@ -323,7 +323,7 @@ grouped_featsnaggrs(X::FeaturedDataset)    = X.grouped_featsnaggrs
 
 nfeatures(X::FeaturedDataset)              = length(features(X))
 nrelations(X::FeaturedDataset)             = length(relations(X))
-nsamples(X::FeaturedDataset)               = nsamples(fwd(X))
+ninstances(X::FeaturedDataset)               = ninstances(fwd(X))
 worldtype(X::FeaturedDataset{V,W}) where {V,W<:AbstractWorld} = W
 
 nfeatsnaggrs(X::FeaturedDataset)            = sum(length.(grouped_featsnaggrs(X)))
@@ -334,9 +334,9 @@ function initialworld(X::FeaturedDataset, i_sample)
     initialworld(X) isa AbstractWorldSet ? initialworld(X)[i_sample] : initialworld(X)
 end
 
-function _slice_dataset(X::FeaturedDataset, inds::AbstractVector{<:Integer}, args...; kwargs...)
+function instances(X::FeaturedDataset, inds::AbstractVector{<:Integer}, return_view::Union{Val{true},Val{false}} = Val(false))
     FeaturedDataset(
-        _slice_dataset(fwd(X), inds, args...; kwargs...),
+        instances(fwd(X), inds, return_view),
         relations(X),
         features(X),
         grouped_featsaggrsnops(X);

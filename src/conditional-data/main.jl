@@ -5,8 +5,9 @@ using SoleLogics: AbstractWorld, IdentityRel
 import SoleLogics: syntaxstring
 import SoleLogics: frame
 
-import SoleData: nsamples, nfeatures
-import SoleData: nframes, frames, hasnans, _slice_dataset
+import SoleData: nvariables
+import SoleData: ninstances
+import SoleData: nmodalities, hasnans, instances
 # import SoleData: frame # TODO
 
 # Minification interface for lossless data compression
@@ -46,7 +47,7 @@ include("conditional-datasets.jl")
 
 include("active-featured-dataset.jl")
 
-export nframes, frames, frame,
+export nmodalities, modalities, frame,
         display_structure,
         MultiFrameConditionalDataset,
         worldtypes

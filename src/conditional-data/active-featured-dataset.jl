@@ -34,7 +34,7 @@ function alphabet(X::AbstractActiveFeaturedDataset)
     conds = vcat([begin
         thresholds = unique([
                 X[i_sample, w, feature]
-                for i_sample in 1:nsamples(X)
+                for i_sample in 1:ninstances(X)
                     for w in allworlds(X, i_sample)
             ])
         [(mc, thresholds) for mc in metaconditions]
@@ -44,8 +44,8 @@ function alphabet(X::AbstractActiveFeaturedDataset)
 end
 
 
-# Base.length(X::AbstractActiveFeaturedDataset) = nsamples(X)
-# Base.iterate(X::AbstractActiveFeaturedDataset, state=1) = state > nsamples(X) ? nothing : (get_instance(X, state), state+1)
+# Base.length(X::AbstractActiveFeaturedDataset) = ninstances(X)
+# Base.iterate(X::AbstractActiveFeaturedDataset, state=1) = state > ninstances(X) ? nothing : (get_instance(X, state), state+1)
 
 function find_feature_id(X::AbstractActiveFeaturedDataset, feature::AbstractFeature)
     id = findfirst(x->(Base.isequal(x, feature)), features(X))

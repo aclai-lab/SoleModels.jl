@@ -41,7 +41,7 @@ include("dimensional-ontologies.jl")
 using SoleLogics: Full0DFrame, Full1DFrame, Full2DFrame
 using SoleLogics: X, Y, Z
 
-# Representatives for dimensional frames
+# Representatives for dimensional modalities
 include("representatives/Full0DFrame.jl")
 include("representatives/Full1DFrame.jl")
 include("representatives/Full1DFrame+IA.jl")

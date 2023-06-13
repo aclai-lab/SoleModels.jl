@@ -1,5 +1,5 @@
-using SoleData: slice_dataset
-import SoleData: get_instance, nsamples, nattributes, channel_size, max_channel_size, dimensionality, eltype
+using SoleData: slicedataset
+import SoleData: get_instance, ninstances, nvariables, channel_size, max_channel_size, dimensionality, eltype
 using SoleData: AbstractDimensionalDataset,
                 AbstractDimensionalInstance,
                 AbstractDimensionalChannel,
@@ -70,8 +70,8 @@ end
 
 Base.size(X::PassiveDimensionalDataset)                 = Base.size(X.d)
 
-nattributes(X::PassiveDimensionalDataset)               = nattributes(X.d)
-nsamples(X::PassiveDimensionalDataset)                  = nsamples(X.d)
+nvariables(X::PassiveDimensionalDataset)               = nvariables(X.d)
+ninstances(X::PassiveDimensionalDataset)                  = ninstances(X.d)
 channel_size(X::PassiveDimensionalDataset)              = channel_size(X.d)
 max_channel_size(X::PassiveDimensionalDataset)          = max_channel_size(X.d)
 dimensionality(X::PassiveDimensionalDataset)            = dimensionality(X.d)
@@ -79,8 +79,8 @@ eltype(X::PassiveDimensionalDataset)                    = eltype(X.d)
 
 get_instance(X::PassiveDimensionalDataset, args...)     = get_instance(X.d, args...)
 
-_slice_dataset(X::PassiveDimensionalDataset{N,W}, inds::AbstractVector{<:Integer}, args...; kwargs...) where {N,W} =
-    PassiveDimensionalDataset{N,W}(_slice_dataset(X.d, inds, args...; kwargs...))
+instances(X::PassiveDimensionalDataset{N,W}, inds::AbstractVector{<:Integer}, return_view::Union{Val{true},Val{false}} = Val(false)) where {N,W} =
+    PassiveDimensionalDataset{N,W}(instances(X.d, inds, return_view))
 
 hasnans(X::PassiveDimensionalDataset) = hasnans(X.d)
 

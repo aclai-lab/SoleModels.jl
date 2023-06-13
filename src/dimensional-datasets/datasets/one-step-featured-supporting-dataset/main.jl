@@ -35,7 +35,7 @@ struct OneStepFeaturedSupportingDataset{
         @assert nfeatsnaggrs(fwd_rs) == length(featsnaggrs)       "Can't instantiate $(ty) with unmatching nfeatsnaggrs for fwd_rs and provided featsnaggrs: $(nfeatsnaggrs(fwd_rs)) and $(length(featsnaggrs))"
         if fwd_gs != nothing
             @assert nfeatsnaggrs(fwd_gs) == length(featsnaggrs)   "Can't instantiate $(ty) with unmatching nfeatsnaggrs for fwd_gs and provided featsnaggrs: $(nfeatsnaggrs(fwd_gs)) and $(length(featsnaggrs))"
-            @assert nsamples(fwd_gs) == nsamples(fwd_rs)          "Can't instantiate $(ty) with unmatching nsamples for fwd_gs and fwd_rs support: $(nsamples(fwd_gs)) and $(nsamples(fwd_rs))"
+            @assert ninstances(fwd_gs) == ninstances(fwd_rs)          "Can't instantiate $(ty) with unmatching ninstances for fwd_gs and fwd_rs support: $(ninstances(fwd_gs)) and $(ninstances(fwd_rs))"
         end
         new{V,W,FR,VV,FWDRS,FWDGS,G}(fwd_rs, fwd_gs, featsnaggrs)
     end
@@ -71,7 +71,7 @@ struct OneStepFeaturedSupportingDataset{
             end
         end
 
-        _n_samples = nsamples(fd)
+        _n_samples = ninstances(fd)
         nrelations = length(_relations)
         nfeatsnaggrs = sum(length.(_grouped_featsnaggrs))
 
@@ -156,7 +156,7 @@ fwd_rs(X::OneStepFeaturedSupportingDataset) = X.fwd_rs
 fwd_gs(X::OneStepFeaturedSupportingDataset) = X.fwd_gs
 featsnaggrs(X::OneStepFeaturedSupportingDataset) = X.featsnaggrs
 
-nsamples(X::OneStepFeaturedSupportingDataset) = nsamples(fwd_rs(X))
+ninstances(X::OneStepFeaturedSupportingDataset) = ninstances(fwd_rs(X))
 # nfeatsnaggrs(X::OneStepFeaturedSupportingDataset) = nfeatsnaggrs(fwd_rs(X))
 
 # TODO delegate to the two components...
@@ -164,7 +164,7 @@ function checksupportconsistency(
     fd::FeaturedDataset{V,W},
     X::OneStepFeaturedSupportingDataset{V,W},
 ) where {V,W<:AbstractWorld}
-    @assert nsamples(fd) == nsamples(X)                "Consistency check failed! Unmatching nsamples for fd and support: $(nsamples(fd)) and $(nsamples(X))"
+    @assert ninstances(fd) == ninstances(X)                "Consistency check failed! Unmatching ninstances for fd and support: $(ninstances(fd)) and $(ninstances(X))"
     # @assert nrelations(fd) == (nrelations(fwd_rs(X)) + (isnothing(fwd_gs(X)) ? 0 : 1))            "Consistency check failed! Unmatching nrelations for fd and support: $(nrelations(fd)) and $(nrelations(fwd_rs(X)))+$((isnothing(fwd_gs(X)) ? 0 : 1))"
     @assert nrelations(fd) >= nrelations(fwd_rs(X))            "Consistency check failed! Inconsistent nrelations for fd and support: $(nrelations(fd)) < $(nrelations(fwd_rs(X)))"
     _nfeatsnaggrs = nfeatsnaggrs(fd)
@@ -180,10 +180,10 @@ Base.size(X::OneStepFeaturedSupportingDataset) = (size(fwd_rs(X)), (isnothing(fw
 
 find_featsnaggr_id(X::OneStepFeaturedSupportingDataset, feature::AbstractFeature, aggregator::Aggregator) = findfirst(x->x==(feature, aggregator), featsnaggrs(X))
 
-function _slice_dataset(X::OneStepFeaturedSupportingDataset, inds::AbstractVector{<:Integer}, args...; kwargs...)
+function instances(X::OneStepFeaturedSupportingDataset, inds::AbstractVector{<:Integer}, return_view::Union{Val{true},Val{false}} = Val(false))
     OneStepFeaturedSupportingDataset(
-        _slice_dataset(fwd_rs(X), inds, args...; kwargs...),
-        (isnothing(fwd_gs(X)) ? nothing : _slice_dataset(fwd_gs(X), inds, args...; kwargs...)),
+        instances(fwd_rs(X), inds, return_view),
+        (isnothing(fwd_gs(X)) ? nothing : instances(fwd_gs(X), inds, return_view)),
         featsnaggrs(X)
     )
 end

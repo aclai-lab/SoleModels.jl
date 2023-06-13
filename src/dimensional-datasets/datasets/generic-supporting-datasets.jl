@@ -16,8 +16,8 @@ struct GenericSupportingDataset{
     function GenericSupportingDataset(
         fd :: FeaturedDataset{V,W,FR},
     ) where {V,W<:AbstractWorld,FR<:AbstractFrame{W,Bool}}
-        memo = Vector{ThreadSafeDict{AbstractFormula,Vector{W}}}(undef, nsamples(fd))
-        for i_sample in 1:nsamples(fd)
+        memo = Vector{ThreadSafeDict{AbstractFormula,Vector{W}}}(undef, ninstances(fd))
+        for i_sample in 1:ninstances(fd)
             memo[i_sample] = ThreadSafeDict{AbstractFormula,Vector{W}}()
         end
         GenericSupportingDataset{W,FR,typeof(memo)}(memo)
@@ -30,8 +30,8 @@ Base.size(X::GenericSupportingDataset) = ()
 capacity(X::GenericSupportingDataset) = Inf
 nmemoizedvalues(X::GenericSupportingDataset) = sum(length.(X.d))
 
-function _slice_dataset(X::GFSD, inds::AbstractVector{<:Integer}, args...; kwargs...) where {GFSD<:GenericSupportingDataset}
-    GFSD(X.w0, _slice_dataset(X.memo[inds], args...; kwargs...))
+function instances(X::GFSD, inds::AbstractVector{<:Integer}, return_view::Union{Val{true},Val{false}} = Val(false)) where {GFSD<:GenericSupportingDataset}
+    GFSD(X.w0, instances(X.memo[inds], return_view))
 end
 
 hasnans(X::GenericSupportingDataset) = false # TODO double check that this is intended
@@ -58,8 +58,8 @@ struct ChainedFeaturedSupportingDataset{
     function ChainedFeaturedSupportingDataset(
         fd :: FeaturedDataset{V,W,FR},
     ) where {V,W<:AbstractWorld,FR<:AbstractFrame{W,Bool}}
-        memo = Vector{ThreadSafeDict{AbstractFormula,Vector{W}}}(undef, nsamples(fd))
-        for i_sample in 1:nsamples(fd)
+        memo = Vector{ThreadSafeDict{AbstractFormula,Vector{W}}}(undef, ninstances(fd))
+        for i_sample in 1:ninstances(fd)
             memo[i_sample] = ThreadSafeDict{AbstractFormula,Vector{W}}()
         end
         ChainedFeaturedSupportingDataset{V,W,FR,typeof(memo)}(memo)
@@ -72,8 +72,8 @@ Base.size(X::ChainedFeaturedSupportingDataset) = ()
 capacity(X::ChainedFeaturedSupportingDataset) = Inf
 nmemoizedvalues(X::ChainedFeaturedSupportingDataset) = sum(length.(X.d))
 
-function _slice_dataset(X::CFSD, inds::AbstractVector{<:Integer}, args...; kwargs...) where {CFSD<:ChainedFeaturedSupportingDataset}
-    CFSD(X.w0, _slice_dataset(X.memo[inds], args...; kwargs...))
+function instances(X::CFSD, inds::AbstractVector{<:Integer}, return_view::Union{Val{true},Val{false}} = Val(false)) where {CFSD<:ChainedFeaturedSupportingDataset}
+    CFSD(X.w0, instances(X.memo[inds], return_view))
 end
 
 hasnans(X::ChainedFeaturedSupportingDataset) = false # TODO double check that this is intended

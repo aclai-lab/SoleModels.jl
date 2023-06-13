@@ -52,7 +52,7 @@ struct DimensionalFeaturedDataset{
         features = collect(features)
         FT = Union{typeof.(features)...}
         features = Vector{FT}(features)
-        @assert allow_no_instances || nsamples(domain) > 0 "" *
+        @assert allow_no_instances || ninstances(domain) > 0 "" *
             "Can't instantiate $(ty) with no instance. (domain's type $(typeof(domain)))"
         @assert length(features) == length(grouped_featsaggrsnops) "" *
             "Can't instantiate $(ty) with mismatching length(features) and" *
@@ -157,7 +157,7 @@ struct DimensionalFeaturedDataset{
             single_attr_feats_n_featsnops(i_attr,(test_ops,cf)::Tuple{<:AbstractVector{<:TestOperator},Function})        = (test_ops,DimensionalDatasets.UnivariateFeature{V}(i_attr, (x)->(V(cf(x)))))
             single_attr_feats_n_featsnops(i_attr,::Any) = throw_n_log("Unknown mixed_feature type: $(cf), $(typeof(cf))")
 
-            for i_attr in 1:nattributes(domain)
+            for i_attr in 1:nvariables(domain)
                 for (test_ops,cf) in map((cf)->single_attr_feats_n_featsnops(i_attr,cf),attribute_specific_cfs)
                     push!(featsnops, test_ops)
                     push!(_features, cf)
@@ -237,8 +237,8 @@ Base.size(X::DimensionalFeaturedDataset)              = Base.size(domain(X))
 dimensionality(X::DimensionalFeaturedDataset{V,N,W}) where {V,N,W} = N
 worldtype(X::DimensionalFeaturedDataset{V,N,W}) where {V,N,W} = W
 
-nsamples(X::DimensionalFeaturedDataset)               = nsamples(domain(X))
-nattributes(X::DimensionalFeaturedDataset)            = nattributes(domain(X))
+ninstances(X::DimensionalFeaturedDataset)               = ninstances(domain(X))
+nvariables(X::DimensionalFeaturedDataset)            = nvariables(domain(X))
 
 relations(X::DimensionalFeaturedDataset)              = relations(ontology(X))
 nrelations(X::DimensionalFeaturedDataset)             = length(relations(X))
@@ -249,8 +249,8 @@ max_channel_size(X::DimensionalFeaturedDataset)          = max_channel_size(doma
 
 get_instance(X::DimensionalFeaturedDataset, args...)     = get_instance(domain(X), args...)
 
-_slice_dataset(X::DimensionalFeaturedDataset, inds::AbstractVector{<:Integer}, args...; kwargs...)    =
-    DimensionalFeaturedDataset(_slice_dataset(domain(X), inds, args...; kwargs...), ontology(X), features(X), grouped_featsaggrsnops(X); initialworld = initialworld(X))
+instances(X::DimensionalFeaturedDataset, inds::AbstractVector{<:Integer}, return_view::Union{Val{true},Val{false}} = Val(false))    =
+    DimensionalFeaturedDataset(instances(domain(X), inds, return_view), ontology(X), features(X), grouped_featsaggrsnops(X); initialworld = initialworld(X))
 
 frame(X::DimensionalFeaturedDataset, i_sample) = frame(domain(X), i_sample)
 initialworld(X::DimensionalFeaturedDataset) = X.initialworld

@@ -61,7 +61,7 @@ export computefeature
 
 include("conditional-data/main.jl")
 
-export nsamples, nframes, frames, nfeatures
+export ninstances, nmodalities, modalities, nfeatures
 
 export get_ontology,
        get_interval_ontology
