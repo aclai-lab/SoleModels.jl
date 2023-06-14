@@ -1,8 +1,10 @@
-using SoleLogics: AbstractMultiModalFrame, AbstractRelation, GlobalRel, IdentityRel, accessibles
+using SoleLogics: AbstractUniModalFrame, AbstractFrame, AbstractRelation, GlobalRel, IdentityRel, accessibles
+
+# TODO: AbstractFrame -> AbstractMultiModalFrame, and provide the same for AbstractUniModalFrame
 
 """
     function representatives(
-        fr::AbstractMultiModalFrame{W},
+        fr::AbstractFrame{W},
         S::W,
         ::AbstractRelation,
         ::ScalarMetaCondition
@@ -20,17 +22,25 @@ truth. A few cases arise depending on the relation, the feature and the test
 operator (or, better, its *aggregator*).
 """
 function representatives( # Dispatch on feature/aggregator pairs
-    fr::AbstractMultiModalFrame{W},
+    fr::AbstractFrame{W},
     w::W,
     r::AbstractRelation,
-    c::ScalarMetaCondition
+    metacond::ScalarMetaCondition
 ) where {W<:AbstractWorld}
-    representatives(fr, w, r, feature(c), existential_aggregator(test_operator(c)))
+    representatives(fr, w, r, feature(metacond), existential_aggregator(test_operator(metacond)))
+end
+
+function representatives(
+    fr::AbstractUniModalFrame{W},
+    w::W,
+    metacond::ScalarMetaCondition
+) where {W<:AbstractWorld}
+    representatives(fr, w, feature(metacond), existential_aggregator(test_operator(metacond)))
 end
 
 # Fallbacks to `accessibles`
 function representatives(
-    fr::AbstractMultiModalFrame{W},
+    fr::AbstractFrame{W},
     w::W,
     r::AbstractRelation,
     ::AbstractFeature,
@@ -41,7 +51,7 @@ end
 
 # Global relation: dispatch on feature/aggregator pairs
 function representatives(
-    fr::AbstractMultiModalFrame{W},
+    fr::AbstractFrame{W},
     w::W,
     r::GlobalRel,
     f::AbstractFeature,
@@ -52,7 +62,7 @@ end
 
 # Global relation: fallbacks to `accessibles`
 function representatives(
-    fr::AbstractMultiModalFrame{W},
+    fr::AbstractFrame{W},
     r::GlobalRel,
     f::AbstractFeature,
     a::Aggregator
@@ -61,6 +71,6 @@ function representatives(
 end
 
 # # TODO remove but probably we need this to stay because of ambiguities!
-# representatives(fr::AbstractMultiModalFrame{W}, w::W, r::IdentityRel, ::AbstractFeature, ::Aggregator) where {W<:AbstractWorld} = accessibles(fr, w, r)
+# representatives(fr::AbstractFrame{W}, w::W, r::IdentityRel, ::AbstractFeature, ::Aggregator) where {W<:AbstractWorld} = accessibles(fr, w, r)
 # TODO need this?
-# `representatives(fr::AbstractMultiModalFrame{W}, S::AbstractWorldSet{W}, ::GlobalRel, ::ScalarMetaCondition)`
+# `representatives(fr::AbstractFrame{W}, S::AbstractWorldSet{W}, ::GlobalRel, ::ScalarMetaCondition)`

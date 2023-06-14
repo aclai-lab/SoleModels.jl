@@ -8,9 +8,9 @@ import SoleLogics: worldtype, frametype
     abstract type AbstractLogiset{
         W<:AbstractWorld,
         U,
-        F<:AbstractFeature,
+        FT<:AbstractFeature,
         FR<:AbstractFrame{W},
-    } <: AbstractInterpretationSet{AbstractKripkeStructure{W,C where C<:AbstractCondition{_F where _F<:F},T where T<:TruthValue,FR}} end
+    } <: AbstractInterpretationSet{AbstractKripkeStructure{W,C where C<:AbstractCondition{_F where _F<:FT},T where T<:TruthValue,FR}} end
 
 Abstract type for logisets, that is, logical datasets for
 symbolic learning where each instance is a
@@ -28,17 +28,37 @@ See also
 abstract type AbstractLogiset{
     W<:AbstractWorld,
     U,
-    F<:AbstractFeature,
+    FT<:AbstractFeature,
     FR<:AbstractFrame{W},
-} <: AbstractInterpretationSet{AbstractKripkeStructure{W,C where C<:AbstractCondition{_F where _F<:F},T where T<:TruthValue,FR}} end
+} <: AbstractInterpretationSet{AbstractKripkeStructure{W,C where C<:AbstractCondition{_F where _F<:FT},T where T<:TruthValue,FR}} end
 
+function featchannel(
+    X::AbstractLogiset{W},
+    i_instance::Integer,
+    f::AbstractFeature,
+) where {W<:AbstractWorld}
+    error("Please, provide method featchannel(::$(typeof(X)), i_instance::$(typeof(i_instance)), f::$(typeof(f))).")
+end
+
+function readfeature(
+    X::AbstractLogiset{W},
+    featchannel::Any,
+    w::W,
+    f::AbstractFeature,
+) where {W<:AbstractWorld}
+    error("Please, provide method readfeature(::$(typeof(X)), featchannel::$(typeof(featchannel)), w::$(typeof(w)), f::$(typeof(f))).")
+end
+
+"""
+TODO
+"""
 function featvalue(
     X::AbstractLogiset{W},
     i_instance::Integer,
     w::W,
     f::AbstractFeature,
 ) where {W<:AbstractWorld}
-    error("Please, provide method featvalue(::$(typeof(X)), i_instance::$(typeof(i_instance)), w::$(typeof(w)), f::$(typeof(f))).")
+    readfeature(X, featchannel(X, i_instance, f), w, f)
 end
 
 function frame(X::AbstractLogiset, i_instance::Integer)
@@ -122,10 +142,10 @@ worldtype(X::AbstractLogiset) = worldtype(typeof(X))
 featvaltype(::Type{<:AbstractLogiset{W,U}}) where {W<:AbstractWorld,U} = U
 featvaltype(X::AbstractLogiset) = featvaltype(typeof(X))
 
-featuretype(::Type{<:AbstractLogiset{W,U,F}}) where {W<:AbstractWorld,U,F<:AbstractFeature} = F
+featuretype(::Type{<:AbstractLogiset{W,U,FT}}) where {W<:AbstractWorld,U,FT<:AbstractFeature} = FT
 featuretype(X::AbstractLogiset) = featuretype(typeof(X))
 
-frametype(::Type{<:AbstractLogiset{W,U,F,FR}}) where {W<:AbstractWorld,U,F<:AbstractFeature,FR<:AbstractFrame} = FR
+frametype(::Type{<:AbstractLogiset{W,U,FT,FR}}) where {W<:AbstractWorld,U,FT<:AbstractFeature,FR<:AbstractFrame} = FR
 frametype(X::AbstractLogiset) = frametype(typeof(X))
 
 representatives(X::AbstractLogiset, i_instance::Integer, args...) = representatives(frame(X, i_instance), args...)
@@ -137,9 +157,9 @@ representatives(X::AbstractLogiset, i_instance::Integer, args...) = representati
 #     abstract type AbstractBaseLogiset{
 #         W<:AbstractWorld,
 #         U,
-#         F<:AbstractFeature,
+#         FT<:AbstractFeature,
 #         FR<:AbstractFrame{W},
-#     } <: AbstractLogiset{W,U,F,FR} end
+#     } <: AbstractLogiset{W,U,FT,FR} end
 
 # (Base) logisets can be associated to support logisets that perform memoization in order
 # to speed up model checking times.
@@ -151,19 +171,19 @@ representatives(X::AbstractLogiset, i_instance::Integer, args...) = representati
 # abstract type AbstractBaseLogiset{
 #     W<:AbstractWorld,
 #     U,
-#     F<:AbstractFeature,
+#     FT<:AbstractFeature,
 #     FR<:AbstractFrame{W},
-# } <: AbstractLogiset{W,U,F,FR} end
+# } <: AbstractLogiset{W,U,FT,FR} end
 
 
 """
     struct ExplicitBooleanLogiset{
         W<:AbstractWorld,
-        F<:AbstractFeature,
+        FT<:AbstractFeature,
         FR<:AbstractFrame{W},
-    } <: AbstractLogiset{W,Bool,F,FR}
+    } <: AbstractLogiset{W,Bool,FT,FR}
 
-        d :: Vector{Tuple{Dict{W,Vector{F}},FR}}
+        d :: Vector{Tuple{Dict{W,Vector{FT}},FR}}
 
     end
 
@@ -175,10 +195,10 @@ See also
 """
 struct ExplicitBooleanLogiset{
     W<:AbstractWorld,
-    F<:AbstractFeature,
+    FT<:AbstractFeature,
     FR<:AbstractFrame{W},
-    D<:AbstractVector{<:Tuple{<:Dict{<:W,<:Vector{<:F}},<:FR}}
-} <: AbstractLogiset{W,Bool,F,FR}
+    D<:AbstractVector{<:Tuple{<:Dict{<:W,<:Vector{<:FT}},<:FR}}
+} <: AbstractLogiset{W,Bool,FT,FR}
 
     d :: D
 
@@ -186,15 +206,23 @@ end
 
 ninstances(X::ExplicitBooleanLogiset) = length(X.d)
 
-function featvalue(
+
+function featchannel(
     X::ExplicitBooleanLogiset{W},
     i_instance::Integer,
+    f::AbstractFeature,
+) where {W<:AbstractWorld}
+    X.d[i_instance][1]
+end
+
+function readfeature(
+    X::ExplicitBooleanLogiset{W},
+    featchannel::Any,
     w::W,
     f::AbstractFeature,
 ) where {W<:AbstractWorld}
-    Base.in(f, X.d[i_instance][1][w])
+    Base.in(f, featchannel[w])
 end
-
 
 function frame(
     X::ExplicitBooleanLogiset{W},
@@ -258,11 +286,11 @@ hasnans(X::ExplicitBooleanLogiset) = false
     struct ExplicitLogiset{
         W<:AbstractWorld,
         U,
-        F<:AbstractFeature,
+        FT<:AbstractFeature,
         FR<:AbstractFrame{W},
-    } <: AbstractLogiset{W,U,F,FR}
+    } <: AbstractLogiset{W,U,FT,FR}
 
-        d :: Vector{Tuple{Dict{W,Dict{F,U}},FR}}
+        d :: Vector{Tuple{Dict{W,Dict{FT,U}},FR}}
 
     end
 
@@ -275,10 +303,10 @@ See also
 struct ExplicitLogiset{
     W<:AbstractWorld,
     U,
-    F<:AbstractFeature,
+    FT<:AbstractFeature,
     FR<:AbstractFrame{W},
-    D<:AbstractVector{<:Tuple{<:Dict{<:W,<:Dict{<:F,<:U}},<:FR}}
-} <: AbstractLogiset{W,U,F,FR}
+    D<:AbstractVector{<:Tuple{<:Dict{<:W,<:Dict{<:FT,<:U}},<:FR}}
+} <: AbstractLogiset{W,U,FT,FR}
 
     d :: D
 
@@ -286,15 +314,22 @@ end
 
 ninstances(X::ExplicitLogiset) = length(X.d)
 
-function featvalue(
+function featchannel(
     X::ExplicitLogiset{W},
     i_instance::Integer,
+    f::AbstractFeature,
+) where {W<:AbstractWorld}
+    X.d[i_instance][1]
+end
+
+function readfeature(
+    X::ExplicitLogiset{W},
+    featchannel::Any,
     w::W,
     f::AbstractFeature,
 ) where {W<:AbstractWorld}
-    X.d[i_instance][1][w][f]
+    featchannel[w][f]
 end
-
 
 function frame(
     X::ExplicitLogiset{W},

@@ -4,8 +4,8 @@
 const DEFAULT_SCALARCOND_FEATTYPE = SoleModels.VarFeature
 
 """
-    struct ScalarMetaCondition{F<:AbstractFeature,O<:TestOperator} <: AbstractCondition{F}
-        feature::F
+    struct ScalarMetaCondition{FT<:AbstractFeature,O<:TestOperator} <: AbstractCondition{FT}
+        feature::FT
         test_operator::O
     end
 
@@ -22,10 +22,10 @@ See also
 [`negation`](@ref),
 [`ScalarCondition`](@ref).
 """
-struct ScalarMetaCondition{F<:AbstractFeature,O<:TestOperator} <: AbstractCondition{F}
+struct ScalarMetaCondition{FT<:AbstractFeature,O<:TestOperator} <: AbstractCondition{FT}
 
   # Feature: a scalar function that can be computed on a world
-  feature::F
+  feature::FT
 
   # Test operator (e.g. ≥)
   test_operator::O
@@ -33,8 +33,8 @@ struct ScalarMetaCondition{F<:AbstractFeature,O<:TestOperator} <: AbstractCondit
 end
 
 # TODO
-# featuretype(::Type{<:ScalarMetaCondition{F}}) where {F<:AbstractFeature} = F
-# featuretype(m::ScalarMetaCondition) = featuretype(typeof(F))
+# featuretype(::Type{<:ScalarMetaCondition{FT}}) where {FT<:AbstractFeature} = FT
+# featuretype(m::ScalarMetaCondition) = featuretype(typeof(FT))
 
 feature(m::ScalarMetaCondition) = m.feature
 test_operator(m::ScalarMetaCondition) = m.test_operator
@@ -64,8 +64,20 @@ _st_featop_abbr(feature::AbstractFeature,   test_operator::TestOperator; kwargs.
 
 ############################################################################################
 
+function groupbyfeature(metaconditions::AbstractVector{<:ScalarMetaCondition})
+    _features = unique(feature.(metaconditions))
+    grouped_features = [begin
+        these_metaconds = filter(m->feature(m) == _feature, metaconditions)
+        # these_testops = unique(test_operator.(these_metaconds))
+        (_feature, these_metaconds)
+    end for _feature in _features]
+    grouped_features
+end
+
+############################################################################################
+
 """
-    struct ScalarCondition{U,F,M<:ScalarMetaCondition{F}} <: AbstractCondition{F}
+    struct ScalarCondition{U,FT,M<:ScalarMetaCondition{FT}} <: AbstractCondition{FT}
         metacond::M
         a::U
     end
@@ -83,7 +95,7 @@ See also
 [`negation`](@ref),
 [`ScalarMetaCondition`](@ref).
 """
-struct ScalarCondition{U,F,M<:ScalarMetaCondition{F}} <: AbstractCondition{F}
+struct ScalarCondition{U,FT,M<:ScalarMetaCondition{FT}} <: AbstractCondition{FT}
 
   # Metacondition
   metacond::M
@@ -94,15 +106,15 @@ struct ScalarCondition{U,F,M<:ScalarMetaCondition{F}} <: AbstractCondition{F}
   function ScalarCondition(
       metacond       :: M,
       threshold      :: U
-  ) where {F<:AbstractFeature,M<:ScalarMetaCondition{F},U}
-      new{U,F,M}(metacond, threshold)
+  ) where {FT<:AbstractFeature,M<:ScalarMetaCondition{FT},U}
+      new{U,FT,M}(metacond, threshold)
   end
 
   function ScalarCondition(
       condition      :: ScalarCondition{U,M},
       threshold      :: U
-  ) where {F<:AbstractFeature,M<:ScalarMetaCondition{F},U}
-      new{U,F,M}(metacond(condition), threshold)
+  ) where {FT<:AbstractFeature,M<:ScalarMetaCondition{FT},U}
+      new{U,FT,M}(metacond(condition), threshold)
   end
 
   function ScalarCondition(
@@ -172,8 +184,8 @@ function parsecondition(
     expression::String;
     featuretype::Union{Nothing,Type} = nothing,
     kwargs...
-) where {U,F,C<:ScalarCondition{U,F}}
-    @assert isnothing(featuretype) || featuretype == F "Cannot parse condition of type $(C) with " *
+) where {U,FT,C<:ScalarCondition{U,FT}}
+    @assert isnothing(featuretype) || featuretype == FT "Cannot parse condition of type $(C) with " *
         "featuretype = $(featuretype). (expression = $(repr(expression)))"
     _parsecondition(C, expression; kwargs...)
 end
@@ -182,7 +194,7 @@ function _parsecondition(
     ::Type{C},
     expression::String;
     kwargs...
-) where {U,F,C<:ScalarCondition{U,F}}
+) where {U,FT,C<:ScalarCondition{U,FT}}
     r = Regex("^\\s*(\\S+)\\s+([^\\s\\d]+)\\s*(\\S+)\\s*\$")
     slices = match(r, expression)
 
@@ -191,7 +203,7 @@ function _parsecondition(
 
     slices = string.(slices)
 
-    feature = parsefeature(F, slices[1]; featvaltype = U, kwargs...)
+    feature = parsefeature(FT, slices[1]; featvaltype = U, kwargs...)
     test_operator = eval(Meta.parse(slices[2]))
     threshold = eval(Meta.parse(slices[3]))
 

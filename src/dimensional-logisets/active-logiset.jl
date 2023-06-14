@@ -21,8 +21,8 @@ featvaltype(d::AbstractFeatureLookupSet) = featvaltype(typeof(d))
         featstruct  :: AbstractFeatureLookupSet{V,FR},
         i_instance  :: Integer,
         w           :: W,
-        feature     :: F,
-    ) where {V,F<:AbstractFeature,W<:AbstractWorld,FR<:AbstractFrame{W}}
+        feature     :: FT,
+    ) where {V,FT<:AbstractFeature,W<:AbstractWorld,FR<:AbstractFrame{W}}
 
 Return the feature value for `f` at world `w` on the `i`-th instance.
 
@@ -33,8 +33,8 @@ function featvalue(
     featstruct  :: AbstractFeatureLookupSet{V,FR},
     i_instance  :: Integer,
     w           :: W,
-    feature     :: F,
-)::V where {V,F<:AbstractFeature,W<:AbstractWorld,FR<:AbstractFrame{W}}
+    feature     :: FT,
+)::V where {V,FT<:AbstractFeature,W<:AbstractWorld,FR<:AbstractFrame{W}}
     error("Please, provide method featvalue(::$(typeof(featstruct)), i_instance::$(typeof(i_instance)), w::$(typeof(w)), feature::$(typeof(feature)))::$(V).")
 end
 
@@ -69,11 +69,11 @@ end
 # # The most generic featstruct structure is a matrix of dictionaries of size (ninstances × nfeatures)
 # struct GenericFWD{
 #     V,
-#     F<:AbstractFeature,
+#     FT<:AbstractFeature,
 #     W<:AbstractWorld,
 #     FR<:AbstractFrame{W},
 #     D<:AbstractVector{<:AbstractDict{<:W,<:AbstractVector{<:V}}}
-# } <: AbstractFeatureLookupSet{V,F,FR}
+# } <: AbstractFeatureLookupSet{V,FT,FR}
 #     d :: D
 #     nfeatures :: Integer
 # end
@@ -124,7 +124,7 @@ end
 # Others...
 # Base.@propagate_inbounds @inline fwdread_channeaoeu(featstruct::GenericFWD{V}, i_instance::Integer, i_feature::Integer) where {V} = TODO
 # const GenericFeaturedChannel{V} = TODO
-# fwd_channel_interpret_world(fwc::GenericFeaturedChannel{V}, w::AbstractWorld) where {V} = TODO
+# readfeature(fwc::GenericFeaturedChannel{V}, w::AbstractWorld) where {V} = TODO
 
 # isminifiable(::AbstractFeatureLookupSet) = true
 
@@ -142,15 +142,15 @@ struct Logiset{
     V,
     W<:AbstractWorld,
     FR<:AbstractFrame{W},
-    F<:AbstractFeature,
+    FT<:AbstractFeature,
     FWD<:AbstractFeatureLookupSet{V,FR},
-} <: AbstractLogiset{W,V,F,Bool,FR}
+} <: AbstractLogiset{W,V,FT,Bool,FR}
 
     # Feature lookup structure
     featstruct              :: FWD
 
     # Features
-    features                :: Vector{F}
+    features                :: Vector{FT}
 
     # Accessibility relations
     relations               :: Vector{<:AbstractRelation}
@@ -158,16 +158,16 @@ struct Logiset{
     # Initial world(s)
     initialworld :: Union{Nothing,W,AbstractWorldSet{<:W}}
 
-    function Logiset{V,W,FR,F,FWD}(
+    function Logiset{V,W,FR,FT,FWD}(
         featstruct              :: FWD,
-        features                :: AbstractVector{F},
+        features                :: AbstractVector{FT},
         relations               :: AbstractVector{<:AbstractRelation},
         ;
         allow_no_instances = false,
         initialworld = nothing,
-    ) where {V,W<:AbstractWorld,FR<:AbstractFrame{W},FWD<:AbstractFeatureLookupSet{V,FR},F<:AbstractFeature}
+    ) where {V,W<:AbstractWorld,FR<:AbstractFrame{W},FWD<:AbstractFeatureLookupSet{V,FR},FT<:AbstractFeature}
         features = collect(features)
-        ty = "Logiset{$(V),$(W),$(FR),$(F)}"
+        ty = "Logiset{$(V),$(W),$(FR),$(FT)}"
         @assert allow_no_instances || ninstances(featstruct) > 0     "Can't instantiate $(ty) with no instance. (featstruct's type $(typeof(featstruct)))"
         @assert nfeatures(featstruct) == length(features)          "Can't instantiate $(ty) with different numbers of instances $(ninstances(featstruct)) and of features $(length(features))."
         check_initialworld(Logiset, initialworld, W)
@@ -175,7 +175,7 @@ struct Logiset{
             V,
             W,
             FR,
-            F,
+            FT,
             FWD,
         }(
             featstruct,
@@ -192,9 +192,9 @@ struct Logiset{
         kwargs...
     ) where {V,W<:AbstractWorld,FR<:AbstractFrame{W},FWD<:AbstractFeatureLookupSet{V,FR}}
         features = collect(features)
-        F = Union{typeof.(features)...}
-        features = Vector{F}(features)
-        Logiset{V,W,FR,F,FWD}(featstruct, features, args...; kwargs...)
+        FT = Union{typeof.(features)...}
+        features = Vector{FT}(features)
+        Logiset{V,W,FR,FT,FWD}(featstruct, features, args...; kwargs...)
     end
 
     function Logiset{V,W}(

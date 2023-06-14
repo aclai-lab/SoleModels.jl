@@ -2,25 +2,25 @@
     abstract type AbstractMemoset{
         W<:AbstractWorld,
         U,
-        F<:AbstractFeature,
+        FT<:AbstractFeature,
         FR<:AbstractFrame,
-    } <: AbstractLogiset{W,U,F,FR} end
+    } <: AbstractLogiset{W,U,FT,FR} end
 
 Abstract type for memoization structures to be used when checking
 formulas on logisets.
 
 See also
-[`Memoset`](@ref),
+[`FullMemoset`](@ref),
 [`SuportedLogiset`](@ref),
 [`AbstractLogiset`](@ref).
 """
 abstract type AbstractMemoset{
     W<:AbstractWorld,
     U,
-    F<:AbstractFeature,
+    FT<:AbstractFeature,
     FR<:AbstractFrame,
-} <: AbstractLogiset{W,U,F,FR} end
-# } <: AbstractInterpretationSet{AbstractKripkeStructure{W,C where C<:AbstractCondition{_F where _F<:F},T where T<:TruthValue,FR where FR<:AbstractFrame}} end
+} <: AbstractLogiset{W,U,FT,FR} end
+# } <: AbstractInterpretationSet{AbstractKripkeStructure{W,C where C<:AbstractCondition{_F where _F<:FT},T where T<:TruthValue,FR where FR<:AbstractFrame}} end
 
 function capacity(Xm::AbstractMemoset)
     error("Please, provide method capacity(::$(typeof(Xm))).")
@@ -32,6 +32,14 @@ end
 
 function nonnothingshare(Xm::AbstractMemoset)
     (isinf(capacity(Xm)) ? NaN : nmemoizedvalues(Xm)/capacity(Xm))
+end
+
+function memoizationinfo(Xm::AbstractMemoset)
+    if isinf(capacity(Xm))
+        "$(nmemoizedvalues(Xm)) memoized values"
+    else
+        "$(nmemoizedvalues(Xm))/$(capacity(Xm)) = $(round(nonnothingshare(Xm)*100, digits=2))% memoized values"
+    end
 end
 
 function displaystructure(Xm::AbstractMemoset; indent_str = "", include_ninstances = true)
@@ -47,16 +55,21 @@ function displaystructure(Xm::AbstractMemoset; indent_str = "", include_ninstanc
     end
     push!(pieces, "$(padattribute("# memoized values:", nmemoizedvalues(Xm)))")
 
-    return "Memoset ($(humansize(Xm)))" *
+    return "FullMemoset ($(humansize(Xm)))" *
         join(pieces, "\n$(indent_str)├ ", "\n$(indent_str)└ ") * "\n"
 end
 
 ############################################################################################
 
 """
-Abstract type for one-step memoization structure for checking formulas of type `⟨R⟩ (f ⋈ t)`.
+Abstract type for one-step memoization structures for checking formulas of type `⟨R⟩ p`.
 """
-abstract type AbstractOneStepMemoset{W<:AbstractWorld,U,F<:AbstractFeature,FR<:AbstractFrame{W}} <: AbstractMemoset{W,U,F,FR}     end
+abstract type AbstractOneStepMemoset{W<:AbstractWorld,U,FT<:AbstractFeature,FR<:AbstractFrame{W}} <: AbstractMemoset{W,U,FT,FR}     end
+
+"""
+Abstract type for full memoization structures for checking generic formulas.
+"""
+abstract type AbstractFullMemoset{W<:AbstractWorld,U,FT<:AbstractFeature,FR<:AbstractFrame{W}} <: AbstractMemoset{W,U,FT,FR}     end
 
 ############################################################################################
 
@@ -75,42 +88,42 @@ See also
 [`AbstractMemoset`](@ref),
 [`AbstractLogiset`](@ref).
 """
-struct Memoset{
+struct FullMemoset{
     W<:AbstractWorld,
     D<:AbstractVector{<:AbstractDict{<:AbstractFormula,<:WorldSet{W}}},
-} <: AbstractMemoset{W,U where U,F where F<:AbstractFeature,FR where FR<:AbstractFrame{W}}
+} <: AbstractFullMemoset{W,U where U,FT where FT<:AbstractFeature,FR where FR<:AbstractFrame{W}}
 
     d :: D
 
-    function Memoset{W,D}(
+    function FullMemoset{W,D}(
         d::D
     ) where {W,D<:AbstractVector{<:AbstractDict{<:AbstractFormula,<:Union{<:AbstractVector{W},Nothing}}}}
         new{W,D}(d)
     end
 
-    function Memoset(
+    function FullMemoset(
         d::D
     ) where {W,D<:AbstractVector{<:AbstractDict{<:AbstractFormula,<:Union{<:AbstractVector{W},Nothing}}}}
         new{W,D}(d)
     end
 
-    function Memoset(
-        X::AbstractLogiset{W,U,F,FR},
+    function FullMemoset(
+        X::AbstractLogiset{W,U,FT,FR},
         perform_initialization = false,
-    ) where {W,U,F<:AbstractFeature,FR<:AbstractFrame{W}}
+    ) where {W,U,FT<:AbstractFeature,FR<:AbstractFrame{W}}
         d = [ThreadSafeDict{SyntaxTree,WorldSet{W}}() for i in 1:ninstances(X)]
         D = typeof(d)
-        Memoset{W,D}(d)
+        FullMemoset{W,D}(d)
     end
 end
 
-ninstances(Xm::Memoset)      = length(Xm.d)
+ninstances(Xm::FullMemoset)      = length(Xm.d)
 
-capacity(Xm::Memoset)        = Inf
-nmemoizedvalues(Xm::Memoset) = sum(length.(Xm.d))
+capacity(Xm::FullMemoset)        = Inf
+nmemoizedvalues(Xm::FullMemoset) = sum(length.(Xm.d))
 
 @inline function Base.haskey(
-    Xm           :: Memoset{W},
+    Xm           :: FullMemoset{W},
     i_instance   :: Integer,
     f            :: AbstractFormula,
 ) where {W<:AbstractWorld}
@@ -118,20 +131,20 @@ nmemoizedvalues(Xm::Memoset) = sum(length.(Xm.d))
 end
 
 @inline function Base.getindex(
-    Xm           :: Memoset{W},
+    Xm           :: FullMemoset{W},
     i_instance   :: Integer,
 ) where {W<:AbstractWorld}
     Xm.d[i_instance]
 end
 @inline function Base.getindex(
-    Xm           :: Memoset{W},
+    Xm           :: FullMemoset{W},
     i_instance   :: Integer,
     f            :: AbstractFormula,
 ) where {W<:AbstractWorld}
     Xm.d[i_instance][f]
 end
 @inline function Base.setindex!(
-    Xm           :: Memoset{W},
+    Xm           :: FullMemoset{W},
     i_instance   :: Integer,
     f            :: AbstractFormula,
     ws           :: WorldSet{W},
@@ -141,7 +154,7 @@ end
 
 function check(
     f::AbstractFormula,
-    Xm::Memoset{W},
+    Xm::FullMemoset{W},
     i_instance::Integer,
     w::W;
     kwargs...
@@ -150,21 +163,21 @@ function check(
 end
 
 function instances(
-    Xm::Memoset,
+    Xm::FullMemoset,
     inds::AbstractVector{<:Integer},
     return_view::Union{Val{true},Val{false}} = Val(false);
     kwargs...
 )
-    Memoset(if return_view == Val(true) @view Xm.d[inds] else Xm.d[inds] end)
+    FullMemoset(if return_view == Val(true) @view Xm.d[inds] else Xm.d[inds] end)
 end
 
-function concatdatasets(Xms::Memoset...)
-    Memoset(vcat([Xm.d for Xm in Xms]...))
+function concatdatasets(Xms::FullMemoset...)
+    FullMemoset(vcat([Xm.d for Xm in Xms]...))
 end
 
-usesfullmemo(::Memoset) = true
-fullmemo(Xm::Memoset) = Xm
+usesfullmemo(::FullMemoset) = true
+fullmemo(Xm::FullMemoset) = Xm
 
-hasnans(::Memoset) = false
+hasnans(::FullMemoset) = false
 
-# Base.size(::Memoset) = ()
+# Base.size(::FullMemoset) = ()

@@ -365,33 +365,33 @@ const BASE_FEATURE_ALIASES = Dict{String,Union{Type,Function}}(
 )
 
 function parsefeature(
-    ::Type{F},
+    ::Type{FT},
     expression::String;
     featvaltype::Union{Nothing,Type} = nothing,
     kwargs...
-) where {F<:VarFeature}
+) where {FT<:VarFeature}
     if isnothing(featvaltype)
         featvaltype = DEFAULT_VARFEATVALTYPE
         @warn "Please, specify a type for the feature values (featvaltype = ...). " *
             "$(featvaltype) will be used, but note that this may raise type errors. " *
             "(expression = $(repr(expression)))"
     end
-    _parsefeature(F{featvaltype}, expression; kwargs...)
+    _parsefeature(FT{featvaltype}, expression; kwargs...)
 end
 
 function parsefeature(
-    ::Type{F},
+    ::Type{FT},
     expression::String;
     featvaltype::Union{Nothing,Type} = nothing,
     kwargs...
-) where {U,F<:VarFeature{U}}
-    @assert isnothing(featvaltype) || featvaltype == U "Cannot parse feature of type $(F) with " *
+) where {U,FT<:VarFeature{U}}
+    @assert isnothing(featvaltype) || featvaltype == U "Cannot parse feature of type $(FT) with " *
         "featvaltype = $(featvaltype). (expression = $(repr(expression)))"
-    _parsefeature(F, expression; kwargs...)
+    _parsefeature(FT, expression; kwargs...)
 end
 
 function _parsefeature(
-    ::Type{F},
+    ::Type{FT},
     expression::String;
     opening_bracket::String = UVF_OPENING_BRACKET,
     closing_bracket::String = UVF_CLOSING_BRACKET,
@@ -399,7 +399,7 @@ function _parsefeature(
     variable_names_map::Union{Nothing,AbstractDict,AbstractVector} = nothing,
     variable_name_prefix::Union{Nothing,String} = nothing,
     kwargs...
-) where {U,F<:VarFeature{U}}
+) where {U,FT<:VarFeature{U}}
     @assert isnothing(variable_names_map) || isnothing(variable_name_prefix) "" *
         "Cannot parse variable with both variable_names_map and variable_name_prefix. " *
         "(expression = $(repr(expression)))"
@@ -458,8 +458,8 @@ function _parsefeature(
         end
     end
 
-    # if !(feature isa F)
-    #     @warn "Could not parse expression $(repr(expression)) as feature of type $(F); " *
+    # if !(feature isa FT)
+    #     @warn "Could not parse expression $(repr(expression)) as feature of type $(FT); " *
     #         " $(typeof(feature)) was used."
     # end
 

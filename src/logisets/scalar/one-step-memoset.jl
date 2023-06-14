@@ -1,9 +1,91 @@
 
+@inline function onestep_aggregation(
+    X::AbstractLogiset{W},
+    i_instance::Integer,
+    w::W,
+    r::AbstractRelation,
+    f::VarFeature{U},
+    aggr::Aggregator,
+    args...
+) where {W<:AbstractWorld,U}
+    vs = [featvalue(X, i_instance, w2, f) for w2 in representatives(X, i_instance, w, r, f, aggr)]
+    return (length(vs) == 0 ? aggregator_bottom(aggr, U) : aggr(vs))
+end
+
+function featchannel_onestep_aggregation(X::SupportedLogiset, args...)
+    onestep_supps = filter(supp->supp isa AbstractOneStepMemoset, supports(X))
+    if length(onestep_supps) > 0
+        @assert length(onestep_supps) == 1 "Currently, using more " *
+            "than one AbstractOneStepMemoset is not allowed."
+        featchannel_onestep_aggregation(base(X), onestep_supps(X)[1], args...)
+    else
+        featchannel_onestep_aggregation(base(X), args...)
+    end
+end
+
+function featchannel_onestep_aggregation(
+    X::AbstractLogiset,
+    featchannel,
+    i_instance,
+    r::GlobalRel,
+    f::AbstractFeature,
+    aggregator::Aggregator
+)
+    # accessible_worlds = allworlds(X, i_instance)
+    accessible_worlds = representatives(X, i_instance, r, f, aggregator)
+    gamma = apply_aggregator(X, featchannel, accessible_worlds, f, aggregator)
+end
+
+function featchannel_onestep_aggregation(
+    X::AbstractLogiset,
+    featchannel,
+    i_instance,
+    w,
+    r::AbstractRelation,
+    f::AbstractFeature,
+    aggregator::Aggregator
+)
+    # accessible_worlds = accessibles(X, i_instance, w, r)
+    accessible_worlds = representatives(X, i_instance, w, r, f, aggregator)
+    gamma = apply_aggregator(X, featchannel, accessible_worlds, f, aggregator)
+end
+
+# TODO add AbstractWorldSet type
+function apply_aggregator(
+    X::AbstractLogiset{W,U},
+    featchannel,
+    worlds::Any,
+    f::AbstractFeature,
+    aggregator::Aggregator
+) where {W<:AbstractWorld,U}
+
+    # TODO try reduce(aggregator, worlds; init=bottom(aggregator, U))
+    # TODO remove this SoleModels.aggregator_to_binary...
+
+    if length(worlds |> collect) == 0
+        aggregator_bottom(aggregator, U)
+    else
+        aggregator((w)->readfeature(X, featchannel, w, f), worlds)
+    end
+
+    # opt = SoleModels.aggregator_to_binary(aggregator)
+    # gamma = bottom(aggregator, U)
+    # for w in worlds
+    #   e = readfeature(X, featchannel, w, f)
+    #   gamma = opt(gamma,e)
+    # end
+    # gamma
+end
+
+############################################################################################
+############################################################################################
+############################################################################################
+
 """
-Abstract type for one-step memoization structure for checking formulas of type `⟨R⟩ (f ⋈ t)`,
+Abstract type for one-step memoization structures for checking formulas of type `⟨R⟩ (f ⋈ t)`,
 for a generic relation `R`.
 """
-abstract type AbstractScalarOneStepRelationalMemoset{W<:AbstractWorld,U,FR<:AbstractFrame{W}} <: AbstractMemoset{W,U,F where F<:AbstractFeature,FR}     end
+abstract type AbstractScalarOneStepRelationalMemoset{W<:AbstractWorld,U,FR<:AbstractFrame{W}} <: AbstractMemoset{W,U,FT where FT<:AbstractFeature,FR}     end
 
 @inline function Base.getindex(
     memoset      :: AbstractScalarOneStepRelationalMemoset{W},
@@ -25,7 +107,7 @@ end
 Abstract type for one-step memoization structure for checking "global" formulas
 of type `⟨G⟩ (f ⋈ t)`.
 """
-abstract type AbstractScalarOneStepGlobalMemoset{W<:AbstractWorld,U} <: AbstractMemoset{W,U,F where F<:AbstractFeature,FR where FR<:AbstractFrame{W}} end
+abstract type AbstractScalarOneStepGlobalMemoset{W<:AbstractWorld,U} <: AbstractMemoset{W,U,FT where FT<:AbstractFeature,FR where FR<:AbstractFrame{W}} end
 
 @inline function Base.getindex(
     memoset      :: AbstractScalarOneStepGlobalMemoset{W},
@@ -62,7 +144,7 @@ struct ScalarOneStepMemoset{
     UU<:Union{U,Nothing},
     RM<:AbstractScalarOneStepRelationalMemoset{W,UU,FR},
     GM<:Union{AbstractScalarOneStepGlobalMemoset{W,U},Nothing},
-} <: AbstractOneStepMemoset{W,U,F where F<:AbstractFeature,FR}
+} <: AbstractOneStepMemoset{W,U,FT where FT<:AbstractFeature,FR}
 
     metaconditions          :: UniqueVector{<:ScalarMetaCondition}
     relations               :: UniqueVector{<:AbstractRelation}
@@ -86,8 +168,13 @@ struct ScalarOneStepMemoset{
         RM<:AbstractScalarOneStepRelationalMemoset{W,UU,FR},
         GM<:Union{AbstractScalarOneStepGlobalMemoset{W,U},Nothing},
     }
+        ty = "ScalarOneStepMemoset"
         metaconditions = UniqueVector(metaconditions)
         relations = UniqueVector(relations)
+
+        if identityrel in relations
+            @warn "Using identity relation in a relational memoset. This is not optimal."
+        end
 
         if globalrel in relations && isnothing(globmemoset)
             @warn "Using global relation in a relational memoset. This is not optimal."
@@ -96,9 +183,10 @@ struct ScalarOneStepMemoset{
         @assert nmetaconditions(relmemoset) == length(metaconditions)  "Can't instantiate " *
             "$(ty) with mismatching nmetaconditions for relmemoset and " *
             "provided metaconditions: $(nmetaconditions(relmemoset)) and $(length(metaconditions))"
-        @assert nrelations(relmemoset) == length(relations)            "Can't instantiate " *
-            "$(ty) with mismatching nrelations for relmemoset and " *
-            "provided relations: $(nrelations(relmemoset)) and $(length(relations))"
+        # Global relation breaks this:
+        # @assert nrelations(relmemoset) == length(relations)            "Can't instantiate " *
+        #     "$(ty) with mismatching nrelations for relmemoset and " *
+        #     "provided relations: $(nrelations(relmemoset)) and $(length(relations))"
 
         if !isnothing(globmemoset)
             @assert nmetaconditions(globmemoset) == length(metaconditions) "Can't " *
@@ -123,100 +211,87 @@ struct ScalarOneStepMemoset{
         precompute_relmemoset   :: Bool = false,
     ) where {W<:AbstractWorld,U}
 
-        _fwd = fwd(X)
-
-        _features = features(X)
-        _grouped_featsnaggrs =  grouped_featsnaggrs(X)
-        featsnaggrs = features_grouped_featsaggrsnops2featsnaggrs(features(X), grouped_featsaggrsnops(X))
-
+        # Only compute global memoset if the global relation is in the relation set.
         compute_globmemoset = begin
             if globalrel in relations
-                relations = filter!(l->l≠globalrel, relations)
+                relations = filter(l->l≠globalrel, relations)
                 true
             else
                 false
             end
         end
 
-        _n_instances = ninstances(X)
-        nrelations = length(relations)
-        nmetaconditions = sum(length.(_grouped_featsnaggrs))
-
         # Prepare relmemoset
-        perform_initialization = !precompute_relmemoset
-        relmemoset = relational_memoset_type(X, perform_initialization)
+        perform_initialization = true # !precompute_relmemoset
+        relmemoset = relational_memoset_type(X, metaconditions, relations, perform_initialization)
 
         # Prepare globmemoset
         globmemoset = begin
             if compute_globmemoset
-                ScalarOneStepGlobalMemoset(X)
+                ScalarOneStepGlobalMemoset(X, metaconditions, perform_initialization)
             else
                 nothing
             end
         end
 
-        # p = Progress(_n_instances, 1, "Computing EMD supports...")
-        Threads.@threads for i_instance in 1:_n_instances
-            # @logmsg LogDebug "Instance $(i_instance)/$(_n_instances)"
+        if (compute_globmemoset && precompute_globmemoset) || precompute_relmemoset
 
-            # if i_instance == 1 || ((i_instance+1) % (floor(Int, ((_n_instances)/4))+1)) == 0
-            #     @logmsg LogOverview "Instance $(i_instance)/$(_n_instances)"
-            # end
+            metaconditions = UniqueVector(metaconditions)
+            relations = UniqueVector(relations)
 
-            for (i_feature,aggregators) in enumerate(_grouped_featsnaggrs)
-                feature = _features[i_feature]
-                # @logmsg LogDebug "Feature $(i_feature)"
+            n_instances = ninstances(X)
+            nrelations = length(relations)
+            nmetaconditions = length(metaconditions)
 
-                fwdslice = fwdread_channel(_fwd, i_instance, i_feature)
+            grouped_metaconditions = groupbyfeature(metaconditions)
 
-                # @logmsg LogDebug fwdslice
+            grouped_metaconditions = map(((feature,these_metaconditions),)->begin
+                these_metaconditions = map(_metacond->begin
+                    i_metacond = findfirst(isequal(_metacond), metaconditions)
+                    aggregator = existential_aggregator(test_operator(_metacond))
+                    (i_metacond, aggregator, _metacond)
+                end, these_metaconditions)
+                (feature,these_metaconditions)
+            end, grouped_metaconditions)
 
-                # Global relation (independent of the current world)
-                if compute_globmemoset && precompute_globmemoset
-                    # @logmsg LogDebug "globalrel"
+            # p = Progress(n_instances, 1, "Computing EMD supports...")
+            Threads.@threads for i_instance in 1:n_instances
 
-                    # TODO optimize: all aggregators are likely reading the same raw values.
-                    for (i_featsnaggr,aggr) in aggregators
-                    # Threads.@threads for (i_featsnaggr,aggr) in aggregators
+                for (_feature, these_metaconditions) in grouped_metaconditions
 
-                        gamma = fwdslice_onestep_accessible_aggregation(X, fwdslice, i_instance, globalrel, feature, aggr)
+                    _featchannel = featchannel(X, i_instance, _feature)
 
-                        # @logmsg LogDebug "Aggregator[$(i_featsnaggr)]=$(aggr)  -->  $(gamma)"
+                    # Global relation (independent of the current world)
+                    if compute_globmemoset && precompute_globmemoset
 
-                        globmemoset[i_instance, i_featsnaggr] = gamma
-                    end
-                end
+                        for (i_metacond, aggregator, _metacond) in these_metaconditions
 
-                if precompute_relmemoset
-                    # Other relations
-                    for (i_relation,relation) in enumerate(relations)
+                            gamma = featchannel_onestep_aggregation(X, _featchannel, i_instance, globalrel, _feature, aggregator)
 
-                        # @logmsg LogDebug "Relation $(i_relation)/$(nrelations)"
-
-                        for (i_featsnaggr,aggr) in aggregators
-                            relmemoset_init_world_slice(relmemoset, i_instance, i_featsnaggr, i_relation)
+                            globmemoset[i_instance, i_metacond] = gamma
                         end
+                    end
 
-                        for w in allworlds(X, i_instance)
+                    # Other, generic relations
+                    if precompute_relmemoset
+                        for (i_relation, relation) in enumerate(relations)
 
-                            # @logmsg LogDebug "World" w
+                            for w in allworlds(X, i_instance)
 
-                            # TODO optimize: all aggregators are likely reading the same raw values.
-                            for (i_featsnaggr,aggr) in aggregators
+                                for (i_metacond, aggregator, _metacond) in these_metaconditions
 
-                                gamma = fwdslice_onestep_accessible_aggregation(X, fwdslice, i_instance, w, relation, feature, aggr)
+                                    gamma = featchannel_onestep_aggregation(X, _featchannel, i_instance, w, relation, _feature, aggregator)
 
-                                # @logmsg LogDebug "Aggregator" aggr gamma
-
-                                relmemoset[i_instance, w, i_featsnaggr, i_relation] = gamma
+                                    relmemoset[i_instance, w, i_metacond, i_relation] = gamma
+                                end
                             end
                         end
                     end
                 end
+                # next!(p)
             end
-            # next!(p)
         end
-        ScalarOneStepMemoset(relmemoset, globmemoset, featsnaggrs)
+        ScalarOneStepMemoset(metaconditions, relations, relmemoset, globmemoset)
     end
 end
 
@@ -230,32 +305,94 @@ globmemoset(Xm::ScalarOneStepMemoset) = Xm.globmemoset
 
 ninstances(Xm::ScalarOneStepMemoset) = ninstances(relmemoset(Xm))
 
+function featchannel_onestep_aggregation(
+    X::AbstractLogiset{W,U},
+    Xm::ScalarOneStepMemoset,
+    featchannel,
+    i_instance::Integer,
+    w::W,
+    rel::AbstractRelation,
+    metacond::ScalarMetaCondition,
+    i_metacond::Union{Nothing,Integer} = nothing,
+    i_relation::Union{Nothing,Integer} = nothing
+)::U where {U,W<:AbstractWorld}
+
+    if isnothing(i_metacond)
+        i_metacond = findfirst(isequal(metacond), metaconditions(Xm))
+    end
+
+    if isnothing(i_metacond)
+        i_metacond = findfirst((m)->feature(m) == feature(metacond) && existential_aggregator(test_operator(m)) == existential_aggregator(test_operator(metacond)), metaconditions(Xm))
+        if isnothing(i_metacond)
+            i_neg_metacond = findfirst(isequal(negation(metacond)), metaconditions(Xm))
+            error("Could not find metacondition $(metacond) in memoset of type $(typeof(Xm)) " *
+                "($(!isnothing(i_neg_metacond) ? "but negation was found " *
+                "with i_metacond = $(i_neg_metacond)!" : "")).")
+        end
+    end
+
+    _feature = feature(metacond)
+    _test_operator = test_operator(metacond)
+    aggregator = existential_aggregator(_test_operator)
+
+    gamma = begin
+        if rel == globalrel
+            _globmemoset = globmemoset(Xm)
+            if isnothing(_globmemoset[i_instance, i_metacond])
+                gamma = featchannel_onestep_aggregation(X, featchannel, i_instance, rel, _feature, aggregator)
+                _globmemoset[i_instance, i_metacond] = gamma
+            end
+            _globmemoset[i_instance, i_metacond]
+        else
+            i_relation = isnothing(i_relation) ? findfirst(isequal(rel), Xm.relations) : i_relation
+            if isnothing(i_relation)
+                error("Could not find relation $(rel) in memoset of type $(typeof(Xm)).")
+            end
+            _relmemoset = relmemoset(Xm)
+            if isnothing(_relmemoset[i_instance, w, i_metacond, i_relation])
+                gamma = featchannel_onestep_aggregation(X, featchannel, i_instance, w, rel, _feature, aggregator)
+                _relmemoset[i_instance, w, i_metacond, i_relation] = gamma
+            end
+            _relmemoset[i_instance, w, i_metacond, i_relation]
+        end
+    end
+end
+
 function check(
     f::ScalarExistentialFormula,
     Xm::ScalarOneStepMemoset,
     i_instance::Integer,
-    w::W;
-    kwargs...
+    w::W,
+    rel,
+    metacond,
 ) where {W<:AbstractWorld}
-    _rel = relation(f)
-    _metacond = metacond(f)
-    i_metacond = findfirst(isequal(_metacond), Xm.metaconditions)
+    rel = relation(f)
+    metacond = metacond(f)
+
+    i_metacond = findfirst(isequal(metacond), metaconditions(Xm))
     if isnothing(i_metacond)
-        error("Could not find metacondition $(_metacond) in memoset of type $(typeof(Xm)).")
+        i_metacond = findfirst((m)->feature(m) == feature(metacond) && existential_aggregator(test_operator(m)) == existential_aggregator(test_operator(metacond)), metaconditions(Xm))
+        if isnothing(i_metacond)
+            i_neg_metacond = findfirst(isequal(negation(metacond)), metaconditions(Xm))
+            error("Could not find metacondition $(metacond) in memoset of type $(typeof(Xm)) " *
+                "($(!isnothing(i_neg_metacond) ? "but negation was found " *
+                "with i_metacond = $(i_neg_metacond)!" : "")).")
+        end
     end
+
     gamma = begin
-        if _rel
+        if rel
             Base.getindex(globmemoset(Xm), i_instance, i_metacond)
         else
-            i_rel = findfirst(isequal(_rel), Xm.relations)
+            i_rel = findfirst(isequal(rel), Xm.relations)
             if isnothing(i_rel)
-                error("Could not find relation $(_rel) in memoset of type $(typeof(Xm)).")
+                error("Could not find relation $(rel) in memoset of type $(typeof(Xm)).")
             end
             Base.getindex(relmemoset(Xm), i_instance, w, i_metacond, i_rel)
         end
     end
     if !isnothing(gamma)
-        return apply_test_operator(test_operator(f), gamma, threshold(f))
+        return apply_test_operator(test_operator(metacond), gamma, threshold(f))
     else
         return nothing
     end
@@ -309,29 +446,26 @@ end
 function displaystructure(Xm::ScalarOneStepMemoset; indent_str = "", include_ninstances = true)
     padattribute(l,r) = string(l) * lpad(r,32+length(string(r))-(length(indent_str)+2+length(l))-1)
     pieces = []
-    push!(pieces, " \n")
+    push!(pieces, "ScalarOneStepMemoset ($(humansize(Xm)))\n")
 
     if include_ninstances
-        push!(pieces, " " * padattribute("# instances:", "$(ninstances(Xm))\n"))
+        push!(pieces, " $(padattribute("# instances:", ninstances(Xm)))\n")
     end
 
-    push!(pieces, "$(padattribute("# metaconditions:", nmetaconditions(Xm)))")
-    push!(pieces, "$(padattribute("# relations:", nrelations(Xm)))")
+    push!(pieces, " $(padattribute("# metaconditions:", nmetaconditions(Xm)))\n")
+    push!(pieces, " $(padattribute("# relations:", nrelations(Xm)))\n")
 
-    push!(pieces, "$(padattribute("metaconditions:", "$(eltype(metaconditions(Xm)))[$(join(syntaxstring.(metaconditions(Xm))))]", ",")))")
-    push!(pieces, "$(padattribute("relations:", relations(Xm)))")
+    push!(pieces, " $(padattribute("metaconditions:", "$(eltype(metaconditions(Xm)))[$(join([(syntaxstring.(metaconditions(Xm))[1:4])..., "...", syntaxstring.(metaconditions(Xm))[end-4:end]...], ","))]")))\n")
+    push!(pieces, " $(padattribute("relations:", relations(Xm)))\n")
 
-    push!(pieces, " relational memoset ($(round(nonnothingshare(relmemoset(Xm))*100, digits=2))% memoized):\n")
-    push!(pieces, " " * displaystructure(relmemoset(Xm); indent_str = "$(indent_str)│ ", include_ninstances = false, include_nmetaconditions = false, include_nrelations = false))
+    push!(pieces, "[R] " * displaystructure(relmemoset(Xm); indent_str = "$(indent_str)│ ", include_ninstances = false, include_nmetaconditions = false, include_nrelations = false))
     if !isnothing(globmemoset(Xm))
-        push!(pieces, " global memoset ($(round(nonnothingshare(globmemoset(Xm))*100, digits=2))% memoized):\n")
-        push!(pieces, " " * displaystructure(globmemoset(Xm); indent_str = "$(indent_str)│ ", include_ninstances = false, include_nmetaconditions = false))
+        push!(pieces, "[G] " * displaystructure(globmemoset(Xm); indent_str = "$(indent_str)  ", include_ninstances = false, include_nmetaconditions = false))
     else
         push!(pieces, " global memoset: −\n")
     end
 
-    return "ScalarOneStepMemoset ($(humansize(Xm)))" *
-        join(pieces, "$(indent_str)├", "$(indent_str)└") * "\n"
+    return join(pieces, "$(indent_str)├", "$(indent_str)└")
 end
 
 ############################################################################################
@@ -344,7 +478,7 @@ datasets with scalar features. The formulas are of type ⟨R⟩ (f ⋈ t)
 TODO explain
 
 See also
-[`Memoset`](@ref),
+[`FullMemoset`](@ref),
 [`SuportedLogiset`](@ref),
 [`AbstractLogiset`](@ref).
 """
@@ -364,11 +498,11 @@ struct ScalarOneStepRelationalMemoset{
     end
 
     function ScalarOneStepRelationalMemoset(
-        X::AbstractLogiset{W,U,F,FR},
+        X::AbstractLogiset{W,U,FT,FR},
         metaconditions::AbstractVector{<:ScalarMetaCondition},
         relations::AbstractVector{<:AbstractRelation},
-        perform_initialization = false
-    ) where {W,U,F<:AbstractFeature,FR<:AbstractFrame{W}}
+        perform_initialization = true
+    ) where {W,U,FT<:AbstractFeature,FR<:AbstractFrame{W}}
         nmetaconditions = length(metaconditions)
         nrelations = length(relations)
         d = begin
@@ -403,6 +537,17 @@ nmemoizedvalues(Xm::ScalarOneStepRelationalMemoset) = sum(length.(Xm.d))
     get(Xm.d[i_instance, i_metacond, i_relation], w, nothing)
 end
 
+@inline function Base.setindex!(
+    Xm           :: ScalarOneStepRelationalMemoset{W},
+    gamma,
+    i_instance   :: Integer,
+    w            :: W,
+    i_metacond   :: Integer,
+    i_relation   :: Integer,
+) where {W<:AbstractWorld}
+    Xm.d[i_instance, i_metacond, i_relation][w] = gamma
+end
+
 usesfullmemo(::ScalarOneStepRelationalMemoset) = false
 
 function hasnans(Xm::ScalarOneStepRelationalMemoset)
@@ -421,6 +566,7 @@ end
 function displaystructure(Xm::ScalarOneStepRelationalMemoset; indent_str = "", include_ninstances = true, include_nmetaconditions = true, include_nrelations = true)
     padattribute(l,r) = string(l) * lpad(r,32+length(string(r))-(length(indent_str)+2+length(l)))
     pieces = []
+    push!(pieces, "ScalarOneStepRelationalMemoset ($(memoizationinfo(Xm)), $(humansize(Xm)))")
     push!(pieces, "$(padattribute("worldtype:", worldtype(Xm)))")
     push!(pieces, "$(padattribute("featvaltype:", featvaltype(Xm)))")
     push!(pieces, "$(padattribute("featuretype:", featuretype(Xm)))")
@@ -434,14 +580,12 @@ function displaystructure(Xm::ScalarOneStepRelationalMemoset; indent_str = "", i
     if include_nrelations
         push!(pieces, "$(padattribute("# relations:", nrelations(Xm)))")
     end
-    push!(pieces, "$(padattribute("# memoized values:", nmemoizedvalues(Xm)))")
+    push!(pieces, "$(padattribute("size × eltype:", "$(size(Xm.d)) × $(eltype(Xm.d))"))")
+    # push!(pieces, "$(padattribute("# memoized values:", nmemoizedvalues(Xm)))")
 
-    return "ScalarOneStepRelationalMemoset ($(humansize(Xm)))" *
-        join(pieces, "\n$(indent_str)├ ", "\n$(indent_str)└ ") * "\n"
+    return join(pieces, "\n$(indent_str)├ ", "\n$(indent_str)└ ") * "\n"
 end
 
-# fwd_rs_init_world_slice(Xm::ScalarOneStepRelationalMemoset{W,U}, i_instance::Integer, i_featsnaggr::Integer, i_relation::Integer) where {W,U} =
-#     Xm.d[i_instance, i_featsnaggr, i_relation] = Dict{W,U}()
 # @inline function Base.setindex!(Xm::ScalarOneStepRelationalMemoset{W,U}, threshold::U, i_instance::Integer, w::AbstractWorld, i_featsnaggr::Integer, i_relation::Integer) where {W,U}
 #     Xm.d[i_instance, i_featsnaggr, i_relation][w] = threshold
 # end
@@ -459,14 +603,14 @@ struct ScalarOneStepGlobalMemoset{
 
     function ScalarOneStepGlobalMemoset{W,U}(
         d::D
-    ) where {W<:AbstractWorld,U,D<:AbstractArray{UU,2} where {UU<:Union{U,Nothing}}
+    ) where {W<:AbstractWorld,U,D<:AbstractArray{UU,2} where {UU<:Union{U,Nothing}}}
         new{W,U,D}(d)
     end
 
     function ScalarOneStepGlobalMemoset(
         X::AbstractLogiset{W,U},
         metaconditions::AbstractVector{<:ScalarMetaCondition},
-        perform_initialization = false
+        perform_initialization = true
     ) where {W<:AbstractWorld,U}
         @assert worldtype(X) != OneWorld "TODO adjust this note: note that you should not use a global Xm when not using global decisions"
         nmetaconditions = length(metaconditions)
@@ -487,11 +631,21 @@ capacity(Xm::ScalarOneStepGlobalMemoset)        = prod(size(Xm.d))
 nmemoizedvalues(Xm::ScalarOneStepGlobalMemoset) = sum((!).((isnothing).(Xm.d)))
 
 @inline function Base.getindex(
-    Xm           :: ScalarOneStepRelationalMemoset{W},
+    Xm           :: ScalarOneStepGlobalMemoset{W},
     i_instance   :: Integer,
     i_metacond   :: Integer,
 ) where {W<:AbstractWorld}
     Xm.d[i_instance, i_metacond]
+end
+
+
+@inline function Base.setindex!(
+    Xm           :: ScalarOneStepGlobalMemoset{W},
+    gamma,
+    i_instance   :: Integer,
+    i_metacond   :: Integer,
+) where {W<:AbstractWorld}
+    Xm.d[i_instance, i_metacond] = gamma
 end
 
 usesfullmemo(::ScalarOneStepGlobalMemoset) = false
@@ -513,6 +667,7 @@ end
 function displaystructure(Xm::ScalarOneStepGlobalMemoset; indent_str = "", include_ninstances = true, include_nmetaconditions = true)
     padattribute(l,r) = string(l) * lpad(r,32+length(string(r))-(length(indent_str)+2+length(l)))
     pieces = []
+    push!(pieces, "ScalarOneStepGlobalMemoset ($(memoizationinfo(Xm)), $(humansize(Xm)))")
     push!(pieces, "$(padattribute("worldtype:", worldtype(Xm)))")
     push!(pieces, "$(padattribute("featvaltype:", featvaltype(Xm)))")
     push!(pieces, "$(padattribute("featuretype:", featuretype(Xm)))")
@@ -523,10 +678,10 @@ function displaystructure(Xm::ScalarOneStepGlobalMemoset; indent_str = "", inclu
     if include_nmetaconditions
         push!(pieces, "$(padattribute("# metaconditions:", nmetaconditions(Xm)))")
     end
-    push!(pieces, "$(padattribute("capacity:", capacity(Xm)))")
-    push!(pieces, "$(padattribute("# memoized values:", nmemoizedvalues(Xm)))")
+    push!(pieces, "$(padattribute("size × eltype:", "$(size(Xm.d)) × $(eltype(Xm.d))"))")
+    # push!(pieces, "$(padattribute("capacity:", capacity(Xm)))")
+    # push!(pieces, "$(padattribute("# memoized values:", nmemoizedvalues(Xm)))")
 
-    return "ScalarOneStepGlobalMemoset ($(humansize(Xm)))" *
-        join(pieces, "\n$(indent_str)├ ", "\n$(indent_str)└ ") * "\n"
+    return join(pieces, "\n$(indent_str)├ ", "\n$(indent_str)└ ") * "\n"
 end
 

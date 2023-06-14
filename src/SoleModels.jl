@@ -62,31 +62,37 @@ export propositions
 export parsecondition
 export modalities
 
-export Logiset, SupportedLogiset, slicedataset, concatdatasets
+export slicedataset, concatdatasets
+
+export World, Feature, featvalue
+export ValueCondition, FunctionalCondition
+export parsecondition
+export SupportedLogiset, nmemoizedvalues
+export ExplicitBooleanLogiset, checkcondition
+export ExplicitLogiset, ScalarCondition
+
+export ninstances, nfeatures
+export MultiLogiset, nmodalities, modalities
+
+export UnivariateMin, UnivariateMax,
+        UnivariateSoftMin, UnivariateSoftMax,
+        MultivariateFeature
+
+export VarFeature,
+        UnivariateNamedFeature,
+        UnivariateFeature
 
 # Definitions for logical datasets (i.e., logisets)
-include("logisets/base/main.jl")
+include("logisets/main.jl")
 
-# export ninstances, nmodalities, modalities, nfeatures
 
 # export get_ontology,
 #        get_interval_ontology
 
 # export DimensionalLogiset, Logiset, SupportedScalarLogiset
 
-# export parsecondition
-
-# export UnivariateMin, UnivariateMax,
-#         UnivariateSoftMin, UnivariateSoftMax,
-#         MultivariateFeature
-
-# export VarFeature, AbstractUnivariateFeature,
-#         UnivariateNamedFeature,
-#         UnivariateFeature
-
 # include("logisets/dimensional-logisets/main.jl")
 
-# using .DimensionalDatasets: parsecondition
 
 # using .DimensionalDatasets: nfeatures, nrelations,
 #                             #

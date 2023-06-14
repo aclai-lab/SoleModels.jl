@@ -6,7 +6,7 @@ import SoleLogics: negation, propositions
 import Base: isequal, hash, in, isfinite, length
 
 """
-    abstract type AbstractCondition{F<:AbstractFeature} end
+    abstract type AbstractCondition{FT<:AbstractFeature} end
 
 Abstract type for representing conditions that can be interpreted and evaluated
 on worlds of instances of a logical dataset. In logical contexts,
@@ -18,7 +18,7 @@ See also
 [`ScalarMetaCondition`](@ref),
 [`ScalarCondition`](@ref).
 """
-abstract type AbstractCondition{F<:AbstractFeature} end
+abstract type AbstractCondition{FT<:AbstractFeature} end
 
 # Check a condition (e.g, on a world of a logiset instance)
 function checkcondition(c::AbstractCondition, args...; kwargs...)
@@ -29,10 +29,10 @@ end
 
 # function checkcondition(
 #     c::AbstractCondition,
-#     X::AbstractLogiset{W,U,F},
+#     X::AbstractLogiset{W,U,FT},
 #     i_instance::Integer,
 #     w::W,
-# ) where {W<:AbstractWorld,U,F<:AbstractFeature}
+# ) where {W<:AbstractWorld,U,FT<:AbstractFeature}
 #     error("Please, provide method checkcondition(c::$(typeof(c)), X::$(typeof(X)), i_instance::$(typeof(i_instance)), w::$(typeof(w))).")
 # end
 
@@ -61,16 +61,16 @@ end
 ############################################################################################
 
 """
-    struct ValueCondition{F<:AbstractFeature} <: AbstractCondition{F}
-        feature::F
+    struct ValueCondition{FT<:AbstractFeature} <: AbstractCondition{FT}
+        feature::FT
     end
 
 A condition which yields a truth value equal to the value of a feature.
 
 See also [`AbstractFeature`](@ref).
 """
-struct ValueCondition{F<:AbstractFeature} <: AbstractCondition{F}
-    feature::F
+struct ValueCondition{FT<:AbstractFeature} <: AbstractCondition{FT}
+    feature::FT
 end
 
 checkcondition(c::ValueCondition, args...; kwargs...) = featvalue(c.feature, args...; kwargs...)
@@ -89,17 +89,17 @@ end
 ############################################################################################
 
 """
-    struct FunctionalCondition{F<:AbstractFeature} <: AbstractCondition{F}
-        feature::F
-        f::F
+    struct FunctionalCondition{FT<:AbstractFeature} <: AbstractCondition{FT}
+        feature::FT
+        f::FT
     end
 
 A condition which yields a truth value equal to the value of a function.
 
 See also [`AbstractFeature`](@ref).
 """
-struct FunctionalCondition{F<:AbstractFeature} <: AbstractCondition{F}
-    feature::F
+struct FunctionalCondition{FT<:AbstractFeature} <: AbstractCondition{FT}
+    feature::FT
     f::Function
 end
 

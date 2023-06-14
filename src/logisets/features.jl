@@ -26,11 +26,11 @@ Base.isequal(a::AbstractFeature, b::AbstractFeature) = syntaxstring(a) == syntax
 Base.hash(a::AbstractFeature) = Base.hash(syntaxstring(a))
 
 function parsefeature(
-    F::Type{<:AbstractFeature},
+    FT::Type{<:AbstractFeature},
     expression::String;
     kwargs...
 )
-    error("Please, provide method parsefeature(::$(F), expression::$(typeof(expression)); kwargs...).")
+    error("Please, provide method parsefeature(::$(FT), expression::$(typeof(expression)); kwargs...).")
 end
 
 ############################################################################################

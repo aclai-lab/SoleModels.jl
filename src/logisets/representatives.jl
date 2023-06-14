@@ -1,8 +1,10 @@
 using SoleLogics: AbstractFrame, AbstractMultiModalFrame, AbstractRelation, accessibles
 
+# TODO: AbstractFrame -> AbstractMultiModalFrame, and provide the same for AbstractUniModalFrame
+
 """
     function representatives(
-        fr::AbstractMultiModalFrame{W},
+        fr::AbstractFrame{W},
         S::W,
         ::AbstractRelation,
         ::AbstractCondition
@@ -25,10 +27,10 @@ Note that this method fallsback to `accessibles`.
 See also
 [`accessibles`](@ref),
 [`ScalarCondition`](@ref),
-[`AbstractMultiModalFrame`](@ref).
+[`AbstractFrame`](@ref).
 """
 function representatives( # Dispatch on feature/aggregator pairs
-    fr::AbstractMultiModalFrame{W},
+    fr::AbstractFrame{W},
     w::W,
     r::AbstractRelation,
     ::AbstractCondition

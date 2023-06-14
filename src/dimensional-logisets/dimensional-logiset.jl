@@ -13,7 +13,7 @@ struct DimensionalLogiset{
     V<:Number,
     N,
     W<:AbstractWorld,
-    D<:PassiveDimensionalDataset{N,W},
+    D<:PassiveDimensionalLogiset{N,W},
     FT<:AbstractFeature{V},
     G1<:AbstractVector{<:AbstractDict{<:Aggregator,<:AbstractVector{<:TestOperator}}},
     G2<:AbstractVector{<:AbstractVector{Tuple{<:Integer,<:Aggregator}}},
@@ -38,7 +38,7 @@ struct DimensionalLogiset{
     ########################################################################################
     
     function DimensionalLogiset{V,N,W}(
-        domain::PassiveDimensionalDataset{N},
+        domain::PassiveDimensionalLogiset{N},
         ontology::Ontology{W},
         features::AbstractVector{<:AbstractFeature},
         grouped_featsaggrsnops::AbstractVector{<:AbstractDict{<:Aggregator,<:AbstractVector{<:TestOperator}}};
@@ -82,24 +82,24 @@ struct DimensionalLogiset{
     ########################################################################################
 
     function DimensionalLogiset{V,N,W}(
-        domain             :: Union{PassiveDimensionalDataset{N,W},AbstractDimensionalDataset},
+        domain             :: Union{PassiveDimensionalLogiset{N,W},AbstractDimensionalDataset},
         ontology           :: Ontology{W},
         features           :: AbstractVector{<:AbstractFeature},
         grouped_featsnops  :: AbstractVector;
         kwargs...,
     ) where {V,N,W<:AbstractWorld}
-        domain = (domain isa AbstractDimensionalDataset ? PassiveDimensionalDataset{N,W}(domain) : domain)
+        domain = (domain isa AbstractDimensionalDataset ? PassiveDimensionalLogiset{N,W}(domain) : domain)
         grouped_featsaggrsnops = grouped_featsnops2grouped_featsaggrsnops(grouped_featsnops)
         DimensionalLogiset{V,N,W}(domain, ontology, features, grouped_featsaggrsnops; kwargs...)
     end
 
     function DimensionalLogiset{V,N,W}(
-        domain           :: Union{PassiveDimensionalDataset{N,W},AbstractDimensionalDataset},
+        domain           :: Union{PassiveDimensionalLogiset{N,W},AbstractDimensionalDataset},
         ontology         :: Ontology{W},
         mixed_features   :: AbstractVector;
         kwargs...,
     ) where {V,N,W<:AbstractWorld}
-        domain = (domain isa AbstractDimensionalDataset ? PassiveDimensionalDataset{N,W}(domain) : domain)
+        domain = (domain isa AbstractDimensionalDataset ? PassiveDimensionalLogiset{N,W}(domain) : domain)
 
         @assert all(isa.(mixed_features, MixedFeature)) "Unknown feature encountered! " *
             "$(filter(f->!isa(f, MixedFeature), mixed_features)), " *
@@ -168,19 +168,19 @@ struct DimensionalLogiset{
     ########################################################################################
 
     function DimensionalLogiset{V,N}(
-        domain             :: Union{PassiveDimensionalDataset{N,W},AbstractDimensionalDataset},
+        domain             :: Union{PassiveDimensionalLogiset{N,W},AbstractDimensionalDataset},
         ontology           :: Ontology{W},
         args...;
         kwargs...,
     ) where {V,N,W<:AbstractWorld}
-        domain = (domain isa AbstractDimensionalDataset ? PassiveDimensionalDataset{N,W}(domain) : domain)
+        domain = (domain isa AbstractDimensionalDataset ? PassiveDimensionalLogiset{N,W}(domain) : domain)
         DimensionalLogiset{V,N,W}(domain, ontology, args...; kwargs...)
     end
 
     ########################################################################################
 
     function DimensionalLogiset{V}(
-        domain             :: Union{PassiveDimensionalDataset,AbstractDimensionalDataset},
+        domain             :: Union{PassiveDimensionalLogiset,AbstractDimensionalDataset},
         args...;
         kwargs...,
     ) where {V}
@@ -190,7 +190,7 @@ struct DimensionalLogiset{
     ########################################################################################
 
     function DimensionalLogiset(
-        domain             :: Union{PassiveDimensionalDataset{N,W},AbstractDimensionalDataset},
+        domain             :: Union{PassiveDimensionalLogiset{N,W},AbstractDimensionalDataset},
         ontology           :: Ontology{W},
         features           :: AbstractVector{<:AbstractFeature},
         args...;
@@ -206,12 +206,12 @@ struct DimensionalLogiset{
     preserves_type(::typeof(maximum)) = true # TODO fix
 
     function DimensionalLogiset(
-        domain           :: Union{PassiveDimensionalDataset{N,W},AbstractDimensionalDataset},
+        domain           :: Union{PassiveDimensionalLogiset{N,W},AbstractDimensionalDataset},
         ontology         :: Ontology{W},
         mixed_features   :: AbstractVector;
         kwargs...,
     ) where {N,W<:AbstractWorld}
-        domain = (domain isa AbstractDimensionalDataset ? PassiveDimensionalDataset{dimensionality(domain),W}(domain) : domain)
+        domain = (domain isa AbstractDimensionalDataset ? PassiveDimensionalLogiset{dimensionality(domain),W}(domain) : domain)
         @assert all((f)->(preserves_type(f)), mixed_features) "Please, specify the feature output type V upon construction, as in: DimensionalLogiset{V}(...)." # TODO highlight and improve
         V = eltype(domain)
         DimensionalLogiset{V}(domain, ontology, mixed_features; kwargs...)

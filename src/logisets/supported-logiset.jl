@@ -1,20 +1,21 @@
 """
-A logiset associated to a number of cascading memoization structures, that are used
-when checking formulas.
+A logiset associated to a number of cascading full or one-step
+memoization structures, that are used when checking formulas.
 
 # Examples
 TODO add example showing that checking is faster when using this structure.
 
 See also
 [`SuportedLogiset`](@ref),
-[`AbstractMemoset`](@ref),
+[`AbstractFullMemoset`](@ref),
+[`AbstractOneStepMemoset`](@ref),
 [`AbstractLogiset`](@ref).
 """
 struct SupportedLogiset{
     L<:AbstractLogiset,
     N,
-    MS<:NTuple{N,AbstractMemoset},
-} <: AbstractLogiset{W where W<:AbstractWorld,U where U,F where F<:AbstractFeature,FR where FR<:AbstractFrame{W where W<:AbstractWorld}}
+    MS<:NTuple{N,Union{AbstractOneStepMemoset,AbstractFullMemoset}},
+} <: AbstractLogiset{W where W<:AbstractWorld,U where U,FT where FT<:AbstractFeature,FR where FR<:AbstractFrame{W where W<:AbstractWorld}}
 
     # Core dataset
     base                 :: L
@@ -24,15 +25,22 @@ struct SupportedLogiset{
     function SupportedLogiset(
         base::L,
         supports::_MS
-    ) where {L<:AbstractLogiset,_N,_MS<:NTuple{_N,<:Union{<:AbstractVector{<:AbstractDict},<:AbstractMemoset,<:SupportedLogiset}}}
+    ) where {L<:AbstractLogiset,_MS<:Tuple}
+
+        wrong_supports = filter(supp->!(supp isa Union{<:AbstractVector{<:AbstractDict},<:Union{AbstractOneStepMemoset,AbstractFullMemoset},<:SupportedLogiset}), supports)
+
+        @assert length(wrong_supports) == 0 "Cannot instantiate SupportedLogiset " *
+            "with wrong support type(s): $(join(typeof.(wrong_supports), ", ")). " *
+            "Only full and one-step memosets are allowed."
         @assert !(base isa SupportedLogiset) "Cannot instantiate SupportedLogiset " *
             "with a SupportedLogiset base."
         if length(supports) == 0
-            supports = (Memoset(base),)
+            full_memoset_type = default_full_memoset_type(base)
+            supports = (full_memoset_type(base),)
         end
         supports = Tuple(vcat(map(supp->begin
             if supp isa AbstractVector{<:AbstractDict{<:AbstractFormula,<:WorldSet}}
-                [Memoset(supp)]
+                [FullMemoset(supp)]
             elseif supp isa SupportedLogiset
                 @assert base == SoleModels.base(supp) "Cannot inherit supports from " *
                     "SupportedLogiset with different base."
@@ -77,7 +85,7 @@ struct SupportedLogiset{
 
     function SupportedLogiset(
         base::AbstractLogiset,
-        supports::AbstractVector{<:Union{AbstractVector{<:AbstractDict},AbstractMemoset,SupportedLogiset}}
+        supports::AbstractVector
     )
         SupportedLogiset(base, Tuple(supports))
     end
@@ -85,23 +93,23 @@ struct SupportedLogiset{
     # Helper (avoids ambiguities)
     function SupportedLogiset(
         base::AbstractLogiset,
-        firstsupport::Union{<:AbstractVector{<:AbstractDict},<:AbstractMemoset,<:SupportedLogiset},
-        supports::Union{<:AbstractVector{<:AbstractDict},<:AbstractMemoset,<:SupportedLogiset}...
+        firstsupport::Union{<:AbstractVector{<:AbstractDict},<:Union{AbstractOneStepMemoset,AbstractFullMemoset},<:SupportedLogiset},
+        supports::Union{<:AbstractVector{<:AbstractDict},<:Union{AbstractOneStepMemoset,AbstractFullMemoset},<:SupportedLogiset}...
     )
-        SupportedLogiset(base, [firstsupport, supports...])
+        SupportedLogiset(base, Union{<:AbstractVector{<:AbstractDict},<:Union{AbstractOneStepMemoset,AbstractFullMemoset},<:SupportedLogiset}[firstsupport, supports...])
     end
 
     function SupportedLogiset(
         base                             :: AbstractLogiset;
-        use_full_memoization             :: Union{Bool,Type{<:AbstractMemoset}} = true,
+        use_full_memoization             :: Union{Bool,Type{<:Union{AbstractOneStepMemoset,AbstractFullMemoset}}} = true,
         #
         conditions                       :: Union{Nothing,AbstractVector{<:AbstractCondition}} = nothing,
         relations                        :: Union{Nothing,AbstractVector{<:AbstractRelation}} = nothing,
         use_onestep_memoization          :: Union{Bool,Type{<:AbstractOneStepMemoset}} = !isnothing(conditions) && !isnothing(relations),
         onestep_precompute_globmemoset   :: Bool = (use_onestep_memoization != false),
-        onestep_precompute_globmemoset   :: Bool = false,
+        onestep_precompute_relmemoset   :: Bool = false,
     )
-        supports = []
+        supports = Union{AbstractOneStepMemoset,AbstractFullMemoset}[]
 
         @assert !xor(isnothing(conditions), isnothing(relations)) "Please, provide " *
             "both conditions and relations in order to use a one-step memoset."
@@ -131,7 +139,7 @@ struct SupportedLogiset{
     # function SupportedLogiset(
     #     X                   :: ... AbstractActiveScalarLogiset{W,V,FT,Bool,FR};
     #     kwargs...,
-    # ) where {V,FT<:AbstractFeature{V},W<:AbstractWorld,FR<:AbstractFrame{W}}
+    # ) where {V,FT<:AbstractFeature,W<:AbstractWorld,FR<:AbstractFrame{W}}
     #     SupportedLogiset(Logiset(X); kwargs...)
     # end
 
@@ -139,6 +147,9 @@ end
 
 base(X::SupportedLogiset)     = X.base
 supports(X::SupportedLogiset) = X.supports
+
+basetype(X::SupportedLogiset{L,N,MS}) where {L,N,MS} = L
+supporttypes(X::SupportedLogiset{L,N,MS}) where {L,N,MS} = MS
 
 nsupports(X::SupportedLogiset) = length(X.supports)
 
@@ -230,11 +241,10 @@ function displaystructure(X::SupportedLogiset; indent_str = "", include_ninstanc
         push!(pieces, " " * padattribute("# instances:", "$(ninstances(X))\n"))
     end
     push!(pieces, " " * padattribute("usesfullmemo:", "$(usesfullmemo(X))\n"))
-    push!(pieces, " base:\n")
-    push!(pieces, " " * displaystructure(base(X); indent_str = "$(indent_str)│ ", include_ninstances = false))
+    push!(pieces, "[BASE] " * displaystructure(base(X); indent_str = "$(indent_str)│ ", include_ninstances = false))
     push!(pieces, " " * padattribute("# supports:", "$(nsupports(X))\n"))
     for (i_supp,supp) in enumerate(supports(X))
-        push!(pieces, "[$(i_supp)] $(displaystructure(supp; indent_str = (i_supp == nsupports(X) ? "$(indent_str)  " : "$(indent_str)│ "), include_ninstances = false))\n")
+        push!(pieces, "[$(i_supp)] $(displaystructure(supp; indent_str = (i_supp == nsupports(X) ? "$(indent_str)  " : "$(indent_str)│ "), include_ninstances = false))")
     end
     return "SupportedLogiset ($(humansize(X)))" *
         join(pieces, "$(indent_str)├", "$(indent_str)└") * "\n"

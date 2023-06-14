@@ -24,10 +24,10 @@ function check(
     X::AbstractLogiset{W,U},
     i_instance::Integer,
     w::Union{Nothing,W,AbstractVector{<:W}} = nothing;
-    use_memo::Union{Nothing,AbstractMemoset{W},AbstractVector{<:AbstractDict{<:F,<:WorldSet}}} = nothing,
+    use_memo::Union{Nothing,AbstractMemoset{W},AbstractVector{<:AbstractDict{<:FT,<:WorldSet}}} = nothing,
     perform_normalization::Bool = true,
     memo_max_height::Union{Nothing,Int} = nothing,
-) where {W<:AbstractWorld,U,F<:SoleLogics.AbstractFormula}
+) where {W<:AbstractWorld,U,FT<:SoleLogics.AbstractFormula}
 
     if isnothing(w)
         # w = SoleLogics.initialworld(X, i_instance)
@@ -45,6 +45,19 @@ function check(
     readformula(memo_structure::AbstractMemoset, φ::AbstractFormula) = Base.getindex(memo_structure, i_instance, SoleLogics.tree(φ))
     hasformula(memo_structure::AbstractMemoset, φ::AbstractFormula) = haskey(memo_structure, i_instance, SoleLogics.tree(φ))
 
+    onestep_memoset = begin
+        if X isa SupportedLogiset && supporttypes(X) <: Tuple{<:AbstractOneStepMemoset,<:AbstractFullMemoset}
+            supports(X)[1]
+        else
+            nothing
+        end
+    end
+
+    if perform_normalization
+        # Only allow flippings when no onestep is used.
+        φ = normalize(φ; profile = :modelchecking, allow_proposition_flipping = isnothing(onestep_memoset))
+    end
+
     X, memo_structure = begin
         if X isa SupportedLogiset && usesfullmemo(X)
             if !isnothing(use_memo)
@@ -61,37 +74,45 @@ function check(
         end
     end
 
-    # if X isa SupportedLogiset
-    #     X = base(X)
-    # end
-
     if !isnothing(memo_max_height)
         forget_list = Vector{SoleLogics.SyntaxTree}()
-    end
-
-    if perform_normalization
-        φ = normalize(φ; profile = :modelchecking)
     end
 
     fr = frame(X, i_instance)
 
     if !hasformula(memo_structure, φ)
         for ψ in unique(SoleLogics.subformulas(φ))
-            # @show ψ
             if !isnothing(memo_max_height) && height(ψ) > memo_max_height
                 push!(forget_list, ψ)
             end
+
             if !hasformula(memo_structure, ψ)
                 tok = token(ψ)
-                setformula(memo_structure, ψ, begin
-                    if tok isa SoleLogics.AbstractOperator
+
+                worldset = begin
+                    if !isnothing(onestep_memoset) && SoleLogics.height(ψ) == 1 && tok isa SoleLogics.AbstractRelationalOperator &&
+                            SoleLogics.ismodal(tok) && SoleLogics.isunary(tok) && SoleLogics.isdiamond(tok) &&
+                            token(first(children(ψ))) isa Proposition
+                        # println("ONESTEP!")
+                        # println(syntaxstring(ψ))
+                        _rel = SoleLogics.relation(tok)
+                        condition = atom(token(first(children(ψ))))
+                        _metacond = metacond(condition)
+                        _feature = feature(condition)
+                        _featchannel = featchannel(X, i_instance, _feature)
+                        filter(world->begin
+                            gamma = featchannel_onestep_aggregation(X, onestep_memoset, _featchannel, i_instance, world, _rel, _metacond)
+                            apply_test_operator(test_operator(_metacond), gamma, threshold(condition))
+                        end, allworlds(fr))
+                    elseif tok isa SoleLogics.AbstractOperator
                         collect(SoleLogics.collateworlds(fr, tok, map(f->readformula(memo_structure, f), children(ψ))))
                     elseif tok isa Proposition
                         filter(w->check(tok, X, i_instance, w), collect(allworlds(fr)))
                     else
                         error("Unexpected token encountered in _check: $(typeof(tok))")
                     end
-                end)
+                end
+                setformula(memo_structure, ψ, worldset)
             end
             # @show syntaxstring(ψ), readformula(memo_structure, ψ)
         end

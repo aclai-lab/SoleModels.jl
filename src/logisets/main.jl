@@ -43,12 +43,13 @@ include("check.jl")
 include("scalar/main.jl")
 
 function default_relmemoset_type(X::AbstractLogiset)
-    frames = [frame(X, i_instance) for i_instance in 1:ninstances(X)]
-    if allequal(frames) && first(unique(frames)) isa FullDimensionalFrame
-        UniformFullDimensionalRelationalSupport
-    else
+    # frames = [frame(X, i_instance) for i_instance in 1:ninstances(X)]
+    # if allequal(frames) && first(unique(frames)) isa FullDimensionalFrame
+    # if X isa UniformFullDimensionalFWD TODO
+    #     UniformFullDimensionalRelationalSupport
+    # else
         ScalarOneStepRelationalMemoset
-    end
+    # end
 end
 
 function default_onestep_memoset_type(X::AbstractLogiset)
@@ -60,9 +61,9 @@ function default_onestep_memoset_type(X::AbstractLogiset)
 end
 function default_full_memoset_type(X::AbstractLogiset)
     # if ...
-    #     ScalarMemoset TODO
+    #     ScalarChainedMemoset TODO
     # else
-        Memoset
+        FullMemoset
     # end
 end
 

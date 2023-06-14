@@ -170,28 +170,28 @@ Base.@propagate_inbounds @inline function fwdslice_set(fwd::UniformFullDimension
     fwd.d[:, i_feature] = fwdslice
 end
 
-Base.@propagate_inbounds @inline fwdread_channel(fwd::UniformFullDimensionalFWD{T,OneWorld}, i_instance::Integer, i_feature::Integer) where {T} =
+Base.@propagate_inbounds @inline featchannel(fwd::UniformFullDimensionalFWD{T,OneWorld}, i_instance::Integer, i_feature::Integer) where {T} =
     fwd.d[i_instance, i_feature]
 const OneWorldFeaturedChannel{T} = T
-fwd_channel_interpret_world(fwc::T #=Note: should be OneWorldFeaturedChannel{T}, but it throws error =#, w::OneWorld) where {T} = fwc
+readfeature(fwc::T #=Note: should be OneWorldFeaturedChannel{T}, but it throws error =#, w::OneWorld) where {T} = fwc
 
 Base.@propagate_inbounds @inline function fwdslice_set(fwd::UniformFullDimensionalFWD{T,<:Interval}, i_feature::Integer, fwdslice::Array{T,3}) where {T}
     fwd.d[:, :, :, i_feature] = fwdslice
 end
-Base.@propagate_inbounds @inline fwdread_channel(fwd::UniformFullDimensionalFWD{T,<:Interval}, i_instance::Integer, i_feature::Integer) where {T} =
+Base.@propagate_inbounds @inline featchannel(fwd::UniformFullDimensionalFWD{T,<:Interval}, i_instance::Integer, i_feature::Integer) where {T} =
     @views fwd.d[:,:,i_instance, i_feature]
 const IntervalFeaturedChannel{T} = AbstractArray{T,2}
-fwd_channel_interpret_world(fwc::IntervalFeaturedChannel{T}, w::Interval) where {T} =
+readfeature(fwc::IntervalFeaturedChannel{T}, w::Interval) where {T} =
     fwc[w.x, w.y]
 
 
 Base.@propagate_inbounds @inline function fwdslice_set(fwd::UniformFullDimensionalFWD{T,<:Interval2D}, i_feature::Integer, fwdslice::Array{T,5}) where {T}
     fwd.d[:, :, :, :, :, i_feature] = fwdslice
 end
-Base.@propagate_inbounds @inline fwdread_channel(fwd::UniformFullDimensionalFWD{T,<:Interval2D}, i_instance::Integer, i_feature::Integer) where {T} =
+Base.@propagate_inbounds @inline featchannel(fwd::UniformFullDimensionalFWD{T,<:Interval2D}, i_instance::Integer, i_feature::Integer) where {T} =
     @views fwd.d[:,:,:,:,i_instance, i_feature]
 const Interval2DFeaturedChannel{T} = AbstractArray{T,4}
-fwd_channel_interpret_world(fwc::Interval2DFeaturedChannel{T}, w::Interval2D) where {T} =
+readfeature(fwc::Interval2DFeaturedChannel{T}, w::Interval2D) where {T} =
     fwc[w.x.x, w.x.y, w.y.x, w.y.y]
 
 const FWDFeatureSlice{T} = Union{
@@ -239,10 +239,10 @@ const FWDFeatureSlice{T} = Union{
 #     fwd.d[:, i_feature] = fwdslice
 # end
 
-# Base.@propagate_inbounds @inline fwdread_channel(fwd::OneWorldFWD{T}, i_instance::Integer, i_feature::Integer) where {T} =
+# Base.@propagate_inbounds @inline featchannel(fwd::OneWorldFWD{T}, i_instance::Integer, i_feature::Integer) where {T} =
 #     fwd.d[i_instance, i_feature]
 # const OneWorldFeaturedChannel{T} = T
-# fwd_channel_interpret_world(fwc::T #=Note: should be OneWorldFeaturedChannel{T}, but it throws error =#, w::OneWorld) where {T} = fwc
+# readfeature(fwc::T #=Note: should be OneWorldFeaturedChannel{T}, but it throws error =#, w::OneWorld) where {T} = fwc
 
 ############################################################################################
 # FWD, Interval: 4D array (x × y × ninstances × nfeatures)
@@ -287,10 +287,10 @@ const FWDFeatureSlice{T} = Union{
 # function instances(fwd::IntervalFWD{T}, inds::AbstractVector{<:Integer}, return_view::Union{Val{true},Val{false}} = Val(false)) where {T}
 #     IntervalFWD{T}(if return_view == Val(true) @view fwd.d[:,:,inds,:] else fwd.d[:,:,inds,:] end)
 # end
-# Base.@propagate_inbounds @inline fwdread_channel(fwd::IntervalFWD{T}, i_instance::Integer, i_feature::Integer) where {T} =
+# Base.@propagate_inbounds @inline featchannel(fwd::IntervalFWD{T}, i_instance::Integer, i_feature::Integer) where {T} =
 #     @views fwd.d[:,:,i_instance, i_feature]
 # const IntervalFeaturedChannel{T} = AbstractArray{T,2}
-# fwd_channel_interpret_world(fwc::IntervalFeaturedChannel{T}, w::Interval) where {T} =
+# readfeature(fwc::IntervalFeaturedChannel{T}, w::Interval) where {T} =
 #     fwc[w.x, w.y]
 
 ############################################################################################
@@ -337,35 +337,13 @@ const FWDFeatureSlice{T} = Union{
 # function instances(fwd::Interval2DFWD{T}, inds::AbstractVector{<:Integer}, return_view::Union{Val{true},Val{false}} = Val(false)) where {T}
 #     Interval2DFWD{T}(if return_view == Val(true) @view fwd.d[:,:,:,:,inds,:] else fwd.d[:,:,:,:,inds,:] end)
 # end
-# Base.@propagate_inbounds @inline fwdread_channel(fwd::Interval2DFWD{T}, i_instance::Integer, i_feature::Integer) where {T} =
+# Base.@propagate_inbounds @inline featchannel(fwd::Interval2DFWD{T}, i_instance::Integer, i_feature::Integer) where {T} =
 #     @views fwd.d[:,:,:,:,i_instance, i_feature]
 # const Interval2DFeaturedChannel{T} = AbstractArray{T,4}
-# fwd_channel_interpret_world(fwc::Interval2DFeaturedChannel{T}, w::Interval2D) where {T} =
+# readfeature(fwc::Interval2DFeaturedChannel{T}, w::Interval2D) where {T} =
 #     fwc[w.x.x, w.x.y, w.y.x, w.y.y]
 
 ############################################################################################
 
 ############################################################################################
 ############################################################################################
-
-
-# TODO add AbstractWorldSet type
-function apply_aggregator(fwdslice::FWDFeatureSlice{T}, worlds::Any, aggregator::Agg) where {T,Agg<:Aggregator}
-    
-    # TODO try reduce(aggregator, worlds; init=bottom(aggregator, T))
-    # TODO remove this SoleModels.aggregator_to_binary...
-    
-    if length(worlds |> collect) == 0
-        aggregator_bottom(aggregator, T)
-    else
-        aggregator((w)->fwd_channel_interpret_world(fwdslice, w), worlds)
-    end
-
-    # opt = SoleModels.aggregator_to_binary(aggregator)
-    # gamma = bottom(aggregator, T)
-    # for w in worlds
-    #   e = fwd_channel_interpret_world(fwdslice, w)
-    #   gamma = opt(gamma,e)
-    # end
-    # gamma
-end
