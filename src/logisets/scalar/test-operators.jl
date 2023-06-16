@@ -1,8 +1,4 @@
 
-using SoleLogics: TruthValue
-
-############################################################################################
-
 """
     const TestOperator = Function
 

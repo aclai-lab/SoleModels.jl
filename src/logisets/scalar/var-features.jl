@@ -14,7 +14,7 @@ const UVF_VARPREFIX = "V"
 """
     abstract type VarFeature{U} <: AbstractFeature end
 
-Abstract type for feature functions that can be applied on (multi)variate data.
+Abstract type for feature functions that can be computed on (multi)variate data.
 
 See also [`featvaltype`](@ref), [`computefeature`](@ref).
 """

@@ -138,7 +138,7 @@ It stores the feature values in a lookup table.
 
 
 """
-struct Logiset{
+struct ActiveLogiset{
     V,
     W<:AbstractWorld,
     FR<:AbstractFrame{W},
@@ -158,7 +158,7 @@ struct Logiset{
     # Initial world(s)
     initialworld :: Union{Nothing,W,AbstractWorldSet{<:W}}
 
-    function Logiset{V,W,FR,FT,FWD}(
+    function ActiveLogiset{V,W,FR,FT,FWD}(
         featstruct              :: FWD,
         features                :: AbstractVector{FT},
         relations               :: AbstractVector{<:AbstractRelation},
@@ -167,10 +167,10 @@ struct Logiset{
         initialworld = nothing,
     ) where {V,W<:AbstractWorld,FR<:AbstractFrame{W},FWD<:AbstractFeatureLookupSet{V,FR},FT<:AbstractFeature}
         features = collect(features)
-        ty = "Logiset{$(V),$(W),$(FR),$(FT)}"
+        ty = "ActiveLogiset{$(V),$(W),$(FR),$(FT)}"
         @assert allow_no_instances || ninstances(featstruct) > 0     "Can't instantiate $(ty) with no instance. (featstruct's type $(typeof(featstruct)))"
         @assert nfeatures(featstruct) == length(features)          "Can't instantiate $(ty) with different numbers of instances $(ninstances(featstruct)) and of features $(length(features))."
-        check_initialworld(Logiset, initialworld, W)
+        check_initialworld(ActiveLogiset, initialworld, W)
         new{
             V,
             W,
@@ -185,7 +185,7 @@ struct Logiset{
         )
     end
 
-    function Logiset{V,W,FR}(
+    function ActiveLogiset{V,W,FR}(
         featstruct              :: FWD,
         features                :: AbstractVector{<:AbstractFeature},
         args...;
@@ -194,54 +194,54 @@ struct Logiset{
         features = collect(features)
         FT = Union{typeof.(features)...}
         features = Vector{FT}(features)
-        Logiset{V,W,FR,FT,FWD}(featstruct, features, args...; kwargs...)
+        ActiveLogiset{V,W,FR,FT,FWD}(featstruct, features, args...; kwargs...)
     end
 
-    function Logiset{V,W}(
+    function ActiveLogiset{V,W}(
         featstruct              :: AbstractFeatureLookupSet{V,FR},
         args...;
         kwargs...
     ) where {V,W<:AbstractWorld,FR<:AbstractFrame{W}}
-        Logiset{V,W,FR}(featstruct, args...; kwargs...)
+        ActiveLogiset{V,W,FR}(featstruct, args...; kwargs...)
     end
 
-    function Logiset(
+    function ActiveLogiset(
         featstruct             :: AbstractFeatureLookupSet{V,FR},
         args...;
         kwargs...,
     ) where {V,W<:AbstractWorld,FR<:AbstractFrame{W}}
-        Logiset{V,W}(featstruct, args...; kwargs...)
+        ActiveLogiset{V,W}(featstruct, args...; kwargs...)
     end
 end
 
 
-@inline function Base.getindex(X::Logiset{V,W}, args...) where {V,W<:AbstractWorld}
+@inline function Base.getindex(X::ActiveLogiset{V,W}, args...) where {V,W<:AbstractWorld}
     Base.getindex(featstruct(X), args...)::V
 end
 
-@inline function featvalue(X::Logiset{V,W}, args...) where {V,W<:AbstractWorld}
+@inline function featvalue(X::ActiveLogiset{V,W}, args...) where {V,W<:AbstractWorld}
     featvalue(featstruct(X), args...)::V
 end
 
-Base.size(X::Logiset)              = Base.size(featstruct(X))
+Base.size(X::ActiveLogiset)              = Base.size(featstruct(X))
 
-featstruct(X::Logiset)                    = X.featstruct
-relations(X::Logiset)              = X.relations
-features(X::Logiset)               = X.features
+featstruct(X::ActiveLogiset)                    = X.featstruct
+relations(X::ActiveLogiset)              = X.relations
+features(X::ActiveLogiset)               = X.features
 
-nfeatures(X::Logiset)              = length(features(X))
-nrelations(X::Logiset)             = length(relations(X))
-ninstances(X::Logiset)               = ninstances(featstruct(X))
-worldtype(X::Logiset{V,W}) where {V,W<:AbstractWorld} = W
+nfeatures(X::ActiveLogiset)              = length(features(X))
+nrelations(X::ActiveLogiset)             = length(relations(X))
+ninstances(X::ActiveLogiset)               = ninstances(featstruct(X))
+worldtype(X::ActiveLogiset{V,W}) where {V,W<:AbstractWorld} = W
 
-frame(X::Logiset, i_instance::Integer) = frame(featstruct(X), i_instance)
-initialworld(X::Logiset) = X.initialworld
-function initialworld(X::Logiset, i_instance::Integer)
+frame(X::ActiveLogiset, i_instance::Integer) = frame(featstruct(X), i_instance)
+initialworld(X::ActiveLogiset) = X.initialworld
+function initialworld(X::ActiveLogiset, i_instance::Integer)
     initialworld(X) isa AbstractWorldSet ? initialworld(X)[i_instance] : initialworld(X)
 end
 
-function instances(X::Logiset, inds::AbstractVector{<:Integer}, args...; kwargs...)
-    Logiset(
+function instances(X::ActiveLogiset, inds::AbstractVector{<:Integer}, args...; kwargs...)
+    ActiveLogiset(
         instances(featstruct(X), inds, args...; kwargs...),
         features(X),
         relations(X),
@@ -249,7 +249,7 @@ function instances(X::Logiset, inds::AbstractVector{<:Integer}, args...; kwargs.
     )
 end
 
-function displaystructure(X::Logiset; indent_str = "")
+function displaystructure(X::ActiveLogiset; indent_str = "")
     out = "$(typeof(X))\t$(humansize(X))\n"
     out *= indent_str * "├ features:\t\t$((length(features(X))))\t$(features(X))\n"
     out *= indent_str * "├ relations:\t\t$((length(relations(X))))\t$(relations(X))\n"
@@ -258,13 +258,13 @@ function displaystructure(X::Logiset; indent_str = "")
     out
 end
 
-hasnans(X::Logiset) = hasnans(featstruct(X))
+hasnans(X::ActiveLogiset) = hasnans(featstruct(X))
 
-isminifiable(::Logiset) = true
+isminifiable(::ActiveLogiset) = true
 
-function minify(X::Logiset)
+function minify(X::ActiveLogiset)
     new_fwd, backmap = minify(featstruct(X))
-    X = Logiset(
+    X = ActiveLogiset(
         new_fwd,
         features(X),
         relations(X),

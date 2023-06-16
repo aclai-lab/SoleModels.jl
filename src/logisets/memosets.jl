@@ -20,7 +20,6 @@ abstract type AbstractMemoset{
     FT<:AbstractFeature,
     FR<:AbstractFrame,
 } <: AbstractLogiset{W,U,FT,FR} end
-# } <: AbstractInterpretationSet{AbstractKripkeStructure{W,C where C<:AbstractCondition{_F where _F<:FT},T where T<:TruthValue,FR where FR<:AbstractFrame}} end
 
 function capacity(Xm::AbstractMemoset)
     error("Please, provide method capacity(::$(typeof(Xm))).")
@@ -53,9 +52,9 @@ function displaystructure(Xm::AbstractMemoset; indent_str = "", include_ninstanc
     if include_ninstances
         push!(pieces, "$(padattribute("# instances:", ninstances(Xm)))")
     end
-    push!(pieces, "$(padattribute("# memoized values:", nmemoizedvalues(Xm)))")
+    # push!(pieces, "$(padattribute("# memoized values:", nmemoizedvalues(Xm)))")
 
-    return "FullMemoset ($(humansize(Xm)))" *
+    return "$(nameof(typeof(Xm))) ($(memoizationinfo(Xm)), $(humansize(Xm)))" *
         join(pieces, "\n$(indent_str)├ ", "\n$(indent_str)└ ") * "\n"
 end
 
@@ -179,5 +178,19 @@ usesfullmemo(::FullMemoset) = true
 fullmemo(Xm::FullMemoset) = Xm
 
 hasnans(::FullMemoset) = false
+
+function displaystructure(Xm::FullMemoset; indent_str = "", include_ninstances = true)
+    padattribute(l,r) = string(l) * lpad(r,32+length(string(r))-(length(indent_str)+2+length(l)))
+    pieces = []
+    push!(pieces, "")
+    push!(pieces, "$(padattribute("worldtype:", worldtype(Xm)))")
+    if include_ninstances
+        push!(pieces, "$(padattribute("# instances:", ninstances(Xm)))")
+    end
+    # push!(pieces, "$(padattribute("# memoized values:", nmemoizedvalues(Xm)))")
+
+    return "$(nameof(typeof(Xm))) ($(memoizationinfo(Xm)), $(humansize(Xm)))" *
+        join(pieces, "\n$(indent_str)├ ", "\n$(indent_str)└ ") * "\n"
+end
 
 # Base.size(::FullMemoset) = ()

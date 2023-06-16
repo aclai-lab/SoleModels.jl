@@ -7,7 +7,8 @@ using SoleLogics: AbstractWorld, IdentityRel
 import SoleLogics: syntaxstring
 
 import SoleData: ninstances
-import SoleData: hasnans, instances
+import SoleData: hasnans, instances, concatdatasets
+import SoleData: displaystructure
 
 # Features to be computed on worlds of dataset instances
 include("features.jl")
@@ -40,16 +41,53 @@ include("multilogiset.jl")
 # Model checking algorithms for logisets and multilogisets
 include("check.jl")
 
+# TODO remove?
+function nfeatures end
+
 include("scalar/main.jl")
 
+include("dimensional-structures/main.jl")
+
+# export get_ontology,
+#        get_interval_ontology
+
+# export DimensionalLogiset, Logiset, SupportedScalarLogiset
+
+# using .DimensionalDatasets: nfeatures, nrelations,
+#                             #
+#                             relations,
+#                             #
+#                             GenericModalDataset,
+#                             AbstractLogiset,
+#                             AbstractActiveScalarLogiset,
+#                             DimensionalLogiset,
+#                             Logiset,
+#                             SupportedScalarLogiset
+
+# using .DimensionalDatasets: AbstractWorld, AbstractRelation
+# using .DimensionalDatasets: AbstractWorldSet, WorldSet
+# using .DimensionalDatasets: FullDimensionalFrame
+
+# using .DimensionalDatasets: Ontology, worldtype
+
+# using .DimensionalDatasets: get_ontology,
+#                             get_interval_ontology
+
+# using .DimensionalDatasets: OneWorld, OneWorldOntology
+
+# using .DimensionalDatasets: Interval, Interval2D
+
+# using .DimensionalDatasets: IARelations
+
 function default_relmemoset_type(X::AbstractLogiset)
+    # TODO?
     # frames = [frame(X, i_instance) for i_instance in 1:ninstances(X)]
     # if allequal(frames) && first(unique(frames)) isa FullDimensionalFrame
-    # if X isa UniformFullDimensionalFWD TODO
-    #     UniformFullDimensionalRelationalSupport
-    # else
+    if X isa DimensionalDatasets.UniformFullDimensionalLogiset
+        DimensionalDatasets.UniformFullDimensionalOneStepRelationalMemoset
+    else
         ScalarOneStepRelationalMemoset
-    # end
+    end
 end
 
 function default_onestep_memoset_type(X::AbstractLogiset)

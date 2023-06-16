@@ -196,9 +196,9 @@ using SoleModels: ScalarOneStepMemoset
 
 relations = [identityrel, globalrel]
 
-bool_onestepmemoset = @test_logs (:warn,) ScalarOneStepMemoset(metaconditions, relations, bool_relationalmemoset, bool_globalmemoset)
+bool_onestepmemoset = @test_logs (:warn,) ScalarOneStepMemoset(bool_relationalmemoset, bool_globalmemoset, metaconditions, relations)
 
-bool_onestepmemoset = @test_logs (:warn,) ScalarOneStepMemoset(metaconditions, relations, bool_relationalmemoset, bool_globalmemoset)
+bool_onestepmemoset = @test_logs (:warn,) ScalarOneStepMemoset(bool_relationalmemoset, bool_globalmemoset, metaconditions, relations)
 bool_onestepmemoset_empty = @test_logs (:warn,) ScalarOneStepMemoset(bool_logiset, metaconditions, relations)
 bool_onestepmemoset_full = @test_logs (:warn,) ScalarOneStepMemoset(bool_logiset, metaconditions, relations; precompute_globmemoset = true, precompute_relmemoset = true)
 

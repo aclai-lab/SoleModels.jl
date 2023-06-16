@@ -27,6 +27,7 @@ function check(
     use_memo::Union{Nothing,AbstractMemoset{W},AbstractVector{<:AbstractDict{<:FT,<:WorldSet}}} = nothing,
     perform_normalization::Bool = true,
     memo_max_height::Union{Nothing,Int} = nothing,
+    onestep_memoset_is_complete = false,
 ) where {W<:AbstractWorld,U,FT<:SoleLogics.AbstractFormula}
 
     if isnothing(w)
@@ -80,6 +81,10 @@ function check(
 
     fr = frame(X, i_instance)
 
+    # TODO try lazily
+    (_f, _c) = filter, collect
+    # (_f, _c) = Iterators.filter, identity
+
     if !hasformula(memo_structure, φ)
         for ψ in unique(SoleLogics.subformulas(φ))
             if !isnothing(memo_max_height) && height(ψ) > memo_max_height
@@ -92,27 +97,31 @@ function check(
                 worldset = begin
                     if !isnothing(onestep_memoset) && SoleLogics.height(ψ) == 1 && tok isa SoleLogics.AbstractRelationalOperator &&
                             SoleLogics.ismodal(tok) && SoleLogics.isunary(tok) && SoleLogics.isdiamond(tok) &&
-                            token(first(children(ψ))) isa Proposition
+                            token(first(children(ψ))) isa Proposition &&
+                            # Note: metacond with same aggregator also works. TODO maybe use Conditions with aggregators inside and look those up.
+                            (onestep_memoset_is_complete || metacond(atom(token(first(children(ψ))))) in metaconditions(onestep_memoset)) &&
+                            true
                         # println("ONESTEP!")
                         # println(syntaxstring(ψ))
-                        _rel = SoleLogics.relation(tok)
                         condition = atom(token(first(children(ψ))))
                         _metacond = metacond(condition)
+                        _rel = SoleLogics.relation(tok)
                         _feature = feature(condition)
                         _featchannel = featchannel(X, i_instance, _feature)
-                        filter(world->begin
+                        _f(world->begin
                             gamma = featchannel_onestep_aggregation(X, onestep_memoset, _featchannel, i_instance, world, _rel, _metacond)
                             apply_test_operator(test_operator(_metacond), gamma, threshold(condition))
-                        end, allworlds(fr))
+                        end, _c(allworlds(fr)))
                     elseif tok isa SoleLogics.AbstractOperator
-                        collect(SoleLogics.collateworlds(fr, tok, map(f->readformula(memo_structure, f), children(ψ))))
+                        _c(SoleLogics.collateworlds(fr, tok, map(f->readformula(memo_structure, f), children(ψ))))
                     elseif tok isa Proposition
-                        filter(w->check(tok, X, i_instance, w), collect(allworlds(fr)))
+                        condition = atom(tok)
+                        _f(_w->checkcondition(condition, X, i_instance, _w), _c(allworlds(fr)))
                     else
                         error("Unexpected token encountered in _check: $(typeof(tok))")
                     end
                 end
-                setformula(memo_structure, ψ, worldset)
+                setformula(memo_structure, ψ, Vector{W}(worldset))
             end
             # @show syntaxstring(ψ), readformula(memo_structure, ψ)
         end

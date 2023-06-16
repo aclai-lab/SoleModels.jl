@@ -114,17 +114,6 @@ function featvalue(
     featvalue(modality(X, i_modality), i_instance, w, f)
 end
 
-function check(
-    p::Proposition{<:AbstractCondition},
-    X::MultiLogiset,
-    i_modality::Integer,
-    i_instance::Integer,
-    w::W;
-    kwargs...
-) where {W<:AbstractWorld}
-    check(p, modality(X, i_modality), i_instance, w; kwargs...)
-end
-
 
 hasnans(X::MultiLogiset) = any(hasnans.(modalities(X)))
 

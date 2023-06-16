@@ -7,10 +7,12 @@ using SoleData: AbstractDimensionalDataset,
                 DimensionalInstance,
                 DimensionalChannel
 
-using SoleLogics: TruthValue
-
 """
-A logiset with a dimensional domain. TODO explain
+Scalar logiset with  of dimensionality `N`.
+
+See also
+...
+[`AbstractLogiset`](@ref).
 """
 struct PassiveDimensionalLogiset{
     N,
@@ -25,8 +27,12 @@ struct PassiveDimensionalLogiset{
         d::DOM,
     ) where {N,W<:AbstractWorld,DOM<:AbstractDimensionalDataset,FR<:AbstractDimensionalFrame{N,W}}
         ty = "PassiveDimensionalLogiset{$(N),$(W),$(DOM),$(FR)}"
-        @assert N == dimensionality(d) "ERROR! Dimensionality mismatch: can't instantiate $(ty) with underlying structure $(DOM). $(N) == $(dimensionality(d)) should hold."
-        @assert SoleLogics.goeswithdim(W, N) "ERROR! Dimensionality mismatch: can't interpret worldtype $(W) on PassiveDimensionalLogiset of dimensionality = $(N)"
+        @assert N == dimensionality(d) "ERROR! Dimensionality mismatch: " *
+            "can't instantiate $(ty) with underlying structure" *
+            "$(DOM). $(N) == $(dimensionality(d)) should hold."
+        @assert SoleLogics.goeswithdim(W, N) "ERROR! Dimensionality mismatch: " *
+            "can't interpret worldtype $(W) on PassiveDimensionalLogiset" *
+            "of dimensionality = $(N)"
         new{N,W,DOM,FR}(d)
     end
     

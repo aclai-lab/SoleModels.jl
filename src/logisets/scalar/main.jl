@@ -1,4 +1,3 @@
-
 export inverse_test_operator, dual_test_operator,
         apply_test_operator,
         TestOperator
@@ -29,9 +28,11 @@ include("random.jl")
 
 include("representatives.jl")
 
+include("dataset-bindings.jl")
+
 include("memosets.jl")
 
-include("one-step-memoset.jl")
+include("onestep-memoset.jl")
 
 export UnivariateMin, UnivariateMax,
         UnivariateSoftMin, UnivariateSoftMax,

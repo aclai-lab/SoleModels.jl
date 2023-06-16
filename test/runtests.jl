@@ -16,9 +16,9 @@ end
 println("Julia version: ", VERSION)
 
 test_suites = [
-    ("Datasets", [
-        "datasets.jl",
-        # "dimensional-datasets.jl",
+    ("Logisets", [
+        "logisets.jl",
+        "dimensional-logisets.jl",
     ]),
     ("Models", ["base.jl", ]),
     ("Miscellaneous", ["misc.jl", "minify.jl"]),

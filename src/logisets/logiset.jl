@@ -35,18 +35,18 @@ abstract type AbstractLogiset{
 function featchannel(
     X::AbstractLogiset{W},
     i_instance::Integer,
-    f::AbstractFeature,
+    feature::AbstractFeature,
 ) where {W<:AbstractWorld}
-    error("Please, provide method featchannel(::$(typeof(X)), i_instance::$(typeof(i_instance)), f::$(typeof(f))).")
+    error("Please, provide method featchannel(::$(typeof(X)), i_instance::$(typeof(i_instance)), feature::$(typeof(feature))).")
 end
 
 function readfeature(
     X::AbstractLogiset{W},
     featchannel::Any,
     w::W,
-    f::AbstractFeature,
+    feature::AbstractFeature,
 ) where {W<:AbstractWorld}
-    error("Please, provide method readfeature(::$(typeof(X)), featchannel::$(typeof(featchannel)), w::$(typeof(w)), f::$(typeof(f))).")
+    error("Please, provide method readfeature(::$(typeof(X)), featchannel::$(typeof(featchannel)), w::$(typeof(w)), feature::$(typeof(feature))).")
 end
 
 """
@@ -56,9 +56,27 @@ function featvalue(
     X::AbstractLogiset{W},
     i_instance::Integer,
     w::W,
-    f::AbstractFeature,
+    feature::AbstractFeature,
 ) where {W<:AbstractWorld}
-    readfeature(X, featchannel(X, i_instance, f), w, f)
+    readfeature(X, featchannel(X, i_instance, feature), w, feature)
+end
+
+function featvalue!(
+    X::AbstractLogiset{W},
+    featval,
+    i_instance::Integer,
+    w::W,
+    feature::AbstractFeature,
+) where {W<:AbstractWorld}
+    error("Please, provide method featvalue!(::$(typeof(X)), featval::$(typeof(featval)), i_instance::$(typeof(i_instance)), w::$(typeof(w)), feature::$(typeof(feature))).")
+end
+
+function featvalues!(
+    X::AbstractLogiset{W},
+    featslice,
+    feature::AbstractFeature,
+) where {W<:AbstractWorld}
+    error("Please, provide method featvalues!(::$(typeof(X)), featslice::$(typeof(featslice)), feature::$(typeof(feature))).")
 end
 
 function frame(X::AbstractLogiset, i_instance::Integer)
@@ -79,9 +97,9 @@ end
 function allfeatvalues(
     X::AbstractLogiset,
     i_instance,
-    f,
+    feature,
 )
-    error("Please, provide method allfeatvalues(::$(typeof(X)), i_instance::$(typeof(i_instance)), f::$(typeof(f))).")
+    error("Please, provide method allfeatvalues(::$(typeof(X)), i_instance::$(typeof(i_instance)), feature::$(typeof(feature))).")
 end
 
 function instances(
@@ -114,22 +132,12 @@ hasnans(::AbstractLogiset) = any.(isnan, allfeatvalues(X))
 ############################################################################################
 
 function featvalue(
-    f::AbstractFeature,
+    feature::AbstractFeature,
     X::AbstractLogiset{W},
     i_instance::Integer,
     w::W,
 ) where {W<:AbstractWorld}
-    featvalue(X, i_instance, w, f)
-end
-
-function check(
-    p::Proposition{<:AbstractCondition},
-    X::AbstractLogiset{W},
-    i_instance::Integer,
-    w::W;
-    kwargs...
-) where {W<:AbstractWorld}
-    checkcondition(atom(p), X, i_instance, w; kwargs...)
+    featvalue(X, i_instance, w, feature)
 end
 
 function Base.show(io::IO, X::AbstractLogiset; kwargs...)
@@ -206,11 +214,10 @@ end
 
 ninstances(X::ExplicitBooleanLogiset) = length(X.d)
 
-
 function featchannel(
     X::ExplicitBooleanLogiset{W},
     i_instance::Integer,
-    f::AbstractFeature,
+    feature::AbstractFeature,
 ) where {W<:AbstractWorld}
     X.d[i_instance][1]
 end
@@ -219,9 +226,24 @@ function readfeature(
     X::ExplicitBooleanLogiset{W},
     featchannel::Any,
     w::W,
-    f::AbstractFeature,
+    feature::AbstractFeature,
 ) where {W<:AbstractWorld}
-    Base.in(f, featchannel[w])
+    Base.in(feature, featchannel[w])
+end
+
+function featvalue!(
+    X::ExplicitBooleanLogiset{W},
+    featval::Bool,
+    i_instance::Integer,
+    w::W,
+    feature::AbstractFeature,
+) where {W<:AbstractWorld}
+    cur_featval = featvalue(X, featval, i_instance, w, feature)
+    if featval && !cur_featval
+        push!(X.d[i_instance][1][w], feature)
+    elseif !featval && cur_featval
+        filter!(_f->_f != feature, X.d[i_instance][1][w])
+    end
 end
 
 function frame(
@@ -317,7 +339,7 @@ ninstances(X::ExplicitLogiset) = length(X.d)
 function featchannel(
     X::ExplicitLogiset{W},
     i_instance::Integer,
-    f::AbstractFeature,
+    feature::AbstractFeature,
 ) where {W<:AbstractWorld}
     X.d[i_instance][1]
 end
@@ -326,9 +348,19 @@ function readfeature(
     X::ExplicitLogiset{W},
     featchannel::Any,
     w::W,
-    f::AbstractFeature,
+    feature::AbstractFeature,
 ) where {W<:AbstractWorld}
-    featchannel[w][f]
+    featchannel[w][feature]
+end
+
+function featvalue!(
+    X::ExplicitLogiset{W},
+    featval,
+    i_instance::Integer,
+    w::W,
+    feature::AbstractFeature,
+) where {W<:AbstractWorld}
+    X.d[i_instance][1][w][feature] = featval
 end
 
 function frame(

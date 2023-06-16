@@ -15,6 +15,8 @@ using Lazy
 
 include("utils.jl")
 
+using .utils
+
 export outcometype, outputtype
 
 export Rule, Branch
@@ -82,42 +84,15 @@ export VarFeature,
         UnivariateNamedFeature,
         UnivariateFeature
 
+export computefeature
+
+export scalarlogiset
+export initlogiset, ninstances, max_channel_size, worldtype, dimensionality, allworlds, featvalue
+
+export ScalarMetaCondition
+
+
 # Definitions for logical datasets (i.e., logisets)
 include("logisets/main.jl")
-
-
-# export get_ontology,
-#        get_interval_ontology
-
-# export DimensionalLogiset, Logiset, SupportedScalarLogiset
-
-# include("logisets/dimensional-logisets/main.jl")
-
-
-# using .DimensionalDatasets: nfeatures, nrelations,
-#                             #
-#                             relations,
-#                             #
-#                             GenericModalDataset,
-#                             AbstractLogiset,
-#                             AbstractActiveScalarLogiset,
-#                             DimensionalLogiset,
-#                             Logiset,
-#                             SupportedScalarLogiset
-
-# using .DimensionalDatasets: AbstractWorld, AbstractRelation
-# using .DimensionalDatasets: AbstractWorldSet, WorldSet
-# using .DimensionalDatasets: FullDimensionalFrame
-
-# using .DimensionalDatasets: Ontology, worldtype
-
-# using .DimensionalDatasets: get_ontology,
-#                             get_interval_ontology
-
-# using .DimensionalDatasets: OneWorld, OneWorldOntology
-
-# using .DimensionalDatasets: Interval, Interval2D
-
-# using .DimensionalDatasets: IARelations
 
 end
