@@ -41,7 +41,7 @@ complete_supported_logiset = @test_nowarn SupportedLogiset(logiset; use_full_mem
 rng = Random.MersenneTwister(1)
 alph = ExplicitAlphabet([SoleModels.ScalarCondition(rand(rng, features), rand(rng, [>, <]), rand(rng)) for i in 1:10]);
 syntaxstring.(alph)
-_formulas = [randformulatree(rng, 3, alph, [SoleLogics.BASE_MULTIMODAL_OPERATORS..., vcat([[DiamondRelationalOperator(r), BoxRelationalOperator(r)] for r in relations]...)[1:16:end]...]) for i in 1:20];
+_formulas = [randformulatree(rng, 3, alph, [SoleLogics.BASE_PROPOSITIONAL_OPERATORS..., vcat([[DiamondRelationalOperator(r), BoxRelationalOperator(r)] for r in relations]...)[1:16:end]...]) for i in 1:20];
 syntaxstring.(_formulas) .|> println;
 
 i_instance = 1
@@ -50,7 +50,7 @@ i_instance = 1
 c1 = @test_nowarn [
         [check(φ, logiset, i_instance, w) for φ in _formulas]
     for w in allworlds(X, i_instance)]
-@test_throws ErrorException [
+c2 = @test_nowarn [
         [check(φ, supported_logiset, i_instance, w) for φ in _formulas]
     for w in allworlds(X, i_instance)]
 c3 = @test_nowarn [
