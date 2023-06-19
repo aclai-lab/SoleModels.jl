@@ -155,7 +155,8 @@ rng = Random.MersenneTwister(1)
 alph = ExplicitAlphabet([SoleModels.ScalarCondition(rand(rng, features), rand(rng, [>, <]), rand(rng)) for i in 1:10])
 syntaxstring.(alph)
 _formulas = [randformulatree(rng, 4, alph, [NEGATION, CONJUNCTION, IMPLICATION, DIAMOND, BOX]) for i in 1:10]
-# syntaxstring.(_formulas)
+@test_nowarn syntaxstring.(_formulas)
+@test_nowarn syntaxstring.(_formulas; threshold_decimals = 2)
 
 c1 = @test_nowarn [check(φ, bool_logiset, 1, w) for φ in _formulas]
 c2 = @test_nowarn [check(φ, bool_logiset, 1, w; use_memo = nothing) for φ in _formulas]
@@ -196,10 +197,11 @@ using SoleModels: ScalarOneStepMemoset
 
 relations = [identityrel, globalrel]
 
-bool_onestepmemoset = @test_logs (:warn,) ScalarOneStepMemoset(bool_relationalmemoset, bool_globalmemoset, metaconditions, relations)
+# bool_onestepmemoset = @test_logs (:warn,) ScalarOneStepMemoset(bool_relationalmemoset, bool_globalmemoset, metaconditions, relations)
+bool_onestepmemoset = @test_logs (:warn,) ScalarOneStepMemoset{Bool}(bool_relationalmemoset, bool_globalmemoset, metaconditions, relations)
 
-bool_onestepmemoset = @test_logs (:warn,) ScalarOneStepMemoset(bool_relationalmemoset, bool_globalmemoset, metaconditions, relations)
 bool_onestepmemoset_empty = @test_logs (:warn,) ScalarOneStepMemoset(bool_logiset, metaconditions, relations)
+bool_onestepmemoset_full = @test_logs (:warn,) ScalarOneStepMemoset(bool_logiset, metaconditions, relations; precompute_globmemoset = false, precompute_relmemoset = false)
 bool_onestepmemoset_full = @test_logs (:warn,) ScalarOneStepMemoset(bool_logiset, metaconditions, relations; precompute_globmemoset = true, precompute_relmemoset = true)
 
 @test_nowarn SupportedLogiset(bool_logiset, bool_onestepmemoset)

@@ -50,15 +50,15 @@ struct DimensionalLogiset{
         FT = Union{typeof.(features)...}
         features = Vector{FT}(features)
         @assert allow_no_instances || ninstances(domain) > 0 "" *
-            "Can't instantiate $(ty) with no instance. (domain's type $(typeof(domain)))"
+            "Cannot instantiate $(ty) with no instance. (domain's type $(typeof(domain)))"
         @assert length(features) == length(grouped_featsaggrsnops) "" *
-            "Can't instantiate $(ty) with mismatching length(features) and " *
+            "Cannot instantiate $(ty) with mismatching length(features) and " *
             "length(grouped_featsaggrsnops): " *
             "$(length(features)) != $(length(grouped_featsaggrsnops))"
         @assert length(grouped_featsaggrsnops) > 0 &&
             sum(length.(grouped_featsaggrsnops)) > 0 &&
             sum(vcat([[length(test_ops) for test_ops in aggrs] for aggrs in grouped_featsaggrsnops]...)) > 0 "" *
-            "Can't instantiate $(ty) with no test operator: $(grouped_featsaggrsnops)"
+            "Cannot instantiate $(ty) with no test operator: $(grouped_featsaggrsnops)"
         grouped_featsnaggrs = features_grouped_featsaggrsnops2grouped_featsnaggrs(features, grouped_featsaggrsnops)
         check_initialworld(DimensionalLogiset, initialworld, W)
         new{
@@ -200,10 +200,10 @@ struct DimensionalLogiset{
         DimensionalLogiset{V}(domain, ontology, features, args...; kwargs...)
     end
 
-    preserves_type(::Any) = false
-    preserves_type(::CanonicalFeature) = true
-    preserves_type(::typeof(minimum)) = true # TODO fix
-    preserves_type(::typeof(maximum)) = true # TODO fix
+    preserveseltype(::Any) = false
+    preserveseltype(::CanonicalFeature) = true
+    preserveseltype(::typeof(minimum)) = true # TODO fix
+    preserveseltype(::typeof(maximum)) = true # TODO fix
 
     function DimensionalLogiset(
         domain           :: Union{PassiveDimensionalLogiset{N,W},AbstractDimensionalDataset},
@@ -212,7 +212,7 @@ struct DimensionalLogiset{
         kwargs...,
     ) where {N,W<:AbstractWorld}
         domain = (domain isa AbstractDimensionalDataset ? PassiveDimensionalLogiset{dimensionality(domain),W}(domain) : domain)
-        @assert all((f)->(preserves_type(f)), mixed_features) "Please, specify the feature output type V upon construction, as in: DimensionalLogiset{V}(...)." # TODO highlight and improve
+        @assert all((f)->(preserveseltype(f)), mixed_features) "Please, specify the feature output type V upon construction, as in: DimensionalLogiset{V}(...)." # TODO highlight and improve
         V = eltype(domain)
         DimensionalLogiset{V}(domain, ontology, mixed_features; kwargs...)
     end
@@ -241,8 +241,8 @@ relations(X::DimensionalLogiset)              = relations(ontology(X))
 nrelations(X::DimensionalLogiset)             = length(relations(X))
 nfeatures(X::DimensionalLogiset)              = length(features(X))
 
-channel_size(X::DimensionalLogiset, args...)     = channel_size(domain(X), args...)
-max_channel_size(X::DimensionalLogiset)          = max_channel_size(domain(X))
+channelsize(X::DimensionalLogiset, args...)     = channelsize(domain(X), args...)
+maxchannelsize(X::DimensionalLogiset)          = maxchannelsize(domain(X))
 
 get_instance(X::DimensionalLogiset, args...)     = get_instance(domain(X), args...)
 
@@ -262,7 +262,7 @@ function displaystructure(X::DimensionalLogiset; indent_str = "")
     out *= indent_str * "├ domain shape:\t\t$(Base.size(domain(X)))\n"
     out *= indent_str * "├ ninstances:\t\t$(ninstances(X))\n"
     out *= indent_str * "├ nvariables:\t\t$(nvariables(X))\n"
-    out *= indent_str * "├ max_channel_size:\t$(max_channel_size(X))\n"
+    out *= indent_str * "├ maxchannelsize:\t$(maxchannelsize(X))\n"
     out *= indent_str * "└ initialworld(s):\t$(initialworld(X))"
     out
 end

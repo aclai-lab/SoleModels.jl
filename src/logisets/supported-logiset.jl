@@ -261,20 +261,55 @@ function concatdatasets(Xs::SupportedLogiset...)
     )
 end
 
-function displaystructure(X::SupportedLogiset; indent_str = "", include_ninstances = true)
+function displaystructure(
+    X::SupportedLogiset;
+    indent_str = "",
+    include_ninstances = true,
+    include_worldtype = missing,
+    include_featvaltype = missing,
+    include_featuretype = missing,
+    include_frametype = missing,
+)
     padattribute(l,r) = string(l) * lpad(r,32+length(string(r))-(length(indent_str)+2+length(l))-1)
     pieces = []
-    push!(pieces, "SupportedLogiset ($(humansize(X)))\n")
+    push!(pieces, "SupportedLogiset with $(nsupports(X)) supports ($(humansize(X)))")
+    if ismissing(include_worldtype) || include_worldtype != worldtype(X)
+        push!(pieces, " " * padattribute("worldtype:", worldtype(X)))
+    end
+    if ismissing(include_featvaltype) || include_featvaltype != featvaltype(X)
+        push!(pieces, " " * padattribute("featvaltype:", featvaltype(X)))
+    end
+    if ismissing(include_featuretype) || include_featuretype != featuretype(X)
+        push!(pieces, " " * padattribute("featuretype:", featuretype(X)))
+    end
+    if ismissing(include_frametype) || include_frametype != frametype(X)
+        push!(pieces, " " * padattribute("frametype:", frametype(X)))
+    end
     if include_ninstances
-        push!(pieces, " " * padattribute("# instances:", "$(ninstances(X))\n"))
+        push!(pieces, " " * padattribute("# instances:", "$(ninstances(X))"))
     end
-    push!(pieces, " " * padattribute("# supports:", "$(nsupports(X))\n"))
-    push!(pieces, " " * padattribute("usesfullmemo:", "$(usesfullmemo(X))\n"))
-    push!(pieces, "[BASE] " * displaystructure(base(X); indent_str = "$(indent_str)│ ", include_ninstances = false))
+    # push!(pieces, " " * padattribute("# supports:", "$(nsupports(X))"))
+    push!(pieces, " " * padattribute("usesfullmemo:", "$(usesfullmemo(X))"))
+    push!(pieces, "[BASE] " * displaystructure(base(X);
+        indent_str = "$(indent_str)│ ",
+        include_ninstances = false,
+        include_worldtype = worldtype(X),
+        include_featvaltype = featvaltype(X),
+        include_featuretype = featuretype(X),
+        include_frametype = frametype(X),
+    ))
+
     for (i_supp,supp) in enumerate(supports(X))
-        push!(pieces, "[SUPPORT $(i_supp)] $(displaystructure(supp; indent_str = (i_supp == nsupports(X) ? "$(indent_str)  " : "$(indent_str)│ "), include_ninstances = false))")
+        push!(pieces, "[SUPPORT $(i_supp)] " * displaystructure(supp;
+            indent_str = (i_supp == nsupports(X) ? "$(indent_str)  " : "$(indent_str)│ "),
+            include_ninstances = false,
+            include_worldtype = worldtype(X),
+            include_featvaltype = featvaltype(X),
+            include_featuretype = featuretype(X),
+            include_frametype = frametype(X),
+        ) * ")")
     end
-    return join(pieces, "$(indent_str)├", "$(indent_str)└") * "\n"
+    return join(pieces, "\n$(indent_str)├", "\n$(indent_str)└")
 end
 
 # ############################################################################################
@@ -289,8 +324,6 @@ end
 # relations(X::SupportedLogiset)                  = relations(base(X))
 # fwd(X::SupportedLogiset)                        = fwd(base(X))
 # worldtype(X::SupportedLogiset{V,W}) where {V,W} = W
-
-# initialworld(X::SupportedScalarLogiset, args...) = initialworld(base(X), args...)
 
 # TODO remove:
 support(X::SupportedLogiset) = first(supports(X))

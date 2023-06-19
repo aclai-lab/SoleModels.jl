@@ -11,15 +11,19 @@ See also
 """
 abstract type AbstractUniformFullDimensionalLogiset{U,N,W<:AbstractWorld,FT<:AbstractFeature,FR<:FullDimensionalFrame{N,W}} <: AbstractLogiset{W,U,FT,FR} end
 
-function channel_size(X::AbstractUniformFullDimensionalLogiset)
-    error("Please, provide method channel_size(::$(typeof(X))).")
+function maxchannelsize(X::AbstractUniformFullDimensionalLogiset)
+    error("Please, provide method maxchannelsize(::$(typeof(X))).")
+end
+
+function channelsize(X::AbstractUniformFullDimensionalLogiset)
+    error("Please, provide method channelsize(::$(typeof(X))).")
 end
 
 function dimensionality(X::AbstractUniformFullDimensionalLogiset{U,N}) where {U,N}
     N
 end
 
-frame(X::AbstractUniformFullDimensionalLogiset, i_instance::Integer) = FullDimensionalFrame(channel_size(X))
+frame(X::AbstractUniformFullDimensionalLogiset, i_instance::Integer) = FullDimensionalFrame(channelsize(X, i_instance))
 
 ############################################################################################
 
@@ -85,9 +89,10 @@ features(X::UniformFullDimensionalLogiset) = X.features
 
 ############################################################################################
 
-channel_size(X::UniformFullDimensionalLogiset{U,OneWorld}) where {U} = ()
-channel_size(X::UniformFullDimensionalLogiset{U,<:Interval}) where {U} = (size(X, 1),)
-channel_size(X::UniformFullDimensionalLogiset{U,<:Interval2D}) where {U} = (size(X, 1),size(X, 3))
+maxchannelsize(X::UniformFullDimensionalLogiset) = channelsize(X, 0)
+channelsize(X::UniformFullDimensionalLogiset{U,OneWorld}, i_instance::Integer) where {U} = ()
+channelsize(X::UniformFullDimensionalLogiset{U,<:Interval}, i_instance::Integer) where {U} = (size(X, 1),)
+channelsize(X::UniformFullDimensionalLogiset{U,<:Interval2D}, i_instance::Integer) where {U} = (size(X, 1),size(X, 3))
 
 ############################################################################################
 
@@ -391,24 +396,44 @@ end
 
 ############################################################################################
 
-function displaystructure(X::UniformFullDimensionalLogiset{U,W,N}; indent_str = "", include_ninstances = true) where {U,W<:AbstractWorld,N}
+function displaystructure(
+    X::UniformFullDimensionalLogiset{U,W,N};
+    indent_str = "",
+    include_ninstances = true,
+    include_worldtype = missing,
+    include_featvaltype = missing,
+    include_featuretype = missing,
+    include_frametype = missing,
+) where {U,W<:AbstractWorld,N}
     padattribute(l,r) = string(l) * lpad(r,32+length(string(r))-(length(indent_str)+2+length(l)))
     pieces = []
-    push!(pieces, "UniformFullDimensionalLogiset ($(humansize(X)))")
-    push!(pieces, "$(padattribute("worldtype:", worldtype(X)))")
-    push!(pieces, "$(padattribute("featvaltype:", featvaltype(X)))")
-    push!(pieces, "$(padattribute("featuretype:", featuretype(X)))")
-    push!(pieces, "$(padattribute("frametype:", frametype(X)))")
+    push!(pieces, "UniformFullDimensionalLogiset " *
+        (dimensionality(X) == 0 ? "of dimensionality 0" :
+            dimensionality(X) == 1 ? "of channel size $(maxchannelsize(X))" :
+                        "of channel size $(join(maxchannelsize(X), " × "))")*
+        " ($(humansize(X)))")
+    if ismissing(include_worldtype) || include_worldtype != worldtype(X)
+        push!(pieces, "$(padattribute("worldtype:", worldtype(X)))")
+    end
+    if ismissing(include_featvaltype) || include_featvaltype != featvaltype(X)
+        push!(pieces, "$(padattribute("featvaltype:", featvaltype(X)))")
+    end
+    if ismissing(include_featuretype) || include_featuretype != featuretype(X)
+        push!(pieces, "$(padattribute("featuretype:", featuretype(X)))")
+    end
+    if ismissing(include_frametype) || include_frametype != frametype(X)
+        push!(pieces, "$(padattribute("frametype:", frametype(X)))")
+    end
     if include_ninstances
         push!(pieces, "$(padattribute("# instances:", ninstances(X)))")
     end
     push!(pieces, "$(padattribute("size × eltype:", "$(size(X.featstruct)) × $(eltype(X.featstruct))"))")
-    push!(pieces, "$(padattribute("dimensionality:", dimensionality(X)))")
-    push!(pieces, "$(padattribute("channel_size:", channel_size(X)))")
+    # push!(pieces, "$(padattribute("dimensionality:", dimensionality(X)))")
+    # push!(pieces, "$(padattribute("maxchannelsize:", maxchannelsize(X)))")
     # push!(pieces, "$(padattribute("# features:", nfeatures(X)))")
     push!(pieces, "$(padattribute("features:", "$(nfeatures(X)) -> $(displaysyntaxvector(features(X)))"))")
 
-    return join(pieces, "\n$(indent_str)├ ", "\n$(indent_str)└ ") * "\n"
+    return join(pieces, "\n$(indent_str)├ ", "\n$(indent_str)└ ")
 end
 
 ############################################################################################

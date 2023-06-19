@@ -182,14 +182,14 @@ struct ScalarOneStepMemoset{
     GM<:Union{AbstractScalarOneStepGlobalMemoset{W,U},Nothing},
 } <: AbstractOneStepMemoset{W,U,FT where FT<:AbstractFeature,FR}
 
-    metaconditions          :: UniqueVector{<:ScalarMetaCondition}
-    relations               :: UniqueVector{<:AbstractRelation}
-
     # Relational memoset
     relmemoset              :: RM
 
     # Global memoset
     globmemoset             :: GM
+
+    metaconditions          :: UniqueVector{<:ScalarMetaCondition}
+    relations               :: UniqueVector{<:AbstractRelation}
 
     function ScalarOneStepMemoset{U}(
         relmemoset::RM,
@@ -216,26 +216,26 @@ struct ScalarOneStepMemoset{
             @warn "Using global relation in a relational memoset. This is not optimal."
         end
 
-        @assert nmetaconditions(relmemoset) == length(metaconditions)  "Can't instantiate " *
+        @assert nmetaconditions(relmemoset) == length(metaconditions)  "Cannot instantiate " *
             "$(ty) with mismatching nmetaconditions for relmemoset and " *
             "provided metaconditions: $(nmetaconditions(relmemoset)) and $(length(metaconditions))"
         # Global relation breaks this:
-        # @assert nrelations(relmemoset) == length(relations)            "Can't instantiate " *
+        # @assert nrelations(relmemoset) == length(relations)            "Cannot instantiate " *
         #     "$(ty) with mismatching nrelations for relmemoset and " *
         #     "provided relations: $(nrelations(relmemoset)) and $(length(relations))"
 
         if !isnothing(globmemoset)
-            @assert nmetaconditions(globmemoset) == length(metaconditions) "Can't " *
+            @assert nmetaconditions(globmemoset) == length(metaconditions) "Cannot " *
                 "instantiate $(ty) with mismatching nmetaconditions for " *
                 "globmemoset and provided metaconditions: " *
                 "$(nmetaconditions(globmemoset)) and $(length(metaconditions))"
-            @assert ninstances(globmemoset) == ninstances(relmemoset)      "Can't " *
+            @assert ninstances(globmemoset) == ninstances(relmemoset)      "Cannot " *
                 "instantiate $(ty) with mismatching ninstances for " *
                 "global and relational memosets: " *
                 "$(ninstances(globmemoset)) and $(ninstances(relmemoset))"
         end
 
-        new{U,W,FR,UU,RM,GM}(metaconditions, relations, relmemoset, globmemoset)
+        new{U,W,FR,UU,RM,GM}(relmemoset, globmemoset, metaconditions, relations)
     end
 
     Base.@propagate_inbounds function ScalarOneStepMemoset(
@@ -444,8 +444,8 @@ function check(
     end
 end
 
-function instances(Xm::ScalarOneStepMemoset, inds::AbstractVector{<:Integer}, return_view::Union{Val{true},Val{false}} = Val(false))
-    ScalarOneStepMemoset(
+function instances(Xm::ScalarOneStepMemoset{U}, inds::AbstractVector{<:Integer}, return_view::Union{Val{true},Val{false}} = Val(false)) where {U}
+    ScalarOneStepMemoset{U}(
         instances(relmemoset(Xm), inds, return_view),
         (isnothing(globmemoset(Xm)) ? nothing : instances(globmemoset(Xm), inds, return_view)),
         metaconditions(Xm),
@@ -453,16 +453,16 @@ function instances(Xm::ScalarOneStepMemoset, inds::AbstractVector{<:Integer}, re
     )
 end
 
-function concatdatasets(Xms::ScalarOneStepMemoset...)
+function concatdatasets(Xms::ScalarOneStepMemoset{U}...) where {U}
     @assert allequal(metaconditions.(Xms)) "Cannot concatenate " *
         "ScalarOneStepMemoset's with different metaconditions: " *
         "$(@show metaconditions.(Xms))"
     @assert allequal(relations.(Xms)) "Cannot concatenate " *
         "ScalarOneStepMemoset's with different relations: " *
         "$(@show relations.(Xms))"
-    ScalarOneStepMemoset(
-        concatdatasets(relmemoset.(Xms)),
-        concatdatasets(globmemoset.(Xms)),
+    ScalarOneStepMemoset{U}(
+        concatdatasets(relmemoset.(Xms)...),
+        concatdatasets(globmemoset.(Xms)...),
         metaconditions(first(Xms)),
         relations(first(Xms)),
     )
@@ -489,29 +489,38 @@ function minify(Xm::OSSD) where {OSSD<:ScalarOneStepMemoset}
     Xm, backmap
 end
 
-function displaystructure(Xm::ScalarOneStepMemoset; indent_str = "", include_ninstances = true)
-    padattribute(l,r,off=0) = string(l) * lpad(r,32+off+length(string(r))-(length(indent_str)+2+length(l))-1)
+function displaystructure(
+    Xm::ScalarOneStepMemoset;
+    indent_str = "",
+    include_ninstances = true,
+    kwargs...
+    # include_worldtype = missing,
+    # include_featvaltype = missing,
+    # include_featuretype = missing,
+    # include_frametype = missing,
+)
+    padattribute(l,r,off=0) = string(l) * lpad(string(r),32+off+length(string(r))-(length(indent_str)+2+length(string(l)))-1)
     pieces = []
-    push!(pieces, "ScalarOneStepMemoset ($(humansize(Xm)))\n")
+    push!(pieces, "ScalarOneStepMemoset ($(humansize(Xm)))")
 
     if include_ninstances
-        push!(pieces, " $(padattribute("# instances:", ninstances(Xm), 1))\n")
+        push!(pieces, " $(padattribute("# instances:", ninstances(Xm), 1))")
     end
 
-    # push!(pieces, " $(padattribute("# metaconditions:", nmetaconditions(Xm), 1))\n")
-    # push!(pieces, " $(padattribute("# relations:", nrelations(Xm), 1))\n")
+    # push!(pieces, " $(padattribute("# metaconditions:", nmetaconditions(Xm), 1))")
+    # push!(pieces, " $(padattribute("# relations:", nrelations(Xm), 1))")
 
-    push!(pieces, " $(padattribute("metaconditions:", "$(nmetaconditions(Xm)) -> $(displaysyntaxvector(metaconditions(Xm)))", 1))\n")
-    push!(pieces, " $(padattribute("relations:", "$(nrelations(Xm)) -> $(displaysyntaxvector(relations(Xm)))", -9))\n")
+    push!(pieces, " $(padattribute("metaconditions:", "$(nmetaconditions(Xm)) -> $(displaysyntaxvector(metaconditions(Xm)))", 1))")
+    push!(pieces, " $(padattribute("relations:", "$(nrelations(Xm)) -> $(displaysyntaxvector(relations(Xm)))"))")
 
-    push!(pieces, "[R] " * displaystructure(relmemoset(Xm); indent_str = "$(indent_str)│ ", include_ninstances = false, include_nmetaconditions = false, include_nrelations = false))
+    push!(pieces, "[R] " * displaystructure(relmemoset(Xm); indent_str = "$(indent_str)│ ", include_ninstances = false, include_nmetaconditions = false, include_nrelations = false, kwargs...))
     if !isnothing(globmemoset(Xm))
-        push!(pieces, "[G] " * displaystructure(globmemoset(Xm); indent_str = "$(indent_str)  ", include_ninstances = false, include_nmetaconditions = false))
+        push!(pieces, "[G] " * displaystructure(globmemoset(Xm); indent_str = "$(indent_str)  ", include_ninstances = false, include_nmetaconditions = false, kwargs...))
     else
-        push!(pieces, "[G] −\n")
+        push!(pieces, "[G] −")
     end
 
-    return join(pieces, "$(indent_str)├", "$(indent_str)└")
+    return join(pieces, "\n$(indent_str)├", "\n$(indent_str)└")
 end
 
 ############################################################################################
@@ -607,14 +616,32 @@ function concatdatasets(Xms::ScalarOneStepRelationalMemoset...)
 end
 
 
-function displaystructure(Xm::ScalarOneStepRelationalMemoset; indent_str = "", include_ninstances = true, include_nmetaconditions = true, include_nrelations = true)
+function displaystructure(
+    Xm::ScalarOneStepRelationalMemoset;
+    indent_str = "",
+    include_ninstances = true,
+    include_nmetaconditions = true,
+    include_nrelations = true,
+    include_worldtype = missing,
+    include_featvaltype = missing,
+    include_featuretype = missing,
+    include_frametype = missing,
+)
     padattribute(l,r) = string(l) * lpad(r,32+length(string(r))-(length(indent_str)+2+length(l)))
     pieces = []
     push!(pieces, "ScalarOneStepRelationalMemoset ($(memoizationinfo(Xm)), $(humansize(Xm)))")
-    push!(pieces, "$(padattribute("worldtype:", worldtype(Xm)))")
-    push!(pieces, "$(padattribute("featvaltype:", featvaltype(Xm)))")
-    push!(pieces, "$(padattribute("featuretype:", featuretype(Xm)))")
-    push!(pieces, "$(padattribute("frametype:", frametype(Xm)))")
+    if ismissing(include_worldtype) || include_worldtype != worldtype(Xm)
+        push!(pieces, "$(padattribute("worldtype:", worldtype(Xm)))")
+    end
+    if ismissing(include_featvaltype) || include_featvaltype != featvaltype(Xm)
+        push!(pieces, "$(padattribute("featvaltype:", featvaltype(Xm)))")
+    end
+    # if ismissing(include_featuretype) || include_featuretype != featuretype(Xm)
+    #     push!(pieces, "$(padattribute("featuretype:", featuretype(Xm)))")
+    # end
+    if ismissing(include_frametype) || include_frametype != frametype(Xm)
+        push!(pieces, "$(padattribute("frametype:", frametype(Xm)))")
+    end
     if include_ninstances
         push!(pieces, "$(padattribute("# instances:", ninstances(Xm)))")
     end
@@ -627,7 +654,7 @@ function displaystructure(Xm::ScalarOneStepRelationalMemoset; indent_str = "", i
     push!(pieces, "$(padattribute("size × eltype:", "$(size(Xm.d)) × $(eltype(Xm.d))"))")
     # push!(pieces, "$(padattribute("# memoized values:", nmemoizedvalues(Xm)))")
 
-    return join(pieces, "\n$(indent_str)├ ", "\n$(indent_str)└ ") * "\n"
+    return join(pieces, "\n$(indent_str)├ ", "\n$(indent_str)└ ")
 end
 
 # @inline function Base.setindex!(Xm::ScalarOneStepRelationalMemoset{W,U}, threshold::U, i_instance::Integer, w::AbstractWorld, i_featsnaggr::Integer, i_relation::Integer) where {W,U}
@@ -700,19 +727,36 @@ function instances(Xm::ScalarOneStepGlobalMemoset{W,U}, inds::AbstractVector{<:I
     ScalarOneStepGlobalMemoset{W,U}(if return_view == Val(true) @view Xm.d[inds,:] else Xm.d[inds,:] end)
 end
 
-function concatdatasets(Xms::ScalarOneStepGlobalMemoset...)
-    ScalarOneStepGlobalMemoset(cat([Xm.d for Xm in Xms]...; dims=1))
+function concatdatasets(Xms::ScalarOneStepGlobalMemoset{W,U}...) where {W,U}
+    ScalarOneStepGlobalMemoset{W,U}(cat([Xm.d for Xm in Xms]...; dims=1))
 end
 
 
-function displaystructure(Xm::ScalarOneStepGlobalMemoset; indent_str = "", include_ninstances = true, include_nmetaconditions = true)
+function displaystructure(
+    Xm::ScalarOneStepGlobalMemoset;
+    indent_str = "",
+    include_ninstances = true,
+    include_nmetaconditions = true,
+    include_worldtype = missing,
+    include_featvaltype = missing,
+    include_featuretype = missing,
+    include_frametype = missing,
+)
     padattribute(l,r) = string(l) * lpad(r,32+length(string(r))-(length(indent_str)+2+length(l)))
     pieces = []
     push!(pieces, "ScalarOneStepGlobalMemoset ($(memoizationinfo(Xm)), $(humansize(Xm)))")
-    push!(pieces, "$(padattribute("worldtype:", worldtype(Xm)))")
-    push!(pieces, "$(padattribute("featvaltype:", featvaltype(Xm)))")
-    push!(pieces, "$(padattribute("featuretype:", featuretype(Xm)))")
-    push!(pieces, "$(padattribute("frametype:", frametype(Xm)))")
+    if ismissing(include_worldtype) || include_worldtype != worldtype(Xm)
+        push!(pieces, "$(padattribute("worldtype:", worldtype(Xm)))")
+    end
+    if ismissing(include_featvaltype) || include_featvaltype != featvaltype(Xm)
+        push!(pieces, "$(padattribute("featvaltype:", featvaltype(Xm)))")
+    end
+    # if ismissing(include_featuretype) || include_featuretype != featuretype(Xm)
+    #     push!(pieces, "$(padattribute("featuretype:", featuretype(Xm)))")
+    # end
+    # if ismissing(include_frametype) || include_frametype != frametype(Xm)
+    #     push!(pieces, "$(padattribute("frametype:", frametype(Xm)))")
+    # end
     if include_ninstances
         push!(pieces, "$(padattribute("# instances:", ninstances(Xm)))")
     end
@@ -721,6 +765,6 @@ function displaystructure(Xm::ScalarOneStepGlobalMemoset; indent_str = "", inclu
     end
     push!(pieces, "$(padattribute("size × eltype:", "$(size(innerstruct(Xm))) × $(eltype(innerstruct(Xm)))"))")
 
-    return join(pieces, "\n$(indent_str)├ ", "\n$(indent_str)└ ") * "\n"
+    return join(pieces, "\n$(indent_str)├ ", "\n$(indent_str)└ ")
 end
 

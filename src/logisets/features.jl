@@ -7,7 +7,7 @@ import SoleLogics: syntaxstring
 Abstract type for features of worlds of
 [Kripke structures](https://en.wikipedia.org/wiki/Kripke_structure_(model_checking).
 
-See also [`featvaltype`](@ref), [`AbstractWorld`](@ref).
+See also [`VarFeature`](@ref), [`featvaltype`](@ref), [`AbstractWorld`](@ref).
 """
 abstract type AbstractFeature end
 

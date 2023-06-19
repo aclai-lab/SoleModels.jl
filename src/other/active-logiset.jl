@@ -168,8 +168,8 @@ struct ActiveLogiset{
     ) where {V,W<:AbstractWorld,FR<:AbstractFrame{W},FWD<:AbstractFeatureLookupSet{V,FR},FT<:AbstractFeature}
         features = collect(features)
         ty = "ActiveLogiset{$(V),$(W),$(FR),$(FT)}"
-        @assert allow_no_instances || ninstances(featstruct) > 0     "Can't instantiate $(ty) with no instance. (featstruct's type $(typeof(featstruct)))"
-        @assert nfeatures(featstruct) == length(features)          "Can't instantiate $(ty) with different numbers of instances $(ninstances(featstruct)) and of features $(length(features))."
+        @assert allow_no_instances || ninstances(featstruct) > 0     "Cannot instantiate $(ty) with no instance. (featstruct's type $(typeof(featstruct)))"
+        @assert nfeatures(featstruct) == length(features)          "Cannot instantiate $(ty) with different numbers of instances $(ninstances(featstruct)) and of features $(length(features))."
         check_initialworld(ActiveLogiset, initialworld, W)
         new{
             V,

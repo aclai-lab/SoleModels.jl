@@ -253,7 +253,7 @@ end
 ############################################################################################
 
 function concatdatasets(Xms::UniformFullDimensionalOneStepRelationalMemoset{U,W,N}...) where {U,W<:AbstractWorld,N}
-    UniformFullDimensionalOneStepRelationalMemoset(cat([Xm.d for Xm in Xms]...; dims=1+2*N))
+    UniformFullDimensionalOneStepRelationalMemoset{U,W,N}(cat([Xm.d for Xm in Xms]...; dims=1+2*N))
 end
 
 isminifiable(::UniformFullDimensionalOneStepRelationalMemoset) = true
@@ -268,14 +268,32 @@ end
 
 ############################################################################################
 
-function displaystructure(Xm::UniformFullDimensionalOneStepRelationalMemoset{U,W,N}; indent_str = "", include_ninstances = true, include_nmetaconditions = true, include_nrelations = true) where {U,W<:AbstractWorld,N}
+function displaystructure(
+    Xm::UniformFullDimensionalOneStepRelationalMemoset{U,W,N};
+    indent_str = "",
+    include_ninstances = true,
+    include_nmetaconditions = true,
+    include_nrelations = true,
+    include_worldtype = missing,
+    include_featvaltype = missing,
+    include_featuretype = missing,
+    include_frametype = missing,
+) where {U,W<:AbstractWorld,N}
     padattribute(l,r) = string(l) * lpad(r,32+length(string(r))-(length(indent_str)+2+length(l)))
     pieces = []
     push!(pieces, "$(nameof(typeof(Xm))) ($(memoizationinfo(Xm)), $(humansize(Xm)))")
-    push!(pieces, "$(padattribute("worldtype:", worldtype(Xm)))")
-    push!(pieces, "$(padattribute("featvaltype:", featvaltype(Xm)))")
-    push!(pieces, "$(padattribute("featuretype:", featuretype(Xm)))")
-    push!(pieces, "$(padattribute("frametype:", frametype(Xm)))")
+    if ismissing(include_worldtype) || include_worldtype != worldtype(Xm)
+        push!(pieces, "$(padattribute("worldtype:", worldtype(Xm)))")
+    end
+    if ismissing(include_featvaltype) || include_featvaltype != featvaltype(Xm)
+        push!(pieces, "$(padattribute("featvaltype:", featvaltype(Xm)))")
+    end
+    # if ismissing(include_featuretype) || include_featuretype != featuretype(Xm)
+    #     push!(pieces, "$(padattribute("featuretype:", featuretype(Xm)))")
+    # end
+    # if ismissing(include_frametype) || include_frametype != frametype(Xm)
+    #     push!(pieces, "$(padattribute("frametype:", frametype(Xm)))")
+    # end
     if include_ninstances
         push!(pieces, "$(padattribute("# instances:", ninstances(Xm)))")
     end
@@ -287,5 +305,5 @@ function displaystructure(Xm::UniformFullDimensionalOneStepRelationalMemoset{U,W
     end
     push!(pieces, "$(padattribute("size × eltype:", "$(size(innerstruct(Xm))) × $(eltype(innerstruct(Xm)))"))")
 
-    return join(pieces, "\n$(indent_str)├ ", "\n$(indent_str)└ ") * "\n"
+    return join(pieces, "\n$(indent_str)├ ", "\n$(indent_str)└ ")
 end

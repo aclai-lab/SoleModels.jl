@@ -76,6 +76,8 @@ export ExplicitLogiset, ScalarCondition
 export ninstances, nfeatures
 export MultiLogiset, nmodalities, modalities
 
+export MultiFormula
+
 export UnivariateMin, UnivariateMax,
         UnivariateSoftMin, UnivariateSoftMax,
         MultivariateFeature
@@ -87,7 +89,7 @@ export VarFeature,
 export computefeature
 
 export scalarlogiset
-export initlogiset, ninstances, max_channel_size, worldtype, dimensionality, allworlds, featvalue
+export initlogiset, ninstances, maxchannelsize, worldtype, dimensionality, allworlds, featvalue
 
 export ScalarMetaCondition
 

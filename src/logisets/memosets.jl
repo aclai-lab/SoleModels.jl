@@ -41,21 +41,37 @@ function memoizationinfo(Xm::AbstractMemoset)
     end
 end
 
-function displaystructure(Xm::AbstractMemoset; indent_str = "", include_ninstances = true)
+function displaystructure(
+    Xm::AbstractMemoset;
+    indent_str = "",
+    include_ninstances = true,
+    include_worldtype = missing,
+    include_featvaltype = missing,
+    include_featuretype = missing,
+    include_frametype = missing,
+)
     padattribute(l,r) = string(l) * lpad(r,32+length(string(r))-(length(indent_str)+2+length(l)))
     pieces = []
     push!(pieces, "")
-    push!(pieces, "$(padattribute("worldtype:", worldtype(Xm)))")
-    push!(pieces, "$(padattribute("featvaltype:", featvaltype(Xm)))")
-    push!(pieces, "$(padattribute("featuretype:", featuretype(Xm)))")
-    push!(pieces, "$(padattribute("frametype:", frametype(Xm)))")
+    if ismissing(include_worldtype) || include_worldtype != worldtype(Xm)
+        push!(pieces, "$(padattribute("worldtype:", worldtype(Xm)))")
+    end
+    if ismissing(include_featvaltype) || include_featvaltype != featvaltype(Xm)
+        push!(pieces, "$(padattribute("featvaltype:", featvaltype(Xm)))")
+    end
+    if ismissing(include_featuretype) || include_featuretype != featuretype(Xm)
+        push!(pieces, "$(padattribute("featuretype:", featuretype(Xm)))")
+    end
+    if ismissing(include_frametype) || include_frametype != frametype(Xm)
+        push!(pieces, "$(padattribute("frametype:", frametype(Xm)))")
+    end
     if include_ninstances
         push!(pieces, "$(padattribute("# instances:", ninstances(Xm)))")
     end
     # push!(pieces, "$(padattribute("# memoized values:", nmemoizedvalues(Xm)))")
 
     return "$(nameof(typeof(Xm))) ($(memoizationinfo(Xm)), $(humansize(Xm)))" *
-        join(pieces, "\n$(indent_str)├ ", "\n$(indent_str)└ ") * "\n"
+        join(pieces, "\n$(indent_str)├ ", "\n$(indent_str)└ ")
 end
 
 ############################################################################################
@@ -179,18 +195,28 @@ fullmemo(Xm::FullMemoset) = Xm
 
 hasnans(::FullMemoset) = false
 
-function displaystructure(Xm::FullMemoset; indent_str = "", include_ninstances = true)
+function displaystructure(
+    Xm::FullMemoset;
+    indent_str = "",
+    include_ninstances = true,
+    include_worldtype = missing,
+    include_featvaltype = missing,
+    include_featuretype = missing,
+    include_frametype = missing,
+)
     padattribute(l,r) = string(l) * lpad(r,32+length(string(r))-(length(indent_str)+2+length(l)))
     pieces = []
     push!(pieces, "")
-    push!(pieces, "$(padattribute("worldtype:", worldtype(Xm)))")
+    if ismissing(include_worldtype) || include_worldtype != worldtype(Xm)
+        push!(pieces, "$(padattribute("worldtype:", worldtype(Xm)))")
+    end
     if include_ninstances
         push!(pieces, "$(padattribute("# instances:", ninstances(Xm)))")
     end
     # push!(pieces, "$(padattribute("# memoized values:", nmemoizedvalues(Xm)))")
 
     return "$(nameof(typeof(Xm))) ($(memoizationinfo(Xm)), $(humansize(Xm)))" *
-        join(pieces, "\n$(indent_str)├ ", "\n$(indent_str)└ ") * "\n"
+        join(pieces, "\n$(indent_str)├ ", "\n$(indent_str)└ ")
 end
 
 # Base.size(::FullMemoset) = ()

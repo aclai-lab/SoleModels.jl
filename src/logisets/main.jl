@@ -19,7 +19,7 @@ include("conditions.jl")
 # Templates for formulas of conditions (e.g., templates for ⊤, p, ⟨R⟩p, etc.)
 include("templated-formulas.jl")
 
-export check, accessibles, allworlds, representatives, initialworld
+export accessibles, allworlds, representatives
 
 # Interface for representative accessibles, for optimized model checking on specific frames
 include("representatives.jl")
@@ -38,7 +38,10 @@ export MultiLogiset,  modalities, worldtypes, nmodalities
 # Multiframe version of logisets, for representing multimodal datasets
 include("multilogiset.jl")
 
+export check, AnchoredFormula
+
 # Model checking algorithms for logisets and multilogisets
+include("check-modes.jl")
 include("check.jl")
 
 # TODO remove?

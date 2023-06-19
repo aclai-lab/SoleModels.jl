@@ -1,3 +1,5 @@
+import SoleData: modality, nmodalities
+
 """
     struct MultiLogiset{L<:AbstractLogiset}
         modalities  :: Vector{L}
@@ -20,7 +22,7 @@ struct MultiLogiset{L<:AbstractLogiset}
     end
     function MultiLogiset{L}(X::AbstractVector) where {L<:AbstractLogiset}
         X = collect(X)
-        @assert length(X) > 0 && length(unique(ninstances.(X))) == 1 "Can't create an empty MultiLogiset or with mismatching number of instances (nmodalities: $(length(X)), modality_sizes: $(ninstances.(X)))."
+        @assert length(X) > 0 && length(unique(ninstances.(X))) == 1 "Cannot create an empty MultiLogiset or with mismatching number of instances (nmodalities: $(length(X)), modality_sizes: $(ninstances.(X)))."
         new{L}(X)
     end
     function MultiLogiset{L}() where {L<:AbstractLogiset}
@@ -83,23 +85,26 @@ function Base.show(io::IO, X::MultiLogiset; kwargs...)
 end
 
 function displaystructure(X::MultiLogiset; indent_str = "", include_ninstances = true)
-    out = "MultiLogiset($(humansize(X)))\n"
+    pieces = []
+    push!(pieces, "MultiLogiset with $(nmodalities(X)) modalities ($(humansize(X)))")
+    # push!(pieces, indent_str * "├ # modalities:\t$(nmodalities(X))")
     if include_ninstances
-        out *= indent_str * "├ # instances:\t$(ninstances(X))\n"
+        push!(pieces, indent_str * "├ # instances:\t$(ninstances(X))")
     end
-    out *= indent_str * "├ modalitytype:\t$(modalitytype(X))\n"
-    out *= indent_str * "├ # modalities:\t$(nmodalities(X))\n"
+    # push!(pieces, indent_str * "├ modalitytype:\t$(modalitytype(X))")
     for (i_modality, mod) in enumerate(modalities(X))
+        out = ""
         if i_modality == nmodalities(X)
-            out *= "$(indent_str)└ "
+            out *= "$(indent_str)└"
         else
-            out *= "$(indent_str)├ "
+            out *= "$(indent_str)├"
         end
         out *= "[$(i_modality)] "
         # \t\t\t$(humansize(mod))\t(worldtype: $(worldtype(mod)))"
-        out *= displaystructure(mod; indent_str = indent_str * (i_modality == nmodalities(X) ? "   " : "│  "), include_ninstances = false) * ""
+        out *= displaystructure(mod; indent_str = indent_str * (i_modality == nmodalities(X) ? "  " : "│ "), include_ninstances = false)
+        push!(pieces, out)
     end
-    out
+    return join(pieces, "\n")
 end
 
 
@@ -148,8 +153,74 @@ end
 
 # Base.size(X::MultiLogiset)                      = map(size, modalities(X))
 
-# # max_channel_size(X::MultiLogiset) = map(max_channel_size, modalities(X)) # TODO: figure if this is useless or not. Note: channel_size doesn't make sense at this point.
+# # maxchannelsize(X::MultiLogiset) = map(maxchannelsize, modalities(X)) # TODO: figure if this is useless or not. Note: channelsize doesn't make sense at this point.
 # nfeatures(X::MultiLogiset) = map(nfeatures, modalities(X)) # Note: used for safety checks in fit_tree.jl
 # # nrelations(X::MultiLogiset) = map(nrelations, modalities(X)) # TODO: figure if this is useless or not
 # nfeatures(X::MultiLogiset,  i_modality::Integer) = nfeatures(modality(X, i_modality))
 # nrelations(X::MultiLogiset, i_modality::Integer) = nrelations(modality(X, i_modality))
+
+############################################################################################
+
+using SoleLogics: AbstractFormula, AbstractSyntaxStructure, AbstractOperator
+import SoleLogics: syntaxstring, joinformulas
+
+import SoleLogics: tree
+
+"""
+A logical formula that can be checked on a `MultiLogiset`, associating
+a set of subformulas to each modality
+"""
+struct MultiFormula{
+    F<:AbstractFormula,
+} <: AbstractSyntaxStructure
+    formulas::Dict{Int,F}
+end
+
+function SoleLogics.tree(f::MultiFormula)
+    error("Cannot convert object of type MultiFormula to a SyntaxTree.")
+end
+
+function syntaxstring(f::MultiFormula; kwargs...)
+    join(["{$(i_modality)}($(syntaxstring(f.formulas[i_modality])))" for i_modality in sort(collect(keys(f.formulas)))], " ∧ ")
+end
+
+function joinformulas(op::typeof(CONJUNCTION), children::NTuple{N,MultiFormula{F}}) where {N,F}
+    formulas = Dict{Int,F}()
+    i_modalities = unique(vcat(collect.(keys.([ch.formulas for ch in children]))...))
+    for i_modality in i_modalities
+        chs = filter(ch->haskey(ch.formulas, i_modality), children)
+        fs = filter(ch->ch.formulas[i_modality], chs)
+        formulas[i_modality] = joinformulas(op, fs)
+    end
+    return MultiFormula(formulas)
+end
+
+function check(
+    φ::MultiFormula,
+    X::MultiLogiset,
+    i_instance::Integer,
+    args...;
+    kwargs...,
+)
+    # TODO in the fuzzy case: use collatetruth(fuzzy algebra, ∧, ...)
+    all([check(f, X, i_modality, i_instance, args...; kwargs...)
+        for (i_modality, f) in φ.formulas])
+end
+
+function check(
+    φ::SoleLogics.AbstractFormula,
+    X::MultiLogiset,
+    i_modality::Integer,
+    i_instance::Integer,
+    args...;
+    kwargs...,
+)
+    check(φ, modality(X, i_modality), i_instance, args...; kwargs...)
+end
+
+
+# # TODO join MultiFormula leads to a SyntaxTree with MultiFormula children
+# function joinformulas(op::AbstractOperator, children::NTuple{N,MultiFormula{F}}) where {N,F}
+# end
+
+# TODO MultiFormula parser

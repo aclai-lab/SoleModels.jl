@@ -1,8 +1,6 @@
 using SoleData: slicedataset
-import SoleData: get_instance, ninstances, nvariables, channel_size, max_channel_size, dimensionality, eltype
+import SoleData: get_instance, ninstances, nvariables, channelsize, maxchannelsize, dimensionality, eltype
 using SoleData: AbstractDimensionalDataset,
-                AbstractDimensionalInstance,
-                AbstractDimensionalChannel,
                 UniformDimensionalDataset,
                 DimensionalInstance,
                 DimensionalChannel
@@ -92,8 +90,8 @@ end
 Base.size(X::PassiveDimensionalLogiset)                 = Base.size(X.d)
 
 nvariables(X::PassiveDimensionalLogiset)               = nvariables(X.d)
-channel_size(X::PassiveDimensionalLogiset)              = channel_size(X.d)
-max_channel_size(X::PassiveDimensionalLogiset)          = max_channel_size(X.d)
+channelsize(X::PassiveDimensionalLogiset)              = channelsize(X.d)
+maxchannelsize(X::PassiveDimensionalLogiset)          = maxchannelsize(X.d)
 dimensionality(X::PassiveDimensionalLogiset)            = dimensionality(X.d)
 eltype(X::PassiveDimensionalLogiset)                    = eltype(X.d)
 
@@ -126,10 +124,10 @@ function displaystructure(Xm::PassiveDimensionalLogiset; indent_str = "", includ
         push!(pieces, "$(padattribute("# instances:", ninstances(Xm)))")
     end
     push!(pieces, "$(padattribute("# variables:", nvariables(Xm)))")
-    push!(pieces, "$(padattribute("channel_size:", channel_size(Xm)))")
+    push!(pieces, "$(padattribute("channelsize:", channelsize(Xm)))")
     push!(pieces, "$(padattribute("size × eltype:", "$(size(Xm.d)) × $(eltype(Xm.d))"))")
 
-    return join(pieces, "\n$(indent_str)├ ", "\n$(indent_str)└ ") * "\n"
+    return join(pieces, "\n$(indent_str)├ ", "\n$(indent_str)└ ")
 end
 
 hasnans(X::PassiveDimensionalLogiset) = hasnans(X.d)
@@ -140,4 +138,4 @@ worldtype(X::PassiveDimensionalLogiset{N,W}) where {N,W} = W
 ############################################################################################
 
 _frame(X::Union{UniformDimensionalDataset,AbstractArray}, i_instance::Integer) = _frame(X)
-_frame(X::Union{UniformDimensionalDataset,AbstractArray}) = FullDimensionalFrame(channel_size(X))
+_frame(X::Union{UniformDimensionalDataset,AbstractArray}) = FullDimensionalFrame(channelsize(X))

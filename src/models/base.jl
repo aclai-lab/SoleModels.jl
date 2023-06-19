@@ -570,10 +570,10 @@ function check_model_constraints(
 )
     I_O = outcometype(I_M)
     # FM_O = outcometype(FM)
-    @assert I_O <: FM_O "Can't instantiate $(M) with inner model outcometype " *
+    @assert I_O <: FM_O "Cannot instantiate $(M) with inner model outcometype " *
         "$(I_O)! $(I_O) <: $(FM_O) should hold."
-    # @assert I_M <: FM || typename(I_M) <: typename(FM) "Can't instantiate $(M) with inner model $(I_M))! $(I_M) <: $(FM) || $(typename(I_M)) <: $(typename(FM)) should hold."
-    @assert I_M <: FM "Can't instantiate $(M) with inner model $(I_M))! " *
+    # @assert I_M <: FM || typename(I_M) <: typename(FM) "Cannot instantiate $(M) with inner model $(I_M))! $(I_M) <: $(FM) || $(typename(I_M)) <: $(typename(FM)) should hold."
+    @assert I_M <: FM "Cannot instantiate $(M) with inner model $(I_M))! " *
         "$(I_M) <: $(FM) should hold."
     if ! (I_M<:FinalModel{<:FM_O})
         # @assert I_M<:ConstrainedModel{FM_O,<:FM} "ConstrainedModels require I_M<:ConstrainedModel{O,<:FM}, but $(I_M) does not subtype $(ConstrainedModel{FM_O,<:FM})."

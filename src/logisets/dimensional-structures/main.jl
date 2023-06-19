@@ -12,10 +12,10 @@ using SoleBase
 using SoleLogics
 using SoleLogics: AbstractFormula, AbstractWorld, AbstractRelation
 using SoleLogics: AbstractFrame, AbstractDimensionalFrame, FullDimensionalFrame
-import SoleLogics: worldtype, accessibles, allworlds, alphabet, initialworld
+import SoleLogics: worldtype, accessibles, allworlds, alphabet
 
 using SoleData
-import SoleData: _isnan, hasnans, nvariables, max_channel_size, channel_size
+import SoleData: _isnan, hasnans, nvariables, maxchannelsize, channelsize
 import SoleData: instance, get_instance, instances, concatdatasets
 import SoleData: displaystructure
 import SoleData: dimensionality
@@ -23,6 +23,7 @@ import SoleData: dimensionality
 
 using SoleModels
 using SoleModels.utils
+
 using SoleModels: Aggregator, AbstractCondition
 using SoleModels: BoundedScalarConditions
 using SoleModels: CanonicalFeatureGeq, CanonicalFeatureGeqSoft, CanonicalFeatureLeq, CanonicalFeatureLeqSoft
@@ -41,11 +42,9 @@ import SoleModels: nmetaconditions
 import SoleModels: capacity, nmemoizedvalues
 using SoleModels: memoizationinfo
 
-
-import SoleModels: initlogiset
 import SoleModels: worldtype, allworlds, featvalue, featvalue!
 import SoleModels: featchannel, readfeature, featvalues!, allfeatvalues
-import SoleData: get_instance, ninstances, nvariables, channel_size, eltype
+import SoleData: get_instance, ninstances, nvariables, channelsize, eltype
 
 export nvariables
 
@@ -56,7 +55,9 @@ include("logiset.jl")
 
 include("onestep-memosets.jl")
 
-export initlogiset, ninstances, max_channel_size, worldtype, dimensionality, allworlds, featvalue
+export initlogiset, ninstances, maxchannelsize, worldtype, dimensionality, allworlds, featvalue
+
+include("computefeature.jl")
 
 # Bindings for interpreting dataset structures as logisets
 include("dataset-bindings.jl")

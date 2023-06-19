@@ -17,8 +17,10 @@ println("Julia version: ", VERSION)
 
 test_suites = [
     ("Logisets", [
-        "logisets.jl",
-        "dimensional-logisets.jl",
+        "logisets/logisets.jl",
+        "logisets/cube2logiset.jl",
+        "logisets/dataframe2logiset.jl",
+        "logisets/multilogisets.jl",
     ]),
     ("Models", ["base.jl", ]),
     ("Miscellaneous", ["misc.jl", "minify.jl"]),

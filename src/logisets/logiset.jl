@@ -1,7 +1,7 @@
 using SoleLogics: AbstractKripkeStructure, AbstractInterpretationSet, AbstractFrame
 using SoleLogics: TruthValue
 import SoleLogics: alphabet, frame, check
-import SoleLogics: accessibles, allworlds, nworlds, initialworld
+import SoleLogics: accessibles, allworlds, nworlds
 import SoleLogics: worldtype, frametype
 
 """
@@ -129,16 +129,15 @@ end
 
 hasnans(::AbstractLogiset) = any.(isnan, allfeatvalues(X))
 
-############################################################################################
-
-function featvalue(
-    feature::AbstractFeature,
-    X::AbstractLogiset{W},
+function initialworldset(
+    X::AbstractLogiset,
     i_instance::Integer,
-    w::W,
-) where {W<:AbstractWorld}
-    featvalue(X, i_instance, w, feature)
+    args...
+)
+    initialworldset(frame(X, i_instance), args...)
 end
+
+############################################################################################
 
 function Base.show(io::IO, X::AbstractLogiset; kwargs...)
     println(io, displaystructure(X; kwargs...))
@@ -266,13 +265,29 @@ function concatdatasets(Xs::ExplicitBooleanLogiset...)
     ExplicitBooleanLogiset(vcat([X.d for X in Xs]...))
 end
 
-function displaystructure(X::ExplicitBooleanLogiset; indent_str = "", include_ninstances = true)
+function displaystructure(
+    X::ExplicitBooleanLogiset;
+    indent_str = "",
+    include_ninstances = true,
+    include_worldtype = missing,
+    include_featvaltype = missing,
+    include_featuretype = missing,
+    include_frametype = missing,
+)
     padattribute(l,r) = string(l) * lpad(r,32+length(string(r))-(length(indent_str)+2+length(l)))
     out = "ExplicitBooleanLogiset ($(humansize(X)))\n"
-    out *= indent_str * "├ " * padattribute("worldtype:", worldtype(X)) * "\n"
-    out *= indent_str * "├ " * padattribute("featvaltype:", featvaltype(X)) * "\n"
-    out *= indent_str * "├ " * padattribute("featuretype:", featuretype(X)) * "\n"
-    out *= indent_str * "├ " * padattribute("frametype:", frametype(X)) * "\n"
+    if ismissing(include_worldtype) || include_worldtype != worldtype(X)
+        out *= indent_str * "├ " * padattribute("worldtype:", worldtype(X)) * "\n"
+    end
+    if ismissing(include_featvaltype) || include_featvaltype != featvaltype(X)
+        out *= indent_str * "├ " * padattribute("featvaltype:", featvaltype(X)) * "\n"
+    end
+    if ismissing(include_featuretype) || include_featuretype != featuretype(X)
+        out *= indent_str * "├ " * padattribute("featuretype:", featuretype(X)) * "\n"
+    end
+    if ismissing(include_frametype) || include_frametype != frametype(X)
+        out *= indent_str * "├ " * padattribute("frametype:", frametype(X)) * "\n"
+    end
     if include_ninstances
         out *= indent_str * "├ " * padattribute("# instances:", ninstances(X)) * "\n"
     end
@@ -383,13 +398,29 @@ function concatdatasets(Xs::ExplicitLogiset...)
     ExplicitBooleanLogiset(vcat([X.d for X in Xs]...))
 end
 
-function displaystructure(X::ExplicitLogiset; indent_str = "", include_ninstances = true)
+function displaystructure(
+    X::ExplicitLogiset;
+    indent_str = "",
+    include_ninstances = true,
+    include_worldtype = missing,
+    include_featvaltype = missing,
+    include_featuretype = missing,
+    include_frametype = missing,
+)
     padattribute(l,r) = string(l) * lpad(r,32+length(string(r))-(length(indent_str)+2+length(l)))
     out = "ExplicitBooleanLogiset ($(humansize(X)))\n"
-    out *= indent_str * "├ " * padattribute("worldtype:", "$(worldtype(X))") * "\n"
-    out *= indent_str * "├ " * padattribute("featvaltype:", "$(featvaltype(X))") * "\n"
-    out *= indent_str * "├ " * padattribute("featuretype:", "$(featuretype(X))") * "\n"
-    out *= indent_str * "├ " * padattribute("frametype:", "$(frametype(X))") * "\n"
+    if ismissing(include_worldtype) || include_worldtype != worldtype(X)
+        out *= indent_str * "├ " * padattribute("worldtype:", worldtype(X)) * "\n"
+    end
+    if ismissing(include_featvaltype) || include_featvaltype != featvaltype(X)
+        out *= indent_str * "├ " * padattribute("featvaltype:", featvaltype(X)) * "\n"
+    end
+    if ismissing(include_featuretype) || include_featuretype != featuretype(X)
+        out *= indent_str * "├ " * padattribute("featuretype:", featuretype(X)) * "\n"
+    end
+    if ismissing(include_frametype) || include_frametype != frametype(X)
+        out *= indent_str * "├ " * padattribute("frametype:", frametype(X)) * "\n"
+    end
     if include_ninstances
         out *= indent_str * "├ " * padattribute("# instances:", "$(ninstances(X))") * "\n"
     end

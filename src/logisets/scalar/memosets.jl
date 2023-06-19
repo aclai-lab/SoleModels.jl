@@ -4,8 +4,7 @@ import Base: in, findfirst
 # Fixes
 # https://github.com/garrison/UniqueVectors.jl/blob/d63669d1f5c8f7ee4f4bf3f2920bc4afe33fe676/src/UniqueVectors.jl#L56
 Base.in(item, uv::UniqueVector) = haskey(uv.lookup, item)
-Base.findfirst(p::UniqueVectors.EqualTo, uv::UniqueVector) =
-    get(uv.lookup, p.x, nothing)
+Base.findfirst(p::UniqueVectors.EqualTo, uv::UniqueVector) = get(uv.lookup, p.x, nothing)
 
 
 """

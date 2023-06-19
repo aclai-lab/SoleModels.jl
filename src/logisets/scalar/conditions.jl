@@ -301,7 +301,7 @@ struct BoundedScalarConditions{C<:ScalarCondition} <: AbstractConditionalAlphabe
         thresholds::Vector{<:Vector},
     ) where {C<:ScalarCondition}
         length(metaconditions) != length(thresholds) &&
-            error("Can't instantiate BoundedScalarConditions with mismatching " *
+            error("Cannot instantiate BoundedScalarConditions with mismatching " *
                 "number of `metaconditions` and `thresholds` " *
                 "($(metaconditions) != $(thresholds)).")
         grouped_featconditions = collect(zip(metaconditions, thresholds))

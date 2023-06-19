@@ -1,22 +1,16 @@
 
-function check(
-    φ::SoleLogics.AbstractFormula,
-    X::MultiLogiset,
-    i_modality::Integer,
-    i_instance::Integer,
-    args...;
-    kwargs...,
-)
-    check(φ, modality(X, i_modality), i_instance, args...; kwargs...)
-end
+############################################################################################
+# Check algorithms
+############################################################################################
 
 function check(
     φ::SoleLogics.AbstractFormula,
     X::AbstractLogiset,
-    i_instance::Integer;
+    i_instance::Integer,
+    args...;
     kwargs...
 )
-    check(tree(φ), X, i_instance; kwargs...)
+    check(tree(φ), X, i_instance, args...; kwargs...)
 end
 
 function check(
@@ -31,12 +25,12 @@ function check(
 ) where {W<:AbstractWorld,U,FT<:SoleLogics.AbstractFormula}
 
     if isnothing(w)
-        # w = SoleLogics.initialworld(X, i_instance)
         w = nothing
     elseif w isa AbstractVector
         w = w[i_instance]
     end
-    @assert SoleLogics.isglobal(φ) || !isnothing(w) "Cannot check non-global formula with no initialworld(s): $(syntaxstring(φ))."
+    @assert SoleLogics.isglobal(φ) || !isnothing(w) "Please, specify a world in order " *
+        "to check non-global formula: $(syntaxstring(φ))."
 
     setformula(memo_structure::AbstractDict{<:AbstractFormula}, φ::AbstractFormula, val) = memo_structure[SoleLogics.tree(φ)] = val
     readformula(memo_structure::AbstractDict{<:AbstractFormula}, φ::AbstractFormula) = memo_structure[SoleLogics.tree(φ)]
