@@ -33,7 +33,7 @@ include("memosets.jl")
 
 include("supported-logiset.jl")
 
-export MultiLogiset,  modalities, worldtypes, nmodalities
+export MultiLogiset, eachmodality, worldtypes, nmodalities
 
 # Multiframe version of logisets, for representing multimodal datasets
 include("multilogiset.jl")
@@ -44,43 +44,16 @@ export check, AnchoredFormula
 include("check-modes.jl")
 include("check.jl")
 
-# TODO remove?
-function nfeatures end
+export nfeatures
 
 include("scalar/main.jl")
 
+
+export initlogiset, ninstances, maxchannelsize, worldtype, dimensionality, allworlds, featvalue
+
+export nvariables
+
 include("dimensional-structures/main.jl")
-
-# export get_ontology,
-#        get_interval_ontology
-
-# export DimensionalLogiset, Logiset, SupportedScalarLogiset
-
-# using .DimensionalDatasets: nfeatures, nrelations,
-#                             #
-#                             relations,
-#                             #
-#                             GenericModalDataset,
-#                             AbstractLogiset,
-#                             AbstractActiveScalarLogiset,
-#                             DimensionalLogiset,
-#                             Logiset,
-#                             SupportedScalarLogiset
-
-# using .DimensionalDatasets: AbstractWorld, AbstractRelation
-# using .DimensionalDatasets: AbstractWorldSet, WorldSet
-# using .DimensionalDatasets: FullDimensionalFrame
-
-# using .DimensionalDatasets: Ontology, worldtype
-
-# using .DimensionalDatasets: get_ontology,
-#                             get_interval_ontology
-
-# using .DimensionalDatasets: OneWorld, OneWorldOntology
-
-# using .DimensionalDatasets: Interval, Interval2D
-
-# using .DimensionalDatasets: IARelations
 
 function default_relmemoset_type(X::AbstractLogiset)
     # TODO?

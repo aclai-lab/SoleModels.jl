@@ -1,6 +1,3 @@
-export inverse_test_operator, dual_test_operator,
-        apply_test_operator,
-        TestOperator
 
 # Features for (multi)variate data
 include("var-features.jl")
@@ -13,11 +10,6 @@ include("conditions.jl")
 
 # Templates for formulas of scalar conditions (e.g., templates for ⊤, f ⋈ t, ⟨R⟩ f ⋈ t, etc.)
 include("templated-formulas.jl")
-
-export MixedFeature, CanonicalFeature, canonical_geq, canonical_leq
-
-export canonical_geq_95, canonical_geq_90, canonical_geq_85, canonical_geq_80, canonical_geq_75, canonical_geq_70, canonical_geq_60,
-       canonical_leq_95, canonical_leq_90, canonical_leq_85, canonical_leq_80, canonical_leq_75, canonical_leq_70, canonical_leq_60
 
 # Types for representing common associations between features and operators
 include("canonical-conditions.jl")
@@ -33,7 +25,3 @@ include("dataset-bindings.jl")
 include("memosets.jl")
 
 include("onestep-memoset.jl")
-
-export UnivariateMin, UnivariateMax,
-        UnivariateSoftMin, UnivariateSoftMax,
-        MultivariateFeature

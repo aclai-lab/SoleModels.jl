@@ -91,7 +91,8 @@ struct SupportedLogiset{
         end
 
         @assert allequal([ninstances(base), ninstances.(supports)...]) "Consistency " *
-            "check failed! Mismatching ninstances for base and memoset(s): $(ninstances(base)) and $(ninstances.(supports))"
+            "check failed! Mismatching ninstances for " *
+            "base and memoset(s): $(ninstances(base)) and $(ninstances.(supports))"
 
         N = length(supports)
         MS = typeof(supports)
@@ -244,10 +245,10 @@ function instances(
     return_view::Union{Val{true},Val{false}} = Val(false);
     kwargs...
 )
-    _instances = (X)->instances(X, inds, return_view; kwargs...)
+    _instances = (_X)->instances(_X, inds, return_view; kwargs...)
     SupportedLogiset(
         _instances(base(X)),
-        [_instances(supp) for supp in supports(X)]...,
+        (_instances.(supports(X)))...,
     )
 end
 
@@ -256,7 +257,7 @@ function concatdatasets(Xs::SupportedLogiset...)
         "SupportedLogiset's with different nsupports: " *
         "$(@show nsupports.(Xs))"
     SupportedLogiset(
-        concatdatasets([base(X) for X in Xs]),
+        concatdatasets([base(X) for X in Xs]...),
         [concatdatasets([supports(X)[i_supp] for X in Xs]...) for i_supp in 1:nsupports(first(Xs))]...,
     )
 end

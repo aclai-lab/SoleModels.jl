@@ -66,6 +66,10 @@ c3 = @test_nowarn [
 
 @test c1 == c3
 
+
+@test_nowarn slicedataset(logiset, [1])
+@test_nowarn slicedataset(complete_supported_logiset, [1])
+
 @test_nowarn concatdatasets(logiset, logiset, logiset)
 @test_nowarn concatdatasets(complete_supported_logiset, complete_supported_logiset)
 

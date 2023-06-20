@@ -25,6 +25,13 @@ multilogiset = @test_nowarn scalarlogiset(multidataset; use_full_memoization = t
 metaconditions = vcat([[ScalarMetaCondition(feature, >), ScalarMetaCondition(feature, <)] for feature in generic_features]...)
 complete_supported_multilogiset = @test_nowarn scalarlogiset(multidataset; use_full_memoization = true, use_onestep_memoization = true, conditions = metaconditions, relations = multirelations)
 
+
+@test_nowarn slicedataset(multilogiset, [2,1])
+@test_nowarn slicedataset(complete_supported_multilogiset, [2,1])
+@test_nowarn concatdatasets(multilogiset, multilogiset, multilogiset)
+@test_nowarn concatdatasets(complete_supported_multilogiset, complete_supported_multilogiset)
+
+
 rng = Random.MersenneTwister(1)
 alph = ExplicitAlphabet([SoleModels.ScalarCondition(rand(rng, generic_features), rand(rng, [>, <]), rand(rng)) for i in 1:n_instances]);
 # syntaxstring.(alph)
@@ -60,6 +67,3 @@ c1 = @test_nowarn [check(φ, multilogiset, i_instance) for φ in multiformulas]
 c3 = @test_nowarn [check(φ, complete_supported_multilogiset, i_instance) for φ in multiformulas]
 
 @test c1 == c3
-
-@test_nowarn concatdatasets(multilogiset, multilogiset, multilogiset)
-@test_nowarn concatdatasets(complete_supported_multilogiset, complete_supported_multilogiset)

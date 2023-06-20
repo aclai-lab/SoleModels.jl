@@ -252,3 +252,15 @@ c4 = @test_nowarn [check(φ, bool_logiset_3layer, 1, w; perform_normalization = 
 
 
 @test SoleModels.nmemoizedvalues(bool_logiset_3layer.supports[1].relmemoset) > 0
+
+@test_nowarn slicedataset(bool_relationalmemoset, [1])
+@test_nowarn slicedataset(bool_globalmemoset, [1])
+@test_nowarn slicedataset(bool_onestepmemoset, [1])
+@test_nowarn slicedataset(bool_logiset_2layer, [1])
+@test_nowarn slicedataset(bool_logiset_3layer, [1])
+
+@test_nowarn concatdatasets(bool_relationalmemoset, bool_relationalmemoset, bool_relationalmemoset)
+@test_nowarn concatdatasets(bool_globalmemoset, bool_globalmemoset, bool_globalmemoset)
+@test_nowarn concatdatasets(bool_onestepmemoset, bool_onestepmemoset, bool_onestepmemoset)
+@test_nowarn concatdatasets(bool_logiset_2layer, bool_logiset_2layer, bool_logiset_2layer)
+@test_nowarn concatdatasets(bool_logiset_3layer, bool_logiset_3layer, bool_logiset_3layer)

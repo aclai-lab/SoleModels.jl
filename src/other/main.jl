@@ -11,7 +11,7 @@
 
 # export DimensionalLogiset, Logiset, SupportedScalarLogiset
 
-# const GenericModalDataset = Union{AbstractDimensionalDataset,AbstractLogiset,MultiLogiset}
+# const GenericDataset = Union{AbstractDimensionalDataset,AbstractLogiset,MultiLogiset}
 
 # # Dimensional ontologies
 # include("dimensional-ontologies.jl")

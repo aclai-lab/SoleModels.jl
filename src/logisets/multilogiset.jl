@@ -1,4 +1,4 @@
-import SoleData: modality, nmodalities
+import SoleData: modality, nmodalities, eachmodality
 
 """
     struct MultiLogiset{L<:AbstractLogiset}
@@ -39,44 +39,44 @@ struct MultiLogiset{L<:AbstractLogiset}
     end
 end
 
-modalities(X::MultiLogiset) = X.modalities
+eachmodality(X::MultiLogiset) = X.modalities
 
 Base.length(X::MultiLogiset) = length(nmodalities(X))
-Base.push!(X::MultiLogiset, f::AbstractLogiset) = push!(modalities(X), f)
-Base.getindex(X::MultiLogiset, i_modality::Integer) = modalities(X)[i_modality]
+Base.push!(X::MultiLogiset, f::AbstractLogiset) = push!(eachmodality(X), f)
+Base.getindex(X::MultiLogiset, i_modality::Integer) = eachmodality(X)[i_modality]
 Base.iterate(X::MultiLogiset, state=1)   = state > nmodalities(X) ? nothing : (modality(X, state), state+1)
 
 modalitytype(::Type{<:MultiLogiset{L}}) where {L<:AbstractLogiset} = L
 modalitytype(X::MultiLogiset) = modalitytype(typeof(X))
 
-modality(X::MultiLogiset, i_modality::Integer) = modalities(X)[i_modality]
-nmodalities(X::MultiLogiset)                   = length(modalities(X))
+modality(X::MultiLogiset, i_modality::Integer) = eachmodality(X)[i_modality]
+nmodalities(X::MultiLogiset)                   = length(eachmodality(X))
 ninstances(X::MultiLogiset)                    = ninstances(modality(X, 1))
 
 worldtype(X::MultiLogiset,  i_modality::Integer) = worldtype(modality(X, i_modality))
-worldtypes(X::MultiLogiset) = Vector{Type{<:AbstractWorld}}(worldtype.(modalities(X)))
+worldtypes(X::MultiLogiset) = Vector{Type{<:AbstractWorld}}(worldtype.(eachmodality(X)))
 
 featvaltype(X::MultiLogiset,  i_modality::Integer) = featvaltype(modality(X, i_modality))
-featvaltypes(X::MultiLogiset) = Vector{Type{<:AbstractWorld}}(featvaltype.(modalities(X)))
+featvaltypes(X::MultiLogiset) = Vector{Type{<:AbstractWorld}}(featvaltype.(eachmodality(X)))
 
 featuretype(X::MultiLogiset,  i_modality::Integer) = featuretype(modality(X, i_modality))
-featuretypes(X::MultiLogiset) = Vector{Type{<:AbstractWorld}}(featuretype.(modalities(X)))
+featuretypes(X::MultiLogiset) = Vector{Type{<:AbstractWorld}}(featuretype.(eachmodality(X)))
 
 frametype(X::MultiLogiset,  i_modality::Integer) = frametype(modality(X, i_modality))
-frametypes(X::MultiLogiset) = Vector{Type{<:AbstractWorld}}(frametype.(modalities(X)))
+frametypes(X::MultiLogiset) = Vector{Type{<:AbstractWorld}}(frametype.(eachmodality(X)))
 
 function instances(
     X::MultiLogiset{L},
     inds::AbstractVector{<:Integer},
-    args...;
+    return_view::Union{Val{true},Val{false}} = Val(false);
     kwargs...
 ) where {L<:AbstractLogiset}
-    MultiLogiset{L}(Vector{L}(map(modality->instances(modality, inds, args...; kwargs...), modalities(X))))
+    MultiLogiset{L}(Vector{L}(map(modality->instances(modality, inds, return_view; kwargs...), eachmodality(X))))
 end
 
 function concatdatasets(Xs::MultiLogiset...)
     MultiLogiset([
-        concatdatasets([modalities(X)[i_mod] for X in Xs]...) for i_mod in 1:nmodalities(Xs)
+        concatdatasets([eachmodality(X)[i_mod] for X in Xs]...) for i_mod in 1:nmodalities(Xs)
     ])
 end
 
@@ -92,7 +92,7 @@ function displaystructure(X::MultiLogiset; indent_str = "", include_ninstances =
         push!(pieces, indent_str * "├ # instances:\t$(ninstances(X))")
     end
     # push!(pieces, indent_str * "├ modalitytype:\t$(modalitytype(X))")
-    for (i_modality, mod) in enumerate(modalities(X))
+    for (i_modality, mod) in enumerate(eachmodality(X))
         out = ""
         if i_modality == nmodalities(X)
             out *= "$(indent_str)└"
@@ -120,19 +120,19 @@ function featvalue(
 end
 
 
-hasnans(X::MultiLogiset) = any(hasnans.(modalities(X)))
+hasnans(X::MultiLogiset) = any(hasnans.(eachmodality(X)))
 
-isminifiable(X::MultiLogiset) = any(isminifiable.(modalities(X)))
+isminifiable(X::MultiLogiset) = any(isminifiable.(eachmodality(X)))
 
 function minify(X::MultiLogiset)
-    if !any(map(isminifiable, modalities(X)))
-        if !all(map(isminifiable, modalities(X)))
-            @error "Cannot perform minification with modalities of types $(typeof.(modalities(X))). Please use a minifiable format (e.g., SupportedScalarLogiset)."
+    if !any(map(isminifiable, eachmodality(X)))
+        if !all(map(isminifiable, eachmodality(X)))
+            @error "Cannot perform minification with modalities of types $(typeof.(eachmodality(X))). Please use a minifiable format (e.g., SupportedScalarLogiset)."
         else
-            @warn "Cannot perform minification on some of the modalities provided. Please use a minifiable format (e.g., SupportedScalarLogiset) ($(typeof.(modalities(X))) were used instead)."
+            @warn "Cannot perform minification on some of the modalities provided. Please use a minifiable format (e.g., SupportedScalarLogiset) ($(typeof.(eachmodality(X))) were used instead)."
         end
     end
-    X, backmap = zip([!isminifiable(X) ? minify(X) : (X, identity) for X in modalities(X)]...)
+    X, backmap = zip([!isminifiable(X) ? minify(X) : (X, identity) for X in eachmodality(X)]...)
     X, backmap
 end
 
@@ -151,11 +151,11 @@ end
 
 # TODO remove:
 
-# Base.size(X::MultiLogiset)                      = map(size, modalities(X))
+# Base.size(X::MultiLogiset)                      = map(size, eachmodality(X))
 
-# # maxchannelsize(X::MultiLogiset) = map(maxchannelsize, modalities(X)) # TODO: figure if this is useless or not. Note: channelsize doesn't make sense at this point.
-# nfeatures(X::MultiLogiset) = map(nfeatures, modalities(X)) # Note: used for safety checks in fit_tree.jl
-# # nrelations(X::MultiLogiset) = map(nrelations, modalities(X)) # TODO: figure if this is useless or not
+# # maxchannelsize(X::MultiLogiset) = map(maxchannelsize, eachmodality(X)) # TODO: figure if this is useless or not. Note: channelsize doesn't make sense at this point.
+# nfeatures(X::MultiLogiset) = map(nfeatures, eachmodality(X)) # Note: used for safety checks in fit_tree.jl
+# # nrelations(X::MultiLogiset) = map(nrelations, eachmodality(X)) # TODO: figure if this is useless or not
 # nfeatures(X::MultiLogiset,  i_modality::Integer) = nfeatures(modality(X, i_modality))
 # nrelations(X::MultiLogiset, i_modality::Integer) = nrelations(modality(X, i_modality))
 

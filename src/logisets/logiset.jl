@@ -108,7 +108,7 @@ function instances(
     return_view::Union{Val{true},Val{false}} = Val(false);
     kwargs...
 )
-    error("Please, provide method instances(::$(typeof(X))).")
+    error("Please, provide method instances(::$(typeof(X)), ::$(typeof(inds)), ::$(typeof(return_view))).")
 end
 
 function concatdatasets(Xs::AbstractLogiset...)
@@ -156,6 +156,13 @@ frametype(::Type{<:AbstractLogiset{W,U,FT,FR}}) where {W<:AbstractWorld,U,FT<:Ab
 frametype(X::AbstractLogiset) = frametype(typeof(X))
 
 representatives(X::AbstractLogiset, i_instance::Integer, args...) = representatives(frame(X, i_instance), args...)
+
+############################################################################################
+# Non mandatory
+
+function nfeatures(X::AbstractLogiset)
+    error("Please, provide method nfeatures(::$(typeof(X))).")
+end
 
 ############################################################################################
 

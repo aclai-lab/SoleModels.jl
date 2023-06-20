@@ -8,12 +8,22 @@ struct CanonicalFeatureLeq <: CanonicalFeature end; const canonical_leq  = Canon
 # ⪴_α and ⪳_α, that is, "*at least α⋅100 percent* of the values on this world are at least, or at most ..."
 
 struct CanonicalFeatureGeqSoft  <: CanonicalFeature
-  alpha :: AbstractFloat
-  CanonicalFeatureGeqSoft(a::T) where {T<:Real} = (a > 0 && a < 1) ? new(a) : throw_n_log("Invalid instantiation for test operator: CanonicalFeatureGeqSoft($(a))")
+    alpha :: AbstractFloat
+    function CanonicalFeatureGeqSoft(a::T) where {T<:Real}
+        if ! (a > 0 && a < 1)
+            error("Invalid instantiation of feature: CanonicalFeatureGeqSoft($(a))")
+        end
+        new(a)
+    end
 end;
 struct CanonicalFeatureLeqSoft  <: CanonicalFeature
-  alpha :: AbstractFloat
-  CanonicalFeatureLeqSoft(a::T) where {T<:Real} = (a > 0 && a < 1) ? new(a) : throw_n_log("Invalid instantiation for test operator: CanonicalFeatureLeqSoft($(a))")
+    alpha :: AbstractFloat
+    function CanonicalFeatureLeqSoft(a::T) where {T<:Real}
+        if ! (a > 0 && a < 1)
+            error("Invalid instantiation of feature: CanonicalFeatureLeqSoft($(a))")
+        end
+        new(a)
+    end
 end;
 
 const canonical_geq_95  = CanonicalFeatureGeqSoft((Rational(95,100)));

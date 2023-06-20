@@ -24,7 +24,7 @@ test_suites = [
     ]),
     ("Models", ["base.jl", ]),
     ("Miscellaneous", ["misc.jl", "minify.jl"]),
-    # ("Parse", ["parse.jl", ]),
+    ("Parse", ["parse.jl", ]),
 ]
 
 @testset "SoleModels.jl" begin

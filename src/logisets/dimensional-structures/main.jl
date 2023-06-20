@@ -16,7 +16,7 @@ import SoleLogics: worldtype, accessibles, allworlds, alphabet
 
 using SoleData
 import SoleData: _isnan, hasnans, nvariables, maxchannelsize, channelsize
-import SoleData: instance, get_instance, instances, concatdatasets
+import SoleData: instance, get_instance, concatdatasets
 import SoleData: displaystructure
 import SoleData: dimensionality
 
@@ -46,8 +46,6 @@ import SoleModels: worldtype, allworlds, featvalue, featvalue!
 import SoleModels: featchannel, readfeature, featvalues!, allfeatvalues
 import SoleData: get_instance, ninstances, nvariables, channelsize, eltype
 
-export nvariables
-
 ############################################################################################
 
 # Frame-specific logisets
@@ -56,6 +54,8 @@ include("logiset.jl")
 include("onestep-memosets.jl")
 
 export initlogiset, ninstances, maxchannelsize, worldtype, dimensionality, allworlds, featvalue
+
+export nvariables
 
 include("computefeature.jl")
 

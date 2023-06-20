@@ -3,6 +3,7 @@ using StatsBase
 using Random
 using SoleLogics
 using SoleModels
+using DataFrames
 using SoleModels.DimensionalDatasets
 
 n_instances = 2
@@ -63,3 +64,10 @@ c2 = @test_nowarn [
     for w in allworlds(complete_logiset, i_instance)]
 
 @test c1 == c2
+
+
+@test_nowarn slicedataset(logiset, [1])
+@test_nowarn slicedataset(complete_logiset, [1])
+
+@test_nowarn concatdatasets(logiset, logiset, logiset)
+@test_nowarn concatdatasets(complete_logiset, complete_logiset, complete_logiset)

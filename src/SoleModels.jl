@@ -61,9 +61,6 @@ export AbstractFeature,
 
 export propositions
 
-export parsecondition
-export modalities
-
 export slicedataset, concatdatasets
 
 export World, Feature, featvalue
@@ -73,28 +70,47 @@ export SupportedLogiset, nmemoizedvalues
 export ExplicitBooleanLogiset, checkcondition
 export ExplicitLogiset, ScalarCondition
 
-export ninstances, nfeatures
-export MultiLogiset, nmodalities, modalities
+export ninstances
+export MultiLogiset, modality, nmodalities, modalities
 
 export MultiFormula
 
-export UnivariateMin, UnivariateMax,
-        UnivariateSoftMin, UnivariateSoftMax,
-        MultivariateFeature
-
-export VarFeature,
-        UnivariateNamedFeature,
+export UnivariateNamedFeature,
         UnivariateFeature
 
 export computefeature
 
 export scalarlogiset
-export initlogiset, ninstances, maxchannelsize, worldtype, dimensionality, allworlds, featvalue
+
+export initlogiset, maxchannelsize, worldtype, dimensionality, allworlds, featvalue, nvariables
 
 export ScalarMetaCondition
 
+export inverse_test_operator, dual_test_operator,
+        apply_test_operator,
+        TestOperator
+
+export MixedFeature, CanonicalFeature, canonical_geq, canonical_leq
+
+export canonical_geq_95, canonical_geq_90, canonical_geq_85, canonical_geq_80, canonical_geq_75, canonical_geq_70, canonical_geq_60,
+       canonical_leq_95, canonical_leq_90, canonical_leq_85, canonical_leq_80, canonical_leq_75, canonical_leq_70, canonical_leq_60
+
+export VarFeature,
+        UnivariateMin, UnivariateMax,
+        UnivariateSoftMin, UnivariateSoftMax,
+        MultivariateFeature
+
+export FullDimensionalFrame
 
 # Definitions for logical datasets (i.e., logisets)
 include("logisets/main.jl")
+
+using .DimensionalDatasets: OneWorld, Interval, Interval2D
+using .DimensionalDatasets: IARelations
+using .DimensionalDatasets: IA2DRelations
+using .DimensionalDatasets: identityrel
+using .DimensionalDatasets: globalrel
+
+const GenericDataset = Union{SoleData.AbstractDimensionalDataset,AbstractDataFrame,AbstractLogiset,MultiLogiset}
 
 end

@@ -351,27 +351,27 @@ end
 ############################################################################################
 
 function instances(
-    X::UniformFullDimensionalLogiset{U,W,N},
+    X::UniformFullDimensionalLogiset{U,W,0},
     inds::AbstractVector{<:Integer},
     return_view::Union{Val{true},Val{false}} = Val(false)
-) where {U,W<:OneWorld,N}
-    UniformFullDimensionalLogiset{U,W,N}(if return_view == Val(true) @view X.featstruct[inds,:] else X.featstruct[inds,:] end, features(X))
+) where {U,W}
+    UniformFullDimensionalLogiset{U,W,0}(if return_view == Val(true) @view X.featstruct[inds,:] else X.featstruct[inds,:] end, features(X))
 end
 
 function instances(
-    X::UniformFullDimensionalLogiset{U,W,N},
+    X::UniformFullDimensionalLogiset{U,W,1},
     inds::AbstractVector{<:Integer},
     return_view::Union{Val{true},Val{false}} = Val(false)
-) where {U,W<:Interval,N}
-    UniformFullDimensionalLogiset{U,W,N}(if return_view == Val(true) @view X.featstruct[:,:,inds,:] else X.featstruct[:,:,inds,:] end, features(X))
+) where {U,W}
+    UniformFullDimensionalLogiset{U,W,1}(if return_view == Val(true) @view X.featstruct[:,:,inds,:] else X.featstruct[:,:,inds,:] end, features(X))
 end
 
 function instances(
-    X::UniformFullDimensionalLogiset{U,W,N},
+    X::UniformFullDimensionalLogiset{U,W,2},
     inds::AbstractVector{<:Integer},
     return_view::Union{Val{true},Val{false}} = Val(false)
-) where {U,W<:Interval2D,N}
-    UniformFullDimensionalLogiset{U,W,N}(if return_view == Val(true) @view X.featstruct[:,:,:,:,inds,:] else X.featstruct[:,:,:,:,inds,:] end, features(X))
+) where {U,W}
+    UniformFullDimensionalLogiset{U,W,2}(if return_view == Val(true) @view X.featstruct[:,:,:,:,inds,:] else X.featstruct[:,:,:,:,inds,:] end, features(X))
 end
 
 ############################################################################################
@@ -380,7 +380,7 @@ function concatdatasets(Xs::UniformFullDimensionalLogiset{U,W,N}...) where {U,W<
     @assert allequal(features.(Xs)) "Cannot concatenate " *
         "UniformFullDimensionalLogiset's with different features: " *
         "$(@show features.(Xs))"
-    UniformFullDimensionalLogiset{U,W,N}(concatdatasets([X.featstruct for X in Xs]...), features(first(Xs)))
+    UniformFullDimensionalLogiset{U,W,N}(cat([X.featstruct for X in Xs]...; dims=1+N*2), features(first(Xs)))
 end
 
 isminifiable(::UniformFullDimensionalLogiset) = true
