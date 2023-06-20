@@ -107,7 +107,3 @@ function default_full_memoset_type(X::AbstractLogiset)
         FullMemoset
     # end
 end
-
-# # TODO figure out which convert function works best:
-# convert(::Type{<:MultiLogiset{T}}, X::MD) where {T,MD<:AbstractLogiset{T}} = MultiLogiset{MD}([X])
-# convert(::Type{<:MultiLogiset}, X::AbstractLogiset) = MultiLogiset([X])
