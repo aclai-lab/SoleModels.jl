@@ -2,13 +2,12 @@
 """
 Active scalar datasets are active logical datasets with scalar features.
 """
-const AbstractActiveScalarLogiset{
+const AbstractScalarLogiset{
     W<:AbstractWorld,
     V<:Number,
     FT<:AbstractFeature{V},
-    T<:TruthValue,
-    FR<:AbstractFrame{W,T}
-} = AbstractLogiset{W,V,FT,T,FR}
+    FR<:AbstractFrame{W}
+} = AbstractLogiset{W,V,FT,FR}
 
 function grouped_featsaggrsnops(X::AbstractScalarLogiset)
     return error("Please, provide method grouped_featsaggrsnops(::$(typeof(X))).")

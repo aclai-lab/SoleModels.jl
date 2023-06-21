@@ -7,7 +7,7 @@
     immediatesubmodels(m::AbstractModel)
 
 Return the list of immediate child models.
-Note: if the model is final, then the returned list will be empty.
+Note: if the model is a leaf model, then the returned list will be empty.
 
 # Examples
 ```julia-repl
@@ -38,7 +38,7 @@ ConstantModel
 
 See also
 [`submodels`](@ref),
-[`FinalModel`](@ref),
+[`LeafModel`](@ref),
 [`AbstractModel`](@ref).
 """
 function immediatesubmodels(
@@ -47,12 +47,21 @@ function immediatesubmodels(
     error("Please, provide method immediatesubmodels(::$(typeof(m))).")
 end
 
-immediatesubmodels(m::FinalModel{O}) where {O} = Vector{<:AbstractModel{<:O}}[]
+immediatesubmodels(m::LeafModel{O}) where {O} = Vector{<:AbstractModel{<:O}}[]
 immediatesubmodels(m::Rule) = [consequent(m)]
 immediatesubmodels(m::Branch) = [posconsequent(m), negconsequent(m)]
 immediatesubmodels(m::DecisionList) = [rulebase(m)..., defaultconsequent(m)]
 immediatesubmodels(m::DecisionTree) = immediatesubmodels(root(m))
+immediatesubmodels(m::DecisionForest) = trees(m)
 immediatesubmodels(m::MixedSymbolicModel) = immediatesubmodels(root(m))
+
+nimmediatesubmodels(m::LeafModel) = 0
+nimmediatesubmodels(m::Rule) = 1
+nimmediatesubmodels(m::Branch) = 2
+nimmediatesubmodels(m::DecisionList) = length(rulebase(m)) + 1
+nimmediatesubmodels(m::DecisionTree) = nimmediatesubmodels(root(m))
+nimmediatesubmodels(m::DecisionForest) = length(trees(m))
+nimmediatesubmodels(m::MixedSymbolicModel) = nimmediatesubmodels(root(m))
 
 """
     submodels(m::AbstractModel)
@@ -103,12 +112,31 @@ false
 
 See also
 [`immediatesubmodels`](@ref),
-[`FinalModel`](@ref),
+[`LeafModel`](@ref),
 [`AbstractModel`](@ref).
 """
 submodels(m::AbstractModel) = [Iterators.flatten(_submodels.(immediatesubmodels(m)))...]
 _submodels(m::AbstractModel) = [m, Iterators.flatten(_submodels.(immediatesubmodels(m)))...]
+_submodels(m::DecisionList) = [Iterators.flatten(_submodels.(immediatesubmodels(m)))...]
+_submodels(m::DecisionTree) = [Iterators.flatten(_submodels.(immediatesubmodels(m)))...]
+_submodels(m::DecisionForest) = [Iterators.flatten(_submodels.(immediatesubmodels(m)))...]
+_submodels(m::MixedSymbolicModel) = [Iterators.flatten(_submodels.(immediatesubmodels(m)))...]
 
+nsubmodels(m::AbstractModel) = 1 + sum(nsubmodels, immediatesubmodels(m))
+nsubmodels(m::DecisionList) = sum(nsubmodels, immediatesubmodels(m))
+nsubmodels(m::DecisionTree) = sum(nsubmodels, immediatesubmodels(m))
+nsubmodels(m::DecisionForest) = sum(nsubmodels, immediatesubmodels(m))
+nsubmodels(m::MixedSymbolicModel) = sum(nsubmodels, immediatesubmodels(m))
+
+leafmodels(m::AbstractModel) = [Iterators.flatten(leafmodels.(immediatesubmodels(m)))...]
+
+nleafmodels(m::AbstractModel) = sum(nleafmodels, immediatesubmodels(m))
+
+submodelsheight(m::AbstractModel) = 1 + maximum(submodelsheight, immediatesubmodels(m))
+submodelsheight(m::DecisionList) = maximum(submodelsheight, immediatesubmodels(m))
+submodelsheight(m::DecisionTree) = maximum(submodelsheight, immediatesubmodels(m))
+submodelsheight(m::DecisionForest) = maximum(submodelsheight, immediatesubmodels(m))
+submodelsheight(m::MixedSymbolicModel) = maximum(submodelsheight, immediatesubmodels(m))
 
 ############################################################################################
 ############################################################################################
@@ -141,7 +169,7 @@ listimmediaterules(m::AbstractModel{O} where {O})::Rule{<:O} =
         end
     end)
 
-listimmediaterules(m::FinalModel) = [Rule(TrueCondition, m)]
+listimmediaterules(m::LeafModel) = [Rule(TrueCondition, m)]
 
 listimmediaterules(m::Rule) = [m]
 
@@ -235,7 +263,7 @@ julia> print(join(displaymodel.(listrules(mixed_symbolic_model); header = false)
 └ ✔ 1.5
 ```
 
-See also [`listimmediaterules`](@ref), [`issymbolic`](@ref), [`FinalModel`](@ref),
+See also [`listimmediaterules`](@ref), [`issymbolic`](@ref), [`LeafModel`](@ref),
 [`AbstractModel`](@ref).
 """
 function listrules(m::AbstractModel; kwargs...)
@@ -248,7 +276,7 @@ function listrules(m::AbstractModel; kwargs...)
     end)
 end
 
-listrules(m::FinalModel; kwargs...) = [m]
+listrules(m::LeafModel; kwargs...) = [m]
 
 function listrules(
     m::Rule{O,<:TrueCondition};
@@ -276,12 +304,12 @@ function listrules(
 ) where {O}
     pos_rules = begin
         submodels = listrules(posconsequent(m); kwargs...)
-        submodels isa Vector{<:FinalModel} ? [Rule{O,TrueCondition}(fm) for fm in submodels] : submodels
+        submodels isa Vector{<:LeafModel} ? [Rule{O,TrueCondition}(fm) for fm in submodels] : submodels
     end
 
     neg_rules = begin
         submodels = listrules(negconsequent(m); kwargs...)
-        submodels isa Vector{<:FinalModel} ? [Rule{O,TrueCondition}(fm) for fm in submodels] : submodels
+        submodels isa Vector{<:LeafModel} ? [Rule{O,TrueCondition}(fm) for fm in submodels] : submodels
     end
 
     return [
@@ -300,7 +328,7 @@ function listrules(
         ant = tree(formula(m))
 
         map(subm-> begin
-            if subm isa FinalModel
+            if subm isa LeafModel
                 Rule(LogicalTruthCondition(ant), subm)
             else
                 f = formula(subm)
@@ -321,7 +349,7 @@ function listrules(
         ant = ¬(tree(formula(m)))
 
         map(subm-> begin
-            if subm isa FinalModel
+            if subm isa LeafModel
                 Rule(LogicalTruthCondition(ant), subm)
             else
                 f = formula(subm)

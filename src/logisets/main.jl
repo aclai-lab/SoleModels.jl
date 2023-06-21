@@ -33,7 +33,7 @@ include("memosets.jl")
 
 include("supported-logiset.jl")
 
-export MultiLogiset, eachmodality, worldtypes, nmodalities
+export MultiLogiset, eachmodality, modality, nmodalities
 
 # Multiframe version of logisets, for representing multimodal datasets
 include("multilogiset.jl")

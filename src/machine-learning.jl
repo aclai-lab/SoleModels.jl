@@ -90,10 +90,10 @@ function bestguess(
     end
 
     if !suppress_parity_warning && sum(counts[argmax(counts)] .== values(counts)) > 1
-        println("Warning: parity encountered in bestguess.")
-        println("Counts ($(length(labels)) elements): $(counts)")
-        println("Argmax: $(argmax(counts))")
-        println("Max: $(counts[argmax(counts)]) (sum = $(sum(values(counts))))")
+        @warn "Parity encountered in bestguess! " *
+            "Counts ($(length(labels)) elements): $(counts)" *
+            "Argmax: $(argmax(counts))" *
+            "Max: $(counts[argmax(counts)]) (sum = $(sum(values(counts))))"
     end
     argmax(counts)
 end

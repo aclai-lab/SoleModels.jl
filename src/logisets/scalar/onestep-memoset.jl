@@ -244,6 +244,7 @@ struct ScalarOneStepMemoset{
         relations               :: AbstractVector{<:AbstractRelation},
         # relational_memoset_type :: Type{<:AbstractScalarOneStepRelationalMemoset} = default_relmemoset_type(X);
         relational_memoset_type :: Type = default_relmemoset_type(X);
+        features = nothing,
         precompute_globmemoset  :: Bool = true,
         precompute_relmemoset   :: Bool = false,
     ) where {W<:AbstractWorld,U}
@@ -284,21 +285,12 @@ struct ScalarOneStepMemoset{
             nrelations = length(relations)
             nmetaconditions = length(metaconditions)
 
-            grouped_metaconditions = groupbyfeature(metaconditions)
-
-            grouped_metaconditions = map(((feature,these_metaconditions),)->begin
-                these_metaconditions = map(_metacond->begin
-                    i_metacond = findfirst(isequal(_metacond), metaconditions)
-                    aggregator = existential_aggregator(test_operator(_metacond))
-                    (i_metacond, aggregator, _metacond)
-                end, these_metaconditions)
-                (feature,these_metaconditions)
-            end, grouped_metaconditions)
+            _grouped_metaconditions = grouped_metaconditions(metaconditions, features)
 
             # p = Progress(n_instances, 1, "Computing EMD supports...")
             Threads.@threads for i_instance in 1:n_instances
 
-                for (_feature, these_metaconditions) in grouped_metaconditions
+                for (_feature, these_metaconditions) in _grouped_metaconditions
 
                     _featchannel = featchannel(X, i_instance, _feature)
 
@@ -345,6 +337,23 @@ relmemoset(Xm::ScalarOneStepMemoset) = Xm.relmemoset
 globmemoset(Xm::ScalarOneStepMemoset) = Xm.globmemoset
 
 ninstances(Xm::ScalarOneStepMemoset) = ninstances(relmemoset(Xm))
+
+function grouped_metaconditions(
+    metaconditions::AbstractVector{<:ScalarMetaCondition},
+    features::Union{Nothing,AbstractVector{<:AbstractFeature}} = nothing,
+)
+    if isnothing(features)
+        features = unique(feature.(metaconditions))
+    end
+    return map(((feature,these_metaconditions),)->begin
+        these_metaconditions = map(_metacond->begin
+            i_metacond = findfirst(isequal(_metacond), metaconditions)
+            aggregator = existential_aggregator(test_operator(_metacond))
+            (i_metacond, aggregator, _metacond)
+        end, these_metaconditions)
+        (feature,these_metaconditions)
+    end, groupbyfeature(metaconditions, features))
+end
 
 function featchannel_onestep_aggregation(
     X::AbstractLogiset{W,U},
@@ -657,8 +666,8 @@ function displaystructure(
     return join(pieces, "\n$(indent_str)├ ", "\n$(indent_str)└ ")
 end
 
-# @inline function Base.setindex!(Xm::ScalarOneStepRelationalMemoset{W,U}, threshold::U, i_instance::Integer, w::AbstractWorld, i_featsnaggr::Integer, i_relation::Integer) where {W,U}
-#     Xm.d[i_instance, i_featsnaggr, i_relation][w] = threshold
+# @inline function Base.setindex!(Xm::ScalarOneStepRelationalMemoset{W,U}, threshold::U, i_instance::Integer, w::AbstractWorld, i_metacond::Integer, i_relation::Integer) where {W,U}
+#     Xm.d[i_instance, i_metacond, i_relation][w] = threshold
 # end
 
 ############################################################################################

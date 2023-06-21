@@ -14,10 +14,10 @@ struct DimensionalLogiset{
     N,
     W<:AbstractWorld,
     D<:PassiveDimensionalLogiset{N,W},
-    FT<:AbstractFeature{V},
+    FT<:AbstractFeature,
     G1<:AbstractVector{<:AbstractDict{<:Aggregator,<:AbstractVector{<:TestOperator}}},
     G2<:AbstractVector{<:AbstractVector{Tuple{<:Integer,<:Aggregator}}},
-} <: AbstractActiveScalarLogiset{W,V,FT,Bool,FullDimensionalFrame{N,W}}
+} <: AbstractScalarLogiset{W,V,FT,FullDimensionalFrame{N,W}}
 
     # Core data (a dimensional domain)
     domain                  :: D
@@ -152,7 +152,7 @@ struct DimensionalLogiset{
             single_var_feats_n_featsnops(i_var,(test_ops,cf)::Tuple{<:AbstractVector{<:TestOperator},typeof(minimum)}) = (test_ops,DimensionalDatasets.UnivariateMin{V}(i_var))
             single_var_feats_n_featsnops(i_var,(test_ops,cf)::Tuple{<:AbstractVector{<:TestOperator},typeof(maximum)}) = (test_ops,DimensionalDatasets.UnivariateMax{V}(i_var))
             single_var_feats_n_featsnops(i_var,(test_ops,cf)::Tuple{<:AbstractVector{<:TestOperator},Function})        = (test_ops,DimensionalDatasets.UnivariateFeature{V}(i_var, (x)->(V(cf(x)))))
-            single_var_feats_n_featsnops(i_var,::Any) = throw_n_log("Unknown mixed_feature type: $(cf), $(typeof(cf))")
+            single_var_feats_n_featsnops(i_var,::Any) = error("Unknown mixed_feature type: $(cf), $(typeof(cf))")
 
             for i_var in 1:nvariables(domain)
                 for (test_ops,cf) in map((cf)->single_var_feats_n_featsnops(i_var,cf),variable_specific_cfs)

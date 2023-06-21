@@ -166,9 +166,9 @@ function scalarlogiset(
     # Initialize the logiset structure
     X = initlogiset(dataset, features)
 
-    # Load external features (if any)
-    if any(isa.(features, ExternalFWDFeature))
-        i_external_features = first.(filter(((i_feature,is_external_fwd),)->(is_external_fwd), collect(enumerate(isa.(features, ExternalFWDFeature)))))
+    # Load explicit features (if any)
+    if any(isa.(features, ExplicitFeature))
+        i_external_features = first.(filter(((i_feature,isexplicit),)->(isexplicit), collect(enumerate(isa.(features, ExplicitFeature)))))
         for i_feature in i_external_features
             feature = features[i_feature]
             featvalues!(X, feature.X, i_feature)
@@ -176,7 +176,7 @@ function scalarlogiset(
     end
 
     # Load internal features
-    i_features = first.(filter(((i_feature,is_external_fwd),)->!(is_external_fwd), collect(enumerate(isa.(features, ExternalFWDFeature)))))
+    i_features = first.(filter(((i_feature,isexplicit),)->!(isexplicit), collect(enumerate(isa.(features, ExplicitFeature)))))
     enum_features = zip(i_features, features[i_features])
 
     _ninstances = ninstances(dataset)

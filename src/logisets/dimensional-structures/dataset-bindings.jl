@@ -1,9 +1,7 @@
 using SoleModels: AbstractUnivariateFeature
 
 using SoleData: AbstractDimensionalDataset,
-                UniformDimensionalDataset,
-                DimensionalInstance,
-                DimensionalChannel
+                UniformDimensionalDataset
 
 import SoleData: ninstances, nvariables
 
@@ -67,9 +65,9 @@ function readfeature(
     w::W,
     f::VarFeature{U},
 ) where {U,W<:AbstractWorld}
-    _interpret_world(::OneWorld, instance::DimensionalInstance{T,1}) where {T} = instance
-    _interpret_world(w::Interval, instance::DimensionalInstance{T,2}) where {T} = instance[w.x:w.y-1,:]
-    _interpret_world(w::Interval2D, instance::DimensionalInstance{T,3}) where {T} = instance[w.x.x:w.x.y-1,w.y.x:w.y.y-1,:]
+    _interpret_world(::OneWorld, instance::AbstractArray{T,1}) where {T} = instance
+    _interpret_world(w::Interval, instance::AbstractArray{T,2}) where {T} = instance[w.x:w.y-1,:]
+    _interpret_world(w::Interval2D, instance::AbstractArray{T,3}) where {T} = instance[w.x.x:w.x.y-1,w.y.x:w.y.y-1,:]
     wchannel = _interpret_world(w, featchannel)
     computefeature(f, wchannel)::U
 end

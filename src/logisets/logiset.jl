@@ -298,7 +298,7 @@ function displaystructure(
     if include_ninstances
         out *= indent_str * "├ " * padattribute("# instances:", ninstances(X)) * "\n"
     end
-    out *= indent_str * "└ " * padattribute("# world density (countmap):", "$(countmap([nworlds(X, i_instance) for i_instance in 1:ninstances(X)]))") * "\n"
+    out *= indent_str * "└ " * padattribute("# world density (countmap):", "$(countmap([nworlds(X, i_instance) for i_instance in 1:ninstances(X)]))")
     out
 end
 
@@ -431,7 +431,7 @@ function displaystructure(
     if include_ninstances
         out *= indent_str * "├ " * padattribute("# instances:", "$(ninstances(X))") * "\n"
     end
-    out *= indent_str * "└ " * padattribute("# world density (countmap):", "$(countmap([nworlds(X, i_instance) for i_instance in 1:ninstances(X)]))") * "\n"
+    out *= indent_str * "└ " * padattribute("# world density (countmap):", "$(countmap([nworlds(X, i_instance) for i_instance in 1:ninstances(X)]))")
     out
 end
 

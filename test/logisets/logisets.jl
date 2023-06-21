@@ -95,9 +95,9 @@ end
 
 w = worlds[1]
 W = worldtype(bool_logiset)
-bool_supported_logiset = SupportedLogiset(bool_logiset)
-scalar_supported_logiset = SupportedLogiset(scalar_logiset)
-nonscalar_supported_logiset = SupportedLogiset(nonscalar_logiset)
+bool_supported_logiset = @test_nowarn SupportedLogiset(bool_logiset)
+scalar_supported_logiset = @test_nowarn SupportedLogiset(scalar_logiset)
+nonscalar_supported_logiset = @test_nowarn SupportedLogiset(nonscalar_logiset)
 
 @test SoleModels.featvalue(nonscalar_logiset, 1, worlds[1], features[1]) == SoleModels.featvalue(nonscalar_supported_logiset, 1, worlds[1], features[1])
 

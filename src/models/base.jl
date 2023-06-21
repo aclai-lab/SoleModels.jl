@@ -314,31 +314,33 @@ info(m::AbstractModel)::NamedTuple = m.info
 ############################################################################################
 
 """
-    abstract type FinalModel{O} <: AbstractModel{O} end
+    abstract type LeafModel{O} <: AbstractModel{O} end
 
-A `FinalModel` is a model which outcomes do not depend on another model.
-An `AbstractModel` can generally wrap other `AbstractModel`s. In such case, the outcome can
+Abstract type for leaf models, that is, models which outcomes do not depend
+other models, and represents the bottom of the computation.
+In general, an `AbstractModel` can generally wrap other `AbstractModel`s;
+in such case, the outcome can
 depend on the inner models being applied on the instance object. Otherwise, the model is
-considered final; that is, it is a leaf of a tree of `AbstractModel`s.
+considered as a *leaf*, or *final*, and is the *leaf* of a tree of `AbstractModel`s.
 
 See also [`ConstantModel`](@ref), [`FunctionModel`](@ref), [`AbstractModel`](@ref).
 """
-abstract type FinalModel{O} <: AbstractModel{O} end
+abstract type LeafModel{O} <: AbstractModel{O} end
 
 """
-    struct ConstantModel{O} <: FinalModel{O}
+    struct ConstantModel{O} <: LeafModel{O}
         outcome::O
         info::NamedTuple
     end
 
 The simplest type of model is the `ConstantModel`;
-it is a `FinalModel` that always outputs the same outcome.
+it is a `LeafModel` that always outputs the same outcome.
 
 # Examples
 ```julia-repl
-julia> SoleModels.FinalModel(2) isa SoleModels.ConstantModel
+julia> SoleModels.LeafModel(2) isa SoleModels.ConstantModel
 
-julia> SoleModels.FinalModel(sum) isa SoleModels.FunctionModel
+julia> SoleModels.LeafModel(sum) isa SoleModels.FunctionModel
 ┌ Warning: Over efficiency concerns, please consider wrappingJulia Function's into FunctionWrapper{O,Tuple{SoleModels.AbstractInterpretation}} structures,where O is their return type.
 └ @ SoleModels ~/.julia/dev/SoleModels/src/models/base.jl:337
 true
@@ -348,9 +350,9 @@ true
 See also
 [`apply`](@ref),
 [`FunctionModel`](@ref),
-[`FinalModel`](@ref).
+[`LeafModel`](@ref).
 """
-struct ConstantModel{O} <: FinalModel{O}
+struct ConstantModel{O} <: LeafModel{O}
     outcome::O
     info::NamedTuple
 
@@ -387,21 +389,21 @@ convert(::Type{ConstantModel{O}}, o::O) where {O} = ConstantModel{O}(o)
 convert(::Type{<:AbstractModel{F}}, m::ConstantModel) where {F} = ConstantModel{F}(m)
 
 """
-    struct FunctionModel{O} <: FinalModel{O}
+    struct FunctionModel{O} <: LeafModel{O}
         f::FunctionWrapper{O}
         info::NamedTuple
     end
 
-A `FunctionModel` is a `FinalModel` that applies a native Julia `Function`
+A `FunctionModel` is a `LeafModel` that applies a native Julia `Function`
 in order to compute the outcome. Over efficiency concerns, it is mandatory to make explicit
 the output type `O` by wrapping the `Function` into an object of type
 `FunctionWrapper{O}`.
 
 TODO @Michele explain functional_args/functional_kwargs
 
-See also [`ConstantModel`](@ref), [`FunctionWrapper`](@ref), [`FinalModel`](@ref).
+See also [`ConstantModel`](@ref), [`FunctionWrapper`](@ref), [`LeafModel`](@ref).
 """
-struct FunctionModel{O} <: FinalModel{O}
+struct FunctionModel{O} <: LeafModel{O}
     f::FunctionWrapper{O}
     # isopen::Bool TODO
     info::NamedTuple
@@ -491,7 +493,7 @@ simply returned (no wrapping is performed);
 
 See also
 [`ConstantModel`](@ref), [`FunctionModel`](@ref),
-[`ConstrainedModel`](@ref), [`FinalModel`](@ref).
+[`ConstrainedModel`](@ref), [`LeafModel`](@ref).
 """
 wrap(o::Any, FM::Type{<:AbstractModel}) = convert(FM, wrap(o))
 wrap(m::AbstractModel) = m
@@ -500,7 +502,7 @@ wrap(o::FunctionWrapper{O}) where {O} = FunctionModel{O}(o)
 wrap(o::O) where {O} = convert(ConstantModel{O}, o)
 
 # Helper
-FinalModel(o) = wrap(o)
+LeafModel(o) = wrap(o)
 
 ############################################################################################
 ############################################################################################
@@ -509,7 +511,7 @@ FinalModel(o) = wrap(o)
 """
 An `AbstractModel` can wrap another `AbstractModel`, and use it to compute the outcome.
 As such, an `AbstractModel` can actually be the result of a composition of many models,
-and enclose a *tree* of `AbstractModel`s (with `FinalModel`s at the leaves).
+and enclose a *tree* of `AbstractModel`s (with `LeafModel`s at the leaves).
 In order to typebound the Feasible Models (`FM`) allowed in the sub-tree,
 the `ConstrainedModel` type is introduced:
 
@@ -519,7 +521,7 @@ For example, `ConstrainedModel{String, Union{Branch{String}, ConstantModel{Strin
 supertypes models that with `String` outcomes that make use of `Branch{String}` and
 `ConstantModel{String}` (essentially, a decision trees with `String`s at the leaves).
 
-See also [`FinalModel`](@ref), [`AbstractModel`](@ref).
+See also [`LeafModel`](@ref), [`AbstractModel`](@ref).
 """
 abstract type ConstrainedModel{O,FM<:AbstractModel} <: AbstractModel{O} end
 
@@ -534,8 +536,8 @@ See also [`ConstrainedModel`](@ref).
 """
 feasiblemodelstype(::Type{M}) where {O, M<:AbstractModel{O}} = AbstractModel{<:O}
 feasiblemodelstype(::Type{M}) where {M<:AbstractModel} = AbstractModel
-feasiblemodelstype(::Type{M}) where {O, M<:FinalModel{O}} = Union{}
-feasiblemodelstype(::Type{M}) where {M<:FinalModel} = Union{}
+feasiblemodelstype(::Type{M}) where {O, M<:LeafModel{O}} = Union{}
+feasiblemodelstype(::Type{M}) where {M<:LeafModel} = Union{}
 feasiblemodelstype(::Type{<:ConstrainedModel{O,FM}}) where {O,FM} = FM
 feasiblemodelstype(m::ConstrainedModel) = outcometype(typeof(m))
 
@@ -575,7 +577,7 @@ function check_model_constraints(
     # @assert I_M <: FM || typename(I_M) <: typename(FM) "Cannot instantiate $(M) with inner model $(I_M))! $(I_M) <: $(FM) || $(typename(I_M)) <: $(typename(FM)) should hold."
     @assert I_M <: FM "Cannot instantiate $(M) with inner model $(I_M))! " *
         "$(I_M) <: $(FM) should hold."
-    if ! (I_M<:FinalModel{<:FM_O})
+    if ! (I_M<:LeafModel{<:FM_O})
         # @assert I_M<:ConstrainedModel{FM_O,<:FM} "ConstrainedModels require I_M<:ConstrainedModel{O,<:FM}, but $(I_M) does not subtype $(ConstrainedModel{FM_O,<:FM})."
         @assert I_M<:ConstrainedModel{<:FM_O,<:FM} "ConstrainedModels require " *
             "I_M<:ConstrainedModel{<:O,<:FM}, but $(I_M) does not " *
@@ -1212,12 +1214,12 @@ where the antecedents are conditions to be tested and the consequents are the fe
 local outcomes of the block.
 
 In practice, a `DecisionTree` simply wraps a constrained
-sub-tree of `Branch` and `FinalModel`:
+sub-tree of `Branch` and `LeafModel`:
 
     struct DecisionTree{
     O,
         C<:AbstractBooleanCondition,
-        FFM<:FinalModel
+        FFM<:LeafModel
     } <: ConstrainedModel{O, Union{<:Branch{<:O,<:C}, <:FFM}}
         root::M where {M<:Union{FFM,Branch}}
         info::NamedTuple
@@ -1232,7 +1234,7 @@ See also [`ConstrainedModel`](@ref), [`MixedSymbolicModel`](@ref), [`DecisionLis
 struct DecisionTree{
     O,
     C<:AbstractBooleanCondition,
-    FFM<:FinalModel
+    FFM<:LeafModel
 } <: ConstrainedModel{O, Union{<:Branch{<:O,<:C}, <:FFM}}
     root::M where {M<:Union{FFM,Branch}}
     info::NamedTuple
@@ -1240,7 +1242,7 @@ struct DecisionTree{
     function DecisionTree(
         root::Union{FFM,Branch{O,C,Union{Branch{<:O,C2},FFM}}},
         info::NamedTuple = (;),
-    ) where {O, C<:AbstractBooleanCondition, C2<:C, FFM<:FinalModel{<:O}}
+    ) where {O, C<:AbstractBooleanCondition, C2<:C, FFM<:LeafModel{<:O}}
         new{O,C,FFM}(root, info)
     end
 
@@ -1251,15 +1253,15 @@ struct DecisionTree{
         root = wrap(root)
         M = typeof(root)
         O = outcometype(root)
-        C = (root isa FinalModel ? AbstractBooleanCondition : conditiontype(M))
+        C = (root isa LeafModel ? AbstractBooleanCondition : conditiontype(M))
         # FM = typeintersect(Union{M,feasiblemodelstype(M)}, AbstractModel{<:O})
         FM = typeintersect(Union{propagate_feasiblemodels(M)}, AbstractModel{<:O})
-        FFM = typeintersect(FM, FinalModel{<:O})
+        FFM = typeintersect(FM, LeafModel{<:O})
         @assert M <: Union{<:FFM,<:Branch{<:O,<:C,<:Union{Branch,FFM}}} "" *
             "Cannot instantiate DecisionTree{$(O),$(C),$(FFM)}(...) with root of " *
-            "type $(typeof(root)). Note that the should be either a FinalNode or a " *
+            "type $(typeof(root)). Note that the should be either a LeafModel or a " *
             "bounded Branch. " *
-            "$(M) <: $(Union{FinalModel,Branch{<:O,<:C,<:Union{Branch,FFM}}}) should hold."
+            "$(M) <: $(Union{LeafModel,Branch{<:O,<:C,<:Union{Branch,FFM}}}) should hold."
         check_model_constraints(DecisionTree{O}, typeof(root), FM, O)
         new{O,C,FFM}(root, info)
     end
@@ -1293,6 +1295,18 @@ function apply(
     apply(root(m), d; kwargs...)
 end
 
+function nnodes(t::DecisionTree)
+    nsubmodels(t)
+end
+
+function nleaves(t::DecisionTree)
+    nleafmodels(t)
+end
+
+function height(t::DecisionTree)
+    submodelsheight(t)
+end
+
 ############################################################################################
 
 """
@@ -1301,7 +1315,7 @@ A `Decision Forest` is a symbolic model that wraps an ensemble of models
     struct DecisionForest{
         O,
         C<:AbstractBooleanCondition,
-        FFM<:FinalModel
+        FFM<:LeafModel
     } <: ConstrainedModel{O, Union{<:Branch{<:O,<:C}, <:FFM}}
         trees::Vector{<:DecisionTree}
         info::NamedTuple
@@ -1314,7 +1328,7 @@ See also [`ConstrainedModel`](@ref), [`MixedSymbolicModel`](@ref), [`DecisionLis
 struct DecisionForest{
     O,
     C<:AbstractBooleanCondition,
-    FFM<:FinalModel
+    FFM<:LeafModel
 } <: ConstrainedModel{O, Union{<:Branch{<:O,<:C}, <:FFM}}
     trees::Vector{<:DecisionTree}
     info::NamedTuple
@@ -1327,7 +1341,7 @@ struct DecisionForest{
         O = Union{outcometype.(trees)...}
         C = Union{conditiontype.(trees)...}
         FM = typeintersect(Union{propagate_feasiblemodels.(trees)...}, AbstractModel{<:O})
-        FFM = typeintersect(FM, FinalModel{<:O})
+        FFM = typeintersect(FM, LeafModel{<:O})
         check_model_constraints.(DecisionForest{O}, typeof.(trees), FM, O)
         new{O,C,FFM}(trees, info)
     end
@@ -1358,6 +1372,18 @@ function apply(
     return [bestguess(pred[i,:]) for i in 1:size(pred,1)]
 end
 
+function nnodes(f::DecisionForest)
+    nsubmodels(f)
+end
+
+function nleaves(f::DecisionForest)
+    nleafmodels(f)
+end
+
+function height(f::DecisionForest)
+    submodelsheight(f)
+end
+
 ############################################################################################
 
 """
@@ -1384,7 +1410,7 @@ In Sole.jl, this logic can implemented using `ConstrainedModel`s such as
 a `MixedSymbolicModel`:
 
     struct MixedSymbolicModel{O,FM<:AbstractModel} <: ConstrainedModel{O,FM}
-        root::M where {M<:Union{FinalModel{<:O},ConstrainedModel{<:O,<:FM}}}
+        root::M where {M<:Union{LeafModel{<:O},ConstrainedModel{<:O,<:FM}}}
         info::NamedTuple
     end
 
@@ -1393,7 +1419,7 @@ Note that `FM` refers to the Feasible Models (`FM`) allowed in the model's sub-t
 See also [`ConstrainedModel`](@ref), [`DecisionTree`](@ref), [`DecisionList`](@ref).
 """
 struct MixedSymbolicModel{O,FM<:AbstractModel} <: ConstrainedModel{O,FM}
-    root::M where {M<:Union{FinalModel{<:O},ConstrainedModel{<:O,<:FM}}}
+    root::M where {M<:Union{LeafModel{<:O},ConstrainedModel{<:O,<:FM}}}
     info::NamedTuple
 
     function MixedSymbolicModel(

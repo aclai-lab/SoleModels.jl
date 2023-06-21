@@ -1,9 +1,7 @@
 using SoleData: slicedataset
 import SoleData: get_instance, ninstances, nvariables, channelsize, maxchannelsize, dimensionality, eltype
 using SoleData: AbstractDimensionalDataset,
-                UniformDimensionalDataset,
-                DimensionalInstance,
-                DimensionalChannel
+                UniformDimensionalDataset
 
 """
 Scalar logiset with  of dimensionality `N`.

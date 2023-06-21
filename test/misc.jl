@@ -6,13 +6,13 @@ using Test
 using SoleLogics
 using SoleModels
 using SoleModels: AbstractModel
-using SoleModels: ConstantModel, FinalModel
+using SoleModels: ConstantModel, LeafModel
 using SoleModels: LogicalTruthCondition, TrueCondition
 using SoleModels: listrules, formula, displaymodel, submodels
 
 io = IOBuffer()
 
-################################### FinalModel #############################################
+################################### LeafModel #############################################
 outcome_int =  @test_nowarn ConstantModel(2)
 outcome_float = @test_nowarn ConstantModel(1.5)
 outcome_string = @test_nowarn ConstantModel("YES")
@@ -146,7 +146,7 @@ rmodel_float = @test_nowarn Rule{Float64}(phi,rmodel_float0)
 rmodel_float2 = @test_nowarn Rule{Float64}(phi,rmodel_float)
 @test typeof(rmodel_float2) == typeof(rmodel_float)
 # @test typeof(rmodel_float) == typeof(Rule{Float64,Union{Rule{Float64},ConstantModel{Float64}}}(phi,rmodel_float0))
-# @test typeof(rmodel_float) != typeof(Rule{Float64,Union{Rule{Float64},FinalModel{Float64}}}(phi,rmodel_float0))
+# @test typeof(rmodel_float) != typeof(Rule{Float64,Union{Rule{Float64},LeafModel{Float64}}}(phi,rmodel_float0))
 # @test typeof(rmodel_float) == typeof(Rule{Float64,Union{Rule,ConstantModel}}(phi,rmodel_float0))
 
 rmodel2_float = @test_nowarn Rule(phi2, rmodel_float)

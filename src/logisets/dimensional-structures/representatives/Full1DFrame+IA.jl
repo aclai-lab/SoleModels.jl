@@ -13,12 +13,12 @@ using SoleLogics: _IA_AorO, _IA_AiorOi, _IA_DorBorE, _IA_DiorBiorEi, _IA_I, IA72
 ############################################################################################
 # When defining `representatives` for minimum & maximum features, we find that we can
 #  categorize interval relations according to their behavior.
-# Consider the decision ⟨R⟩ (minimum(A1) ≥ 10) evaluated on a world w = (x,y):
-#  - With R = identityrel, it requires computing minimum(A1) on w;
-#  - With R = globalrel, it requires computing maximum(A1) on 1:(X(fr)+1) (the largest world);
-#  - With R = Begins inverse, it requires computing minimum(A1) on (x,y+1), if such interval exists;
-#  - With R = During, it requires computing maximum(A1) on (x+1,y-1), if such interval exists;
-#  - With R = After, it requires reading the single value in (y,y+1) (or, alternatively, computing minimum(A1) on it), if such interval exists;
+# Consider the decision ⟨R⟩ (minimum[V1] ≥ 10) evaluated on a world w = (x,y):
+#  - With R = identityrel, it requires computing minimum[V1] on w;
+#  - With R = globalrel, it requires computing maximum[V1] on 1:(X(fr)+1) (the largest world);
+#  - With R = Begins inverse, it requires computing minimum[V1] on (x,y+1), if such interval exists;
+#  - With R = During, it requires computing maximum[V1] on (x+1,y-1), if such interval exists;
+#  - With R = After, it requires reading the single value in (y,y+1) (or, alternatively, computing minimum[V1] on it), if such interval exists;
 #
 # Here is the categorization assuming feature = minimum and test_operator = ≥:
 #

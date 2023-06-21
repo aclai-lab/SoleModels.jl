@@ -110,7 +110,7 @@ end
 
 # # A function for setting threshold values for a single feature (from a feature slice, experimental)
 # Base.@propagate_inbounds @inline function fwd_set_feature(featstruct::GenericFWD{V}, i_feature::Integer, fwdslice::Any) where {V}
-#     throw_n_log("Warning! fwd_set_feature with GenericFWD is not yet implemented!")
+#     error("Warning! fwd_set_feature with GenericFWD is not yet implemented!")
 #     for ((i_instance,w),threshold::V) in read_fwdslice(fwdslice)
 #         featstruct.d[i_instance][w][i_feature] = threshold
 #     end

@@ -26,7 +26,7 @@ These definitions provide a unified base for implementing symbolic algorithms, s
 
 ### Basic models:
 
-- Final models: wrapping native Julia computation (e.g., constants, functions);
+- Leaf models: wrapping native Julia computation (e.g., constants, functions);
 - Rules: structures with `IF antecedent THEN consequent END` semantics;
 - Branches: structures with `IF antecedent THEN pos_consequent ELSE neg_consequent END` semantics.
 

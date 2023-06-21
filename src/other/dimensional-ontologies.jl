@@ -65,13 +65,13 @@ get_interval_ontology(N::Val, relations::Union{Symbol,AbstractVector{<:AbstractR
 # Any world type W must provide an `interpret_world` method for interpreting a world
 #  onto a modal instance:
 # interpret_world(::W, modal_instance)
-# Note: for dimensional world types: modal_instance::DimensionalInstance
+# Note: for dimensional world types: modal_instance::AbstractArray
 
 ############################################################################################
 # Dimensionality: 0
 
 # Dimensional world type: it can be interpreted on dimensional instances.
-interpret_world(::OneWorld, instance::DimensionalInstance{T,1}) where {T} = instance
+interpret_world(::OneWorld, instance::AbstractArray{T,1}) where {T} = instance
 
 const OneWorldOntology   = Ontology{OneWorld}(AbstractRelation[])
 
@@ -79,7 +79,7 @@ const OneWorldOntology   = Ontology{OneWorld}(AbstractRelation[])
 # Dimensionality: 1
 
 # Dimensional world type: it can be interpreted on dimensional instances.
-interpret_world(w::Interval2D, instance::DimensionalInstance{T,3}) where {T} = instance[w.x.x:w.x.y-1,w.y.x:w.y.y-1,:]
+interpret_world(w::Interval2D, instance::AbstractArray{T,3}) where {T} = instance[w.x.x:w.x.y-1,w.y.x:w.y.y-1,:]
 
 const IntervalOntology       = Ontology{Interval{Int}}(IARelations)
 const Interval3Ontology      = Ontology{Interval}(SoleLogics.IA3Relations)
@@ -92,7 +92,7 @@ const IntervalRCC5Ontology   = Ontology{Interval{Int}}(RCC5Relations)
 # Dimensionality: 2
 
 # Dimensional world type: it can be interpreted on dimensional instances.
-interpret_world(w::Interval, instance::DimensionalInstance{T,2}) where {T} = instance[w.x:w.y-1,:]
+interpret_world(w::Interval, instance::AbstractArray{T,2}) where {T} = instance[w.x:w.y-1,:]
 
 const Interval2DOntology     = Ontology{Interval2D{Int}}(IA2DRelations)
 const Interval2DRCC8Ontology = Ontology{Interval2D{Int}}(RCC8Relations)

@@ -15,7 +15,7 @@ of an instance of a logical dataset.
 A test operator is a binary mathematical relation, comparing the computed feature value
 and an external threshold value (see `ScalarCondition`). A metacondition can also be used
 for representing the infinite set of conditions that arise with a free threshold
-(see `UnboundedScalarConditions`): \${min(V1) ≥ a, a ∈ ℝ}\$.
+(see `UnboundedScalarConditions`): \${min[V1] ≥ a, a ∈ ℝ}\$.
 
 See also
 [`AbstractCondition`](@ref),
@@ -64,14 +64,18 @@ _st_featop_abbr(feature::AbstractFeature,   test_operator::TestOperator; kwargs.
 
 ############################################################################################
 
-function groupbyfeature(metaconditions::AbstractVector{<:ScalarMetaCondition})
-    _features = unique(feature.(metaconditions))
-    grouped_features = [begin
+function groupbyfeature(
+    metaconditions::AbstractVector{<:ScalarMetaCondition},
+    features::Union{Nothing,AbstractVector{<:AbstractFeature}} = nothing,
+)
+    if isnothing(features)
+        features = unique(feature.(metaconditions))
+    end
+    return map(_feature->begin
         these_metaconds = filter(m->feature(m) == _feature, metaconditions)
         # these_testops = unique(test_operator.(these_metaconds))
         (_feature, these_metaconds)
-    end for _feature in _features]
-    grouped_features
+    end, features)
 end
 
 ############################################################################################
@@ -86,7 +90,7 @@ A scalar condition comparing a computed feature value (see `ScalarMetaCondition`
 and a threshold value `a`.
 It can be evaluated on a world of an instance of a logical dataset.
 
-For example: \$min(V1) ≥ 10\$, which translates to
+For example: \$min[V1] ≥ 10\$, which translates to
 "Within this world, the minimum of variable 1 is greater or equal than 10."
 In this case, the feature a [`UnivariateMin`](@ref) object.
 
@@ -139,8 +143,28 @@ function checkcondition(c::ScalarCondition, args...; kwargs...)
     apply_test_operator(test_operator(c), featvalue(feature(c), args...; kwargs...), threshold(c))
 end
 
-syntaxstring(m::ScalarCondition; threshold_decimals = nothing, kwargs...) =
-    "$(_syntaxstring_metacondition(metacond(m); kwargs...)) $((isnothing(threshold_decimals) ? threshold(m) : round(threshold(m); digits=threshold_decimals)))"
+function syntaxstring(
+    m::ScalarCondition;
+    threshold_decimals::Union{Nothing,Integer} = nothing,
+    threshold_display_method::Union{Nothing,Base.Callable} = nothing,
+    kwargs...
+)
+    if (!isnothing(threshold_decimals) && !isnothing(threshold_display_method))
+        @warn "Prioritizing threshold_display_method parameter over threshold_decimals " *
+            "in syntaxstring for `ScalarCondition`."
+    end
+    threshold_display_method = begin
+        if !isnothing(threshold_display_method)
+            threshold_display_method
+        elseif !isnothing(threshold_decimals)
+            x->round(x; digits=threshold_decimals)
+        else
+            identity
+        end
+    end
+    string(_syntaxstring_metacondition(metacond(m); kwargs...)) * " " *
+    string(threshold_display_method(threshold(m)))
+end
 
 function parsecondition(
     ::Type{C},
@@ -238,7 +262,7 @@ abstract type AbstractConditionalAlphabet{C<:ScalarCondition} <: AbstractAlphabe
 
 An infinite alphabet of conditions induced from a finite set of metaconditions.
 For example, if `metaconditions = [ScalarMetaCondition(UnivariateMin(1), ≥)]`,
-the alphabet represents the (infinite) set: \${min(V1) ≥ a, a ∈ ℝ}\$.
+the alphabet represents the (infinite) set: \${min[V1] ≥ a, a ∈ ℝ}\$.
 
 See also
 [`BoundedScalarConditions`](@ref),

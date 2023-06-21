@@ -1,5 +1,5 @@
 using SoleModels
-using SoleModels: FinalModel
+using SoleModels: LeafModel
 import SoleLogics: npropositions
 
 """

@@ -62,20 +62,20 @@ end
 ############################################################################################
 
 """
-    struct ExternalFWDFeature <: AbstractFeature
+    struct ExplicitFeature{T} <: AbstractFeature
         name::String
-        fwd::Any
+        featstruct
     end
 
-A feature encoded explicitly as (a slice of) an FWD structure (see `AbstractFeatureLookupSet`).
+A feature encoded explicitly as a slice of feature structure (see `AbstractFeatureLookupSet`).
 
 See also
 [`AbstractFeatureLookupSet`](@ref), [`AbstractFeature`](@ref).
 """
-struct ExternalFWDFeature <: AbstractFeature
+struct ExplicitFeature{T} <: AbstractFeature
     name::String
-    fwd::Any
+    featstruct::T
 end
-syntaxstring(f::ExternalFWDFeature; kwargs...) = f.name
+syntaxstring(f::ExplicitFeature; kwargs...) = f.name
 
 ############################################################################################

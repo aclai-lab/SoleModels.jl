@@ -54,7 +54,6 @@ nmodalities(X::MultiLogiset)                   = length(eachmodality(X))
 ninstances(X::MultiLogiset)                    = ninstances(modality(X, 1))
 
 worldtype(X::MultiLogiset,  i_modality::Integer) = worldtype(modality(X, i_modality))
-worldtypes(X::MultiLogiset) = Vector{Type{<:AbstractWorld}}(worldtype.(eachmodality(X)))
 
 featvaltype(X::MultiLogiset,  i_modality::Integer) = featvaltype(modality(X, i_modality))
 featvaltypes(X::MultiLogiset) = Vector{Type{<:AbstractWorld}}(featvaltype.(eachmodality(X)))
@@ -127,9 +126,13 @@ isminifiable(X::MultiLogiset) = any(isminifiable.(eachmodality(X)))
 function minify(X::MultiLogiset)
     if !any(map(isminifiable, eachmodality(X)))
         if !all(map(isminifiable, eachmodality(X)))
-            @error "Cannot perform minification with modalities of types $(typeof.(eachmodality(X))). Please use a minifiable format (e.g., SupportedScalarLogiset)."
+            error("Cannot perform minification with modalities " *
+                "of types $(typeof.(eachmodality(X))). Please use a " *
+                "minifiable format (e.g., SupportedLogiset).")
         else
-            @warn "Cannot perform minification on some of the modalities provided. Please use a minifiable format (e.g., SupportedScalarLogiset) ($(typeof.(eachmodality(X))) were used instead)."
+            @warn "Cannot perform minification on some of the modalities " *
+                "provided. Please use a minifiable format (e.g., " *
+                "SupportedLogiset) ($(typeof.(eachmodality(X))) were used instead)."
         end
     end
     X, backmap = zip([!isminifiable(X) ? minify(X) : (X, identity) for X in eachmodality(X)]...)

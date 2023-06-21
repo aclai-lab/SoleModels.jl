@@ -56,8 +56,7 @@ export minify, isminifiable
 # Minification interface for lossless data compression
 include("utils/minify.jl")
 
-export AbstractFeature,
-        Feature, ExternalFWDFeature
+export AbstractFeature, Feature
 
 export propositions
 
@@ -85,10 +84,6 @@ export scalarlogiset
 export initlogiset, maxchannelsize, worldtype, dimensionality, allworlds, featvalue, nvariables
 
 export ScalarMetaCondition
-
-export inverse_test_operator, dual_test_operator,
-        apply_test_operator,
-        TestOperator
 
 export MixedFeature, CanonicalFeature, canonical_geq, canonical_leq
 

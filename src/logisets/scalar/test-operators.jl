@@ -5,6 +5,10 @@
 A test operator is a binary Julia `Function` used for comparing a feature value and
 a threshold. In a crisp (i.e., boolean, non-fuzzy) setting, the test operator returns
 a boolean value, and `<`, `>`, `≥`, `≤`, `!=`, and `==` are typically used.
+
+See also
+[`Aggregator`](@ref),
+[`ScalarCondition`](@ref).
 """
 const TestOperator = Function
 
@@ -20,6 +24,18 @@ the (binary) test operator function.
     operator(featval, threshold)
 end
 
+"""
+    const Aggregator = Function
+
+A test operator is a binary Julia `Function` used for comparing a feature value and
+a threshold. In a crisp (i.e., boolean, non-fuzzy) setting, the test operator returns
+a boolean value, and `<`, `>`, `≥`, `≤`, `!=`, and `==` are typically used.
+
+See also
+[`ScalarCondition`](@ref),
+[`ScalarOneStepMemoset`](@ref),
+[`TestOperator`](@ref).
+"""
 const Aggregator = Function
 
 ############################################################################################

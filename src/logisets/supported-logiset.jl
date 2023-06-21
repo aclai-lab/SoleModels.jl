@@ -163,7 +163,7 @@ struct SupportedLogiset{
 
     # TODO Helper
     # function SupportedLogiset(
-    #     X                   :: ... AbstractActiveScalarLogiset{W,V,FT,Bool,FR};
+    #     X                   :: ... AbstractScalarLogiset{W,V,FT,FR};
     #     kwargs...,
     # ) where {V,FT<:AbstractFeature,W<:AbstractWorld,FR<:AbstractFrame{W}}
     #     SupportedLogiset(Logiset(X); kwargs...)
