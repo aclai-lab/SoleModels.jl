@@ -81,11 +81,11 @@ export computefeature
 
 export scalarlogiset
 
-export initlogiset, maxchannelsize, worldtype, dimensionality, allworlds, featvalue, nvariables
+export initlogiset, maxchannelsize, worldtype, dimensionality, frame, featvalue, nvariables
 
 export ScalarMetaCondition
 
-export MixedFeature, CanonicalFeature, canonical_geq, canonical_leq
+export MixedCondition, CanonicalFeature, canonical_geq, canonical_leq
 
 export canonical_geq_95, canonical_geq_90, canonical_geq_85, canonical_geq_80, canonical_geq_75, canonical_geq_70, canonical_geq_60,
        canonical_leq_95, canonical_leq_90, canonical_leq_85, canonical_leq_80, canonical_leq_75, canonical_leq_70, canonical_leq_60

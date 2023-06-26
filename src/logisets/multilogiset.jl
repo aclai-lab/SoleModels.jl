@@ -41,11 +41,6 @@ end
 
 eachmodality(X::MultiLogiset) = X.modalities
 
-Base.length(X::MultiLogiset) = length(nmodalities(X))
-Base.push!(X::MultiLogiset, f::AbstractLogiset) = push!(eachmodality(X), f)
-Base.getindex(X::MultiLogiset, i_modality::Integer) = eachmodality(X)[i_modality]
-Base.iterate(X::MultiLogiset, state=1)   = state > nmodalities(X) ? nothing : (modality(X, state), state+1)
-
 modalitytype(::Type{<:MultiLogiset{L}}) where {L<:AbstractLogiset} = L
 modalitytype(X::MultiLogiset) = modalitytype(typeof(X))
 
@@ -161,6 +156,10 @@ end
 # # nrelations(X::MultiLogiset) = map(nrelations, eachmodality(X)) # TODO: figure if this is useless or not
 # nfeatures(X::MultiLogiset,  i_modality::Integer) = nfeatures(modality(X, i_modality))
 # nrelations(X::MultiLogiset, i_modality::Integer) = nrelations(modality(X, i_modality))
+# Base.length(X::MultiLogiset) = length(nmodalities(X))
+# Base.push!(X::MultiLogiset, f::AbstractLogiset) = push!(eachmodality(X), f)
+# Base.getindex(X::MultiLogiset, i_modality::Integer) = eachmodality(X)[i_modality]
+# Base.iterate(X::MultiLogiset, state=1)   = state > nmodalities(X) ? nothing : (modality(X, state), state+1)
 
 ############################################################################################
 

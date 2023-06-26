@@ -6,7 +6,7 @@ using SoleData: AbstractDimensionalDataset,
 import SoleData: ninstances, nvariables
 
 import SoleModels: scalarlogiset,
-    initlogiset, initlogiset, allworlds,
+    initlogiset, initlogiset, frame,
     featchannel, readfeature, featvalue, vareltype
 
 function initlogiset(
@@ -44,11 +44,11 @@ function initlogiset(
     return UniformFullDimensionalLogiset{U,W,N}(featstruct, features)
 end
 
-function allworlds(
+function frame(
     dataset::Union{UniformDimensionalDataset,AbstractArray},
     i_instance::Integer
 )
-    allworlds(FullDimensionalFrame(channelsize(dataset)))
+    FullDimensionalFrame(channelsize(dataset))
 end
 
 function featchannel(
@@ -103,13 +103,21 @@ function initlogiset(
     initlogiset(cube, features)
 end
 
-function allworlds(
+function frame(
     dataset::AbstractDataFrame,
     i_instance::Integer
 )
     # dataset_cube, varnames = SoleData.dataframe2cube(dataset; dry_run = true)
-    # allworlds(FullDimensionalFrame(channelsize(dataset_cube)))
-    allworlds(FullDimensionalFrame(size(dataset[i_instance,1])))
+    # FullDimensionalFrame(channelsize(dataset_cube))
+    column = dataset[:,1]
+    frame(column, i_instance)
+end
+
+function frame(
+    column::Vector,
+    i_instance::Integer
+)
+    FullDimensionalFrame(size(column[i_instance]))
 end
 
 function featchannel(

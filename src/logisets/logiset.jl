@@ -160,6 +160,10 @@ representatives(X::AbstractLogiset, i_instance::Integer, args...) = representati
 ############################################################################################
 # Non mandatory
 
+function features(X::AbstractLogiset)
+    error("Please, provide method features(::$(typeof(X))).")
+end
+
 function nfeatures(X::AbstractLogiset)
     error("Please, provide method nfeatures(::$(typeof(X))).")
 end

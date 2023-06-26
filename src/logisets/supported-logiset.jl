@@ -183,6 +183,23 @@ capacity(X::SupportedLogiset) = sum(capacity.(supports(X)))
 nmemoizedvalues(X::SupportedLogiset) = sum(nmemoizedvalues.(supports(X)))
 
 
+function featchannel(
+    X::AbstractLogiset{W},
+    i_instance::Integer,
+    feature::AbstractFeature,
+) where {W<:AbstractWorld}
+    featchannel(base(X), i_instance, feature)
+end
+
+function readfeature(
+    X::AbstractLogiset{W},
+    featchannel::Any,
+    w::W,
+    feature::AbstractFeature,
+) where {W<:AbstractWorld}
+    featchannel(base(X), featchannel, w, feature)
+end
+
 function featvalue(
     X::SupportedLogiset,
     i_instance::Integer,
@@ -328,3 +345,6 @@ end
 
 # TODO remove:
 support(X::SupportedLogiset) = first(supports(X))
+
+features(X::SupportedLogiset) = features(base(X))
+nfeatures(X::SupportedLogiset) = nfeatures(base(X))

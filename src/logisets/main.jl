@@ -49,6 +49,8 @@ export nfeatures
 include("scalar/main.jl")
 
 
+include("Tables.jl")
+
 export initlogiset, ninstances, maxchannelsize, worldtype, dimensionality, allworlds, featvalue
 
 export nvariables

@@ -101,11 +101,11 @@ struct DimensionalLogiset{
     ) where {V,N,W<:AbstractWorld}
         domain = (domain isa AbstractDimensionalDataset ? PassiveDimensionalLogiset{N,W}(domain) : domain)
 
-        @assert all(isa.(mixed_features, MixedFeature)) "Unknown feature encountered! " *
-            "$(filter(f->!isa(f, MixedFeature), mixed_features)), " *
-            "$(typeof.(filter(f->!isa(f, MixedFeature), mixed_features)))"
+        @assert all(isa.(mixed_features, MixedCondition)) "Unknown feature encountered! " *
+            "$(filter(f->!isa(f, MixedCondition), mixed_features)), " *
+            "$(typeof.(filter(f->!isa(f, MixedCondition), mixed_features)))"
 
-        mixed_features = Vector{MixedFeature}(mixed_features)
+        mixed_features = Vector{MixedCondition}(mixed_features)
 
         _features, featsnops = begin
             _features = AbstractFeature[]

@@ -11,16 +11,16 @@ include("conditions.jl")
 # Templates for formulas of scalar conditions (e.g., templates for ⊤, f ⋈ t, ⟨R⟩ f ⋈ t, etc.)
 include("templated-formulas.jl")
 
-# Types for representing common associations between features and operators
-include("canonical-conditions.jl")
-
-const MixedFeature = Union{AbstractFeature,CanonicalFeature,Function,Tuple{TestOperator,Function},Tuple{TestOperator,AbstractFeature}}
-
 include("random.jl")
 
 include("representatives.jl")
 
 include("dataset-bindings.jl")
+
+# # Types for representing common associations between features and operators
+# include("canonical-conditions.jl") TODO remove
+# const MixedCondition = Union{AbstractFeature,CanonicalFeature,Function,Tuple{TestOperator,Function},Tuple{TestOperator,AbstractFeature}}
+# Union{AbstractFeature,CanonicalFeature,Function,Tuple{TestOperator,Function},Tuple{TestOperator,AbstractFeature}}
 
 include("memosets.jl")
 

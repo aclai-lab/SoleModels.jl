@@ -26,11 +26,11 @@ using SoleModels.utils
 
 using SoleModels: Aggregator, AbstractCondition
 using SoleModels: BoundedScalarConditions
-using SoleModels: CanonicalFeatureGeq, CanonicalFeatureGeqSoft, CanonicalFeatureLeq, CanonicalFeatureLeqSoft
 using SoleModels: AbstractLogiset, AbstractMultiModalFrame
 using SoleModels: MultiLogiset, AbstractLogiset
 using SoleModels: apply_test_operator, existential_aggregator, aggregator_bottom, aggregator_to_binary
 
+import SoleModels: features, nfeatures
 using SoleModels: worldtype, featvaltype, featuretype, frametype
 
 import SoleModels: representatives, ScalarMetaCondition, ScalarCondition, featvaltype
