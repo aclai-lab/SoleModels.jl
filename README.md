@@ -1,12 +1,11 @@
 # *SoleModels.jl* – Symbolic Learning Models
 
 [![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://aclai-lab.github.io/SoleModels.jl/stable)
-[![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://aclai-lab.github.io/SoleModels.jl/dev)
-[![Build Status](https://api.cirrus-ci.com/github/aclai-lab/SoleModels.jl.svg)](https://cirrus-ci.com/github/aclai-lab/SoleModels.jl)
+[![Build Status](https://api.cirrus-ci.com/github/aclai-lab/SoleModels.jl.svg?branch=main)](https://cirrus-ci.com/github/aclai-lab/SoleModels.jl)
 [![Coverage](https://codecov.io/gh/aclai-lab/SoleModels.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/aclai-lab/SoleModels.jl)
-[![Coverage](https://coveralls.io/repos/github/aclai-lab/SoleModels.jl/badge.svg?branch=master)](https://coveralls.io/github/aclai-lab/SoleModels.jl?branch=master)
 [![Code Style: Blue](https://img.shields.io/badge/code%20style-blue-4495d1.svg)](https://github.com/invenia/BlueStyle)
 
+<!-- [![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://aclai-lab.github.io/SoleModels.jl/dev) -->
 
 ## In a nutshell
 

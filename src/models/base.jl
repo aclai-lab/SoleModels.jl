@@ -1,5 +1,7 @@
 import Base: convert, length, getindex, isopen
 import SoleLogics: check, syntaxstring
+using SoleData: slicedataset
+using SoleLogics: LeftmostLinearForm, LeftmostConjunctiveForm, LeftmostDisjunctiveForm
 
 # Util
 typename(::Type{T}) where T = eval(nameof(T))
@@ -18,9 +20,6 @@ See also
 """
 abstract type AbstractBooleanCondition end
 
-# TODO: move in correct position
-eachsample(d::AbstractDataset) = map(i->get_instance(d, i), 1:nsamples(d))
-
 function syntaxstring(c::AbstractBooleanCondition; kwargs...)
     error("Please, provide method syntaxstring(::$(typeof(c)); kwargs...).")
 end
@@ -30,12 +29,20 @@ function Base.show(io::IO, c::AbstractBooleanCondition)
 end
 
 # Check on a boolean condition
-function check(c::AbstractBooleanCondition, i::AbstractInterpretation, args...)
-    error("Please, provide method syntaxstring(::$(typeof(c))," *
-        " i::$(typeof(i)), args...).")
+function check(c::AbstractBooleanCondition, i::AbstractInterpretation, args...; kwargs...)
+    error("Please, provide method check(::$(typeof(c))," *
+        " i::$(typeof(i)), args...; kwargs...).")
 end
-function check(c::AbstractBooleanCondition, d::AbstractInterpretationSet, args...)
-    map(i->check(c, i, args...), eachsample(d))
+function check(
+    c::AbstractBooleanCondition,
+    d::AbstractInterpretationSet,
+    args...;
+    kwargs...
+)
+    map(
+        i_sample->check(c, slicedataset(d, [i_sample]; return_view = true), args...; kwargs...)[1],
+        1:ninstances(d)
+    )
 end
 
 """
@@ -55,7 +62,7 @@ abstract type AbstractLogicalBooleanCondition <: AbstractBooleanCondition end
 """
     formula(c::AbstractLogicalBooleanCondition)::AbstractFormula
 
-Returns the logical formula (see [`SoleLogics`](@ref) package) of a given
+Return the logical formula (see [`SoleLogics`](@ref) package) of a given
 logical boolean condition.
 
 See also
@@ -70,7 +77,6 @@ function syntaxstring(c::AbstractLogicalBooleanCondition; kwargs...)
     syntaxstring(formula(c); kwargs...)
 end
 
-
 """
     struct TrueCondition <: AbstractLogicalBooleanCondition end
 
@@ -83,7 +89,9 @@ See also
 struct TrueCondition <: AbstractLogicalBooleanCondition end
 
 formula(::TrueCondition) = SyntaxTree(⊤)
-check(::TrueCondition, args...) = true
+check(::TrueCondition, i::AbstractInterpretation, args...; kwargs...) = true
+check(::TrueCondition, d::AbstractInterpretationSet, args...; kwargs...) =
+    fill(true, ninstances(d))
 
 """
     struct LogicalTruthCondition{F<:AbstractFormula} <: AbstractLogicalBooleanCondition
@@ -115,8 +123,16 @@ end
 
 formula(c::LogicalTruthCondition) = c.formula
 
-function check(c::LogicalTruthCondition, i::AbstractInterpretation, args...)
-    tops(check(formula(c), i, args...))
+function check(c::LogicalTruthCondition, i::AbstractInterpretation, args...; kwargs...)
+    istop(check(formula(c), i, args...; kwargs...))
+end
+function check(
+    c::LogicalTruthCondition,
+    d::AbstractInterpretationSet,
+    args...;
+    kwargs...,
+)
+    map(istop, check(formula(c), d, args...; kwargs...))
 end
 
 ############################################################################################
@@ -150,7 +166,7 @@ abstract type AbstractModel{O} end
     outcometype(::Type{<:AbstractModel{O}}) where {O} = O
     outcometype(m::AbstractModel) = outcometype(typeof(m))
 
-Returns the outcome type of a model (type).
+Return the outcome type of a model (type).
 
 See also [`AbstractModel`](@ref).
 """
@@ -165,7 +181,7 @@ Otherwise, the model can output `nothing` values and is referred to as *open*.
 """
     isopen(::AbstractModel)::Bool
 
-Returns whether a model is open.
+Return whether a model is open.
 $(doc_open_model)
 [`Rule`](@ref) is an example of an *open* model, while [`Branch`](@ref)
 is an example of *closed* model.
@@ -177,7 +193,7 @@ isopen(::AbstractModel) = true
 """
     outputtype(m::AbstractModel)
 
-Returns a supertype for the outputs obtained when `apply`ing a model.
+Return a supertype for the outputs obtained when `apply`ing a model.
 The result depends on whether the model is open or closed:
 
     outputtype(M::AbstractModel{O}) = isopen(M) ? Union{Nothing,O} : O
@@ -195,11 +211,35 @@ function outputtype(m::AbstractModel)
 end
 
 """
-    apply(m::AbstractModel, i::AbstractInterpretation)::outputtype(m)
-    apply(m::AbstractModel, d::AbstractInterpretationSet)::AbstractVector{<:outputtype(m)}
+    apply(
+        m::AbstractModel,
+        i::AbstractInterpretation;
+        check_args::Tuple = (),
+        check_kwargs::NamedTuple = (;),
+        functional_args::Tuple = (),
+        functional_kwargs::NamedTuple = (;),
+        kwargs...
+    )::outputtype(m)
 
-Returns the output prediction of the model on an instance, or on each instance of a dataset.
-The predictions can be `nothing` if the model is *open*
+    apply(
+        m::AbstractModel,
+        d::AbstractInterpretationSet;
+        check_args::Tuple = (),
+        check_kwargs::NamedTuple = (; use_memo = [ThreadSafeDict{SyntaxTree,WorldSet{worldtype(d)}}() for i in 1:ninstances(d)]),
+        functional_args::Tuple = (),
+        functional_kwargs::NamedTuple = (;),
+        kwargs...
+    )::AbstractVector{<:outputtype(m)}
+
+Return the output prediction of the model on an instance, or on each instance of a dataset.
+The predictions can be `nothing` if the model is *open*.
+
+`check_args` and `check_kwargs` can influence check's behavior at the time
+of its computation (see [`check`](@ref))
+
+`functional_args` and `functional_kwargs` can influence FunctionModel's
+behavior when the corresponding function is applied to AbstractInterpretation (see
+[`FunctionModel`](@ref), [`AbstractInterpretation`](@ref))
 
 See also
 [`isopen`](@ref),
@@ -209,28 +249,51 @@ See also
 [`AbstractInterpretation`](@ref),
 [`AbstractInterpretationSet`](@ref).
 """
-function apply(m::AbstractModel, i::AbstractInterpretation)::outputtype(m)
+function apply(
+    m::AbstractModel,
+    i::AbstractInterpretation;
+    check_args::Tuple = (),
+    check_kwargs::NamedTuple = (;),
+    functional_args::Tuple = (),
+    functional_kwargs::NamedTuple = (;),
+    kwargs...,
+)::outputtype(m)
     error("Please, provide method apply(::$(typeof(m)), ::$(typeof(i))).")
 end
-function apply(m::AbstractModel, d::AbstractInterpretationSet)::AbstractVector{<:outputtype(m)}
-    map(i->apply(m, i), eachsample(d))
+
+function apply(
+    m::AbstractModel,
+    d::AbstractInterpretationSet,
+    i_sample::Integer;
+    kwargs...
+)::outputtype(m)
+    interpretation = get_instance(d, i_sample)
+    apply(m, interpretation; kwargs...)
+end
+
+function apply(
+    m::AbstractModel,
+    d::AbstractInterpretationSet;
+    kwargs...
+)::AbstractVector{<:outputtype(m)}
+    map(i_sample->apply(m, d, i_sample; kwargs...), 1:ninstances(d))
 end
 
 """
     issymbolic(::AbstractModel)::Bool
 
-Returns whether a model is symbolic or not.
+Return whether a model is symbolic or not.
 A model is said to be `symbolic` when its application relies on checking formulas
 of a certain logical language (see [`SoleLogics`](@ref) package) on the instance.
 Symbolic models provide a form of transparent and interpretable modeling.
 
 Instead, a model is said to be functional when it encodes an algebraic mathematical
 function (e.g., a neural network).
-TODO explain unroll_rules/cascade/rules A symbolic model is one where the computation has a *rule-base structure*.
+TODO explain listrules/cascade/rules A symbolic model is one where the computation has a *rule-base structure*.
 
 See also
 [`apply`](@ref),
-[`unroll_rules`](@ref),
+[`listrules`](@ref),
 [`AbstractModel`](@ref).
 """
 issymbolic(::AbstractModel) = false
@@ -238,7 +301,7 @@ issymbolic(::AbstractModel) = false
 """
     info(m::AbstractModel)::NamedTuple = m.info
 
-Returns the `info` structure for model `m`; this structure is used
+Return the `info` structure for model `m`; this structure is used
 for storing additional information that does not affect the model's behavior.
 This structure can hold, for example, information
 about the model's statistical performance during the learning phase.
@@ -316,8 +379,9 @@ end
 
 outcome(m::ConstantModel) = m.outcome
 isopen(::ConstantModel) = false
-apply(m::ConstantModel, i::AbstractInterpretation) = outcome(m)
-apply(m::ConstantModel, d::AbstractInterpretationSet) = outcome(m)
+apply(m::ConstantModel, i::AbstractInterpretation; kwargs...) = outcome(m)
+apply(m::ConstantModel, d::AbstractInterpretationSet, i_sample::Integer; kwargs...) = outcome(m)
+apply(m::ConstantModel, d::AbstractInterpretationSet; kwargs...) = fill(outcome(m), ninstances(d))
 
 convert(::Type{ConstantModel{O}}, o::O) where {O} = ConstantModel{O}(o)
 convert(::Type{<:AbstractModel{F}}, m::ConstantModel) where {F} = ConstantModel{F}(m)
@@ -332,6 +396,8 @@ A `FunctionModel` is a `FinalModel` that applies a native Julia `Function`
 in order to compute the outcome. Over efficiency concerns, it is mandatory to make explicit
 the output type `O` by wrapping the `Function` into an object of type
 `FunctionWrapper{O}`.
+
+TODO @Michele explain functional_args/functional_kwargs
 
 See also [`ConstantModel`](@ref), [`FunctionWrapper`](@ref), [`FinalModel`](@ref).
 """
@@ -383,7 +449,33 @@ end
 
 f(m::FunctionModel) = m.f
 isopen(::FunctionModel) = false
-apply(m::FunctionModel, i::AbstractInterpretation) = f(m)(i)
+function apply(
+    m::FunctionModel,
+    i::AbstractInterpretation;
+    functional_models_gets_single_instance::Bool = false,
+    functional_args::Tuple = (),
+    functional_kwargs::NamedTuple = (;),
+    kwargs...,
+)
+    @assert functional_models_gets_single_instance
+    f(m)(i, functional_args...; functional_kwargs...)
+end
+function apply(
+    m::FunctionModel,
+    d::AbstractInterpretationSet,
+    i_sample::Integer;
+    functional_models_gets_single_instance::Bool = false,
+    functional_args::Tuple = (),
+    functional_kwargs::NamedTuple = (;),
+    kwargs...,
+)
+    if functional_models_gets_single_instance
+        interpretation = get_instance(d, i_sample)
+        f(m)(interpretation, functional_args...; functional_kwargs...)
+    else
+        f(m)(d, i_sample, functional_args...; functional_kwargs...)
+    end
+end
 
 convert(::Type{<:AbstractModel{F}}, m::FunctionModel) where {F} = FunctionModel{F}(m)
 
@@ -434,7 +526,7 @@ abstract type ConstrainedModel{O,FM<:AbstractModel} <: AbstractModel{O} end
 """
     feasiblemodelstype(m::AbstractModel)
 
-Returns a `Union` of the Feasible Models (`FM`) allowed in the sub-tree of any
+Return a `Union` of the Feasible Models (`FM`) allowed in the sub-tree of any
 AbstractModel. Note that for a `ConstrainedModel{O,FM<:AbstractModel}`, it
 simply returns `FM`.
 
@@ -578,7 +670,7 @@ end
 """
     antecedent(m::Union{Rule,Branch})::AbstractBooleanCondition
 
-Returns the antecedent of a rule/branch;
+Return the antecedent of a rule/branch;
 that is, the condition to be evaluated upon applying the model.
 
 See also
@@ -593,7 +685,7 @@ antecedent(m::Rule) = m.antecedent
 """
     consequent(m::Rule)::AbstractModel
 
-Returns the consequent of a rule.
+Return the consequent of a rule.
 
 See also
 [`antecedent`](@ref),
@@ -609,9 +701,10 @@ issymbolic(::Rule) = true
 """
     function check_antecedent(
         m::Union{Rule,Branch},
-        id::Union{AbstractInterpretation,AbstractInterpretationSet}
+        args...;
+        kwargs...
     )
-        check(antecedent(m), id)
+        check(antecedent(m), id, args...; kwargs...)
     end
 
 Simply checks the antecedent of a rule on an instance or dataset.
@@ -623,14 +716,82 @@ See also
 """
 function check_antecedent(
     m::Rule,
-    id::Union{AbstractInterpretation,AbstractInterpretationSet}
+    args...;
+    kwargs...
 )
-    check(antecedent(m), id)
+    check(antecedent(m), args...; kwargs...)
 end
 
-function apply(m::Rule, i::AbstractInterpretation)
-    check_antecedent(m, i) ? apply(consequent(m), i) : nothing
+function apply(
+    m::Rule,
+    i::AbstractInterpretation;
+    check_args::Tuple = (),
+    check_kwargs::NamedTuple = (;),
+    kwargs...
+)
+    if check_antecedent(m, i, check_args...; check_kwargs...)
+        apply(consequent(m), i;
+            check_args = check_args,
+            check_kwargs = check_kwargs,
+            kwargs...
+        )
+    else
+        nothing
+    end
 end
+
+function apply(
+    m::Rule,
+    d::AbstractInterpretationSet,
+    i_sample::Integer;
+    check_args::Tuple = (),
+    check_kwargs::NamedTuple = (; use_memo = [Dict{SyntaxTree,WorldSet{worldtype(d)}}() for i in 1:ninstances(d)]),
+    kwargs...
+)
+    if check_antecedent(m, d, i_sample, check_args...; check_kwargs...) == true
+        apply(consequent(m), d, i_sample;
+            check_args = check_args,
+            check_kwargs = check_kwargs,
+            kwargs...
+        )
+    else
+        nothing
+    end
+end
+
+# Helper
+function formula(m::Rule{O,<:Union{LogicalTruthCondition,TrueCondition}}) where {O}
+    formula(antecedent(m))
+end
+
+# Helpers
+function conjuncts(m::Rule{O,<:LogicalTruthCondition{<:LeftmostConjunctiveForm}}) where {O}
+    conjuncts(formula(m))
+end
+function nconjuncts(m::Rule{O,<:LogicalTruthCondition{<:LeftmostConjunctiveForm}}) where {O}
+    nconjuncts(formula(m))
+end
+function disjuncts(m::Rule{O,<:LogicalTruthCondition{<:LeftmostDisjunctiveForm}}) where {O}
+    disjuncts(formula(m))
+end
+function ndisjuncts(m::Rule{O,<:LogicalTruthCondition{<:LeftmostDisjunctiveForm}}) where {O}
+    ndisjuncts(formula(m))
+end
+
+# Helper
+function Base.getindex(
+    m::Rule{O,C},
+    idxs::AbstractVector{<:Integer},
+) where {O,SS<:LeftmostLinearForm,C<:LogicalTruthCondition{SS}}
+    Rule{O,C}(
+        LogicalTruthCondition{SS}(begin
+            ants = children(formula(m))
+            SS(ants[idxs])
+        end),
+        consequent(m)
+    )
+end
+
 
 ############################################################################################
 
@@ -706,7 +867,7 @@ antecedent(m::Branch) = m.antecedent
 """
     posconsequent(m::Branch)::AbstractModel
 
-Returns the positive consequent of a branch;
+Return the positive consequent of a branch;
 that is, the model to be applied if the antecedent evaluates to `true`.
 
 See also
@@ -718,7 +879,7 @@ posconsequent(m::Branch) = m.posconsequent
 """
     negconsequent(m::Branch)::AbstractModel
 
-Returns the negative consequent of a branch;
+Return the negative consequent of a branch;
 that is, the model to be applied if the antecedent evaluates to `false`.
 
 See also
@@ -736,22 +897,99 @@ isopen(m::Branch) = isopen(posconsequent(m)) || isopen(negconsequent(m))
 
 function check_antecedent(
     m::Branch,
-    id::Union{AbstractInterpretation,AbstractInterpretationSet}
+    args...;
+    kwargs...
 )
-    check(antecedent(m), id)
+    check(antecedent(m), args...; kwargs...)
 end
 
-function apply(m::Branch, i::AbstractInterpretation)
-    check_antecedent(m, i) ? apply(posconsequent(m), i) : apply(negconsequent(m), i)
+function apply(
+    m::Branch,
+    i::AbstractInterpretation;
+    check_args::Tuple = (),
+    check_kwargs::NamedTuple = (;),
+    kwargs...
+)
+    if check_antecedent(m, i, check_args...; check_kwargs...)
+        apply(posconsequent(m), i;
+            check_args = check_args,
+            check_kwargs = check_kwargs,
+            kwargs...
+        )
+    else
+        apply(negconsequent(m), i;
+            check_args = check_args,
+            check_kwargs = check_kwargs,
+            kwargs...
+        )
+    end
 end
-function apply(m::Branch{O,<:LogicalTruthCondition}, d::AbstractInterpretationSet) where {O}
-    cs = check_antecedent(m, d)
+
+function apply(
+    m::Branch{O,<:LogicalTruthCondition},
+    d::AbstractInterpretationSet,
+    i_sample::Integer;
+    check_args::Tuple = (),
+    check_kwargs::NamedTuple = (; use_memo = [Dict{SyntaxTree,WorldSet{worldtype(d)}}() for i in 1:ninstances(d)]),
+    kwargs...
+) where {O}
+    if check_antecedent(m, d, i_sample, check_args...; check_kwargs...) == true
+        apply(posconsequent(m), d, i_sample;
+            check_args = check_args,
+            check_kwargs = check_kwargs,
+            kwargs...
+        )
+    else
+        apply(negconsequent(m), d, i_sample;
+            check_args = check_args,
+            check_kwargs = check_kwargs,
+            kwargs...
+        )
+    end
+end
+
+function apply(
+    m::Branch{O,<:LogicalTruthCondition},
+    d::AbstractInterpretationSet;
+    check_args::Tuple = (),
+    check_kwargs::NamedTuple = (; use_memo = [ThreadSafeDict{SyntaxTree,WorldSet{worldtype(d)}}() for i in 1:ninstances(d)]),
+    kwargs...
+) where {O}
+    cs = check_antecedent(m, d, check_args...; check_kwargs...)
     cpos = findall((c)->c==true, cs)
     cneg = findall((c)->c==false, cs)
-    out = fill(true, length(cs))
-    out[cpos] = apply(posconsequent(m), slice_dataset(d, cpos))
-    out[cneg] = apply(posconsequent(m), slice_dataset(d, cneg))
+    out = Array{outputtype(m)}(undef,length(cs))
+    if !isempty(cpos)
+        out[cpos] .= apply(
+            posconsequent(m),
+            slicedataset(d, cpos; return_view = true);
+            check_args = check_args,
+            check_kwargs = check_kwargs,
+            kwargs...
+        )
+    end
+    if !isempty(cneg)
+        out[cneg] .= apply(
+            negconsequent(m),
+            slicedataset(d, cneg; return_view = true);
+            check_args = check_args,
+            check_kwargs = check_kwargs,
+            kwargs...
+        )
+    end
     out
+end
+
+# Helper
+function formula(m::Branch{O,<:Union{LogicalTruthCondition,TrueCondition}}) where {O}
+    formula(antecedent(m))
+end
+
+function Base.getindex(
+    m::Branch{O,<:LogicalTruthCondition{<:LeftmostLinearForm}},
+    args...
+) where {O}
+    return Base.getindex(formula(m), args...)
 end
 
 ############################################################################################
@@ -826,145 +1064,129 @@ issymbolic(::DecisionList) = true
 
 isopen(m::DecisionList) = isopen(defaultconsequent(m))
 
-function apply(m::DecisionList, i::AbstractInterpretation)
+function apply(
+    m::DecisionList,
+    i::AbstractInterpretation;
+    check_args::Tuple = (),
+    check_kwargs::NamedTuple = (;),
+)
     for rule in rulebase(m)
-        if check(m, i)
+        if check(m, i, check_args...; check_kwargs...)
             return consequent(rule)
         end
     end
     defaultconsequent(m)
 end
 
-function apply(m::DecisionList{O}, X::AbstractInterpretationSet) where {O}
-    n_samples = nsamples(X)
-    pred = Vector{O}(undef, n_samples)
-    idxs = 1:n_samples
+function apply(
+    m::DecisionList{O},
+    d::AbstractInterpretationSet;
+    check_args::Tuple = (),
+    check_kwargs::NamedTuple = (; use_memo = [ThreadSafeDict{SyntaxTree,WorldSet{worldtype(d)}}() for i in 1:ninstances(d)]),
+) where {O}
+    nsamp = ninstances(d)
+    pred = Vector{O}(undef, nsamp)
+    uncovered_idxs = 1:nsamp
 
     for rule in rulebase(m)
-        length(idxs) == 0 && break
+        length(uncovered_idxs) == 0 && break
 
-        idxs_sat = findall(check(antecedent(rule),X) .== true)
-        idxs = setdiff(idxs,idxs_sat)
+        uncovered_d = slicedataset(d, uncovered_idxs; return_view = true)
+
+        idxs_sat = findall(
+            # check_antecedent(rule, d, check_args...; check_kwargs...) .== true
+            check_antecedent(rule, uncovered_d, check_args...; check_kwargs...) .== true
+        )
+        idxs_sat = uncovered_idxs[idxs_sat]
+        uncovered_idxs = setdiff(uncovered_idxs, idxs_sat)
 
         map((i)->(pred[i] = outcome(consequent(rule))), idxs_sat)
     end
 
-    length(idxs) != 0 && map((i)->(pred[i] = outcome(defaultconsequent(m))), idxs)
+    length(uncovered_idxs) != 0 &&
+        map((i)->(pred[i] = outcome(defaultconsequent(m))), uncovered_idxs)
 
     return pred
 end
 
-############################################################################################
+#TODO: write apply! for the other models
+#TODO write in docstring that possible values for compute_metrics are: :append, true, false
+function apply!(
+    m::DecisionList{O},
+    d::AbstractInterpretationSet;
+    check_args::Tuple = (),
+    check_kwargs::NamedTuple = (; use_memo = [ThreadSafeDict{SyntaxTree,WorldSet{worldtype(d)}}() for i in 1:ninstances(d)]),
+    compute_metrics::Union{Symbol,Bool} = false,
+) where {O}
+    nsamp = ninstances(d)
+    pred = Vector{O}(undef, nsamp)
+    delays = Vector{Integer}(undef, nsamp)
+    uncovered_idxs = 1:nsamp
+    rules = rulebase(m)
 
-"""
-    struct RuleCascade{
-        O,
-        C<:AbstractBooleanCondition,
-        FFM<:FinalModel
-    } <: ConstrainedModel{O,FFM}
-        antecedents::Vector{<:C}
-        consequent::FFM
-        info::NamedTuple
+    for (n, rule) in enumerate(rules)
+        length(uncovered_idxs) == 0 && break
+
+        uncovered_d = slicedataset(d, uncovered_idxs; return_view = true)
+
+        idxs_sat = findall(
+            # check_antecedent(rule, d, check_args...; check_kwargs...) .== true
+            check_antecedent(rule, uncovered_d, check_args...; check_kwargs...) .== true
+        )
+        idxs_sat = uncovered_idxs[idxs_sat]
+        uncovered_idxs = setdiff(uncovered_idxs, idxs_sat)
+
+        delays[idxs_sat] .= (n-1)
+        map((i)->(pred[i] = outcome(consequent(rule))), idxs_sat)
     end
 
-A `RuleCascade` is a symbolic model that operates as a nested structure of IF-THEN blocks:
-
-    IF (antecedent_1) THEN
-        IF (antecedent_2) THEN
-            ...
-                IF (antecedent_n) THEN
-                    (consequent)
-                END
-            ...
-        END
-    END
-
-where the antecedents are conditions to be tested and the consequent is the feasible
-local outcome of the block.
-
-Note that `FM` refers to the Feasible Models (`FM`) allowed in the model's sub-tree.
-
-See also [`Rule`](@ref), [`ConstrainedModel`](@ref), [`DecisionList`](@ref), [`AbstractModel`](@ref).
-"""
-struct RuleCascade{
-    O,
-    C<:AbstractBooleanCondition,
-    FFM<:FinalModel
-} <: ConstrainedModel{O,FFM}
-    antecedents::Vector{<:C}
-    consequent::FFM
-    info::NamedTuple
-
-    function RuleCascade(
-        antecedents::Vector,
-        consequent::Any,
-        info::NamedTuple = (;),
-    )
-        antecedents = convert.(AbstractBooleanCondition, antecedents)
-        C = SoleBase._typejoin(typeof.(antecedents)...)
-        consequent = wrap(consequent)
-        O = outcometype(consequent)
-        FFM = typeintersect(propagate_feasiblemodels(consequent), FinalModel{<:O})
-        check_model_constraints(RuleCascade{O}, typeof(consequent), FFM, O)
-        new{O,C,FFM}(antecedents, consequent, info)
+    if length(uncovered_idxs) != 0
+        map((i)->(pred[i] = outcome(defaultconsequent(m))), uncovered_idxs)
+        length(rules) == 0 ? (delays .= 0) : (delays[uncovered_idxs] .= length(rules))
     end
 
-    function RuleCascade(
-        consequent::Any,
-        info::NamedTuple = (;),
-    )
-        antecedents = [TrueCondition()]
-        C = SoleBase._typejoin(typeof.(antecedents)...)
-        consequent = wrap(consequent)
-        O = outcometype(consequent)
-        FFM = typeintersect(propagate_feasiblemodels(consequent), FinalModel{<:O})
-        check_model_constraints(RuleCascade{O}, typeof(consequent), FFM, O)
-        new{O,C,FFM}(antecedents, consequent, info)
-    end
-end
+    (length(rules) != 0) && (delays = delays ./ length(rules))
 
-antecedents(m::RuleCascade) = m.antecedents
-consequent(m::RuleCascade) = m.consequent
-
-conditiontype(::Type{M}) where {M<:RuleCascade{O,C}} where {O,C} = C
-conditiontype(m::RuleCascade) = conditiontype(typeof(m))
-
-issymbolic(::RuleCascade) = true
-
-function apply(m::RuleCascade, i::AbstractInterpretation)
-    for antecedent in antecedents(m)
-        if ! check(antecedent, i)
-            return nothing
-        end
-    end
-    consequent(m)
-end
-
-# Convert a rule cascade into a rule by joining the antecedents.
-function convert(
-    ::Type{R},
-    m::RuleCascade{O,C}
-) where {R<:Rule,O,C<:Union{TrueCondition,LogicalTruthCondition}}
-    function _antecedent(m::Vector{<:AbstractLogicalBooleanCondition})
-        if length(m) == 0
-            return SyntaxTree(⊤)
-        elseif length(m) == 1
-            return formula(m[1])
+    iprev = info(m)
+    inew = compute_metrics == false ? iprev : begin
+        if :delays ∉ keys(iprev)
+            merge(iprev, (; delays = delays))
         else
-            return ∧((formula.(m))...)
+            prev = iprev[:delays]
+            ntwithout = (; [p for p in pairs(nt) if p[1] != :delays]...)
+            if compute_metrics == :append
+                merge(ntwithout,(; delays = [prev..., delays...]))
+            elseif compute_metrics == true
+                merge(ntwithout,(; delays = delays))
+            end
         end
     end
 
-    if C isa TrueCondition
-        return R(consequent(m), info(m))
-    else
-        cond = LogicalTruthCondition(_antecedent(antecedents(m)))
-        return R(cond, consequent(m), info(m))
+    inewnew = begin
+        if :pred ∉ keys(inew)
+            merge(inew, (; pred = pred))
+        else
+            prev = inew[:pred]
+            ntwithout = (; [p for p in pairs(nt) if p[1] != :pred]...)
+            if compute_metrics == :append
+                merge(ntwithout,(; pred = [prev..., pred...]))
+            elseif compute_metrics == true
+                merge(ntwithout,(; pred = pred))
+            end
+        end
     end
+
+    return DecisionList(rules, defaultconsequent(m), inewnew)
 end
 
-Base.length(rc::RuleCascade) = length(antecedents(rc))
-Base.getindex(rc::RuleCascade, idxs) = RuleCascade(antecedents(rc)[idxs], consequent(rc))
+# TODO: if delays not in info(m) ?
+function meandelaydl(m::DecisionList)
+    i = info(m)
+
+    if :delays in keys(i)
+        return mean(i[:delays])
+    end
+end
 
 ############################################################################################
 
@@ -1016,7 +1238,7 @@ struct DecisionTree{
     info::NamedTuple
 
     function DecisionTree(
-        root::Union{FFM,Branch{O,C,<:Union{Branch{<:O,C2},FFM}}},
+        root::Union{FFM,Branch{O,C,Union{Branch{<:O,C2},FFM}}},
         info::NamedTuple = (;),
     ) where {O, C<:AbstractBooleanCondition, C2<:C, FFM<:FinalModel{<:O}}
         new{O,C,FFM}(root, info)
@@ -1046,13 +1268,30 @@ end
 root(m::DecisionTree) = m.root
 
 conditiontype(::Type{M}) where {M<:DecisionTree{O,C}} where {O,C} = C
+conditiontype(::Type{M}) where {M<:DecisionTree{O,C,FFM}} where {O,C,FFM} = C
 conditiontype(m::DecisionTree) = conditiontype(typeof(m))
 
 issymbolic(::DecisionTree) = true
 
 isopen(::DecisionTree) = false
 
-apply(m::DecisionTree, id::Union{AbstractInterpretation,AbstractInterpretationSet}) = apply(root(m), id)
+# TODO join these two or note that they are kept separate due to possible dispatch ambiguities.
+function apply(
+    m::DecisionTree,
+    #id::Union{AbstractInterpretation,AbstractInterpretationSet};
+    id::AbstractInterpretation;
+    kwargs...
+)
+    apply(root(m), id; kwargs...)
+end
+
+function apply(
+    m::DecisionTree,
+    d::AbstractInterpretationSet;
+    kwargs...,
+)
+    apply(root(m), d; kwargs...)
+end
 
 ############################################################################################
 
@@ -1101,8 +1340,22 @@ conditiontype(m::DecisionForest) = conditiontype(typeof(m))
 
 issymbolic(::DecisionForest) = false
 
-function apply(f::DecisionForest, id::Union{AbstractInterpretation,AbstractInterpretationSet})
-    best_guess([apply(t, id) for t in trees(f)])
+# TODO check these two.
+function apply(
+    f::DecisionForest,
+    id::AbstractInterpretation;
+    kwargs...
+)
+    bestguess([apply(t, d; kwargs...) for t in trees(f)])
+end
+
+function apply(
+    f::DecisionForest,
+    d::AbstractInterpretationSet;
+    kwargs...
+)
+    pred = hcat([apply(t, d; kwargs...) for t in trees(f)]...)
+    return [bestguess(pred[i,:]) for i in 1:size(pred,1)]
 end
 
 ############################################################################################
@@ -1127,7 +1380,7 @@ where the antecedents are conditinos and the consequents are the feasible
 local outcomes of the block.
 
 In Sole.jl, this logic can implemented using `ConstrainedModel`s such as
-`Rule`s, `Branch`s, `RuleCascade`s, `DecisionList`s, `DecisionTree`s, and the be wrapped into
+`Rule`s, `Branch`s, `DecisionList`s, `DecisionTree`s, and the be wrapped into
 a `MixedSymbolicModel`:
 
     struct MixedSymbolicModel{O,FM<:AbstractModel} <: ConstrainedModel{O,FM}
@@ -1162,6 +1415,12 @@ issymbolic(m::MixedSymbolicModel) = issymbolic(root(m))
 
 isopen(::MixedSymbolicModel) = isopen(root)
 
-apply(m::MixedSymbolicModel, id::Union{AbstractInterpretation,AbstractInterpretationSet}) = apply(root(m), id)
+function apply(
+    m::MixedSymbolicModel,
+    id::Union{AbstractInterpretation,AbstractInterpretationSet};
+    kwargs...
+)
+    apply(root(m), id; kwargs...)
+end
 
 ############################################################################################

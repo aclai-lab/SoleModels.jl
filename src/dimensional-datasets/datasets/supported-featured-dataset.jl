@@ -13,7 +13,7 @@
 #  the fly and store it for later calls).
 # 
 # We define an abstract type for explicit modal dataset with support lookup tables
-# remove: abstract type ExplicitModalDatasetWithSupport{V,W,FR} <: ActiveFeaturedDataset{V,W,FR,FT} end
+# remove: abstract type ExplicitModalDatasetWithSupport{V,W,FR} <: AbstractActiveFeaturedDataset{V,W,FR,FT} end
 # And an abstract type for support lookup tables
 abstract type AbstractSupport{V,W} end
 
@@ -68,7 +68,7 @@ struct SupportedFeaturedDataset{
     FR<:AbstractFrame{W,Bool},
     FT<:AbstractFeature{V},
     S<:FeaturedSupportingDataset{V,W,FR},
-} <: ActiveFeaturedDataset{V,W,FR,FT}
+} <: AbstractActiveFeaturedDataset{V,W,FR,FT}
 
     # Core dataset
     fd                 :: FeaturedDataset{V,W,FR,FT}
@@ -84,7 +84,7 @@ struct SupportedFeaturedDataset{
         allow_no_instances = false,
     ) where {V,W<:AbstractWorld,FR<:AbstractFrame{W,Bool},FT<:AbstractFeature{V},S<:FeaturedSupportingDataset{V,W,FR}}
         ty = "SupportedFeaturedDataset{$(V),$(W),$(FR),$(FT),$(S)}"
-        @assert allow_no_instances || nsamples(fd) > 0  "Can't instantiate $(ty) with no instance."
+        @assert allow_no_instances || ninstances(fd) > 0  "Can't instantiate $(ty) with no instance."
         @assert checksupportconsistency(fd, support)    "Can't instantiate $(ty) with an inconsistent support:\n\nemd:\n$(display_structure(fd))\n\nsupport:\n$(display_structure(support))"
         new{V,W,FR,FT,S}(fd, support)
     end
@@ -147,7 +147,7 @@ grouped_featsaggrsnops(X::SupportedFeaturedDataset)     = grouped_featsaggrsnops
 grouped_featsnaggrs(X::SupportedFeaturedDataset)        = grouped_featsnaggrs(fd(X))
 nfeatures(X::SupportedFeaturedDataset)                  = nfeatures(fd(X))
 nrelations(X::SupportedFeaturedDataset)                 = nrelations(fd(X))
-nsamples(X::SupportedFeaturedDataset)                   = nsamples(fd(X))
+ninstances(X::SupportedFeaturedDataset)                   = ninstances(fd(X))
 relations(X::SupportedFeaturedDataset)                  = relations(fd(X))
 fwd(X::SupportedFeaturedDataset)                        = fwd(fd(X))
 worldtype(X::SupportedFeaturedDataset{V,W}) where {V,W} = W
@@ -155,11 +155,12 @@ worldtype(X::SupportedFeaturedDataset{V,W}) where {V,W} = W
 usesmemo(X::SupportedFeaturedDataset) = usesmemo(support(X))
 
 frame(X::SupportedFeaturedDataset, i_sample) = frame(fd(X), i_sample)
+initialworld(X::SupportedFeaturedDataset, args...) = initialworld(fd(X), args...)
 
-function _slice_dataset(X::SupportedFeaturedDataset, inds::AbstractVector{<:Integer}, args...; kwargs...)
+function instances(X::SupportedFeaturedDataset, inds::AbstractVector{<:Integer}, return_view::Union{Val{true},Val{false}} = Val(false))
     SupportedFeaturedDataset(
-        _slice_dataset(fd(X), inds, args...; kwargs...),
-        _slice_dataset(support(X), inds, args...; kwargs...),
+        instances(fd(X), inds, return_view),
+        instances(support(X), inds, return_view),
     )
 end
 

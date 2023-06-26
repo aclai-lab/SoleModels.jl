@@ -15,9 +15,9 @@ struct DimensionalFeaturedDataset{
     W<:AbstractWorld,
     D<:PassiveDimensionalDataset{N,W},
     FT<:AbstractFeature{V},
-    G1<:AbstractVector{<:AbstractDict{<:Aggregator,<:AbstractVector{<:TestOperatorFun}}},
+    G1<:AbstractVector{<:AbstractDict{<:Aggregator,<:AbstractVector{<:TestOperator}}},
     G2<:AbstractVector{<:AbstractVector{Tuple{<:Integer,<:Aggregator}}},
-} <: ActiveFeaturedDataset{V,W,FullDimensionalFrame{N,W,Bool},FT}
+} <: AbstractActiveFeaturedDataset{V,W,FullDimensionalFrame{N,W,Bool},FT}
 
     # Core data (a dimensional domain)
     domain                  :: D
@@ -35,20 +35,24 @@ struct DimensionalFeaturedDataset{
     # Features and Aggregators
     grouped_featsnaggrs     :: G2
 
+    # Initial world(s)
+    initialworld :: Union{Nothing,W,AbstractWorldSet{<:W}}
+
     ########################################################################################
     
     function DimensionalFeaturedDataset{V,N,W}(
         domain::PassiveDimensionalDataset{N},
         ontology::Ontology{W},
         features::AbstractVector{<:AbstractFeature},
-        grouped_featsaggrsnops::AbstractVector{<:AbstractDict{<:Aggregator,<:AbstractVector{<:TestOperatorFun}}};
+        grouped_featsaggrsnops::AbstractVector{<:AbstractDict{<:Aggregator,<:AbstractVector{<:TestOperator}}};
         allow_no_instances = false,
+        initialworld = nothing,
     ) where {V,N,W<:AbstractWorld}
         ty = "DimensionalFeaturedDataset{$(V),$(N),$(W)}"
         features = collect(features)
         FT = Union{typeof.(features)...}
         features = Vector{FT}(features)
-        @assert allow_no_instances || nsamples(domain) > 0 "" *
+        @assert allow_no_instances || ninstances(domain) > 0 "" *
             "Can't instantiate $(ty) with no instance. (domain's type $(typeof(domain)))"
         @assert length(features) == length(grouped_featsaggrsnops) "" *
             "Can't instantiate $(ty) with mismatching length(features) and" *
@@ -59,7 +63,23 @@ struct DimensionalFeaturedDataset{
             sum(vcat([[length(test_ops) for test_ops in aggrs] for aggrs in grouped_featsaggrsnops]...)) > 0 "" *
             "Can't instantiate $(ty) with no test operator: $(grouped_featsaggrsnops)"
         grouped_featsnaggrs = features_grouped_featsaggrsnops2grouped_featsnaggrs(features, grouped_featsaggrsnops)
-        new{V,N,W,typeof(domain),FT,typeof(grouped_featsaggrsnops),typeof(grouped_featsnaggrs)}(domain, ontology, features, grouped_featsaggrsnops, grouped_featsnaggrs)
+        check_initialworld(DimensionalFeaturedDataset, initialworld, W)
+        new{
+            V,
+            N,
+            W,
+            typeof(domain),
+            FT,
+            typeof(grouped_featsaggrsnops),
+            typeof(grouped_featsnaggrs),
+        }(
+            domain,
+            ontology,
+            features,
+            grouped_featsaggrsnops,
+            grouped_featsnaggrs,
+            initialworld,
+        )
     end
 
     ########################################################################################
@@ -83,41 +103,61 @@ struct DimensionalFeaturedDataset{
         kwargs...,
     ) where {V,N,W<:AbstractWorld}
         domain = (domain isa AbstractDimensionalDataset ? PassiveDimensionalDataset{N,W}(domain) : domain)
+
+        @assert all(isa.(mixed_features, MixedFeature)) "Unknown feature encountered!" *
+            " $(filter(f->!isa(f, MixedFeature), mixed_features)), " *
+            " $(typeof.(filter(f->!isa(f, MixedFeature), mixed_features)))"
+
         mixed_features = Vector{MixedFeature}(mixed_features)
+
         _features, featsnops = begin
             _features = AbstractFeature[]
-            featsnops = Vector{<:TestOperatorFun}[]
+            featsnops = Vector{<:TestOperator}[]
 
             # readymade features
             cnv_feat(cf::AbstractFeature) = ([≥, ≤], cf)
-            cnv_feat(cf::Tuple{TestOperatorFun,AbstractFeature}) = ([cf[1]], cf[2])
+            cnv_feat(cf::Tuple{TestOperator,AbstractFeature}) = ([cf[1]], cf[2])
             # single-attribute features
             cnv_feat(cf::Any) = cf
+            cnv_feat(cf::CanonicalFeature) = cf
             cnv_feat(cf::Function) = ([≥, ≤], cf)
-            cnv_feat(cf::Tuple{TestOperatorFun,Function}) = ([cf[1]], cf[2])
+            cnv_feat(cf::Tuple{TestOperator,Function}) = ([cf[1]], cf[2])
 
             mixed_features = cnv_feat.(mixed_features)
 
-            readymade_cfs          = filter(x->isa(x, Tuple{<:AbstractVector{<:TestOperatorFun},AbstractFeature}), mixed_features)
-            attribute_specific_cfs = filter(x->isa(x, CanonicalFeature) || isa(x, Tuple{<:AbstractVector{<:TestOperatorFun},Function}), mixed_features)
+            readymade_cfs          = filter(x->
+                # isa(x, Tuple{<:AbstractVector{<:TestOperator},AbstractFeature}),
+                isa(x, Tuple{AbstractVector,AbstractFeature}),
+                mixed_features,
+            )
+            attribute_specific_cfs = filter(x->
+                isa(x, CanonicalFeature) ||
+                # isa(x, Tuple{<:AbstractVector{<:TestOperator},Function}) ||
+                (isa(x, Tuple{AbstractVector,Function}) && !isa(x, Tuple{AbstractVector,AbstractFeature})),
+                mixed_features,
+            )
 
-            @assert length(readymade_cfs) + length(attribute_specific_cfs) == length(mixed_features) "Unexpected mixed_features: $(filter(x->(! (x in readymade_cfs) && ! (x in attribute_specific_cfs)), mixed_features))"
+            @assert length(readymade_cfs) + length(attribute_specific_cfs) == length(mixed_features) "" *
+                "Unexpected" *
+                " mixed_features. $(mixed_features)." *
+                " $(filter(x->(! (x in readymade_cfs) && ! (x in attribute_specific_cfs)), mixed_features))." *
+                " $(length(readymade_cfs)) + $(length(attribute_specific_cfs)) == $(length(mixed_features))."
 
             for (test_ops,cf) in readymade_cfs
                 push!(_features, cf)
                 push!(featsnops, test_ops)
             end
 
-            single_attr_feats_n_featsnops(i_attr,cf::ModalLogic.CanonicalFeatureGeq) = ([≥],SoleModels.SingleAttributeMin{V}(i_attr))
-            single_attr_feats_n_featsnops(i_attr,cf::ModalLogic.CanonicalFeatureLeq) = ([≤],SoleModels.SingleAttributeMax{V}(i_attr))
-            single_attr_feats_n_featsnops(i_attr,cf::ModalLogic.CanonicalFeatureGeqSoft) = ([≥],SoleModels.SingleAttributeSoftMin{V}(i_attr, cf.alpha))
-            single_attr_feats_n_featsnops(i_attr,cf::ModalLogic.CanonicalFeatureLeqSoft) = ([≤],SoleModels.SingleAttributeSoftMax{V}(i_attr, cf.alpha))
-            single_attr_feats_n_featsnops(i_attr,(test_ops,cf)::Tuple{<:AbstractVector{<:TestOperatorFun},typeof(minimum)}) = (test_ops,SingleAttributeMin{V}(i_attr))
-            single_attr_feats_n_featsnops(i_attr,(test_ops,cf)::Tuple{<:AbstractVector{<:TestOperatorFun},typeof(maximum)}) = (test_ops,SingleAttributeMax{V}(i_attr))
-            single_attr_feats_n_featsnops(i_attr,(test_ops,cf)::Tuple{<:AbstractVector{<:TestOperatorFun},Function})        = (test_ops,SingleAttributeGenericFeature{V}(i_attr, (x)->(V(cf(x)))))
+            single_attr_feats_n_featsnops(i_attr,cf::SoleModels.CanonicalFeatureGeq) = ([≥],DimensionalDatasets.UnivariateMin{V}(i_attr))
+            single_attr_feats_n_featsnops(i_attr,cf::SoleModels.CanonicalFeatureLeq) = ([≤],DimensionalDatasets.UnivariateMax{V}(i_attr))
+            single_attr_feats_n_featsnops(i_attr,cf::SoleModels.CanonicalFeatureGeqSoft) = ([≥],DimensionalDatasets.UnivariateSoftMin{V}(i_attr, cf.alpha))
+            single_attr_feats_n_featsnops(i_attr,cf::SoleModels.CanonicalFeatureLeqSoft) = ([≤],DimensionalDatasets.UnivariateSoftMax{V}(i_attr, cf.alpha))
+            single_attr_feats_n_featsnops(i_attr,(test_ops,cf)::Tuple{<:AbstractVector{<:TestOperator},typeof(minimum)}) = (test_ops,DimensionalDatasets.UnivariateMin{V}(i_attr))
+            single_attr_feats_n_featsnops(i_attr,(test_ops,cf)::Tuple{<:AbstractVector{<:TestOperator},typeof(maximum)}) = (test_ops,DimensionalDatasets.UnivariateMax{V}(i_attr))
+            single_attr_feats_n_featsnops(i_attr,(test_ops,cf)::Tuple{<:AbstractVector{<:TestOperator},Function})        = (test_ops,DimensionalDatasets.UnivariateFeature{V}(i_attr, (x)->(V(cf(x)))))
             single_attr_feats_n_featsnops(i_attr,::Any) = throw_n_log("Unknown mixed_feature type: $(cf), $(typeof(cf))")
 
-            for i_attr in 1:nattributes(domain)
+            for i_attr in 1:nvariables(domain)
                 for (test_ops,cf) in map((cf)->single_attr_feats_n_featsnops(i_attr,cf),attribute_specific_cfs)
                     push!(featsnops, test_ops)
                     push!(_features, cf)
@@ -163,14 +203,19 @@ struct DimensionalFeaturedDataset{
         DimensionalFeaturedDataset{V}(domain, ontology, features, args...; kwargs...)
     end
 
+    preserves_type(::Any) = false
+    preserves_type(::CanonicalFeature) = true
+    preserves_type(::typeof(minimum)) = true # TODO fix
+    preserves_type(::typeof(maximum)) = true # TODO fix
+
     function DimensionalFeaturedDataset(
         domain           :: Union{PassiveDimensionalDataset{N,W},AbstractDimensionalDataset},
         ontology         :: Ontology{W},
         mixed_features   :: AbstractVector;
         kwargs...,
     ) where {N,W<:AbstractWorld}
-        domain = (domain isa AbstractDimensionalDataset ? PassiveDimensionalDataset{N,W}(domain) : domain)
-        @assert all((f)->(f isa CanonicalFeature && SoleModels.preserves_type(f)), mixed_features) "Please, specify the feature output type V upon construction, as in: DimensionalFeaturedDataset{V}(...)." # TODO highlight and improve
+        domain = (domain isa AbstractDimensionalDataset ? PassiveDimensionalDataset{dimensionality(domain),W}(domain) : domain)
+        @assert all((f)->(preserves_type(f)), mixed_features) "Please, specify the feature output type V upon construction, as in: DimensionalFeaturedDataset{V}(...)." # TODO highlight and improve
         V = eltype(domain)
         DimensionalFeaturedDataset{V}(domain, ontology, mixed_features; kwargs...)
     end
@@ -192,8 +237,8 @@ Base.size(X::DimensionalFeaturedDataset)              = Base.size(domain(X))
 dimensionality(X::DimensionalFeaturedDataset{V,N,W}) where {V,N,W} = N
 worldtype(X::DimensionalFeaturedDataset{V,N,W}) where {V,N,W} = W
 
-nsamples(X::DimensionalFeaturedDataset)               = nsamples(domain(X))
-nattributes(X::DimensionalFeaturedDataset)            = nattributes(domain(X))
+ninstances(X::DimensionalFeaturedDataset)               = ninstances(domain(X))
+nvariables(X::DimensionalFeaturedDataset)            = nvariables(domain(X))
 
 relations(X::DimensionalFeaturedDataset)              = relations(ontology(X))
 nrelations(X::DimensionalFeaturedDataset)             = length(relations(X))
@@ -204,16 +249,21 @@ max_channel_size(X::DimensionalFeaturedDataset)          = max_channel_size(doma
 
 get_instance(X::DimensionalFeaturedDataset, args...)     = get_instance(domain(X), args...)
 
-_slice_dataset(X::DimensionalFeaturedDataset, inds::AbstractVector{<:Integer}, args...; kwargs...)    =
-    DimensionalFeaturedDataset(_slice_dataset(domain(X), inds, args...; kwargs...), ontology(X), features(X), X.grouped_featsaggrsnops)
+instances(X::DimensionalFeaturedDataset, inds::AbstractVector{<:Integer}, return_view::Union{Val{true},Val{false}} = Val(false))    =
+    DimensionalFeaturedDataset(instances(domain(X), inds, return_view), ontology(X), features(X), grouped_featsaggrsnops(X); initialworld = initialworld(X))
 
 frame(X::DimensionalFeaturedDataset, i_sample) = frame(domain(X), i_sample)
+initialworld(X::DimensionalFeaturedDataset) = X.initialworld
+function initialworld(X::DimensionalFeaturedDataset, i_sample)
+    initialworld(X) isa AbstractWorldSet ? initialworld(X)[i_sample] : initialworld(X)
+end
 
 function display_structure(X::DimensionalFeaturedDataset; indent_str = "")
     out = "$(typeof(X))\t$(Base.summarysize(X) / 1024 / 1024 |> x->round(x, digits=2)) MBs\n"
     out *= indent_str * "├ relations: \t$((length(relations(X))))\t$(relations(X))\n"
     out *= indent_str * "├ domain shape\t$(Base.size(domain(X)))\n"
-    out *= indent_str * "└ max_channel_size\t$(max_channel_size(X))"
+    out *= indent_str * "├ max_channel_size\t$(max_channel_size(X))"
+    out *= indent_str * "└ initialworld(s)\t$(initialworld(X))"
     out
 end
 

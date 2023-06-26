@@ -35,13 +35,13 @@ struct UniformFullDimensionalFWD{
 ############################################################################################
 
     function UniformFullDimensionalFWD(X::DimensionalFeaturedDataset{T,N,W}) where {T,N,W<:OneWorld}
-        UniformFullDimensionalFWD{T,W,N}(Array{T,2}(undef, nsamples(X), nfeatures(X)))
+        UniformFullDimensionalFWD{T,W,N}(Array{T,2}(undef, ninstances(X), nfeatures(X)))
     end
     function UniformFullDimensionalFWD(X::DimensionalFeaturedDataset{T,N,W}) where {T,N,W<:Interval}
-        UniformFullDimensionalFWD{T,W,N}(Array{T,4}(undef, max_channel_size(X)[1], max_channel_size(X)[1]+1, nsamples(X), nfeatures(X)))
+        UniformFullDimensionalFWD{T,W,N}(Array{T,4}(undef, max_channel_size(X)[1], max_channel_size(X)[1]+1, ninstances(X), nfeatures(X)))
     end
     function UniformFullDimensionalFWD(X::DimensionalFeaturedDataset{T,N,W}) where {T,N,W<:Interval2D}
-        UniformFullDimensionalFWD{T,W,N}(Array{T,6}(undef, max_channel_size(X)[1], max_channel_size(X)[1]+1, max_channel_size(X)[2], max_channel_size(X)[2]+1, nsamples(X), nfeatures(X)))
+        UniformFullDimensionalFWD{T,W,N}(Array{T,6}(undef, max_channel_size(X)[1], max_channel_size(X)[1]+1, max_channel_size(X)[2], max_channel_size(X)[2]+1, ninstances(X), nfeatures(X)))
     end
 
 end
@@ -49,7 +49,7 @@ end
 Base.size(fwd::UniformFullDimensionalFWD, args...) = size(fwd.d, args...)
 Base.ndims(fwd::UniformFullDimensionalFWD, args...) = ndims(fwd.d, args...)
 
-nsamples(fwd::UniformFullDimensionalFWD)  = size(fwd, ndims(fwd)-1)
+ninstances(fwd::UniformFullDimensionalFWD)  = size(fwd, ndims(fwd)-1)
 nfeatures(fwd::UniformFullDimensionalFWD) = size(fwd, ndims(fwd))
 
 ############################################################################################
@@ -65,14 +65,14 @@ function capacity(fwd::UniformFullDimensionalFWD{T,OneWorld}) where {T}
 end
 function capacity(fwd::UniformFullDimensionalFWD{T,<:Interval}) where {T}
     prod([
-        nsamples(fwd),
+        ninstances(fwd),
         nfeatures(fwd),
         div(size(fwd, 1)*(size(fwd, 2)),2),
     ])
 end
 function capacity(fwd::UniformFullDimensionalFWD{T,<:Interval2D}) where {T}
     prod([
-        nsamples(fwd),
+        ninstances(fwd),
         nfeatures(fwd),
         div(size(fwd, 1)*(size(fwd, 2)),2),
         div(size(fwd, 3)*(size(fwd, 4)),2),
@@ -145,15 +145,15 @@ end
 
 ############################################################################################
 
-function _slice_dataset(fwd::UniformFullDimensionalFWD{T,W,N}, inds::AbstractVector{<:Integer}, return_view::Val = Val(false)) where {T,W<:OneWorld,N}
+function instances(fwd::UniformFullDimensionalFWD{T,W,N}, inds::AbstractVector{<:Integer}, return_view::Union{Val{true},Val{false}} = Val(false)) where {T,W<:OneWorld,N}
     UniformFullDimensionalFWD{T,W,N}(if return_view == Val(true) @view fwd.d[inds,:] else fwd.d[inds,:] end)
 end
 
-function _slice_dataset(fwd::UniformFullDimensionalFWD{T,W,N}, inds::AbstractVector{<:Integer}, return_view::Val = Val(false)) where {T,W<:Interval,N}
+function instances(fwd::UniformFullDimensionalFWD{T,W,N}, inds::AbstractVector{<:Integer}, return_view::Union{Val{true},Val{false}} = Val(false)) where {T,W<:Interval,N}
     UniformFullDimensionalFWD{T,W,N}(if return_view == Val(true) @view fwd.d[:,:,inds,:] else fwd.d[:,:,inds,:] end)
 end
 
-function _slice_dataset(fwd::UniformFullDimensionalFWD{T,W,N}, inds::AbstractVector{<:Integer}, return_view::Val = Val(false)) where {T,W<:Interval2D,N}
+function instances(fwd::UniformFullDimensionalFWD{T,W,N}, inds::AbstractVector{<:Integer}, return_view::Union{Val{true},Val{false}} = Val(false)) where {T,W<:Interval2D,N}
     UniformFullDimensionalFWD{T,W,N}(if return_view == Val(true) @view fwd.d[:,:,:,:,inds,:] else fwd.d[:,:,:,:,inds,:] end)
 end
 
@@ -190,7 +190,7 @@ fwd_channel_interpret_world(fwc::Interval2DFeaturedChannel{T}, w::Interval2D) wh
     fwc[w.x.x, w.x.y, w.y.x, w.y.y]
 
 const FWDFeatureSlice{T} = Union{
-    # FWDFeatureSlice(DimensionalFeaturedDataset{T where T,0,ModalLogic.OneWorld})
+    # FWDFeatureSlice(DimensionalFeaturedDataset{T where T,0,OneWorld})
     T, # Note: should be, but it throws error OneWorldFeaturedChannel{T},
     IntervalFeaturedChannel{T},
     Interval2DFeaturedChannel{T},
@@ -203,11 +203,11 @@ const FWDFeatureSlice{T} = Union{
 
 # channel_size(fwd::OneWorldFWD) = ()
 
-# nsamples(fwd::OneWorldFWD)  = size(fwd.d, 1)
+# ninstances(fwd::OneWorldFWD)  = size(fwd.d, 1)
 # nfeatures(fwd::OneWorldFWD) = size(fwd.d, 2)
 
 # function fwd_init(::Type{OneWorldFWD}, X::DimensionalFeaturedDataset{T,0,OneWorld}) where {T}
-#     OneWorldFWD{T}(Array{T,2}(undef, nsamples(X), nfeatures(X)))
+#     OneWorldFWD{T}(Array{T,2}(undef, ninstances(X), nfeatures(X)))
 # end
 
 # function fwd_init_world_slice(fwd::OneWorldFWD, i_sample::Integer, w::AbstractWorld)
@@ -226,7 +226,7 @@ const FWDFeatureSlice{T} = Union{
 #     fwd.d[i_sample, i_feature] = threshold
 # end
 
-# function _slice_dataset(fwd::OneWorldFWD{T}, inds::AbstractVector{<:Integer}, return_view::Val = Val(false)) where {T}
+# function instances(fwd::OneWorldFWD{T}, inds::AbstractVector{<:Integer}, return_view::Union{Val{true},Val{false}} = Val(false)) where {T}
 #     OneWorldFWD{T}(if return_view == Val(true) @view fwd.d[inds,:] else fwd.d[inds,:] end)
 # end
 
@@ -240,7 +240,7 @@ const FWDFeatureSlice{T} = Union{
 # fwd_channel_interpret_world(fwc::T #=Note: should be OneWorldFeaturedChannel{T}, but it throws error =#, w::OneWorld) where {T} = fwc
 
 ############################################################################################
-# FWD, Interval: 4D array (x × y × nsamples × nfeatures)
+# FWD, Interval: 4D array (x × y × ninstances × nfeatures)
 ############################################################################################
 
 # struct IntervalFWD{T} <: UniformFullDimensionalFWD{T,1,<:Interval}
@@ -249,11 +249,11 @@ const FWDFeatureSlice{T} = Union{
 
 # channel_size(fwd::IntervalFWD) = (size(fwd, 1),)
 
-# nsamples(fwd::IntervalFWD)  = size(fwd, 3)
+# ninstances(fwd::IntervalFWD)  = size(fwd, 3)
 # nfeatures(fwd::IntervalFWD) = size(fwd, 4)
 
 # function fwd_init(::Type{IntervalFWD}, X::DimensionalFeaturedDataset{T,1,<:Interval}) where {T}
-#     IntervalFWD{T}(Array{T,4}(undef, max_channel_size(X)[1], max_channel_size(X)[1]+1, nsamples(X), nfeatures(X)))
+#     IntervalFWD{T}(Array{T,4}(undef, max_channel_size(X)[1], max_channel_size(X)[1]+1, ninstances(X), nfeatures(X)))
 # end
 
 # function fwd_init_world_slice(fwd::IntervalFWD, i_sample::Integer, w::AbstractWorld)
@@ -279,7 +279,7 @@ const FWDFeatureSlice{T} = Union{
 #     fwd.d[:, :, :, i_feature] = fwdslice
 # end
 
-# function _slice_dataset(fwd::IntervalFWD{T}, inds::AbstractVector{<:Integer}, return_view::Val = Val(false)) where {T}
+# function instances(fwd::IntervalFWD{T}, inds::AbstractVector{<:Integer}, return_view::Union{Val{true},Val{false}} = Val(false)) where {T}
 #     IntervalFWD{T}(if return_view == Val(true) @view fwd.d[:,:,inds,:] else fwd.d[:,:,inds,:] end)
 # end
 # Base.@propagate_inbounds @inline fwdread_channel(fwd::IntervalFWD{T}, i_sample::Integer, i_feature::Integer) where {T} =
@@ -289,7 +289,7 @@ const FWDFeatureSlice{T} = Union{
 #     fwc[w.x, w.y]
 
 ############################################################################################
-# FWD, Interval: 6D array (x.x × x.y × y.x × y.y × nsamples × nfeatures)
+# FWD, Interval: 6D array (x.x × x.y × y.x × y.y × ninstances × nfeatures)
 ############################################################################################
 
 # struct Interval2DFWD{T} <: UniformFullDimensionalFWD{T,2,<:Interval2D}
@@ -298,12 +298,12 @@ const FWDFeatureSlice{T} = Union{
 
 # channel_size(fwd::Interval2DFWD) = (size(fwd, 1),size(fwd, 3))
 
-# nsamples(fwd::Interval2DFWD)  = size(fwd, 5)
+# ninstances(fwd::Interval2DFWD)  = size(fwd, 5)
 # nfeatures(fwd::Interval2DFWD) = size(fwd, 6)
 
 
 # function fwd_init(::Type{Interval2DFWD}, X::DimensionalFeaturedDataset{T,2,<:Interval2D}) where {T}
-#     Interval2DFWD{T}(Array{T,6}(undef, max_channel_size(X)[1], max_channel_size(X)[1]+1, max_channel_size(X)[2], max_channel_size(X)[2]+1, nsamples(X), nfeatures(X)))
+#     Interval2DFWD{T}(Array{T,6}(undef, max_channel_size(X)[1], max_channel_size(X)[1]+1, max_channel_size(X)[2], max_channel_size(X)[2]+1, ninstances(X), nfeatures(X)))
 # end
 
 # function fwd_init_world_slice(fwd::Interval2DFWD, i_sample::Integer, w::AbstractWorld)
@@ -329,7 +329,7 @@ const FWDFeatureSlice{T} = Union{
 #     fwd.d[:, :, :, :, :, i_feature] = fwdslice
 # end
 
-# function _slice_dataset(fwd::Interval2DFWD{T}, inds::AbstractVector{<:Integer}, return_view::Val = Val(false)) where {T}
+# function instances(fwd::Interval2DFWD{T}, inds::AbstractVector{<:Integer}, return_view::Union{Val{true},Val{false}} = Val(false)) where {T}
 #     Interval2DFWD{T}(if return_view == Val(true) @view fwd.d[:,:,:,:,inds,:] else fwd.d[:,:,:,:,inds,:] end)
 # end
 # Base.@propagate_inbounds @inline fwdread_channel(fwd::Interval2DFWD{T}, i_sample::Integer, i_feature::Integer) where {T} =
@@ -347,8 +347,8 @@ const FWDFeatureSlice{T} = Union{
 # TODO add AbstractWorldSet type
 function apply_aggregator(fwdslice::FWDFeatureSlice{T}, worlds::Any, aggregator::Agg) where {T,Agg<:Aggregator}
     
-    # TODO try reduce(aggregator, worlds; init=ModalLogic.bottom(aggregator, T))
-    # TODO remove this aggregator_to_binary...
+    # TODO try reduce(aggregator, worlds; init=bottom(aggregator, T))
+    # TODO remove this SoleModels.aggregator_to_binary...
     
     if length(worlds |> collect) == 0
         aggregator_bottom(aggregator, T)
@@ -356,8 +356,8 @@ function apply_aggregator(fwdslice::FWDFeatureSlice{T}, worlds::Any, aggregator:
         aggregator((w)->fwd_channel_interpret_world(fwdslice, w), worlds)
     end
 
-    # opt = aggregator_to_binary(aggregator)
-    # gamma = ModalLogic.bottom(aggregator, T)
+    # opt = SoleModels.aggregator_to_binary(aggregator)
+    # gamma = bottom(aggregator, T)
     # for w in worlds
     #   e = fwd_channel_interpret_world(fwdslice, w)
     #   gamma = opt(gamma,e)

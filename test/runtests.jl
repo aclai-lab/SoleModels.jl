@@ -3,6 +3,7 @@ using SoleModels
 using SoleLogics
 using Test
 using Random
+using ThreadSafeDicts
 
 function run_tests(list)
     println("\n" * ("#"^50))
@@ -15,8 +16,10 @@ end
 println("Julia version: ", VERSION)
 
 test_suites = [
-    ("Base", ["base.jl", ]),
-    ("Miscellaneous", ["misc.jl", ]),
+    ("Models", ["base.jl", ]),
+    ("Datasets", ["datasets.jl", ]),
+    ("Miscellaneous", ["misc.jl", "minify.jl"]),
+    ("Parse", ["parse.jl", ]),
 ]
 
 @testset "SoleModels.jl" begin

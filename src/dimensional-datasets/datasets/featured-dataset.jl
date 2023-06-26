@@ -12,7 +12,7 @@
 #  question whether a proposition (e.g., minimum(A1) ≥ 10) holds onto a given world and instance;
 #  however, an fwd table can be implemented in many ways, mainly depending on the world type.
 # 
-# Note that this structure does not constitute a ActiveFeaturedDataset (see FeaturedDataset a few lines below)
+# Note that this structure does not constitute a AbstractActiveFeaturedDataset (see FeaturedDataset a few lines below)
 # 
 ############################################################################################
 
@@ -35,20 +35,20 @@ end
 #  way of learning it is by considering the fallback fwd structure defined as follows.
 # TODO oh, but the implementation is broken due to a strange error (see https://discourse.julialang.org/t/tricky-too-many-parameters-for-type-error/25182 )
 
-# # The most generic fwd structure is a matrix of dictionaries of size (nsamples × nfeatures)
+# # The most generic fwd structure is a matrix of dictionaries of size (ninstances × nfeatures)
 # struct GenericFWD{V,W} <: AbstractFWD{V,W}
 #   d :: AbstractVector{<:AbstractDict{W,AbstractVector{V,1}},1}
 #   nfeatures :: Integer
 # end
 
-# nsamples(fwd::GenericFWD{V}) where {V}  = size(fwd, 1)
+# ninstances(fwd::GenericFWD{V}) where {V}  = size(fwd, 1)
 # nfeatures(fwd::GenericFWD{V}) where {V} = fwd.d
 # Base.size(fwd::GenericFWD{V}, args...) where {V} = size(fwd.d, args...)
 
 # # The matrix is initialized with #undef values
 # function fwd_init(::Type{GenericFWD}, X::DimensionalFeaturedDataset{V}) where {V}
-#     d = Array{Dict{W,V}, 2}(undef, nsamples(X))
-#     for i in 1:nsamples
+#     d = Array{Dict{W,V}, 2}(undef, ninstances(X))
+#     for i in 1:ninstances
 #         d[i] = Dict{W,Array{V,1}}()
 #     end
 #     GenericFWD{V}(d, nfeatures(X))
@@ -80,7 +80,7 @@ end
 # end
 
 # # A function for slicing the dataset
-# function _slice_dataset(fwd::GenericFWD{V}, inds::AbstractVector{<:Integer}, return_view::Val = Val(false)) where {V}
+# function instances(fwd::GenericFWD{V}, inds::AbstractVector{<:Integer}, return_view::Union{Val{true},Val{false}} = Val(false)) where {V}
 #     GenericFWD{V}(if return_view == Val(true) @view fwd.d[inds] else fwd.d[inds] end, fwd.nfeatures)
 # end
 
@@ -111,9 +111,9 @@ struct FeaturedDataset{
     FR<:AbstractFrame{W,Bool},
     FT<:AbstractFeature{V},
     FWD<:AbstractFWD{V,W,FR},
-    G1<:AbstractVector{<:AbstractDict{<:Aggregator,<:AbstractVector{<:TestOperatorFun}}},
+    G1<:AbstractVector{<:AbstractDict{<:Aggregator,<:AbstractVector{<:TestOperator}}},
     G2<:AbstractVector{<:AbstractVector{Tuple{<:Integer,<:Aggregator}}},
-} <: ActiveFeaturedDataset{V,W,FR,FT}
+} <: AbstractActiveFeaturedDataset{V,W,FR,FT}
     
     # Core data (fwd lookup table)
     fwd                     :: FWD
@@ -130,20 +130,40 @@ struct FeaturedDataset{
     
     grouped_featsnaggrs     :: G2
     
+    # Initial world(s)
+    initialworld :: Union{Nothing,W,AbstractWorldSet{<:W}}
+
     function FeaturedDataset{V,W,FR,FT,FWD}(
         fwd                     :: FWD,
         relations               :: AbstractVector{<:AbstractRelation},
         features                :: AbstractVector{FT},
-        grouped_featsaggrsnops  :: AbstractVector{<:AbstractDict{<:Aggregator,<:AbstractVector{<:TestOperatorFun}}};
+        grouped_featsaggrsnops  :: AbstractVector{<:AbstractDict{<:Aggregator,<:AbstractVector{<:TestOperator}}};
         allow_no_instances = false,
+        initialworld = nothing,
     ) where {V,W<:AbstractWorld,FR<:AbstractFrame{W,Bool},FWD<:AbstractFWD{V,W,FR},FT<:AbstractFeature{V}}
         features = collect(features)
         ty = "FeaturedDataset{$(V),$(W),$(FR),$(FT)}"
-        @assert allow_no_instances || nsamples(fwd) > 0     "Can't instantiate $(ty) with no instance. (fwd's type $(typeof(fwd)))"
+        @assert allow_no_instances || ninstances(fwd) > 0     "Can't instantiate $(ty) with no instance. (fwd's type $(typeof(fwd)))"
         @assert length(grouped_featsaggrsnops) > 0 && sum(length.(grouped_featsaggrsnops)) > 0 && sum(vcat([[length(test_ops) for test_ops in aggrs] for aggrs in grouped_featsaggrsnops]...)) > 0 "Can't instantiate $(ty) with no test operator: grouped_featsaggrsnops"
-        @assert nfeatures(fwd) == length(features)          "Can't instantiate $(ty) with different numbers of instances $(nsamples(fwd)) and of features $(length(features))."
+        @assert nfeatures(fwd) == length(features)          "Can't instantiate $(ty) with different numbers of instances $(ninstances(fwd)) and of features $(length(features))."
         grouped_featsnaggrs = features_grouped_featsaggrsnops2grouped_featsnaggrs(features, grouped_featsaggrsnops)
-        new{V,W,FR,FT,FWD,typeof(grouped_featsaggrsnops),typeof(grouped_featsnaggrs)}(fwd, relations, features, grouped_featsaggrsnops, grouped_featsnaggrs)
+        check_initialworld(FeaturedDataset, initialworld, W)
+        new{
+            V,
+            W,
+            FR,
+            FT,
+            FWD,
+            typeof(grouped_featsaggrsnops),
+            typeof(grouped_featsnaggrs)
+        }(
+            fwd,
+            relations,
+            features,
+            grouped_featsaggrsnops,
+            grouped_featsnaggrs,
+            initialworld,
+        )
     end
 
     function FeaturedDataset{V,W,FR}(
@@ -171,7 +191,7 @@ struct FeaturedDataset{
         fwd                    :: AbstractFWD{V,W},
         relations              :: AbstractVector{<:AbstractRelation},
         features               :: AbstractVector{<:AbstractFeature},
-        grouped_featsaggrsnops_or_featsnops, # AbstractVector{<:AbstractDict{<:Aggregator,<:AbstractVector{<:TestOperatorFun}}}
+        grouped_featsaggrsnops_or_featsnops, # AbstractVector{<:AbstractDict{<:Aggregator,<:AbstractVector{<:TestOperator}}}
         args...;
         kwargs...,
     ) where {V,W}
@@ -182,7 +202,7 @@ struct FeaturedDataset{
         fwd                    :: AbstractFWD{V,W},
         relations              :: AbstractVector{<:AbstractRelation},
         features               :: AbstractVector{<:AbstractFeature},
-        grouped_featsnops      :: AbstractVector{<:AbstractVector{<:TestOperatorFun}},
+        grouped_featsnops      :: AbstractVector{<:AbstractVector{<:TestOperator}},
         args...;
         kwargs...,
     ) where {V,W<:AbstractWorld}
@@ -211,7 +231,7 @@ struct FeaturedDataset{
 
             _features = features(X)
 
-            _n_samples = nsamples(X)
+            _n_samples = ninstances(X)
 
             # Load any (possible) external features
             if any(isa.(_features, ExternalFWDFeature))
@@ -256,7 +276,15 @@ struct FeaturedDataset{
             fwd
         end
 
-        FeaturedDataset(fwd, relations(X), _features, grouped_featsaggrsnops(X), args...; kwargs...)
+        FeaturedDataset(
+            fwd,
+            relations(X),
+            _features,
+            grouped_featsaggrsnops(X),
+            args...;
+            initialworld = SoleLogics.initialworld(X),
+            kwargs...,
+        )
     end
 
 end
@@ -295,19 +323,24 @@ grouped_featsnaggrs(X::FeaturedDataset)    = X.grouped_featsnaggrs
 
 nfeatures(X::FeaturedDataset)              = length(features(X))
 nrelations(X::FeaturedDataset)             = length(relations(X))
-nsamples(X::FeaturedDataset)               = nsamples(fwd(X))
+ninstances(X::FeaturedDataset)               = ninstances(fwd(X))
 worldtype(X::FeaturedDataset{V,W}) where {V,W<:AbstractWorld} = W
 
 nfeatsnaggrs(X::FeaturedDataset)            = sum(length.(grouped_featsnaggrs(X)))
 
 frame(X::FeaturedDataset, i_sample) = frame(fwd(X), i_sample)
+initialworld(X::FeaturedDataset) = X.initialworld
+function initialworld(X::FeaturedDataset, i_sample)
+    initialworld(X) isa AbstractWorldSet ? initialworld(X)[i_sample] : initialworld(X)
+end
 
-function _slice_dataset(X::FeaturedDataset, inds::AbstractVector{<:Integer}, args...; kwargs...)
+function instances(X::FeaturedDataset, inds::AbstractVector{<:Integer}, return_view::Union{Val{true},Val{false}} = Val(false))
     FeaturedDataset(
-        _slice_dataset(fwd(X), inds, args...; kwargs...),
+        instances(fwd(X), inds, return_view),
         relations(X),
         features(X),
-        grouped_featsaggrsnops(X)
+        grouped_featsaggrsnops(X);
+        initialworld = initialworld(X)
     )
 end
 
@@ -315,7 +348,8 @@ end
 function display_structure(X::FeaturedDataset; indent_str = "")
     out = "$(typeof(X))\t$(Base.summarysize(X) / 1024 / 1024 |> x->round(x, digits=2)) MBs\n"
     out *= indent_str * "├ relations: \t$((length(relations(X))))\t$(relations(X))\n"
-    out *= indent_str * "└ fwd: \t$(typeof(fwd(X)))\t$(Base.summarysize(fwd(X)) / 1024 / 1024 |> x->round(x, digits=2)) MBs\n"
+    out *= indent_str * "├ fwd: \t$(typeof(fwd(X)))\t$(Base.summarysize(fwd(X)) / 1024 / 1024 |> x->round(x, digits=2)) MBs\n"
+    out *= indent_str * "└ initialworld(s)\t$(initialworld(X))"
     out
 end
 

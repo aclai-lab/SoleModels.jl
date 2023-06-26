@@ -1,30 +1,19 @@
 using SoleModels
 using SoleModels: FinalModel
-using SoleLogics: npropositions
+import SoleLogics: npropositions
 
 """
-    evaluate_rule(rule::Rule,X::AbstractInterpretationSet,Y::AbstractVector{<:Label})
+    evaluaterule(
+        r::Rule{O},
+        X::AbstractInterpretationSet,
+        Y::AbstractVector{L}
+    ) where {O,L<:Label}
 
-Let X dataset and Y vector of labels, evaluate_rule evaluates the input rule and
-returns a NamedTuple consisting of:
- - `:ant_sat`: antecedent satisfaction. For each instance in X:
-     - `false` when not satisfied
-     - `true` when satisfied.
- - :idxs_sat
-    Indices of satisfiable instances TODO: true e false
- - `:cons_sat`: consequent satisfaction. For each instance in X:
-     - `false` when not satisfied,
-     - `true` when satisfied,
-     - `nothing` when antecedent does not hold.
- - `:rule_output`: consequent prediction. For each instance in X:
-     - `consequent of input rule` when satisfied,
-     - `nothing` when not satisfied.
-
-# Examples
-```julia-repl
-julia> evaluate_rule(rule,X,Y)
-TODO
-```
+Evaluate the rule on a labelled dataset, and return a `NamedTuple` consisting of:
+- `antsat::Vector{Bool}`: satsfaction of the antecedent for each instance in the dataset;
+- `ys::Vector{Union{Nothing,O}}`: rule prediction. For each instance in X:
+    - `consequent(rule)` if the antecedent is satisfied,
+    - `nothing` otherwise.
 
 See also
 [`Rule`](@ref),
@@ -32,95 +21,94 @@ See also
 [`Label`](@ref),
 [`check_antecedent`](@ref).
 """
-function evaluate_rule(
+function evaluaterule(
     rule::Rule{O, C, FM},
     X::AbstractInterpretationSet,
     Y::AbstractVector{<:Label}
 ) where {O,C,FM<:AbstractModel}
-    rule_output = apply(rule,X)
+    ys = apply(rule,X)
 
-    ant_sat = rule_output .!= nothing
+    antsat = ys .!= nothing
 
     cons_sat = begin
-        idxs_sat = findall(ant_sat .== true)
+        idxs_sat = findall(antsat .== true)
         cons_sat = Vector{Union{Bool,Nothing}}(fill(nothing, length(Y)))
 
         idxs_true = begin
             idx_cons = findall(outcome(consequent(rule)) .== Y)
-            intersect(idxs_sat,idx_cons)
+            intersect(idxs_sat, idx_cons)
         end
         idxs_false = begin
             idx_cons = findall(outcome(consequent(rule)) .!= Y)
-            intersect(idxs_sat,idx_cons)
+            intersect(idxs_sat, idx_cons)
         end
         cons_sat[idxs_true]  .= true
         cons_sat[idxs_false] .= false
         cons_sat
     end
 
+    # - `cons_sat::Vector{Union{Nothing,Bool}}`: for each instance in the dataset:
+    #     - `nothing` if antecedent is not satisfied.
+    #     - `false` if the antecedent is satisfied, but the consequent does not match the ground-truth label,
+    #     - `true` if the antecedent is satisfied, and the consequent matches the ground-truth label,
+
     return (;
-        rule_output = rule_output,
-        ant_sat     = ant_sat,
-        cons_sat    = cons_sat,
+        ys = ys,
+        antsat     = antsat,
+        # cons_sat    = cons_sat,
     )
 end
 
-"""
-    rule_length(rule::Rule{O,<:TrueCondition}) where {O}
-    rule_length(rule::Rule{O,C}) where {O,C<:LogicalTruthCondition}
+# """
+#     npropositions(rule::Rule{O,<:TrueCondition}) where {O}
+#     npropositions(rule::Rule{O,<:LogicalTruthCondition}) where {O}
 
-Calculates the length of the input rule, that is counts the number of conjuncts of
-the input rule
-
-See also
-[`Rule`](@ref),
-[`TrueCondition`](@ref),
-[`LogicalTruthCondition`](@ref),
-[`antecedent`](@ref),
-[`formula`](@ref),
-[`n_propositions`](@ref).
-"""
-rule_length(rule::Rule{O,<:TrueCondition}) where {O} = 1
-function rule_length(rule::Rule{O,C}) where {O,C<:LogicalTruthCondition}
-    npropositions(formula(antecedent(rule)))
-end
+# See also
+# [`Rule`](@ref),
+# [`TrueCondition`](@ref),
+# [`LogicalTruthCondition`](@ref),
+# [`antecedent`](@ref),
+# [`formula`](@ref),
+# [`n_propositions`](@ref).
+# """
+# npropositions(rule::Rule{O,<:TrueCondition}) where {O} = 1
+# npropositions(rule::Rule{O,<:LogicalTruthCondition}) where {O} = npropositions(antecedent(rule))
 
 """
-    rule_metrics(rule::Rule,X::AbstractInterpretationSet,Y::AbstractVector{<:Label})
+    rulemetrics(
+        r::Rule,
+        X::AbstractInterpretationSet,
+        Y::AbstractVector{<:Label}
+    )
 
-Calculates metrics of the rule and returns a NamedTuple consisting of:
- - `:support`: number of instances satisfying the antecedent of the rule relative to the number of total instances
- - `:error`:
-    - `Classification Problems:` number of instances that were not classified correctly compared to the number of total instances
-    - `Regression Problems:` mean squared error
- - `:length`: number of conjuncts of the input rule
-
-# Examples
-```julia-repl
-julia> rule_metrics(rule,X,Y)
-TODO
-```
+Calculate metrics for a rule with respect to a labelled dataset and returns a `NamedTuple` consisting of:
+- `support`: number of instances satisfying the antecedent of the rule divided by
+    the total number of instances;
+- `error`:
+    - For classification problems: number of instances that were not classified
+    correctly divided by the total number of instances;
+    - For regression problems: mean squared error;
+- `length`: number of propositions in the rule's antecedent.
 
 See also
 [`Rule`](@ref),
 [`AbstractInterpretationSet`](@ref),
 [`Label`](@ref),
-[`evaluate_rule`](@ref),
-[`nsamples`](@ref),
+[`evaluaterule`](@ref),
+[`ninstances`](@ref),
 [`outcometype`](@ref),
-[`consequent`](@ref),
-[`rule_length`](@ref).
+[`consequent`](@ref).
 """
-function rule_metrics(
+function rulemetrics(
     rule::Rule{O, C, FM},
     X::AbstractInterpretationSet,
     Y::AbstractVector{<:Label}
 ) where {O,C,FM<:AbstractModel}
-    eval_result = evaluate_rule(rule, X, Y)
-    rule_output = eval_result[:rule_output]
-    ant_sat = eval_result[:ant_sat]
-    n_instances = nsamples(X)
-    n_satisfy = sum(ant_sat)
+    eval_result = evaluaterule(rule, X, Y)
+    ys = eval_result[:ys]
+    antsat = eval_result[:antsat]
+    n_instances = ninstances(X)
+    n_satisfy = sum(antsat)
 
     rule_support =  n_satisfy / n_instances
 
@@ -129,11 +117,11 @@ function rule_metrics(
             # Number of incorrectly classified instances divided by number of instances
             # satisfying the rule condition.
             # TODO: failure
-            misclassified_instances = length(findall(rule_output .!= Y))
+            misclassified_instances = length(findall(ys .!= Y))
             misclassified_instances / n_satisfy
         elseif outcometype(consequent(rule)) <: RLabel
             # Mean Squared Error (mse)
-            mse(rule_output[ant_sat], Y[ant_sat])
+            mse(ys[antsat], Y[antsat])
         else
             error("The outcome type of the consequent of the input rule $(outcometype(consequent(rule))) is not among those accepted")
         end
@@ -142,7 +130,7 @@ function rule_metrics(
     return (;
         support   = rule_support,
         error     = rule_error,
-        length    = rule_length(rule),
+        length    = npropositions(antecedent(rule)),
     )
 end
 

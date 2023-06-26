@@ -1,5 +1,5 @@
-using SoleData: slice_dataset
-import SoleData: get_instance, nsamples, nattributes, channel_size, max_channel_size, dimensionality, eltype
+using SoleData: slicedataset
+import SoleData: get_instance, ninstances, nvariables, channel_size, max_channel_size, dimensionality, eltype
 using SoleData: AbstractDimensionalDataset,
                 AbstractDimensionalInstance,
                 AbstractDimensionalChannel,
@@ -14,18 +14,6 @@ using SoleLogics: TruthValue
 # A passive modal dataset is one that you can interpret decisions on, but cannot necessarily
 #  enumerate decisions for, as it doesn't have objects for storing the logic (relations, features, etc.).
 # Dimensional datasets are passive.
-
-# function get_interval_worldtype(N::Integer)
-#     if N == 0
-#         OneWorld
-#     elseif N == 0
-#         Interval
-#     elseif N == 0
-#         Interval2D
-#     else
-#         error("TODO")
-#     end
-# end
 
 struct PassiveDimensionalDataset{
     N,
@@ -48,9 +36,9 @@ struct PassiveDimensionalDataset{
     function PassiveDimensionalDataset{N,W,DOM}(
         d::DOM,
     ) where {N,W<:AbstractWorld,DOM<:AbstractDimensionalDataset}
-        FR = _frametype(d)
+        FR = typeof(_frame(d))
         _W = worldtype(FR)
-        @assert W <: _W
+        @assert W <: _W "This should hold: $(W) <: $(_W)"
         PassiveDimensionalDataset{N,_W,DOM,FR}(d)
     end
 
@@ -64,7 +52,7 @@ struct PassiveDimensionalDataset{
         d::AbstractDimensionalDataset,
         # worldtype::Type{<:AbstractWorld},
     )
-        W = worldtype(_frametype(d))
+        W = worldtype(_frame(d))
         PassiveDimensionalDataset{dimensionality(d),W}(d)
     end
 end
@@ -77,13 +65,13 @@ end
     args...,
 ) where {N,W<:AbstractWorld,U}
     w_values = interpret_world(w, get_instance(X.d, i_sample))
-    compute_feature(f, w_values)::U
+    computefeature(f, w_values)::U
 end
 
 Base.size(X::PassiveDimensionalDataset)                 = Base.size(X.d)
 
-nattributes(X::PassiveDimensionalDataset)               = nattributes(X.d)
-nsamples(X::PassiveDimensionalDataset)                  = nsamples(X.d)
+nvariables(X::PassiveDimensionalDataset)               = nvariables(X.d)
+ninstances(X::PassiveDimensionalDataset)                  = ninstances(X.d)
 channel_size(X::PassiveDimensionalDataset)              = channel_size(X.d)
 max_channel_size(X::PassiveDimensionalDataset)          = max_channel_size(X.d)
 dimensionality(X::PassiveDimensionalDataset)            = dimensionality(X.d)
@@ -91,8 +79,8 @@ eltype(X::PassiveDimensionalDataset)                    = eltype(X.d)
 
 get_instance(X::PassiveDimensionalDataset, args...)     = get_instance(X.d, args...)
 
-_slice_dataset(X::PassiveDimensionalDataset{N,W}, inds::AbstractVector{<:Integer}, args...; kwargs...) where {N,W} =
-    PassiveDimensionalDataset{N,W}(_slice_dataset(X.d, inds, args...; kwargs...))
+instances(X::PassiveDimensionalDataset{N,W}, inds::AbstractVector{<:Integer}, return_view::Union{Val{true},Val{false}} = Val(false)) where {N,W} =
+    PassiveDimensionalDataset{N,W}(instances(X.d, inds, return_view))
 
 hasnans(X::PassiveDimensionalDataset) = hasnans(X.d)
 
@@ -102,5 +90,5 @@ frame(X::PassiveDimensionalDataset, i_sample) = _frame(X.d, i_sample)
 
 ############################################################################################
 
-_frametype(X::Union{UniformDimensionalDataset,AbstractArray}) = typeof(FullDimensionalFrame(channel_size(X))) # TODO dirty but works
-_frame(X::Union{UniformDimensionalDataset,AbstractArray}, i_sample) = FullDimensionalFrame(channel_size(X)) # TODO dirty but works
+_frame(X::Union{UniformDimensionalDataset,AbstractArray}, i_sample) = _frame(X)
+_frame(X::Union{UniformDimensionalDataset,AbstractArray}) = FullDimensionalFrame(channel_size(X))

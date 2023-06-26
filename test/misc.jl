@@ -8,7 +8,7 @@ using SoleModels
 using SoleModels: AbstractModel
 using SoleModels: ConstantModel, FinalModel
 using SoleModels: LogicalTruthCondition, TrueCondition
-using SoleModels: unroll_rules, unroll_rules_cascade, formula, displaymodel, submodels
+using SoleModels: listrules, formula, displaymodel, submodels
 
 io = IOBuffer()
 
@@ -206,10 +206,6 @@ rules_integer = @test_nowarn [Rule(phi, cmodel_integer), Rule(phi, cmodel_intege
 dlmodel_integer = @test_nowarn DecisionList(rules_integer, defaultconsequent)
 @test outputtype(dlmodel_integer) == Union{outcometype(defaultconsequent),outcometype.(rules_integer)...}
 
-################################## RuleCascade #############################################
-rc1_string = @test_nowarn RuleCascade([cond_r,cond_s,cond_t],outcome_string)
-rc2_string = @test_nowarn RuleCascade([cond_r],outcome_string)
-
 ################################### Branch #################################################
 b_nsx = @test_nowarn Branch(cond_q,outcome_string,outcome_string2)
 b_fsx = @test_nowarn Branch(cond_s,outcome_string,outcome_string2)
@@ -254,9 +250,6 @@ branch_true = @test_nowarn Branch(TrueCondition(), (branch_r, "yes"))
 @test typeof(branch_r0) == typeof(branch_r)
 
 rule_r = @test_nowarn Rule(formula_r, branch_r)
-rcmodel = RuleCascade([phi,phi,phi], cmodel_integer)
-@test_nowarn displaymodel(Branch(phi, rcmodel, bmodel_2));
-String(take!(io))
 
 branch_r_mixed = @test_nowarn Branch(formula_r, (rule_r, "no"))
 
@@ -304,64 +297,54 @@ ms_model = MixedSymbolicModel(ms_model)
 @test_throws MethodError convert(AbstractModel{<:Int}, cmodel_number)
 
 ############################################################################################
-############################ Testing immediate_submodels #######################################
+############################ Testing immediatesubmodels ####################################
 ############################################################################################
 
-@test_nowarn immediate_submodels(outcome_int)
-@test_nowarn immediate_submodels(outcome_float)
-@test_nowarn immediate_submodels(outcome_string)
-@test_nowarn immediate_submodels(outcome_string2)
-@test_nowarn immediate_submodels(cmodel_string)
+@test_nowarn immediatesubmodels(outcome_int)
+@test_nowarn immediatesubmodels(outcome_float)
+@test_nowarn immediatesubmodels(outcome_string)
+@test_nowarn immediatesubmodels(outcome_string2)
+@test_nowarn immediatesubmodels(cmodel_string)
 
-@test immediate_submodels(outcome_int) isa Vector{Vector{<:AbstractModel{<:Int64}}}
-@test immediate_submodels(outcome_float) isa Vector{Vector{<:AbstractModel{<:Float64}}}
-@test immediate_submodels(outcome_string) isa Vector{Vector{<:AbstractModel{<:String}}}
-@test immediate_submodels(outcome_string2) isa Vector{Vector{<:AbstractModel{<:String}}}
-@test immediate_submodels(cmodel_string) isa Vector{Vector{<:AbstractModel{<:String}}}
+@test immediatesubmodels(outcome_int) isa Vector{Vector{<:AbstractModel{<:Int64}}}
+@test immediatesubmodels(outcome_float) isa Vector{Vector{<:AbstractModel{<:Float64}}}
+@test immediatesubmodels(outcome_string) isa Vector{Vector{<:AbstractModel{<:String}}}
+@test immediatesubmodels(outcome_string2) isa Vector{Vector{<:AbstractModel{<:String}}}
+@test immediatesubmodels(cmodel_string) isa Vector{Vector{<:AbstractModel{<:String}}}
 
-@test immediate_submodels(r1_string) isa Vector{<:AbstractModel}
-@test join(displaymodel.(immediate_submodels(r1_string); header = false)) == """
+@test immediatesubmodels(r1_string) isa Vector{<:AbstractModel}
+@test join(displaymodel.(immediatesubmodels(r1_string); header = false)) == """
 YES
 """
 
-@test immediate_submodels(r2_string) isa Vector{<:AbstractModel}
-@test join(displaymodel.(immediate_submodels(r2_string); header = false)) == """
+@test immediatesubmodels(r2_string) isa Vector{<:AbstractModel}
+@test join(displaymodel.(immediatesubmodels(r2_string); header = false)) == """
 YES
 """
 
-@test immediate_submodels(rc1_string) isa Vector{<:AbstractModel}
-@test join(displaymodel.(immediate_submodels(rc1_string); header = false)) == """
-YES
-"""
+@test immediatesubmodels(b_nsx) isa Vector{<:AbstractModel}
+@test immediatesubmodels(b_fsx) isa Vector{<:AbstractModel}
+@test immediatesubmodels(b_fdx) isa Vector{<:AbstractModel}
+@test immediatesubmodels(b_p) isa Vector{<:AbstractModel}
 
-@test immediate_submodels(rcmodel) isa Vector{<:AbstractModel}
-@test join(displaymodel.(immediate_submodels(rcmodel); header = false)) == """
-1
-"""
-
-@test immediate_submodels(b_nsx) isa Vector{<:AbstractModel}
-@test immediate_submodels(b_fsx) isa Vector{<:AbstractModel}
-@test immediate_submodels(b_fdx) isa Vector{<:AbstractModel}
-@test immediate_submodels(b_p) isa Vector{<:AbstractModel}
-
-@test join(displaymodel.(immediate_submodels(b_nsx); header = false)) == """
+@test join(displaymodel.(immediatesubmodels(b_nsx); header = false)) == """
 YES
 NO
 """
 
-@test join(displaymodel.(immediate_submodels(b_fsx); header = false)) == """
+@test join(displaymodel.(immediatesubmodels(b_fsx); header = false)) == """
 YES
 NO
 """
 
-@test join(displaymodel.(immediate_submodels(b_fdx); header = false)) == """
+@test join(displaymodel.(immediatesubmodels(b_fdx); header = false)) == """
 ┐ q
 ├ ✔ YES
 └ ✘ NO
 YES
 """
 
-@test join(displaymodel.(immediate_submodels(b_p); header = false)) == """
+@test join(displaymodel.(immediatesubmodels(b_p); header = false)) == """
 ┐ s
 ├ ✔ YES
 └ ✘ NO
@@ -372,8 +355,8 @@ YES
 └ ✘ YES
 """
 
-@test immediate_submodels(d1_string) isa Vector{<:AbstractModel}
-@test join(displaymodel.(immediate_submodels(d1_string); header = false)) == """
+@test immediatesubmodels(d1_string) isa Vector{<:AbstractModel}
+@test join(displaymodel.(immediatesubmodels(d1_string); header = false)) == """
 ┐(r ∧ s) ∧ t
 └ ✔ YES
 ┐¬(r)
@@ -381,8 +364,8 @@ YES
 YES
 """
 
-@test immediate_submodels(dt1) isa Vector{<:AbstractModel}
-@test join(displaymodel.(immediate_submodels(dt1); header = false)) == """
+@test immediatesubmodels(dt1) isa Vector{<:AbstractModel}
+@test join(displaymodel.(immediatesubmodels(dt1); header = false)) == """
 ┐ s
 ├ ✔ YES
 └ ✘ NO
@@ -393,16 +376,16 @@ YES
 └ ✘ YES
 """
 
-@test immediate_submodels(dt2) isa Vector{<:AbstractModel}
-@test join(displaymodel.(immediate_submodels(dt2); header = false)) == """
+@test immediatesubmodels(dt2) isa Vector{<:AbstractModel}
+@test join(displaymodel.(immediatesubmodels(dt2); header = false)) == """
 ┐ q
 ├ ✔ YES
 └ ✘ NO
 YES
 """
 
-@test immediate_submodels(msm) isa Vector{<:AbstractModel}
-@test join(displaymodel.(immediate_submodels(msm); header = false)) == """
+@test immediatesubmodels(msm) isa Vector{<:AbstractModel}
+@test join(displaymodel.(immediatesubmodels(msm); header = false)) == """
 2
 1.5
 """
@@ -431,16 +414,6 @@ YES
 @test submodels(r2_string) isa Vector{<:AbstractModel}
 @test join(displaymodel.(submodels(r2_string); header = false)) == """
 YES
-"""
-
-@test submodels(rc1_string) isa Vector{<:AbstractModel}
-@test join(displaymodel.(submodels(rc1_string); header = false)) == """
-YES
-"""
-
-@test submodels(rcmodel) isa Vector{<:AbstractModel}
-@test join(displaymodel.(submodels(rcmodel); header = false)) == """
-1
 """
 
 @test submodels(b_nsx) isa Vector{<:AbstractModel}
@@ -534,293 +507,116 @@ YES
 """
 
 ############################################################################################
-###################### Testing unroll_rules_cascade ########################################
+############################ Testing listrules ##########################################
 ############################################################################################
 
-@test_nowarn unroll_rules_cascade(outcome_int)
-@test_nowarn unroll_rules_cascade(outcome_float)
-@test_nowarn unroll_rules_cascade(outcome_string)
-@test_nowarn unroll_rules_cascade(outcome_string2)
-@test_nowarn unroll_rules_cascade(cmodel_string)
+@test_nowarn listrules(outcome_int)
+@test_nowarn listrules(outcome_float)
+@test_nowarn listrules(outcome_string)
+@test_nowarn listrules(outcome_string2)
+@test_nowarn listrules(cmodel_string)
 
-@test unroll_rules_cascade(outcome_int) isa Vector{<:ConstantModel}
-@test unroll_rules_cascade(outcome_float) isa Vector{<:ConstantModel}
-@test unroll_rules_cascade(outcome_string) isa Vector{<:ConstantModel}
-@test unroll_rules_cascade(outcome_string2) isa Vector{<:ConstantModel}
-@test unroll_rules_cascade(cmodel_string) isa Vector{<:ConstantModel}
-
-@test unroll_rules_cascade(r1_string) isa Vector{<:RuleCascade}
-@test join(displaymodel.(unroll_rules_cascade(r1_string); header = false)) == """
-┐⩚((r ∧ s) ∧ t)
-└ ✔ YES
-"""
-
-@test unroll_rules_cascade(r2_string) isa Vector{<:RuleCascade}
-@test join(displaymodel.(unroll_rules_cascade(r2_string); header = false)) == """
-┐⩚(¬(r))
-└ ✔ YES
-"""
-
-@test unroll_rules_cascade(rc1_string) isa Vector{<:RuleCascade}
-@test join(displaymodel.(unroll_rules_cascade(rc1_string); header = false)) == """
-┐⩚(r, s, t)
-└ ✔ YES
-"""
-
-@test unroll_rules_cascade(rcmodel) isa Vector{<:RuleCascade}
-@test join(displaymodel.(unroll_rules_cascade(rcmodel); header = false)) == """
-┐⩚(p ∧ (q ∨ r), p ∧ (q ∨ r), p ∧ (q ∨ r))
-└ ✔ 1
-"""
-
-@test unroll_rules_cascade(b_nsx) isa Vector{<:RuleCascade}
-@test unroll_rules_cascade(b_fsx) isa Vector{<:RuleCascade}
-@test unroll_rules_cascade(b_fdx) isa Vector{<:RuleCascade}
-@test unroll_rules_cascade(b_p) isa Vector{<:RuleCascade}
-
-@test join(displaymodel.(unroll_rules_cascade(b_nsx); header = false)) == """
-┐⩚(q)
-└ ✔ YES
-┐⩚(¬(q))
-└ ✔ NO
-"""
-
-@test join(displaymodel.(unroll_rules_cascade(b_fsx); header = false)) == """
-┐⩚(s)
-└ ✔ YES
-┐⩚(¬(s))
-└ ✔ NO
-"""
-
-@test join(displaymodel.(unroll_rules_cascade(b_fdx); header = false)) == """
-┐⩚(t, q)
-└ ✔ YES
-┐⩚(t, ¬(q))
-└ ✔ NO
-┐⩚(¬(t))
-└ ✔ YES
-"""
-# [{t,q} => YES, {t,¬q} => NO, {¬t} => YES]"
-
-@test join(displaymodel.(unroll_rules_cascade(b_p); header = false)) == """
-┐⩚(r, s)
-└ ✔ YES
-┐⩚(r, ¬(s))
-└ ✔ NO
-┐⩚(¬(r), t, q)
-└ ✔ YES
-┐⩚(¬(r), t, ¬(q))
-└ ✔ NO
-┐⩚(¬(r), ¬(t))
-└ ✔ YES
-"""
-
-@test unroll_rules_cascade(d1_string) isa Vector{<:RuleCascade}
-@test join(displaymodel.(unroll_rules_cascade(d1_string); header = false)) == """
-┐⩚((r ∧ s) ∧ t)
-└ ✔ YES
-┐⩚(¬(r))
-└ ✔ YES
-┐⩚(⊤)
-└ ✔ YES
-"""
-
-@test unroll_rules_cascade(dt1) isa Vector{<:RuleCascade}
-@test join(displaymodel.(unroll_rules_cascade(dt1); header = false)) == """
-┐⩚(r, s)
-└ ✔ YES
-┐⩚(r, ¬(s))
-└ ✔ NO
-┐⩚(¬(r), t, q)
-└ ✔ YES
-┐⩚(¬(r), t, ¬(q))
-└ ✔ NO
-┐⩚(¬(r), ¬(t))
-└ ✔ YES
-"""
-
-@test unroll_rules_cascade(dt2) isa Vector{<:RuleCascade}
-@test join(displaymodel.(unroll_rules_cascade(dt2); header = false)) == """
-┐⩚(t, q)
-└ ✔ YES
-┐⩚(t, ¬(q))
-└ ✔ NO
-┐⩚(¬(t))
-└ ✔ YES
-"""
-
-@test unroll_rules_cascade(msm) isa Vector{<:RuleCascade}
-@test join(displaymodel.(unroll_rules_cascade(msm); header = false)) == """
-┐⩚(q)
-└ ✔ 2
-┐⩚(¬(q))
-└ ✔ 1.5
-"""
-
-#=
-unroll_rules_cascade(rule_r)
-unroll_rules_cascade(branch_r)
-=#
-
-############################################################################################
-############################ Testing unroll_rules ##########################################
-############################################################################################
-
-@test_nowarn unroll_rules(outcome_int)
-@test_nowarn unroll_rules(outcome_float)
-@test_nowarn unroll_rules(outcome_string)
-@test_nowarn unroll_rules(outcome_string2)
-@test_nowarn unroll_rules(cmodel_string)
-
-@test unroll_rules(outcome_int) isa Vector{<:ConstantModel}
-@test unroll_rules(outcome_float) isa Vector{<:ConstantModel}
-@test unroll_rules(outcome_string) isa Vector{<:ConstantModel}
-@test unroll_rules(outcome_string2) isa Vector{<:ConstantModel}
-@test unroll_rules(cmodel_string) isa Vector{<:ConstantModel}
+@test listrules(outcome_int) isa Vector{<:ConstantModel}
+@test listrules(outcome_float) isa Vector{<:ConstantModel}
+@test listrules(outcome_string) isa Vector{<:ConstantModel}
+@test listrules(outcome_string2) isa Vector{<:ConstantModel}
+@test listrules(cmodel_string) isa Vector{<:ConstantModel}
 
 
-@test_nowarn unroll_rules(rule_r)
-@test_nowarn ruleset = unroll_rules(branch_r)
-@test_broken unroll_rules(dlmodel)
-@test_nowarn unroll_rules(rcmodel)
+@test_nowarn listrules(rule_r)
+@test_nowarn ruleset = listrules(branch_r)
+@test_broken listrules(dlmodel)
 
-@test_nowarn unroll_rules_cascade(cmodel_string)
-#@test_nowarn unroll_rules_cascade(rule_r)
-#@test_nowarn unroll_rules_cascade(branch_r)
-#@test_nowarn unroll_rules_cascade(dlmodel)
-#@test_nowarn unroll_rules_cascade(rcmodel)
-
-#unroll_rules_cascade.([rfloat_number, dlmodel, dlmodel_integer, bmodel_integer, bmodel, bmodel_mixed, bmodel_mixed_number, dtmodel0, dtmodel, ms_model])
-
-
-@test unroll_rules(r1_string) isa Vector{<:Rule}
-@test join(displaymodel.(unroll_rules(r1_string); header = false)) == """
+@test listrules(r1_string) isa Vector{<:Rule}
+@test join(displaymodel.(listrules(r1_string); header = false)) == """
 ┐(r ∧ s) ∧ t
 └ ✔ YES
 """
 
-@test unroll_rules(r2_string) isa Vector{<:Rule}
-@test join(displaymodel.(unroll_rules(r2_string); header = false)) == """
+@test listrules(r2_string) isa Vector{<:Rule}
+@test join(displaymodel.(listrules(r2_string); header = false)) == """
 ┐¬(r)
 └ ✔ YES
 """
 
-@test unroll_rules(d1_string) isa Vector{<:Rule}
-@test join(displaymodel.(unroll_rules(d1_string); header = false)) == """
+@test listrules(d1_string) isa Vector{<:Rule}
+@test join(displaymodel.(listrules(d1_string); header = false)) == """
 ┐(r ∧ s) ∧ t
 └ ✔ YES
-┐¬(r)
+┐(¬((r ∧ s) ∧ t)) ∧ (¬(r))
 └ ✔ YES
-┐⊤
-└ ✔ YES
-"""
-
-@test unroll_rules(rc1_string) isa Vector{<:Rule}
-@test join(displaymodel.(unroll_rules(rc1_string); header = false)) == """
-┐r ∧ (s ∧ t)
+┐(¬((r ∧ s) ∧ t)) ∧ (¬((¬((r ∧ s) ∧ t)) ∧ (¬(r))))
 └ ✔ YES
 """
 
-@test unroll_rules(rcmodel) isa Vector{<:Rule}
-@test join(displaymodel.(unroll_rules(rcmodel); header = false)) == """
-┐(p ∧ (q ∨ r)) ∧ ((p ∧ (q ∨ r)) ∧ (p ∧ (q ∨ r)))
-└ ✔ 1
-"""
-
-@test unroll_rules(b_nsx) isa Vector{<:Rule}
-@test join(displaymodel.(unroll_rules(b_nsx); header = false)) == """
+@test listrules(b_nsx) isa Vector{<:Rule}
+@test join(displaymodel.(listrules(b_nsx); header = false)) == """
 ┐q
 └ ✔ YES
 ┐¬(q)
 └ ✔ NO
 """
 
-@test unroll_rules(b_fsx) isa Vector{<:Rule}
-@test join(displaymodel.(unroll_rules(b_fsx); header = false)) == """
+@test listrules(b_fsx) isa Vector{<:Rule}
+@test join(displaymodel.(listrules(b_fsx); header = false)) == """
 ┐s
 └ ✔ YES
 ┐¬(s)
 └ ✔ NO
 """
 
-@test unroll_rules(b_fdx) isa Vector{<:Rule}
-@test join(displaymodel.(unroll_rules(b_fdx); header = false)) == """
-┐t ∧ q
+@test listrules(b_fdx) isa Vector{<:Rule}
+@test join(displaymodel.(listrules(b_fdx); header = false)) == """
+┐(t) ∧ (q)
 └ ✔ YES
-┐t ∧ (¬(q))
+┐(t) ∧ (¬(q))
 └ ✔ NO
 ┐¬(t)
 └ ✔ YES
 """
 
-@test unroll_rules(b_p) isa Vector{<:Rule}
-@test join(displaymodel.(unroll_rules(b_p); header = false)) == """
-┐r ∧ s
+@test listrules(b_p) isa Vector{<:Rule}
+@test join(displaymodel.(listrules(b_p); header = false)) == """
+┐(r) ∧ (s)
 └ ✔ YES
-┐r ∧ (¬(s))
+┐(r) ∧ (¬(s))
 └ ✔ NO
-┐(¬(r)) ∧ (t ∧ q)
+┐(¬(r)) ∧ (t) ∧ (q)
 └ ✔ YES
-┐(¬(r)) ∧ (t ∧ (¬(q)))
-└ ✔ NO
-┐(¬(r)) ∧ (¬(t))
-└ ✔ YES
-"""
-
-@test unroll_rules(dt1) isa Vector{<:Rule}
-@test join(displaymodel.(unroll_rules(dt1); header = false)) == """
-┐r ∧ s
-└ ✔ YES
-┐r ∧ (¬(s))
-└ ✔ NO
-┐(¬(r)) ∧ (t ∧ q)
-└ ✔ YES
-┐(¬(r)) ∧ (t ∧ (¬(q)))
+┐(¬(r)) ∧ (t) ∧ (¬(q))
 └ ✔ NO
 ┐(¬(r)) ∧ (¬(t))
 └ ✔ YES
 """
 
-@test unroll_rules(dt2) isa Vector{<:Rule}
-@test join(displaymodel.(unroll_rules(dt2); header = false)) == """
-┐t ∧ q
+@test listrules(dt1) isa Vector{<:Rule}
+@test join(displaymodel.(listrules(dt1); header = false)) == """
+┐(r) ∧ (s)
 └ ✔ YES
-┐t ∧ (¬(q))
+┐(r) ∧ (¬(s))
+└ ✔ NO
+┐(¬(r)) ∧ (t) ∧ (q)
+└ ✔ YES
+┐(¬(r)) ∧ (t) ∧ (¬(q))
+└ ✔ NO
+┐(¬(r)) ∧ (¬(t))
+└ ✔ YES
+"""
+
+@test listrules(dt2) isa Vector{<:Rule}
+@test join(displaymodel.(listrules(dt2); header = false)) == """
+┐(t) ∧ (q)
+└ ✔ YES
+┐(t) ∧ (¬(q))
 └ ✔ NO
 ┐¬(t)
 └ ✔ YES
 """
 
-@test unroll_rules(msm) isa Vector{<:Rule}
-@test join(displaymodel.(unroll_rules(msm); header = false)) == """
+@test listrules(msm) isa Vector{<:Rule}
+@test join(displaymodel.(listrules(msm); header = false)) == """
 ┐q
 └ ✔ 2
 ┐¬(q)
 └ ✔ 1.5
 """
-
-############################################################################################
-############################### Testing convert ############################################
-############################################################################################
-
-@test convert(Rule,rc1_string) isa Rule
-@test convert(Rule,rc2_string) isa Rule
-
-@test convert(Rule, rcmodel) isa Rule
-
-#=
-@test convert(RuleCascade,r1_string) isa RuleCascade
-displaymodel.(io,convert(RuleCascade,r1_string))
-@test String(take!(io)) == """
-RuleCascade{String, LogicalTruthCondition{SyntaxTree{Union{SoleLogics.NamedOperator{:∧}, Proposition{String}}, SoleLogics.NamedOperator{:∧}}}, ConstantModel{String}}
-┐⩚(r ∧ s ∧ t)
-└ ✔ YES
-"""
-@test_nowarn convert(RuleCascade,r2_string)
-displaymodel.(io,convert(RuleCascade,r2_string))
-@test String(take!(io)) == """
-RuleCascade{String, LogicalTruthCondition{SyntaxTree{Union{SoleLogics.NamedOperator{:¬}, Proposition{String}}, SoleLogics.NamedOperator{:¬}}}, ConstantModel{String}}
-┐⩚(¬(r))
-└ ✔ YES
-"""
-=#
