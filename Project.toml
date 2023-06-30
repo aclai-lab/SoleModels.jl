@@ -23,7 +23,6 @@ Suppressor = "fd094767-a336-5f1f-9728-57cf17d0bbfb"
 ThreadSafeDicts = "4239201d-c60e-5e0a-9702-85d713665ba7"
 
 [compat]
-BenchmarkTools = "1"
 julia = "1"
 BenchmarkTools = "1"
 ComputedFieldTypes = "1"
