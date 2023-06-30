@@ -539,13 +539,11 @@ version = "1.0.1"
 [[Sockets]]
 uuid = "6462fe0b-24de-5631-8697-dd941f90decc"
 
-[[SoleBase]]
-deps = ["Logging", "Random"]
-git-tree-sha1 = "c6c3042fd61c7b7162ddf16b69939bdace7d5e30"
-repo-rev = "dev"
-repo-url = "https://github.com/aclai-lab/SoleBase.jl"
+[[deps.SoleBase]]
+deps = ["IterTools", "Logging", "Random"]
+git-tree-sha1 = "4f941f62f7864f253e9063256dcef0fab72a44f4"
 uuid = "4475fa32-7023-44a0-aa70-4813b230e492"
-version = "0.1.0"
+version = "0.9.1"
 
 [[SoleData]]
 deps = ["CSV", "Catch22", "DataFrames", "DataStructures", "Logging", "Random", "Reexport", "ScientificTypes", "SoleBase", "Statistics"]
