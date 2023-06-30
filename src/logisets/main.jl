@@ -10,6 +10,10 @@ import SoleData: ninstances
 import SoleData: hasnans, instances, concatdatasets
 import SoleData: displaystructure
 
+# TODO fix
+import SoleData: eachinstance
+import Tables: istable, rows, subset, getcolumn, columnnames, rowaccess
+
 # Features to be computed on worlds of dataset instances
 include("features.jl")
 
@@ -26,7 +30,7 @@ include("representatives.jl")
 
 export ninstances, featvalue, displaystructure, isminifiable, minify
 
-# Logical datasets, where the instances are Kripke models with conditional alphabets
+# Logical datasets, where the instances are Kripke structures with conditional alphabets
 include("logiset.jl")
 
 include("memosets.jl")
@@ -48,8 +52,8 @@ export nfeatures
 
 include("scalar/main.jl")
 
-
-include("Tables.jl")
+# Tables interface for Logiset's, so that it can be integrated with MLJ
+include("MLJ-interface.jl")
 
 export initlogiset, ninstances, maxchannelsize, worldtype, dimensionality, allworlds, featvalue
 

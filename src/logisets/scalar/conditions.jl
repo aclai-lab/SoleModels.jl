@@ -56,7 +56,11 @@ function _syntaxstring_metacondition(
     end
 end
 
-_st_featop_name(feature::AbstractFeature,   test_operator::TestOperator; kwargs...)     = "$(syntaxstring(feature; kwargs...)) $(test_operator)"
+_st_featop_name(feature::AbstractFeature,   test_operator::TestOperator; kwargs...)     = "$(syntaxstring(feature; kwargs...)) $(_st_testop_name(test_operator))"
+
+_st_testop_name(test_op::Any) = "$(test_op)"
+_st_testop_name(::typeof(>=)) = "≥"
+_st_testop_name(::typeof(<=)) = "≤"
 
 # Abbreviations
 
@@ -71,11 +75,22 @@ function groupbyfeature(
     if isnothing(features)
         features = unique(feature.(metaconditions))
     end
-    return map(_feature->begin
+    groups = map(_feature->begin
         these_metaconds = filter(m->feature(m) == _feature, metaconditions)
         # these_testops = unique(test_operator.(these_metaconds))
         (_feature, these_metaconds)
     end, features)
+    all_matched_metaconds = unique(vcat(last.(groups)...))
+    unmatched_metaconds = filter(m->!(m in all_matched_metaconds), metaconditions)
+    if length(unmatched_metaconds) != 0
+        if length(unmatched_metaconds) == length(metaconditions)
+            error("Could not find features for any of the $(length(metaconditions)) " *
+                "metaconditions: $(metaconditions). Features: $(features).")
+        end
+        @warn "Could not find features for $(length(unmatched_metaconds)) " *
+            "metaconditions: $(unmatched_metaconds)."
+    end
+    return groups
 end
 
 ############################################################################################

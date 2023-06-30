@@ -143,7 +143,14 @@ function scalarlogiset(
     end
 
     if isnothing(features)
-        features = collect(Iterators.flatten([[UnivariateMax(i_var), UnivariateMin(i_var)] for i_var in 1:nvariables(dataset)]))
+        is_propositional_dataset = all(i_instance->nworlds(frame(dataset, i_instance)) == 1, 1:ninstances(dataset))
+        features = begin
+            if is_propositional_dataset
+                [UnivariateValue(i_var) for i_var in 1:nvariables(dataset)]
+            else
+                cat([[UnivariateMax(i_var), UnivariateMin(i_var)] for i_var in 1:nvariables(dataset)]...)
+            end
+        end
     end
 
     features_ok = filter(f->isconcretetype(SoleModels.featvaltype(f)), features)
@@ -225,7 +232,6 @@ function naturalconditions(
     featvaltype        :: Type = Real
 )
     nvars = nvariables(dataset)
-    V = featvaltype
 
     @assert all(isa.(mixed_conditions, MixedCondition)) "" *
         "Unknown condition seed encountered! " *
@@ -238,17 +244,37 @@ function naturalconditions(
 
     def_test_operators = is_propositional_dataset ? [≥] : [≥, <]
 
-    # univar_condition(i_var,cond::SoleModels.CanonicalFeatureGeq) = ([≥],DimensionalDatasets.UnivariateMin{V}(i_var))
-    # univar_condition(i_var,cond::SoleModels.CanonicalFeatureLeq) = ([<],DimensionalDatasets.UnivariateMax{V}(i_var))
-    # univar_condition(i_var,cond::SoleModels.CanonicalFeatureGeqSoft) = ([≥],DimensionalDatasets.UnivariateSoftMin{V}(i_var, cond.alpha))
-    # univar_condition(i_var,cond::SoleModels.CanonicalFeatureLeqSoft) = ([<],DimensionalDatasets.UnivariateSoftMax{V}(i_var, cond.alpha))
+    # univar_condition(i_var,cond::SoleModels.CanonicalFeatureGeq) = ([≥],DimensionalDatasets.UnivariateMin{featvaltype}(i_var))
+    # univar_condition(i_var,cond::SoleModels.CanonicalFeatureLeq) = ([<],DimensionalDatasets.UnivariateMax{featvaltype}(i_var))
+    # univar_condition(i_var,cond::SoleModels.CanonicalFeatureGeqSoft) = ([≥],DimensionalDatasets.UnivariateSoftMin{featvaltype}(i_var, cond.alpha))
+    # univar_condition(i_var,cond::SoleModels.CanonicalFeatureLeqSoft) = ([<],DimensionalDatasets.UnivariateSoftMax{featvaltype}(i_var, cond.alpha))
+    function univar_condition(i_var,(test_ops,cond)::Tuple{<:AbstractVector{<:TestOperator},typeof(identity)})
+        V = vareltype(dataset, i_var)
+        if !isconcretetype(V)
+            @warn "Building UnivariateValue with non-concrete feature type: $(V)."
+        end
+        return (test_ops,DimensionalDatasets.UnivariateValue{V}(i_var))
+    end
     function univar_condition(i_var,(test_ops,cond)::Tuple{<:AbstractVector{<:TestOperator},typeof(minimum)})
+        V = vareltype(dataset, i_var)
+        if !isconcretetype(V)
+            @warn "Building UnivariateMin with non-concrete feature type: $(V)."
+        end
         return (test_ops,DimensionalDatasets.UnivariateMin{V}(i_var))
     end
     function univar_condition(i_var,(test_ops,cond)::Tuple{<:AbstractVector{<:TestOperator},typeof(maximum)})
+        V = vareltype(dataset, i_var)
+        if !isconcretetype(V)
+            @warn "Building UnivariateMax with non-concrete feature type: $(V)."
+        end
         return (test_ops,DimensionalDatasets.UnivariateMax{V}(i_var))
     end
     function univar_condition(i_var,(test_ops,cond)::Tuple{<:AbstractVector{<:TestOperator},Base.Callable})
+        V = featvaltype
+        if !isconcretetype(V)
+            @warn "Building UnivariateFeature with non-concrete feature type: $(V)."
+                "Please provide `featvaltype` parameter to naturalconditions."
+        end
         return (test_ops,DimensionalDatasets.UnivariateFeature{V}(i_var, (x)->(V(cond(x)))))
     end
     univar_condition(i_var,::Any) = throw_n_log("Unknown mixed_feature type: $(cond), $(typeof(cond))")
@@ -376,7 +402,7 @@ function naturalgrouping(
     end
 
     percol_framess = percol_framess[_good_columns]
-    columnnames = columnnames[_good_columns]
+    columnnames = Symbol.(columnnames[_good_columns])
     percol_frames = getindex.(percol_framess, 1)
 
     var_grouping = begin

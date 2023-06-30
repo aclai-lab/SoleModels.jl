@@ -21,6 +21,7 @@ test_suites = [
         "logisets/cube2logiset.jl",
         "logisets/dataframe2logiset.jl",
         "logisets/multilogisets.jl",
+        "logisets/MLJ.jl",
     ]),
     ("Models", ["base.jl", ]),
     ("Miscellaneous", ["misc.jl", "minify.jl"]),

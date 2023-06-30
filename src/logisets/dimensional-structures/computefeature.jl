@@ -22,7 +22,7 @@ function computeunivariatefeature(f::UnivariateNamedFeature, varchannel::Union{T
     error("Cannot intepret UnivariateNamedFeature on any structure at all.")
 end
 function computeunivariatefeature(f::UnivariateValue{U}, varchannel::Union{T,AbstractArray{T}}) where {U<:Real,T}
-    varchannel::U
+    (varchannel isa U ? varchannel : first(varchannel))::U
 end
 function computeunivariatefeature(f::UnivariateMin{U}, varchannel::AbstractArray{T}) where {U<:Real,T}
     (minimum(varchannel))::U

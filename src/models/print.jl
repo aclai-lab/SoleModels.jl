@@ -165,8 +165,8 @@ function displaymodel(
         #println(io, "$(pipe)$(antecedent(m))")
         println(io, "$(pipe)$(syntaxstring(antecedent(m); syntaxstring_kwargs...))")
         pad_str = indentation_str*repeat(" ", length(pipe)-length(indentation_last_space)+1)
-        print(io, "$(pad_str*indentation_last_first)$("✔ ")")
-        ind_str = pad_str*indentation_last_space*repeat(" ", length("✔ ")-length(indentation_last_space)+2)
+        print(io, "$(pad_str*indentation_last_first)$("✔")")
+        ind_str = pad_str*indentation_last_space*repeat(" ", length("✔")-length(indentation_last_space)+2)
         subm_str = @_display_submodel consequent(m) ind_str indentation depth max_depth show_subtree_info syntaxstring_kwargs kwargs
         print(io, subm_str)
     else
@@ -206,7 +206,10 @@ function displaymodel(
     if isnothing(max_depth) || depth < max_depth
         pipe = "$(indentation_list_children) "
         println(io, "$(pipe)$(syntaxstring(antecedent(m); syntaxstring_kwargs...))")
-        for (consequent, indentation_flag_space, indentation_flag_first, f) in [(posconsequent(m), indentation_any_space, indentation_any_first, "✔ "), (negconsequent(m), indentation_last_space, indentation_last_first, "✘ ")]
+        for (consequent, indentation_flag_space, indentation_flag_first, f) in [
+            (posconsequent(m), indentation_any_space, indentation_any_first, "✔ "),
+            (negconsequent(m), indentation_last_space, indentation_last_first, "✘ ")
+        ]
             # pad_str = indentation_str*indentation_flag_first**repeat(" ", length(pipe)-length(indentation_flag_first))
             pad_str = "$(indentation_str*indentation_flag_first)$(f)"
             print(io, "$(pad_str)")

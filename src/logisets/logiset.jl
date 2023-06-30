@@ -129,14 +129,6 @@ end
 
 hasnans(::AbstractLogiset) = any.(isnan, allfeatvalues(X))
 
-function initialworldset(
-    X::AbstractLogiset,
-    i_instance::Integer,
-    args...
-)
-    initialworldset(frame(X, i_instance), args...)
-end
-
 ############################################################################################
 
 function Base.show(io::IO, X::AbstractLogiset; kwargs...)

@@ -178,6 +178,10 @@ struct MultiFormula{
     formulas::Dict{Int,F}
 end
 
+function MultiFormula(i_modality, formula::SyntaxTree)
+    MultiFormula(Dict{Int,SyntaxTree}(i_modality => formula))
+end
+
 function SoleLogics.tree(f::MultiFormula)
     error("Cannot convert object of type MultiFormula to a SyntaxTree.")
 end
@@ -186,12 +190,12 @@ function syntaxstring(f::MultiFormula; kwargs...)
     join(["{$(i_modality)}($(syntaxstring(f.formulas[i_modality])))" for i_modality in sort(collect(keys(f.formulas)))], " ∧ ")
 end
 
-function joinformulas(op::typeof(CONJUNCTION), children::NTuple{N,MultiFormula{F}}) where {N,F}
+function joinformulas(op::SoleLogics.AbstractOperator, children::NTuple{N,MultiFormula{F}}) where {N,F}
     formulas = Dict{Int,F}()
     i_modalities = unique(vcat(collect.(keys.([ch.formulas for ch in children]))...))
     for i_modality in i_modalities
         chs = filter(ch->haskey(ch.formulas, i_modality), children)
-        fs = filter(ch->ch.formulas[i_modality], chs)
+        fs = map(ch->ch.formulas[i_modality], chs)
         formulas[i_modality] = joinformulas(op, fs)
     end
     return MultiFormula(formulas)

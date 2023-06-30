@@ -1,7 +1,10 @@
 module SoleModels
 
 using SoleBase
+
 using SoleData
+using SoleData: _isnan
+
 using SoleLogics
 using SoleLogics: AbstractInterpretation, AbstractInterpretationSet
 using SoleLogics: AbstractSyntaxToken
@@ -107,5 +110,7 @@ using .DimensionalDatasets: identityrel
 using .DimensionalDatasets: globalrel
 
 const GenericDataset = Union{SoleData.AbstractDimensionalDataset,AbstractDataFrame,AbstractLogiset,MultiLogiset}
+
+include("MLJ-utils.jl")
 
 end

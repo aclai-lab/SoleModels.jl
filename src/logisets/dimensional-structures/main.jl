@@ -15,7 +15,8 @@ using SoleLogics: AbstractFrame, AbstractDimensionalFrame, FullDimensionalFrame
 import SoleLogics: worldtype, accessibles, allworlds, alphabet
 
 using SoleData
-import SoleData: _isnan, hasnans, nvariables, maxchannelsize, channelsize
+using SoleData: _isnan
+import SoleData: hasnans, nvariables, maxchannelsize, channelsize
 import SoleData: instance, get_instance, concatdatasets
 import SoleData: displaystructure
 import SoleData: dimensionality
@@ -47,6 +48,8 @@ import SoleModels: featchannel, readfeature, featvalues!, allfeatvalues
 import SoleData: get_instance, ninstances, nvariables, channelsize, eltype
 
 ############################################################################################
+
+export UniformFullDimensionalLogiset
 
 # Frame-specific logisets
 include("logiset.jl")

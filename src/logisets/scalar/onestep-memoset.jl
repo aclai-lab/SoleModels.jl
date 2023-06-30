@@ -17,7 +17,7 @@ function featchannel_onestep_aggregation(X::SupportedLogiset, args...)
     if length(onestep_supps) > 0
         @assert length(onestep_supps) == 1 "Currently, using more " *
             "than one AbstractOneStepMemoset is not allowed."
-        featchannel_onestep_aggregation(base(X), onestep_supps(X)[1], args...)
+        featchannel_onestep_aggregation(base(X), onestep_supps[1], args...)
     else
         featchannel_onestep_aggregation(base(X), args...)
     end
@@ -253,7 +253,10 @@ struct ScalarOneStepMemoset{
         compute_globmemoset = begin
             if globalrel in relations
                 relations = filter(l->l≠globalrel, relations)
-                if worldtype == OneWorld
+                if worldtype == OneWorld || all(i_instance->nworlds(frame(X, i_instance)) == 1, 1:ninstances(X))
+                    @warn "ScalarOneStepMemoset: " *
+                        "Found globalrel in relations but single-world case is" *
+                        "identified."
                     false
                 else
                     true
@@ -335,6 +338,9 @@ nrelations(Xm::ScalarOneStepMemoset) = length(Xm.relations)
 
 relmemoset(Xm::ScalarOneStepMemoset) = Xm.relmemoset
 globmemoset(Xm::ScalarOneStepMemoset) = Xm.globmemoset
+
+capacity(Xm::ScalarOneStepMemoset)        = sum(capacity, [relmemoset(Xm), globmemoset(Xm)])
+nmemoizedvalues(Xm::ScalarOneStepMemoset) = sum(nmemoizedvalues, [relmemoset(Xm), globmemoset(Xm)])
 
 ninstances(Xm::ScalarOneStepMemoset) = ninstances(relmemoset(Xm))
 

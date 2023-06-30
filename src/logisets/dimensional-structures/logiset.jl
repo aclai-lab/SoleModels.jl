@@ -69,13 +69,21 @@ struct UniformFullDimensionalLogiset{
         UniformFullDimensionalLogiset{U,W,N,D,FT,FullDimensionalFrame{N,W}}(featstruct, features)
     end
 
-    # function UniformFullDimensionalLogiset(
-    #     dataset::Any,
-    #     features::AbstractVector{<:VarFeature},
-    # )
-    #     U = Union{featvaltype.(features)...}
-    #     UniformFullDimensionalLogiset{U}(dataset, features)
-    # end
+    function UniformFullDimensionalLogiset(
+        featstruct::Any,
+        features::AbstractVector{<:VarFeature},
+    )
+        _worldtype(featstruct::AbstractArray{T,2}) where {T} = OneWorld
+        _worldtype(featstruct::AbstractArray{T,4}) where {T} = Interval{Int}
+        _worldtype(featstruct::AbstractArray{T,6}) where {T} = Interval2D{Int}
+        _dimensionality(featstruct::AbstractArray{T,2}) where {T} = 0
+        _dimensionality(featstruct::AbstractArray{T,4}) where {T} = 1
+        _dimensionality(featstruct::AbstractArray{T,6}) where {T} = 2
+        U = Union{featvaltype.(features)...}
+        W = _worldtype(featstruct)
+        N = _dimensionality(featstruct)
+        UniformFullDimensionalLogiset{U,W,N}(featstruct, features)
+    end
 
 end
 
@@ -471,3 +479,5 @@ function hasnans(X::UniformFullDimensionalLogiset{U,<:Interval2D}) where {U}
         for xx in 1:size(X, 1) for xy in (xx+1):size(X, 2)
         for yx in 1:size(X, 3) for yy in (yx+1):size(X, 4)])
 end
+
+############################################################################################

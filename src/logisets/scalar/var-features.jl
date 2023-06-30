@@ -48,6 +48,10 @@ See also [`AbstractWorld`](@ref).
 featvaltype(::Type{<:VarFeature{U}}) where {U} = U
 featvaltype(::VarFeature{U}) where {U} = U
 
+# # TODO Necessary?
+# Base.isequal(a::FT, b::FT) where {FT<:VarFeature} = Base.isequal(map(x->getfield(a, x), fieldnames(typeof(a))), map(x->getfield(b, x), fieldnames(typeof(b))))
+# Base.hash(a::VarFeature) = Base.hash(map(x->getfield(a, x), fieldnames(typeof(a)))) + Base.hash("")
+
 """
     computefeature(f::VarFeature{U}, featchannel; kwargs...)::U where {U}
 
@@ -221,7 +225,8 @@ featurename(f::UnivariateNamedFeature) = f.name
         i_variable::Integer
     end
 
-Notable univariate feature computing the minimum value for a given variable.
+Simply the value of a scalar variable
+(propositional case, when the frame has a single world).
 
 See also [`Interval`](@ref),
 [`Interval2D`](@ref),

@@ -1,4 +1,3 @@
-import SoleData: eachinstance
 
 function eachinstance(X::AbstractLogiset)
     map(i_instance->(X,i_instance), 1:ninstances(X))
@@ -55,8 +54,6 @@ function featvalues!(
     featvalues(X, featslice, features(X)[i_feature])
 end
 
-import Tables: istable, rows, subset, getcolumn, columnnames, rowaccess
-
 Tables.istable(X::AbstractLogiset) = true
 Tables.istable(X::MultiLogiset) = true
 
@@ -70,11 +67,11 @@ function Tables.rows(X::MultiLogiset)
     eachinstance(X)
 end
 
-function Tables.subset(X::AbstractLogiset, inds; viewhint=nothing)
+function Tables.subset(X::AbstractLogiset, inds; viewhint = nothing)
     slicedataset(X, inds; return_view = (isnothing(viewhint) || viewhint == true))
 end
 
-function Tables.subset(X::MultiLogiset, inds; viewhint=nothing)
+function Tables.subset(X::MultiLogiset, inds; viewhint = nothing)
     slicedataset(X, inds; return_view = (isnothing(viewhint) || viewhint == true))
 end
 
@@ -95,11 +92,17 @@ function Tables.columnnames(row::Tuple{MultiLogiset,Integer})
     1:nmodalities(row[1])
 end
 
-# function Tables.materializer(::Type{<:AbstractLogiset})
-#     function materialize(columns)
-#         columns
-#     end
-# end
+using MLJBase
+using MLJModelInterface
+import MLJModelInterface: selectrows, _selectrows
+
+# From MLJModelInferface.jl/src/data_utils.jl
+function MLJModelInterface.selectrows(::MLJBase.FI, ::Val{:table}, X::Union{AbstractLogiset,MultiLogiset}, r)
+    r = r isa Integer ? (r:r) : r
+    return Tables.subset(X, r)
+end
+
+
 
 import Base: vcat
 

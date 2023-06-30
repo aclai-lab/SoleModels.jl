@@ -14,25 +14,25 @@ struct ScalarPropositionFormula{U} <: ScalarFormula{U}
     p :: ScalarCondition{U}
 end
 
-proposition(d::ScalarPropositionFormula) = Proposition(d.p)
-feature(d::ScalarPropositionFormula) = feature(proposition(d))
-test_operator(d::ScalarPropositionFormula) = test_operator(proposition(d))
-threshold(d::ScalarPropositionFormula) = threshold(proposition(d))
+proposition(f::ScalarPropositionFormula) = Proposition(f.p)
+feature(f::ScalarPropositionFormula) = feature(proposition(f))
+test_operator(f::ScalarPropositionFormula) = test_operator(proposition(f))
+threshold(f::ScalarPropositionFormula) = threshold(proposition(f))
 
-tree(d::ScalarPropositionFormula) = SyntaxTree(d.p)
-negation(d::ScalarPropositionFormula{U}) where {U} =
+tree(f::ScalarPropositionFormula) = SyntaxTree(f.p)
+negation(f::ScalarPropositionFormula{U}) where {U} =
     ScalarPropositionFormula{U}(negation(p))
 
 ############################################################################################
 
 abstract type ScalarOneStepFormula{U} <: ScalarFormula{U} end
 
-relation(d::ScalarOneStepFormula) = d.relation
-proposition(d::ScalarOneStepFormula) = Proposition(d.p)
-metacond(d::ScalarOneStepFormula) = metacond(proposition(d))
-feature(d::ScalarOneStepFormula) = feature(proposition(d))
-test_operator(d::ScalarOneStepFormula) = test_operator(proposition(d))
-threshold(d::ScalarOneStepFormula) = threshold(proposition(d))
+relation(f::ScalarOneStepFormula) = f.relation
+proposition(f::ScalarOneStepFormula) = Proposition(f.p)
+metacond(f::ScalarOneStepFormula) = metacond(atom(proposition(f)))
+feature(f::ScalarOneStepFormula) = feature(atom(proposition(f)))
+test_operator(f::ScalarOneStepFormula) = test_operator(atom(proposition(f)))
+threshold(f::ScalarOneStepFormula) = threshold(atom(proposition(f)))
 
 """
 Templated formula for ⟨R⟩ f ⋈ t.
@@ -90,7 +90,7 @@ struct ScalarExistentialFormula{U} <: ScalarOneStepFormula{U}
     end
 end
 
-tree(d::ScalarExistentialFormula) = DiamondRelationalOperator(d.relation)(Proposition(d.p))
+tree(f::ScalarExistentialFormula) = DiamondRelationalOperator(f.relation)(Proposition(f.p))
 
 """
 Templated formula for [R] f ⋈ t.
@@ -100,7 +100,7 @@ struct ScalarUniversalFormula{U} <: ScalarOneStepFormula{U}
     p         :: ScalarCondition{U}
 end
 
-tree(d::ScalarUniversalFormula) = BoxRelationalOperator(d.relation)(Proposition(d.p))
+tree(f::ScalarUniversalFormula) = BoxRelationalOperator(f.relation)(Proposition(f.p))
 
 function negation(formula::ScalarExistentialFormula{U}) where {U}
     ScalarUniversalFormula{U}(

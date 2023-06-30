@@ -517,7 +517,7 @@ the `ConstrainedModel` type is introduced:
 
     abstract type ConstrainedModel{O,FM<:AbstractModel} <: AbstractModel{O} end
 
-For example, `ConstrainedModel{String, Union{Branch{String}, ConstantModel{String}}}`
+For example, `ConstrainedModel{String,Union{Branch{String},ConstantModel{String}}}`
 supertypes models that with `String` outcomes that make use of `Branch{String}` and
 `ConstantModel{String}` (essentially, a decision trees with `String`s at the leaves).
 
@@ -534,9 +534,9 @@ simply returns `FM`.
 
 See also [`ConstrainedModel`](@ref).
 """
-feasiblemodelstype(::Type{M}) where {O, M<:AbstractModel{O}} = AbstractModel{<:O}
+feasiblemodelstype(::Type{M}) where {O,M<:AbstractModel{O}} = AbstractModel{<:O}
 feasiblemodelstype(::Type{M}) where {M<:AbstractModel} = AbstractModel
-feasiblemodelstype(::Type{M}) where {O, M<:LeafModel{O}} = Union{}
+feasiblemodelstype(::Type{M}) where {O,M<:LeafModel{O}} = Union{}
 feasiblemodelstype(::Type{M}) where {M<:LeafModel} = Union{}
 feasiblemodelstype(::Type{<:ConstrainedModel{O,FM}}) where {O,FM} = FM
 feasiblemodelstype(m::ConstrainedModel) = outcometype(typeof(m))
@@ -1220,7 +1220,7 @@ sub-tree of `Branch` and `LeafModel`:
     O,
         C<:AbstractBooleanCondition,
         FFM<:LeafModel
-    } <: ConstrainedModel{O, Union{<:Branch{<:O,<:C}, <:FFM}}
+    } <: ConstrainedModel{O,Union{<:Branch{<:O,<:C},<:FFM}}
         root::M where {M<:Union{FFM,Branch}}
         info::NamedTuple
     end
@@ -1235,15 +1235,15 @@ struct DecisionTree{
     O,
     C<:AbstractBooleanCondition,
     FFM<:LeafModel
-} <: ConstrainedModel{O, Union{<:Branch{<:O,<:C}, <:FFM}}
+} <: ConstrainedModel{O,Union{<:Branch{<:O,<:C}, <:FFM}}
     root::M where {M<:Union{FFM,Branch}}
     info::NamedTuple
 
     function DecisionTree(
         root::Union{FFM,Branch{O,C,Union{Branch{<:O,C2},FFM}}},
         info::NamedTuple = (;),
-    ) where {O, C<:AbstractBooleanCondition, C2<:C, FFM<:LeafModel{<:O}}
-        new{O,C,FFM}(root, info)
+    ) where {O,C<:AbstractBooleanCondition,C2<:C,FFM<:LeafModel{<:O}}
+        new{O,root isa LeafModel ? AbstractBooleanCondition : C,FFM}(root, info)
     end
 
     function DecisionTree(
@@ -1316,7 +1316,7 @@ A `Decision Forest` is a symbolic model that wraps an ensemble of models
         O,
         C<:AbstractBooleanCondition,
         FFM<:LeafModel
-    } <: ConstrainedModel{O, Union{<:Branch{<:O,<:C}, <:FFM}}
+    } <: ConstrainedModel{O,Union{<:Branch{<:O,<:C},<:FFM}}
         trees::Vector{<:DecisionTree}
         info::NamedTuple
     end
@@ -1329,7 +1329,7 @@ struct DecisionForest{
     O,
     C<:AbstractBooleanCondition,
     FFM<:LeafModel
-} <: ConstrainedModel{O, Union{<:Branch{<:O,<:C}, <:FFM}}
+} <: ConstrainedModel{O,Union{<:Branch{<:O,<:C},<:FFM}}
     trees::Vector{<:DecisionTree}
     info::NamedTuple
 

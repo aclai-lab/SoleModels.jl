@@ -17,8 +17,8 @@ function check(
     φ::SoleLogics.SyntaxTree,
     X::AbstractLogiset{W,U},
     i_instance::Integer,
-    w::Union{Nothing,W,AbstractVector{<:W}} = nothing;
-    use_memo::Union{Nothing,AbstractMemoset{W},AbstractVector{<:AbstractDict{<:FT,<:WorldSet}}} = nothing,
+    w::Union{Nothing,<:AbstractWorld,AbstractVector{<:AbstractWorld}} = nothing;
+    use_memo::Union{Nothing,AbstractMemoset{<:AbstractWorld},AbstractVector{<:AbstractDict{<:FT,<:WorldSet}}} = nothing,
     perform_normalization::Bool = true,
     memo_max_height::Union{Nothing,Int} = nothing,
     onestep_memoset_is_complete = false,
