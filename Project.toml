@@ -23,7 +23,6 @@ Suppressor = "fd094767-a336-5f1f-9728-57cf17d0bbfb"
 ThreadSafeDicts = "4239201d-c60e-5e0a-9702-85d713665ba7"
 
 [compat]
-julia = "1"
 BenchmarkTools = "1"
 ComputedFieldTypes = "1"
 DataStructures = "0.18"
@@ -36,6 +35,8 @@ SoleBase = "0.9"
 SoleLogics = "0.2"
 StatsBase = "0.33"
 Suppressor = "0.2"
+ThreadSafeDicts = "0.1"
+julia = "1"
 
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
