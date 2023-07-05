@@ -27,11 +27,11 @@ C = SoleModels.ScalarCondition
 @test_throws AssertionError SoleModels.parsecondition(C, "avg [V8]    > 63.2  "; featvaltype = Float64, featuretype = SoleModels.AbstractUnivariateFeature)
 @test_nowarn SoleModels.parsecondition(C, "mean[V9] <= 1.0e100"; featvaltype = Float64, featuretype = SoleModels.AbstractUnivariateFeature)
 
-@test_nowarn SoleModels.parsecondition(C, "max{3] <= 12"; featvaltype = Float64, opening_bracket="{", variable_name_prefix = "", featuretype = SoleModels.AbstractUnivariateFeature)
-@test_nowarn SoleModels.parsecondition(C, "  min[V4}    > 43.25  "; featvaltype = Float64, closing_bracket="}", featuretype = SoleModels.AbstractUnivariateFeature)
-@test_nowarn SoleModels.parsecondition(C, "max{5} <= 250"; featvaltype = Float64, opening_bracket="{", closing_bracket="}", variable_name_prefix = "", featuretype = SoleModels.AbstractUnivariateFeature)
+@test_nowarn SoleModels.parsecondition(C, "max{3] <= 12"; featvaltype = Float64, opening_parenthesis="{", variable_name_prefix = "", featuretype = SoleModels.AbstractUnivariateFeature)
+@test_nowarn SoleModels.parsecondition(C, "  min[V4}    > 43.25  "; featvaltype = Float64, closing_parenthesis="}", featuretype = SoleModels.AbstractUnivariateFeature)
+@test_nowarn SoleModels.parsecondition(C, "max{5} <= 250"; featvaltype = Float64, opening_parenthesis="{", closing_parenthesis="}", variable_name_prefix = "", featuretype = SoleModels.AbstractUnivariateFeature)
 @test_nowarn SoleModels.parsecondition(C, "mean[V9] <= 1.0e100"; featvaltype = Float64, featuretype = SoleModels.AbstractUnivariateFeature)
-@test_nowarn SoleModels.parsecondition(C, "mean🌅V9🌄 <= 1.0e100"; featvaltype = Float64, opening_bracket="🌅", closing_bracket="🌄", featuretype = SoleModels.AbstractUnivariateFeature)
+@test_nowarn SoleModels.parsecondition(C, "mean🌅V9🌄 <= 1.0e100"; featvaltype = Float64, opening_parenthesis="🌅", closing_parenthesis="🌄", featuretype = SoleModels.AbstractUnivariateFeature)
 
 @test_nowarn SoleModels.featvaltype(SoleModels.feature(SoleModels.parsecondition(C, "mean[V10]    > 462.2"; featvaltype = Float64, featuretype = SoleModels.AbstractUnivariateFeature))) == Float64
 @test_nowarn SoleModels.featvaltype(SoleModels.feature(SoleModels.parsecondition(C, "mean[V11] < 1.0e100"; featvaltype = Float64, featuretype = SoleModels.AbstractUnivariateFeature))) == Float64
@@ -45,5 +45,5 @@ C = SoleModels.ScalarCondition
 @test_throws AssertionError SoleModels.parsecondition(C, "mean189]    > 113.2"; featuretype = SoleModels.AbstractUnivariateFeature)
 @test_throws AssertionError SoleModels.parsecondition(C, "123.4 < avg [V12]    > 777.2  "; featuretype = SoleModels.AbstractUnivariateFeature)
 @test_throws Exception SoleModels.parsecondition(C, "mimimum [V17] < 23.2 <= 156.2"; featuretype = SoleModels.AbstractUnivariateFeature)
-@test_throws AssertionError SoleModels.parsecondition(C, "max[V3} <= 12"; opening_bracket="{", featuretype = SoleModels.AbstractUnivariateFeature)
-@test_throws AssertionError SoleModels.parsecondition(C, "max{18] <= 12"; opening_bracket="}", variable_name_prefix = "", featuretype = SoleModels.AbstractUnivariateFeature)
+@test_throws AssertionError SoleModels.parsecondition(C, "max[V3} <= 12"; opening_parenthesis="{", featuretype = SoleModels.AbstractUnivariateFeature)
+@test_throws AssertionError SoleModels.parsecondition(C, "max{18] <= 12"; opening_parenthesis="}", variable_name_prefix = "", featuretype = SoleModels.AbstractUnivariateFeature)

@@ -5,9 +5,9 @@ using SoleData: channelvariable
 import Base: isequal, hash, show
 import SoleLogics: syntaxstring
 
-# Feature brackets
-const UVF_OPENING_BRACKET = "["
-const UVF_CLOSING_BRACKET = "]"
+# Feature parentheses
+const UVF_OPENING_PARENTHESIS = "["
+const UVF_CLOSING_PARENTHESIS = "]"
 # Default prefix for variables
 const UVF_VARPREFIX = "V"
 
@@ -167,12 +167,12 @@ end
 
 function syntaxstring(
     f::AbstractUnivariateFeature;
-    opening_bracket::String = UVF_OPENING_BRACKET,
-    closing_bracket::String = UVF_CLOSING_BRACKET,
+    opening_parenthesis::String = UVF_OPENING_PARENTHESIS,
+    closing_parenthesis::String = UVF_CLOSING_PARENTHESIS,
     kwargs...
 )
     n = variable_name(f; kwargs...)
-    "$(featurename(f))$opening_bracket$n$closing_bracket"
+    "$(featurename(f))$opening_parenthesis$n$closing_parenthesis"
 end
 
 ############################################################################################
@@ -450,8 +450,8 @@ end
 function _parsefeature(
     ::Type{FT},
     expression::String;
-    opening_bracket::String = UVF_OPENING_BRACKET,
-    closing_bracket::String = UVF_CLOSING_BRACKET,
+    opening_parenthesis::String = UVF_OPENING_PARENTHESIS,
+    closing_parenthesis::String = UVF_CLOSING_PARENTHESIS,
     custom_feature_aliases = Dict{String,Union{Type,Function}}(),
     variable_names_map::Union{Nothing,AbstractDict,AbstractVector} = nothing,
     variable_name_prefix::Union{Nothing,String} = nothing,
@@ -463,9 +463,9 @@ function _parsefeature(
 
     featvaltype = U
 
-    @assert length(opening_bracket) == 1 || length(closing_bracket)
-        "Brackets must be single-character strings! " *
-        "$(repr(opening_bracket)) and $(repr(closing_bracket)) encountered."
+    @assert length(opening_parenthesis) == 1 || length(closing_parenthesis)
+        "Parentheses must be single-character strings! " *
+        "$(repr(opening_parenthesis)) and $(repr(closing_parenthesis)) encountered."
 
     featdict = merge(BASE_FEATURE_ALIASES, custom_feature_aliases)
 
@@ -473,7 +473,7 @@ function _parsefeature(
         isnothing(variable_names_map) ? UVF_VARPREFIX : variable_name_prefix
     variable_name_prefix = isnothing(variable_name_prefix) ? "" : variable_name_prefix
 
-    r = Regex("^\\s*(\\w+)\\s*\\$(opening_bracket)\\s*$(variable_name_prefix)(\\S+)\\s*\\$(closing_bracket)\\s*\$")
+    r = Regex("^\\s*(\\w+)\\s*\\$(opening_parenthesis)\\s*$(variable_name_prefix)(\\S+)\\s*\\$(closing_parenthesis)\\s*\$")
     slices = match(r, expression)
 
     # Assert for malformed strings (e.g. "123.4<avg[V189]>250.2")
