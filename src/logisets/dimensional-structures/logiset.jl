@@ -12,11 +12,11 @@ See also
 abstract type AbstractUniformFullDimensionalLogiset{U,N,W<:AbstractWorld,FT<:AbstractFeature,FR<:FullDimensionalFrame{N,W}} <: AbstractLogiset{W,U,FT,FR} end
 
 function maxchannelsize(X::AbstractUniformFullDimensionalLogiset)
-    error("Please, provide method maxchannelsize(::$(typeof(X))).")
+    return error("Please, provide method maxchannelsize(::$(typeof(X))).")
 end
 
 function channelsize(X::AbstractUniformFullDimensionalLogiset)
-    error("Please, provide method channelsize(::$(typeof(X))).")
+    return error("Please, provide method channelsize(::$(typeof(X))).")
 end
 
 function dimensionality(X::AbstractUniformFullDimensionalLogiset{U,N}) where {U,N}
@@ -112,7 +112,7 @@ Base.@propagate_inbounds @inline function featchannel(
     i_feature   :: Union{Nothing,Integer} = nothing
 ) where {U}
     if isnothing(i_feature)
-        i_feature = findfirst(isequal(feature), features(X))
+        i_feature = _findfirst(isequal(feature), features(X))
         if isnothing(i_feature)
             error("Could not find feature $(feature) in memoset of type $(typeof(X)).")
         end
@@ -127,7 +127,7 @@ Base.@propagate_inbounds @inline function featvalues!(
     i_feature   :: Union{Nothing,Integer} = nothing,
 ) where {U}
     if isnothing(i_feature)
-        i_feature = findfirst(isequal(feature), features(X))
+        i_feature = _findfirst(isequal(feature), features(X))
         if isnothing(i_feature)
             error("Could not find feature $(feature) in memoset of type $(typeof(X)).")
         end
@@ -152,7 +152,7 @@ Base.@propagate_inbounds @inline function featchannel(
     i_feature   :: Union{Nothing,Integer} = nothing
 ) where {U}
     if isnothing(i_feature)
-        i_feature = findfirst(isequal(feature), features(X))
+        i_feature = _findfirst(isequal(feature), features(X))
         if isnothing(i_feature)
             error("Could not find feature $(feature) in memoset of type $(typeof(X)).")
         end
@@ -167,7 +167,7 @@ Base.@propagate_inbounds @inline function featvalues!(
     i_feature   :: Union{Nothing,Integer} = nothing,
 ) where {U}
     if isnothing(i_feature)
-        i_feature = findfirst(isequal(feature), features(X))
+        i_feature = _findfirst(isequal(feature), features(X))
         if isnothing(i_feature)
             error("Could not find feature $(feature) in memoset of type $(typeof(X)).")
         end
@@ -192,7 +192,7 @@ Base.@propagate_inbounds @inline function featchannel(
     i_feature   :: Union{Nothing,Integer} = nothing
 ) where {U}
     if isnothing(i_feature)
-        i_feature = findfirst(isequal(feature), features(X))
+        i_feature = _findfirst(isequal(feature), features(X))
         if isnothing(i_feature)
             error("Could not find feature $(feature) in memoset of type $(typeof(X)).")
         end
@@ -207,7 +207,7 @@ Base.@propagate_inbounds @inline function featvalues!(
     i_feature   :: Union{Nothing,Integer} = nothing,
 ) where {U}
     if isnothing(i_feature)
-        i_feature = findfirst(isequal(feature), features(X))
+        i_feature = _findfirst(isequal(feature), features(X))
         if isnothing(i_feature)
             error("Could not find feature $(feature) in memoset of type $(typeof(X)).")
         end
@@ -234,7 +234,7 @@ end
     i_feature   :: Union{Nothing,Integer} = nothing
 ) where {U}
     if isnothing(i_feature)
-        i_feature = findfirst(isequal(feature), features(X))
+        i_feature = _findfirst(isequal(feature), features(X))
         if isnothing(i_feature)
             error("Could not find feature $(feature) in memoset of type $(typeof(X)).")
         end
@@ -251,7 +251,7 @@ end
     i_feature   :: Union{Nothing,Integer} = nothing
 ) where {U}
     if isnothing(i_feature)
-        i_feature = findfirst(isequal(feature), features(X))
+        i_feature = _findfirst(isequal(feature), features(X))
         if isnothing(i_feature)
             error("Could not find feature $(feature) in memoset of type $(typeof(X)).")
         end
@@ -268,7 +268,7 @@ end
     i_feature   :: Union{Nothing,Integer} = nothing
 ) where {U}
     if isnothing(i_feature)
-        i_feature = findfirst(isequal(feature), features(X))
+        i_feature = _findfirst(isequal(feature), features(X))
         if isnothing(i_feature)
             error("Could not find feature $(feature) in memoset of type $(typeof(X)).")
         end
@@ -288,7 +288,7 @@ end
     i_feature   :: Union{Nothing,Integer} = nothing
 ) where {U}
     if isnothing(i_feature)
-        i_feature = findfirst(isequal(feature), features(X))
+        i_feature = _findfirst(isequal(feature), features(X))
         if isnothing(i_feature)
             error("Could not find feature $(feature) in memoset of type $(typeof(X)).")
         end
@@ -306,7 +306,7 @@ end
     i_feature   :: Union{Nothing,Integer} = nothing
 ) where {U}
     if isnothing(i_feature)
-        i_feature = findfirst(isequal(feature), features(X))
+        i_feature = _findfirst(isequal(feature), features(X))
         if isnothing(i_feature)
             error("Could not find feature $(feature) in memoset of type $(typeof(X)).")
         end
@@ -324,7 +324,7 @@ end
     i_feature   :: Union{Nothing,Integer} = nothing
 ) where {U}
     if isnothing(i_feature)
-        i_feature = findfirst(isequal(feature), features(X))
+        i_feature = _findfirst(isequal(feature), features(X))
         if isnothing(i_feature)
             error("Could not find feature $(feature) in memoset of type $(typeof(X)).")
         end
@@ -345,7 +345,7 @@ function allfeatvalues(
     X::UniformFullDimensionalLogiset,
     i_instance,
 )
-    error("Please, provide method allfeatvalues(::$(typeof(X)), i_instance::$(typeof(i_instance)), f::$(typeof(f))).")
+    return error("Please, provide method allfeatvalues(::$(typeof(X)), i_instance::$(typeof(i_instance)), f::$(typeof(f))).")
 end
 
 function allfeatvalues(
@@ -353,7 +353,7 @@ function allfeatvalues(
     i_instance,
     f,
 )
-    error("Please, provide method allfeatvalues(::$(typeof(X)), i_instance::$(typeof(i_instance)), f::$(typeof(f))).")
+    return error("Please, provide method allfeatvalues(::$(typeof(X)), i_instance::$(typeof(i_instance)), f::$(typeof(f))).")
 end
 
 ############################################################################################

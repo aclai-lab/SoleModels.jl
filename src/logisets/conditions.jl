@@ -22,7 +22,7 @@ abstract type AbstractCondition{FT<:AbstractFeature} end
 
 # Check a condition (e.g, on a world of a logiset instance)
 function checkcondition(c::AbstractCondition, args...; kwargs...)
-    error("Please, provide method checkcondition(::$(typeof(c)), " *
+    return error("Please, provide method checkcondition(::$(typeof(c)), " *
         join(map(t->"::$(t)", typeof.(args)), ", ") * "; kwargs...). " *
         "Note that this value must be unique.")
 end
@@ -37,7 +37,7 @@ end
 # end
 
 function syntaxstring(c::AbstractCondition; kwargs...)
-    error("Please, provide method syntaxstring(::$(typeof(c)); kwargs...). " *
+    return error("Please, provide method syntaxstring(::$(typeof(c)); kwargs...). " *
         "Note that this value must be unique.")
 end
 
@@ -55,7 +55,7 @@ function parsecondition(
     expression::String;
     kwargs...
 )
-    error("Please, provide method parsecondition(::$(Type{C}), expression::$(typeof(expression)); kwargs...).")
+    return error("Please, provide method parsecondition(::$(Type{C}), expression::$(typeof(expression)); kwargs...).")
 end
 
 ############################################################################################

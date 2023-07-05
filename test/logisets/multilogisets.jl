@@ -41,7 +41,7 @@ i_instance = 1
 multiformulas = [begin
     _formulas_dict = Dict{Int,SoleLogics.AbstractFormula}()
     for (i_modality, relations) in enumerate(multirelations)
-        f = randformulatree(rng, 3, alph, [SoleLogics.BASE_PROPOSITIONAL_OPERATORS..., vcat([[DiamondRelationalOperator(r), BoxRelationalOperator(r)] for r in relations]...)[1:32:end]...])
+        f = randformula(rng, 3, alph, [SoleLogics.BASE_PROPOSITIONAL_OPERATORS..., vcat([[DiamondRelationalOperator(r), BoxRelationalOperator(r)] for r in relations]...)[1:32:end]...])
         if rand(Bool)
             # coin = rand(1:3)
             coin = rand(2:3)

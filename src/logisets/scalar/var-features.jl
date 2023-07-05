@@ -60,7 +60,7 @@ Compute a feature on a featchannel (i.e., world reading) of an instance.
 See also [`VarFeature`](@ref).
 """
 function computefeature(f::VarFeature{U}, featchannel; kwargs...) where {U}
-    error("Please, provide method computefeature(::$(typeof(f)), featchannel::$(typeof(featchannel)); kwargs...)::U.")
+    return error("Please, provide method computefeature(::$(typeof(f)), featchannel::$(typeof(featchannel)); kwargs...)::U.")
 end
 
 preserveseltype(::VarFeature) = false
@@ -115,7 +115,7 @@ Compute a feature on a variable channel (i.e., world reading) of an instance.
 See also [`AbstractUnivariateFeature`](@ref).
 """
 function computeunivariatefeature(f::AbstractUnivariateFeature{U}, varchannel::Any; kwargs...) where {U}
-    error("Please, provide method computeunivariatefeature(::$(typeof(f)), varchannel::$(typeof(varchannel)); kwargs...)::U.")
+    return error("Please, provide method computeunivariatefeature(::$(typeof(f)), varchannel::$(typeof(varchannel)); kwargs...)::U.")
 end
 
 i_variable(f::AbstractUnivariateFeature) = f.i_variable
@@ -162,7 +162,7 @@ function variable_name(
 end
 
 function featurename(f::AbstractFeature; kwargs...)
-    error("Please, provide method featurename(::$(typeof(f)); kwargs...).")
+    return error("Please, provide method featurename(::$(typeof(f)); kwargs...).")
 end
 
 function syntaxstring(

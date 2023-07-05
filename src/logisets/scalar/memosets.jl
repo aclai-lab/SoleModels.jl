@@ -6,6 +6,11 @@ import Base: in, findfirst
 Base.in(item, uv::UniqueVector) = haskey(uv.lookup, item)
 Base.findfirst(p::UniqueVectors.EqualTo, uv::UniqueVector) = get(uv.lookup, p.x, nothing)
 
+_in(item, uv) = Base.in(item, uv)
+_in(item, uv::UniqueVector) = haskey(uv.lookup, item)
+_findfirst(p::UniqueVectors.EqualTo, uv) = Base.findfirst(p, uv)
+_findfirst(p::UniqueVectors.EqualTo, uv::UniqueVector) = get(uv.lookup, p.x, nothing)
+
 
 """
 A full memoization structure used for checking formulas of scalar conditions on
@@ -87,7 +92,7 @@ function check(
     w::W;
     kwargs...
 ) where {W<:AbstractWorld}
-    error("TODO implement chained threshold checking algorithm.")
+    return error("TODO implement chained threshold checking algorithm.")
 end
 
 function instances(

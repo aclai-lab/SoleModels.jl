@@ -1,7 +1,10 @@
 module DimensionalDatasets
 
-
 import Base: size, show, getindex, iterate, length, push!, eltype
+
+# TODO remove
+using SoleModels: _in, _findfirst
+
 
 using BenchmarkTools
 using ProgressMeter

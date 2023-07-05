@@ -12,7 +12,7 @@ See also [`VarFeature`](@ref), [`featvaltype`](@ref), [`AbstractWorld`](@ref).
 abstract type AbstractFeature end
 
 function syntaxstring(f::AbstractFeature; kwargs...)
-    error("Please, provide method syntaxstring(::$(typeof(f)); kwargs...)."
+    return error("Please, provide method syntaxstring(::$(typeof(f)); kwargs...)."
         * " Note that this value must be unique.")
 end
 
@@ -30,7 +30,8 @@ function parsefeature(
     expression::String;
     kwargs...
 )
-    error("Please, provide method parsefeature(::$(FT), expression::$(typeof(expression)); kwargs...).")
+    return error("Please, provide method parsefeature(::$(FT), " *
+        " expression::$(typeof(expression)); kwargs...).")
 end
 
 ############################################################################################

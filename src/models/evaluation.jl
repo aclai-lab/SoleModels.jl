@@ -1,6 +1,27 @@
 using SoleModels
+using MLJBase
 using SoleModels: LeafModel
 import SoleLogics: npropositions
+
+function leafmetrics(
+    m::ConstantModel{L};
+    digits = 2
+) where {L}
+    if haskey(info(m), :supporting_labels)
+        _gts = info(m)[:supporting_labels]
+        _preds = fill(outcome(m), length(_gts))
+        if L <: CLabel
+            (; ninstances = length(_gts), confidence = round(MLJBase.accuracy(_gts, _preds); digits = digits))
+        elseif L <: RLabel
+            (; ninstances = length(_gts), mae = round(MLJBase.mae(_gts, _preds); digits = digits))
+        else
+            error("Could not compute leafmetrics with unknown label type: $(L).")
+        end
+    else
+        return (;)
+    end
+end
+
 
 """
     evaluaterule(

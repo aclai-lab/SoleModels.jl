@@ -50,9 +50,9 @@ export Label, bestguess
 
 include("machine-learning.jl")
 
-export rulemetrics
+export rulemetrics, leafmetrics
 
-include("models/rule-evaluation.jl")
+include("models/evaluation.jl")
 
 export minify, isminifiable
 

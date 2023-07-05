@@ -37,7 +37,7 @@ function featchannel(
     i_instance::Integer,
     feature::AbstractFeature,
 ) where {W<:AbstractWorld}
-    error("Please, provide method featchannel(::$(typeof(X)), i_instance::$(typeof(i_instance)), feature::$(typeof(feature))).")
+    return error("Please, provide method featchannel(::$(typeof(X)), i_instance::$(typeof(i_instance)), feature::$(typeof(feature))).")
 end
 
 function readfeature(
@@ -46,7 +46,7 @@ function readfeature(
     w::W,
     feature::AbstractFeature,
 ) where {W<:AbstractWorld}
-    error("Please, provide method readfeature(::$(typeof(X)), featchannel::$(typeof(featchannel)), w::$(typeof(w)), feature::$(typeof(feature))).")
+    return error("Please, provide method readfeature(::$(typeof(X)), featchannel::$(typeof(featchannel)), w::$(typeof(w)), feature::$(typeof(feature))).")
 end
 
 """
@@ -68,7 +68,7 @@ function featvalue!(
     w::W,
     feature::AbstractFeature,
 ) where {W<:AbstractWorld}
-    error("Please, provide method featvalue!(::$(typeof(X)), featval::$(typeof(featval)), i_instance::$(typeof(i_instance)), w::$(typeof(w)), feature::$(typeof(feature))).")
+    return error("Please, provide method featvalue!(::$(typeof(X)), featval::$(typeof(featval)), i_instance::$(typeof(i_instance)), w::$(typeof(w)), feature::$(typeof(feature))).")
 end
 
 function featvalues!(
@@ -76,22 +76,22 @@ function featvalues!(
     featslice,
     feature::AbstractFeature,
 ) where {W<:AbstractWorld}
-    error("Please, provide method featvalues!(::$(typeof(X)), featslice::$(typeof(featslice)), feature::$(typeof(feature))).")
+    return error("Please, provide method featvalues!(::$(typeof(X)), featslice::$(typeof(featslice)), feature::$(typeof(feature))).")
 end
 
 function frame(X::AbstractLogiset, i_instance::Integer)
-    error("Please, provide method frame(::$(typeof(X)), i_instance::$(typeof(i_instance))).")
+    return error("Please, provide method frame(::$(typeof(X)), i_instance::$(typeof(i_instance))).")
 end
 
 function ninstances(X::AbstractLogiset)
-    error("Please, provide method ninstances(::$(typeof(X))).")
+    return error("Please, provide method ninstances(::$(typeof(X))).")
 end
 
 function allfeatvalues(
     X::AbstractLogiset,
     i_instance,
 )
-    error("Please, provide method allfeatvalues(::$(typeof(X)), i_instance::$(typeof(i_instance))).")
+    return error("Please, provide method allfeatvalues(::$(typeof(X)), i_instance::$(typeof(i_instance))).")
 end
 
 function allfeatvalues(
@@ -99,7 +99,7 @@ function allfeatvalues(
     i_instance,
     feature,
 )
-    error("Please, provide method allfeatvalues(::$(typeof(X)), i_instance::$(typeof(i_instance)), feature::$(typeof(feature))).")
+    return error("Please, provide method allfeatvalues(::$(typeof(X)), i_instance::$(typeof(i_instance)), feature::$(typeof(feature))).")
 end
 
 function instances(
@@ -108,15 +108,15 @@ function instances(
     return_view::Union{Val{true},Val{false}} = Val(false);
     kwargs...
 )
-    error("Please, provide method instances(::$(typeof(X)), ::$(typeof(inds)), ::$(typeof(return_view))).")
+    return error("Please, provide method instances(::$(typeof(X)), ::$(typeof(inds)), ::$(typeof(return_view))).")
 end
 
 function concatdatasets(Xs::AbstractLogiset...)
-    error("Please, provide method concatdatasets(X...::$(typeof(Xs))).")
+    return error("Please, provide method concatdatasets(X...::$(typeof(Xs))).")
 end
 
 function displaystructure(X::AbstractLogiset; kwargs...)::String
-    error("Please, provide method displaystructure(X::$(typeof(X)); kwargs...)::String.")
+    return error("Please, provide method displaystructure(X::$(typeof(X)); kwargs...)::String.")
 end
 
 isminifiable(::AbstractLogiset) = false
@@ -153,11 +153,11 @@ representatives(X::AbstractLogiset, i_instance::Integer, args...) = representati
 # Non mandatory
 
 function features(X::AbstractLogiset)
-    error("Please, provide method features(::$(typeof(X))).")
+    return error("Please, provide method features(::$(typeof(X))).")
 end
 
 function nfeatures(X::AbstractLogiset)
-    error("Please, provide method nfeatures(::$(typeof(X))).")
+    return error("Please, provide method nfeatures(::$(typeof(X))).")
 end
 
 ############################################################################################

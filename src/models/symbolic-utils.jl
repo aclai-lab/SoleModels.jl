@@ -13,7 +13,7 @@ Note: if the model is a leaf model, then the returned list will be empty.
 ```julia-repl
 julia> using SoleLogics
 
-julia> branch = Branch(SoleLogics.parseformula("p∧q∨r"), "YES", "NO");
+julia> branch = Branch(SoleLogics.parsebaseformula("p∧q∨r"), "YES", "NO");
 
 julia> immediatesubmodels(branch)
 2-element Vector{SoleModels.ConstantModel{String}}:
@@ -23,7 +23,7 @@ YES
  SoleModels.ConstantModel{String}
 NO
 
-julia> branch2 = Branch(SoleLogics.parseformula("s→p"), branch, 42);
+julia> branch2 = Branch(SoleLogics.parsebaseformula("s→p"), branch, 42);
 
 
 julia> printmodel.(immediatesubmodels(branch2));
@@ -44,7 +44,7 @@ See also
 function immediatesubmodels(
     m::AbstractModel{O}
 )::Vector{<:{AbstractModel{<:O}}} where {O}
-    error("Please, provide method immediatesubmodels(::$(typeof(m))).")
+    return error("Please, provide method immediatesubmodels(::$(typeof(m))).")
 end
 
 immediatesubmodels(m::LeafModel{O}) where {O} = Vector{<:AbstractModel{<:O}}[]
@@ -75,7 +75,7 @@ their immediate submodels, and so on.
 ```julia-repl
 julia> using SoleLogics
 
-julia> branch = Branch(SoleLogics.parseformula("p∧q∨r"), "YES", "NO");
+julia> branch = Branch(SoleLogics.parsebaseformula("p∧q∨r"), "YES", "NO");
 
 julia> submodels(branch)
 2-element Vector{SoleModels.ConstantModel{String}}:
@@ -86,7 +86,7 @@ YES
 NO
 
 
-julia> branch2 = Branch(SoleLogics.parseformula("s→p"), branch, 42);
+julia> branch2 = Branch(SoleLogics.parsebaseformula("s→p"), branch, 42);
 
 julia> printmodel.(submodels(branch2));
 Branch
@@ -132,11 +132,12 @@ leafmodels(m::AbstractModel) = [Iterators.flatten(leafmodels.(immediatesubmodels
 
 nleafmodels(m::AbstractModel) = sum(nleafmodels, immediatesubmodels(m))
 
-submodelsheight(m::AbstractModel) = 1 + maximum(submodelsheight, immediatesubmodels(m))
-submodelsheight(m::DecisionList) = maximum(submodelsheight, immediatesubmodels(m))
-submodelsheight(m::DecisionTree) = maximum(submodelsheight, immediatesubmodels(m))
-submodelsheight(m::DecisionForest) = maximum(submodelsheight, immediatesubmodels(m))
-submodelsheight(m::MixedSymbolicModel) = maximum(submodelsheight, immediatesubmodels(m))
+subtreeheight(m::AbstractModel) = 1 + maximum(subtreeheight, immediatesubmodels(m))
+subtreeheight(m::LeafModel) = 0
+subtreeheight(m::DecisionList) = maximum(subtreeheight, immediatesubmodels(m))
+subtreeheight(m::DecisionTree) = maximum(subtreeheight, immediatesubmodels(m))
+subtreeheight(m::DecisionForest) = maximum(subtreeheight, immediatesubmodels(m))
+subtreeheight(m::MixedSymbolicModel) = maximum(subtreeheight, immediatesubmodels(m))
 
 ############################################################################################
 ############################################################################################
@@ -200,7 +201,7 @@ listimmediaterules(m::MixedSymbolicModel) = listimmediaterules(root(m))
 ############################################################################################
 
 """
-    listrules(m::AbstractModel; force_syntaxtree::Bool = false)::Vector{<:Rule}
+    listrules(m::AbstractModel; force_syntaxtree::Bool = false, use_shortforms::Bool = true)::Vector{<:Rule}
 
 Return a list of rules capturing the knowledge enclosed in symbolic model.
 The behavior of a symbolic model can be extracted and represented as a
@@ -289,13 +290,8 @@ function listrules(
     m::Rule{O,<:LogicalTruthCondition};
     force_syntaxtree::Bool = false
 ) where {O}
-    [begin
-       !force_syntaxtree ? m : Rule{O}(
-            LogicalTruthCondition(tree(formula(m))),
-            consequent(m),
-            info(m)
-        )
-    end]
+    ant = force_syntaxtree ? tree(formula(m)) : formula(m)
+    [(force_syntaxtree ? Rule{O}(LogicalTruthCondition(ant), consequent(m), info(m)) : m)]
 end
 
 function listrules(
@@ -320,55 +316,45 @@ end
 
 function listrules(
     m::Branch{O,<:LogicalTruthCondition};
+    use_shortforms::Bool = true,
     force_syntaxtree::Bool = false,
+    use_leftmostlinearform::Bool = false,
     kwargs...,
 ) where {O}
-    pos_rules = begin
-        submodels = listrules(posconsequent(m); force_syntaxtree = force_syntaxtree, kwargs...)
-        ant = tree(formula(m))
+    using_shortform = use_shortforms && haskey(info(m), :shortform)
+    ant = (using_shortform ? info(m, :shortform) : m)
+    antformula = formula(ant)
 
-        map(subm-> begin
-            if subm isa LeafModel
-                Rule(LogicalTruthCondition(ant), subm)
-            else
-                f = formula(subm)
-                subants = f isa LeftmostLinearForm ? children(f) : [f]
-                Rule(
-                    LogicalTruthCondition( begin
-                        lf = LeftmostConjunctiveForm([ant, subants...])
-                        force_syntaxtree ? tree(lf) : lf
-                    end),
-                    consequent(subm)
-                )
-            end
-        end, submodels)
-    end
+    pos_antformula = force_syntaxtree ? tree(antformula)  : antformula
+    neg_antformula = force_syntaxtree ? ¬tree(antformula) : ¬antformula
 
-    neg_rules = begin
-        submodels = listrules(negconsequent(m); force_syntaxtree = force_syntaxtree, kwargs...)
-        ant = ¬(tree(formula(m)))
-
-        map(subm-> begin
-            if subm isa LeafModel
-                Rule(LogicalTruthCondition(ant), subm)
-            else
-                f = formula(subm)
-                subants = f isa LeftmostLinearForm ? children(f) : [f]
-                Rule(
-                    LogicalTruthCondition( begin
-                        lf = LeftmostConjunctiveForm([ant, subants...])
-                        force_syntaxtree ? tree(lf) : lf
-                    end),
-                    consequent(subm)
-                )
-            end
-        end, submodels)
-    end
-
-    return [
-        pos_rules...,
-        neg_rules...,
+    _subrules = [
+        [(pos_antformula, r) for r in listrules(posconsequent(m); use_shortforms = use_shortforms, use_leftmostlinearform = use_leftmostlinearform, force_syntaxtree = force_syntaxtree, kwargs...)]...,
+        [(neg_antformula, r) for r in listrules(negconsequent(m); use_shortforms = use_shortforms, use_leftmostlinearform = use_leftmostlinearform, force_syntaxtree = force_syntaxtree, kwargs...)]...
     ]
+
+    rules = map(((antformula, subrule),)->begin
+            # @show info(subrule)
+            if subrule isa LeafModel
+                Rule(LogicalTruthCondition(antformula), subrule, merge(info(subrule), (; shortform = LogicalTruthCondition(antformula))))
+            elseif (use_shortforms && haskey(info(subrule), :shortform))
+                Rule(info(subrule)[:shortform], consequent(subrule), info(subrule))
+            else
+                f = begin
+                    f = formula(subrule)
+                    if use_leftmostlinearform
+                        subantformulas = (f isa LeftmostLinearForm ? children(f) : [f])
+                        lf = LeftmostConjunctiveForm([antformula, subantformulas...])
+                        force_syntaxtree ? tree(lf) : lf
+                    else
+                        antformula ∧ f
+                    end
+                end
+                Rule(LogicalTruthCondition(f), consequent(subrule))
+            end
+        end, _subrules)
+
+    return rules
 end
 
 function listrules(m::DecisionList; kwargs...)

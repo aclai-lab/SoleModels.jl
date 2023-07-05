@@ -92,7 +92,7 @@ end
 
 # tree(f::AnchoredFormula) = tree(f.formula)
 function SoleLogics.tree(f::AnchoredFormula)
-    error("Cannot convert object of type AnchoredFormula to a SyntaxTree.")
+    return error("Cannot convert object of type AnchoredFormula to a SyntaxTree.")
 end
 
 function syntaxstring(f::AnchoredFormula; kwargs...)

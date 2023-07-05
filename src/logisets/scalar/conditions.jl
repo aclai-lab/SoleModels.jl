@@ -160,19 +160,19 @@ end
 
 function syntaxstring(
     m::ScalarCondition;
-    threshold_decimals::Union{Nothing,Integer} = nothing,
+    threshold_digits::Union{Nothing,Integer} = nothing,
     threshold_display_method::Union{Nothing,Base.Callable} = nothing,
     kwargs...
 )
-    if (!isnothing(threshold_decimals) && !isnothing(threshold_display_method))
-        @warn "Prioritizing threshold_display_method parameter over threshold_decimals " *
+    if (!isnothing(threshold_digits) && !isnothing(threshold_display_method))
+        @warn "Prioritizing threshold_display_method parameter over threshold_digits " *
             "in syntaxstring for `ScalarCondition`."
     end
     threshold_display_method = begin
         if !isnothing(threshold_display_method)
             threshold_display_method
-        elseif !isnothing(threshold_decimals)
-            x->round(x; digits=threshold_decimals)
+        elseif !isnothing(threshold_digits)
+            x->round(x; digits=threshold_digits)
         else
             identity
         end

@@ -68,19 +68,19 @@ st_1 = @test_nowarn SyntaxTree(prop_1)
 st_100 = @test_nowarn SyntaxTree(prop_100)
 
 ################################### Formula ################################################
-p = @test_nowarn SoleLogics.parseformula("p")
-p_tree = @test_nowarn SoleLogics.parseformulatree("p")
+p = @test_nowarn SoleLogics.parsebaseformula("p")
+p_tree = @test_nowarn SoleLogics.parsetree("p")
 
 # @test LogicalTruthCondition(p) == LogicalTruthCondition{Formula}(p)
 # @test LogicalTruthCondition(p_tree) == LogicalTruthCondition{SyntaxTree}(p_tree)
 
-# phi = @test_nowarn SoleLogics.parseformula("p∧q∨r")
-# phi_tree = @test_nowarn SoleLogics.parseformulatree("p∧q∨r")
+# phi = @test_nowarn SoleLogics.parsebaseformula("p∧q∨r")
+# phi_tree = @test_nowarn SoleLogics.parsetree("p∧q∨r")
 # @test LogicalTruthCondition(phi) == LogicalTruthCondition{Formula}(phi)
 # @test LogicalTruthCondition(phi_tree) == LogicalTruthCondition{SyntaxTree}(phi_tree)
 
-# phi2 = @test_nowarn SoleLogics.parseformula("q∧s→r")
-# phi2_tree = @test_nowarn SoleLogics.parseformulatree("q∧s→r")
+# phi2 = @test_nowarn SoleLogics.parsebaseformula("q∧s→r")
+# phi2_tree = @test_nowarn SoleLogics.parsetree("q∧s→r")
 # @test LogicalTruthCondition(phi2) == LogicalTruthCondition{Formula}(phi2)
 # @test LogicalTruthCondition(phi2_tree) == LogicalTruthCondition{SyntaxTree}(phi2_tree)
 
@@ -90,20 +90,20 @@ p_tree = @test_nowarn SoleLogics.parseformulatree("p")
 @test LogicalTruthCondition(p) isa LogicalTruthCondition{<:Formula}
 @test LogicalTruthCondition(p_tree) isa LogicalTruthCondition{<:SyntaxTree}
 
-phi = @test_nowarn SoleLogics.parseformula("p∧q∨r")
-phi_tree = @test_nowarn SoleLogics.parseformulatree("p∧q∨r")
+phi = @test_nowarn SoleLogics.parsebaseformula("p∧q∨r")
+phi_tree = @test_nowarn SoleLogics.parsetree("p∧q∨r")
 @test LogicalTruthCondition(phi) isa LogicalTruthCondition{<:Formula}
 @test LogicalTruthCondition(phi_tree) isa LogicalTruthCondition{<:SyntaxTree}
 
-phi2 = @test_nowarn SoleLogics.parseformula("q∧s→r")
-phi2_tree = @test_nowarn SoleLogics.parseformulatree("q∧s→r")
+phi2 = @test_nowarn SoleLogics.parsebaseformula("q∧s→r")
+phi2_tree = @test_nowarn SoleLogics.parsetree("q∧s→r")
 @test LogicalTruthCondition(phi2) isa LogicalTruthCondition{<:Formula}
 @test LogicalTruthCondition(phi2_tree) isa LogicalTruthCondition{<:SyntaxTree}
 
-formula_p = @test_nowarn SoleLogics.parseformula("p")
-formula_q = @test_nowarn SoleLogics.parseformula("q")
-formula_r = @test_nowarn SoleLogics.parseformula("r")
-formula_s = @test_nowarn SoleLogics.parseformula("s")
+formula_p = @test_nowarn SoleLogics.parsebaseformula("p")
+formula_q = @test_nowarn SoleLogics.parsebaseformula("q")
+formula_r = @test_nowarn SoleLogics.parsebaseformula("r")
+formula_s = @test_nowarn SoleLogics.parsebaseformula("s")
 
 ############################### LogicalTruthCondition ######################################
 cond_r = @test_nowarn LogicalTruthCondition(st_r)

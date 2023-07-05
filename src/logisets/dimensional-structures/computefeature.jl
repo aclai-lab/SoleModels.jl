@@ -16,10 +16,11 @@ function computefeature(f::MultivariateFeature{U}, featchannel::Any)::U where {U
 end
 
 function computeunivariatefeature(f::UnivariateFeature{U}, varchannel::Union{T,AbstractArray{T}}) where {U,T}
-    (f.f(SoleBase.vectorize(varchannel);))::U
+    # (f.f(SoleBase.vectorize(varchannel);))::U
+    (f.f(varchannel))::U
 end
 function computeunivariatefeature(f::UnivariateNamedFeature, varchannel::Union{T,AbstractArray{T}}) where {T}
-    error("Cannot intepret UnivariateNamedFeature on any structure at all.")
+    return error("Cannot intepret UnivariateNamedFeature on any structure at all.")
 end
 function computeunivariatefeature(f::UnivariateValue{U}, varchannel::Union{T,AbstractArray{T}}) where {U<:Real,T}
     (varchannel isa U ? varchannel : first(varchannel))::U

@@ -21,7 +21,7 @@ See also
 abstract type AbstractBooleanCondition end
 
 function syntaxstring(c::AbstractBooleanCondition; kwargs...)
-    error("Please, provide method syntaxstring(::$(typeof(c)); kwargs...).")
+    return error("Please, provide method syntaxstring(::$(typeof(c)); kwargs...).")
 end
 
 function Base.show(io::IO, c::AbstractBooleanCondition)
@@ -30,7 +30,7 @@ end
 
 # Check on a boolean condition
 function check(c::AbstractBooleanCondition, i::AbstractInterpretation, args...; kwargs...)
-    error("Please, provide method check(::$(typeof(c)), " *
+    return error("Please, provide method check(::$(typeof(c)), " *
         "i::$(typeof(i)), args...; kwargs...).")
 end
 function check(
@@ -70,7 +70,7 @@ See also
 [`AbstractLogicalBooleanCondition`](@ref).
 """
 function formula(c::AbstractLogicalBooleanCondition)::AbstractFormula
-    error("Please, provide method formula(::$(typeof(c))).")
+    return error("Please, provide method formula(::$(typeof(c))).")
 end
 
 function syntaxstring(c::AbstractLogicalBooleanCondition; kwargs...)
@@ -258,7 +258,7 @@ function apply(
     functional_kwargs::NamedTuple = (;),
     kwargs...,
 )::outputtype(m)
-    error("Please, provide method apply(::$(typeof(m)), ::$(typeof(i))).")
+    return error("Please, provide method apply(::$(typeof(m)), ::$(typeof(i))).")
 end
 
 function apply(
@@ -300,6 +300,7 @@ issymbolic(::AbstractModel) = false
 
 """
     info(m::AbstractModel)::NamedTuple = m.info
+    info(m::AbstractModel, key) = m.info[key]
 
 Return the `info` structure for model `m`; this structure is used
 for storing additional information that does not affect the model's behavior.
@@ -307,6 +308,8 @@ This structure can hold, for example, information
 about the model's statistical performance during the learning phase.
 """
 info(m::AbstractModel)::NamedTuple = m.info
+info(m::AbstractModel, key) = m.info[key]
+info!(m::AbstractModel, key, value) = (m.info[key] = value; m)
 
 
 ############################################################################################
@@ -1304,7 +1307,7 @@ function nleaves(t::DecisionTree)
 end
 
 function height(t::DecisionTree)
-    submodelsheight(t)
+    subtreeheight(t)
 end
 
 ############################################################################################
@@ -1381,7 +1384,7 @@ function nleaves(f::DecisionForest)
 end
 
 function height(f::DecisionForest)
-    submodelsheight(f)
+    subtreeheight(f)
 end
 
 ############################################################################################

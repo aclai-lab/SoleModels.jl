@@ -95,7 +95,7 @@ abstract type AbstractScalarOneStepRelationalMemoset{W<:AbstractWorld,U,FR<:Abst
     i_metacond   :: Integer,
     i_relation   :: Integer
 ) where {W}
-    error("Please, provide method Base.getindex(" *
+    return error("Please, provide method Base.getindex(" *
         "Xm::$(typeof(Xm)), " *
         "i_instance::$(typeof(i_instance)), " *
         "w::$(typeof(w)), " *
@@ -112,7 +112,7 @@ end
     i_metacond   :: Integer,
     i_relation   :: Integer,
 ) where {W<:AbstractWorld}
-    error("Please, provide method Base.setindex!(" *
+    return error("Please, provide method Base.setindex!(" *
         "Xm::$(typeof(Xm)), " *
         "gamma, " *
         "i_instance::$(typeof(i_instance)), " *
@@ -134,7 +134,7 @@ abstract type AbstractScalarOneStepGlobalMemoset{W<:AbstractWorld,U} <: Abstract
     i_instance   :: Integer,
     i_metacond   :: Integer,
 ) where {W}
-    error("Please, provide method Base.getindex(" *
+    return error("Please, provide method Base.getindex(" *
         "Xm::$(typeof(Xm)), " *
         "i_instance::$(typeof(i_instance)), " *
         "i_metacond::$(typeof(i_metacond))" *
@@ -147,7 +147,7 @@ end
     i_instance   :: Integer,
     i_metacond   :: Integer,
 ) where {W<:AbstractWorld}
-    error("Please, provide method Base.getindex(" *
+    return error("Please, provide method Base.getindex(" *
         "Xm::$(typeof(Xm)), " *
         "gamma, " *
         "i_instance::$(typeof(i_instance)), " *
@@ -157,7 +157,7 @@ end
 
 # Access inner structure
 function innerstruct(Xm::Union{AbstractScalarOneStepRelationalMemoset,AbstractScalarOneStepGlobalMemoset})
-    error("Please, provide method innerstruct(::$(typeof(Xm))).")
+    return error("Please, provide method innerstruct(::$(typeof(Xm))).")
 end
 
 isminifiable(::Union{AbstractScalarOneStepRelationalMemoset,AbstractScalarOneStepGlobalMemoset}) = true
@@ -353,7 +353,7 @@ function grouped_metaconditions(
     end
     return map(((feature,these_metaconditions),)->begin
         these_metaconditions = map(_metacond->begin
-            i_metacond = findfirst(isequal(_metacond), metaconditions)
+            i_metacond = _findfirst(isequal(_metacond), metaconditions)
             aggregator = existential_aggregator(test_operator(_metacond))
             (i_metacond, aggregator, _metacond)
         end, these_metaconditions)
@@ -374,14 +374,14 @@ function featchannel_onestep_aggregation(
 )::U where {U,W<:AbstractWorld}
 
     if isnothing(i_metacond)
-        i_metacond = findfirst(isequal(metacond), metaconditions(Xm))
+        i_metacond = _findfirst(isequal(metacond), metaconditions(Xm))
     end
 
     if isnothing(i_metacond)
         # Find metacond with same aggregator
         i_metacond = findfirst((m)->feature(m) == feature(metacond) && existential_aggregator(test_operator(m)) == existential_aggregator(test_operator(metacond)), metaconditions(Xm))
         if isnothing(i_metacond)
-            i_neg_metacond = findfirst(isequal(negation(metacond)), metaconditions(Xm))
+            i_neg_metacond = _findfirst(isequal(negation(metacond)), metaconditions(Xm))
             error("Could not find metacondition $(metacond) in memoset of type $(typeof(Xm)) " *
                 "($(!isnothing(i_neg_metacond) ? "but negation was found " *
                 "with i_metacond = $(i_neg_metacond)!" : "")).")
@@ -405,7 +405,7 @@ function featchannel_onestep_aggregation(
                 _globmemoset[i_instance, i_metacond]
             end
         else
-            i_relation = isnothing(i_relation) ? findfirst(isequal(rel), Xm.relations) : i_relation
+            i_relation = isnothing(i_relation) ? _findfirst(isequal(rel), Xm.relations) : i_relation
             if isnothing(i_relation)
                 error("Could not find relation $(rel) in memoset of type $(typeof(Xm)).")
             end
@@ -430,11 +430,11 @@ function check(
     rel = relation(f)
     metacond = metacond(f)
 
-    i_metacond = findfirst(isequal(metacond), metaconditions(Xm))
+    i_metacond = _findfirst(isequal(metacond), metaconditions(Xm))
     if isnothing(i_metacond)
         i_metacond = findfirst((m)->feature(m) == feature(metacond) && existential_aggregator(test_operator(m)) == existential_aggregator(test_operator(metacond)), metaconditions(Xm))
         if isnothing(i_metacond)
-            i_neg_metacond = findfirst(isequal(negation(metacond)), metaconditions(Xm))
+            i_neg_metacond = _findfirst(isequal(negation(metacond)), metaconditions(Xm))
             error("Could not find metacondition $(metacond) in memoset of type $(typeof(Xm)) " *
                 "($(!isnothing(i_neg_metacond) ? "but negation was found " *
                 "with i_metacond = $(i_neg_metacond)!" : "")).")
@@ -445,7 +445,7 @@ function check(
         if rel
             Base.getindex(globmemoset(Xm), i_instance, i_metacond)
         else
-            i_rel = findfirst(isequal(rel), Xm.relations)
+            i_rel = _findfirst(isequal(rel), Xm.relations)
             if isnothing(i_rel)
                 error("Could not find relation $(rel) in memoset of type $(typeof(Xm)).")
             end

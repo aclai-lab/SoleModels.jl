@@ -96,9 +96,9 @@ using MLJBase
 using MLJModelInterface
 import MLJModelInterface: selectrows, _selectrows
 
-# From MLJModelInferface.jl/src/data_utils.jl
-function MLJModelInterface.selectrows(::MLJBase.FI, ::Val{:table}, X::Union{AbstractLogiset,MultiLogiset}, r)
+function MLJModelInterface.selectrows(X::Union{AbstractLogiset,MultiLogiset}, r)
     r = r isa Integer ? (r:r) : r
+    # return slicedataset(X, r; return_view = true)
     return Tables.subset(X, r)
 end
 

@@ -2,22 +2,22 @@ using SoleData: AbstractMultiModalDataset
 import SoleData: ninstances, nvariables, nmodalities, eachmodality
 
 function initlogiset(dataset, features)
-    error("Please, provide method initlogiset(dataset::$(typeof(dataset)), features::$(typeof(features))).")
+    return error("Please, provide method initlogiset(dataset::$(typeof(dataset)), features::$(typeof(features))).")
 end
 function ninstances(dataset)
-    error("Please, provide method ninstances(dataset::$(typeof(dataset))).")
+    return error("Please, provide method ninstances(dataset::$(typeof(dataset))).")
 end
 function nvariables(dataset)
-    error("Please, provide method nvariables(dataset::$(typeof(dataset))).")
+    return error("Please, provide method nvariables(dataset::$(typeof(dataset))).")
 end
 function frame(dataset, i_instance)
-    error("Please, provide method frame(dataset::$(typeof(dataset)), i_instance::Integer).")
+    return error("Please, provide method frame(dataset::$(typeof(dataset)), i_instance::Integer).")
 end
 function featvalue(dataset, i_instance, w, feature)
-    error("Please, provide method featvalue(dataset::$(typeof(dataset)), i_instance::Integer, w::$(typeof(w)), feature::$(typeof(feature))).")
+    return error("Please, provide method featvalue(dataset::$(typeof(dataset)), i_instance::Integer, w::$(typeof(w)), feature::$(typeof(feature))).")
 end
 function vareltype(dataset, i_variable)
-    error("Please, provide method vareltype(dataset::$(typeof(dataset)), i_variable::Integer).")
+    return error("Please, provide method vareltype(dataset::$(typeof(dataset)), i_variable::Integer).")
 end
 
 function allworlds(dataset, i_instance)
@@ -29,10 +29,10 @@ function ismultimodal(dataset)
     false
 end
 function nmodalities(dataset)
-    error("Please, provide method nmodalities(dataset::$(typeof(dataset))).")
+    return error("Please, provide method nmodalities(dataset::$(typeof(dataset))).")
 end
 function eachmodality(dataset)
-    error("Please, provide method eachmodality(dataset::$(typeof(dataset))).")
+    return error("Please, provide method eachmodality(dataset::$(typeof(dataset))).")
 end
 
 function ismultimodal(dataset::AbstractMultiModalDataset)
@@ -169,7 +169,7 @@ function scalarlogiset(
         else
             @warn "Could not infer feature value type for some of the specified features. " *
                     "Please specify the feature value type upon construction. Untyped " *
-                    "features: $(displaysyntaxvector(features_notok_fixed))"
+                    "features: $(displaysyntaxvector(features_notok))"
         end
     end
     features = UniqueVector(features)
@@ -229,7 +229,7 @@ const MixedCondition = Union{
 function naturalconditions(
     dataset,
     mixed_conditions   :: AbstractVector,
-    featvaltype        :: Type = Real
+    featvaltype        :: Type = DEFAULT_VARFEATVALTYPE
 )
     nvars = nvariables(dataset)
 
@@ -275,7 +275,9 @@ function naturalconditions(
             @warn "Building UnivariateFeature with non-concrete feature type: $(V)."
                 "Please provide `featvaltype` parameter to naturalconditions."
         end
-        return (test_ops,DimensionalDatasets.UnivariateFeature{V}(i_var, (x)->(V(cond(x)))))
+        # f = function (x) return V(cond(x)) end # breaks because it does not create a closure.
+        f = cond
+        return (test_ops,DimensionalDatasets.UnivariateFeature{V}(i_var, f))
     end
     univar_condition(i_var,::Any) = throw_n_log("Unknown mixed_feature type: $(cond), $(typeof(cond))")
 
@@ -327,6 +329,7 @@ function naturalconditions(
             end
         end
     end
+
     metaconditions
 end
 

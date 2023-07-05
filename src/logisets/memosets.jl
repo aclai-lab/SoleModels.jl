@@ -22,15 +22,15 @@ abstract type AbstractMemoset{
 } <: AbstractLogiset{W,U,FT,FR} end
 
 function capacity(Xm::AbstractMemoset)
-    error("Please, provide method capacity(::$(typeof(Xm))).")
+    return error("Please, provide method capacity(::$(typeof(Xm))).")
 end
 
 function nmemoizedvalues(Xm::AbstractMemoset)
-    error("Please, provide method nmemoizedvalues(::$(typeof(Xm))).")
+    return error("Please, provide method nmemoizedvalues(::$(typeof(Xm))).")
 end
 
 function nonnothingshare(Xm::AbstractMemoset)
-    (isinf(capacity(Xm)) ? NaN : nmemoizedvalues(Xm)/capacity(Xm))
+    return (isinf(capacity(Xm)) ? NaN : nmemoizedvalues(Xm)/capacity(Xm))
 end
 
 function memoizationinfo(Xm::AbstractMemoset)

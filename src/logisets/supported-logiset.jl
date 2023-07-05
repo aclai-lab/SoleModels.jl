@@ -174,6 +174,9 @@ end
 base(X::SupportedLogiset)     = X.base
 supports(X::SupportedLogiset) = X.supports
 
+# Helper
+base(X::AbstractLogiset)      = X
+
 basetype(X::SupportedLogiset{W,U,FT,FR,L,N,MS}) where {W,U,FT,FR,L,N,MS} = L
 supporttypes(X::SupportedLogiset{W,U,FT,FR,L,N,MS}) where {W,U,FT,FR,L,N,MS} = MS
 
@@ -184,7 +187,7 @@ nmemoizedvalues(X::SupportedLogiset) = sum(nmemoizedvalues.(supports(X)))
 
 
 function featchannel(
-    X::AbstractLogiset{W},
+    X::SupportedLogiset{W},
     i_instance::Integer,
     feature::AbstractFeature,
 ) where {W<:AbstractWorld}
@@ -192,7 +195,7 @@ function featchannel(
 end
 
 function readfeature(
-    X::AbstractLogiset{W},
+    X::SupportedLogiset{W},
     featchannel::Any,
     w::W,
     feature::AbstractFeature,
