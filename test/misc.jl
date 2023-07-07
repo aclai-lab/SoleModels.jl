@@ -525,7 +525,7 @@ YES
 
 @test_nowarn listrules(rule_r)
 @test_nowarn ruleset = listrules(branch_r)
-@test_broken listrules(dlmodel)
+@test_nowarn listrules(dlmodel)
 
 @test listrules(r1_string) isa Vector{<:Rule}
 @test join(displaymodel.(listrules(r1_string); header = false)) == """
