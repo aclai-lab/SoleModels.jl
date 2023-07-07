@@ -30,9 +30,10 @@ These definitions provide a unified base for implementing symbolic algorithms, s
 
 Remember:
 - An antecedent is any *condition* that can be checked on a machine learning *instance*, yielding a `true/false` value;
-- A consequent is... anything you want, really, even another model (spoiler: a Branch with Branch consequents is a Decision Tree 😉).
+- A consequent is another model, for example, a (final) constant model or branch to be applied.
 
-More specifically, antecedents can be *logical formulas* and, in such case, the symbolic models
+Within this framewokr, a decision tree is simply a branch with branch and final consequents.
+NoteThat antecedents can consist of *logical formulas* and, in such case, the symbolic models
 are can be applied to *logical interpretations*.
 For more information, refer to [*SoleLogics.jl*](https://github.com/aclai-lab/SoleLogics.jl), the underlying logical layer.
 
