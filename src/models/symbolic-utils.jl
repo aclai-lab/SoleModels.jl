@@ -183,58 +183,6 @@ The keyword argument `force_syntaxtree`, when set to true, causes the logical an
 in the returned rules to be represented as `SyntaxTree`s, as opposed to other syntax
 structure (e.g., `LeftmostConjunctiveForm`).
 
-# Examples
-# TODO @Michi questi esempi non sono chiari: cosa è r2_string?
-```julia-repl
-@test listrules(r2_string) isa Vector{<:Rule}
-julia> print(join(displaymodel.(listrules(rule); header = false)))
-┐¬(r)
-└ ✔ YES
-
-julia> print(join(displaymodel.(listrules(decision_list); header = false)))
-┐(r ∧ s) ∧ t
-└ ✔ YES
-┐¬(r)
-└ ✔ YES
-┐⊤
-└ ✔ YES
-
-@test listrules(rcmodel) isa Vector{<:Rule}
-julia> print(join(displaymodel.(listrules(rule_cascade); header = false)))
-┐(p ∧ (q ∨ r)) ∧ ((p ∧ (q ∨ r)) ∧ (p ∧ (q ∨ r)))
-└ ✔ 1
-
-julia> print(join(displaymodel.(listrules(branch); header = false)))
-┐r ∧ s
-└ ✔ YES
-┐r ∧ (¬(s))
-└ ✔ NO
-┐(¬(r)) ∧ (t ∧ q)
-└ ✔ YES
-┐(¬(r)) ∧ (t ∧ (¬(q)))
-└ ✔ NO
-┐(¬(r)) ∧ (¬(t))
-└ ✔ YES
-
-julia> print(join(displaymodel.(listrules(decision_tree); header = false)))
-┐r ∧ s
-└ ✔ YES
-┐r ∧ (¬(s))
-└ ✔ NO
-┐(¬(r)) ∧ (t ∧ q)
-└ ✔ YES
-┐(¬(r)) ∧ (t ∧ (¬(q)))
-└ ✔ NO
-┐(¬(r)) ∧ (¬(t))
-└ ✔ YES
-
-julia> print(join(displaymodel.(listrules(mixed_symbolic_model); header = false)))
-┐q
-└ ✔ 2
-┐¬(q)
-└ ✔ 1.5
-```
-
 See also [`listimmediaterules`](@ref), [`issymbolic`](@ref), [`FinalModel`](@ref),
 [`AbstractModel`](@ref).
 """

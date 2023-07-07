@@ -283,13 +283,17 @@ end
     issymbolic(::AbstractModel)::Bool
 
 Return whether a model is symbolic or not.
-A model is said to be `symbolic` when its application relies on checking formulas
-of a certain logical language (see [`SoleLogics`](@ref) package) on the instance.
-Symbolic models provide a form of transparent and interpretable modeling.
+A model is said to be `symbolic` when its functioning simply relies on checking conditions
+(e.g., based on formulas of a certain logical language, see [`SoleLogics`](@ref) package)
+on the instance.
+Essentially, symbolic models have a *rule-based structure*,
+and provide a form of transparent and interpretable computation.
 
-Instead, a model is said to be functional when it encodes an algebraic mathematical
-function (e.g., a neural network).
-TODO explain listrules/cascade/rules A symbolic model is one where the computation has a *rule-base structure*.
+Examples of purely symbolic models are [`Rule`](@ref)s, [`Branch`](@ref),
+[`DecisionList`](@ref)s and [`DecisionTree`](@ref)s.
+Examples of non-symbolic models are those encoding algebraic mathematical
+functions (e.g., a neural networks). Note that [`DecisionForest`](@ref)s are
+not purely symbolic.
 
 See also
 [`apply`](@ref),
@@ -396,8 +400,6 @@ A `FunctionModel` is a `FinalModel` that applies a native Julia `Function`
 in order to compute the outcome. Over efficiency concerns, it is mandatory to make explicit
 the output type `O` by wrapping the `Function` into an object of type
 `FunctionWrapper{O}`.
-
-TODO @Michele explain functional_args/functional_kwargs
 
 See also [`ConstantModel`](@ref), [`FunctionWrapper`](@ref), [`FinalModel`](@ref).
 """
