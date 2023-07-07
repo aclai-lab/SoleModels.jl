@@ -36,6 +36,7 @@ SoleData = "0.9.1"
 SoleLogics = "0.3.0"
 StatsBase = "0.33"
 Suppressor = "0.2"
+ThreadSafeDicts = "0.1.0"
 julia = "1"
 
 [extras]
