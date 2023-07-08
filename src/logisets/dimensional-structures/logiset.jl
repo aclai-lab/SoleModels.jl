@@ -181,7 +181,7 @@ function readfeature(
     w::Interval,
     f::AbstractFeature
 ) where {U}
-    featchannel[w.x, w.y]
+    featchannel[w.x, w.y-1]
 end
 
 
@@ -221,7 +221,7 @@ function readfeature(
     w::Interval2D,
     f::AbstractFeature
 ) where {U}
-    featchannel[w.x.x, w.x.y, w.y.x, w.y.y]
+    featchannel[w.x.x, w.x.y-1, w.y.x, w.y.y-1]
 end
 
 ############################################################################################
@@ -257,7 +257,7 @@ end
         end
     end
 
-    X.featstruct[w.x, w.y, i_instance, i_feature]
+    X.featstruct[w.x, w.y-1, i_instance, i_feature]
 end
 
 @inline function featvalue(
@@ -273,8 +273,7 @@ end
             error("Could not find feature $(feature) in memoset of type $(typeof(X)).")
         end
     end
-
-    X.featstruct[w.x.x, w.x.y, w.y.x, w.y.y, i_instance, i_feature]
+    X.featstruct[w.x.x, w.x.y-1, w.y.x, w.y.y-1, i_instance, i_feature]
 end
 
 ############################################################################################
@@ -312,7 +311,7 @@ end
         end
     end
 
-    X.featstruct[w.x, w.y, i_instance, i_feature] = featval
+    X.featstruct[w.x, w.y-1, i_instance, i_feature] = featval
 end
 
 @inline function featvalue!(
@@ -330,7 +329,7 @@ end
         end
     end
 
-    X.featstruct[w.x.x, w.x.y, w.y.x, w.y.y, i_instance, i_feature] = featval
+    X.featstruct[w.x.x, w.x.y-1, w.y.x, w.y.y-1, i_instance, i_feature] = featval
 end
 
 ############################################################################################
@@ -453,15 +452,15 @@ function capacity(X::UniformFullDimensionalLogiset{U,<:Interval}) where {U}
     prod([
         ninstances(X),
         nfeatures(X),
-        div(size(X, 1)*(size(X, 2)),2),
+        div(size(X, 1)*(size(X, 2)+1),2),
     ])
 end
 function capacity(X::UniformFullDimensionalLogiset{U,<:Interval2D}) where {U}
     prod([
         ninstances(X),
         nfeatures(X),
-        div(size(X, 1)*(size(X, 2)),2),
-        div(size(X, 3)*(size(X, 4)),2),
+        div(size(X, 1)*(size(X, 2)+1),2),
+        div(size(X, 3)*(size(X, 4)+1),2),
     ])
 end
 
@@ -471,13 +470,13 @@ function hasnans(X::UniformFullDimensionalLogiset{U,OneWorld}) where {U}
     any(_isnan.(X.featstruct))
 end
 function hasnans(X::UniformFullDimensionalLogiset{U,<:Interval}) where {U}
-    any([hasnans(X.featstruct[x,y,:,:])
-        for x in 1:size(X, 1) for y in (x+1):size(X, 2)])
+    any([hasnans(X.featstruct[x,y-1,:,:])
+        for x in 1:size(X, 1) for y in (x+1):(size(X, 2)+1)])
 end
 function hasnans(X::UniformFullDimensionalLogiset{U,<:Interval2D}) where {U}
-    any([hasnans(X.featstruct[xx,xy,yx,yy,:,:])
-        for xx in 1:size(X, 1) for xy in (xx+1):size(X, 2)
-        for yx in 1:size(X, 3) for yy in (yx+1):size(X, 4)])
+    any([hasnans(X.featstruct[xx,xy-1,yx,yy-1,:,:])
+        for xx in 1:size(X, 1) for xy in (xx+1):(size(X, 2)+1)
+        for yx in 1:size(X, 3) for yy in (yx+1):(size(X, 4)+1)])
 end
 
 ############################################################################################

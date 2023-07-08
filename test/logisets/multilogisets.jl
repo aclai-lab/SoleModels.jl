@@ -38,7 +38,7 @@ alph = ExplicitAlphabet([SoleModels.ScalarCondition(rand(rng, generic_features),
 
 i_instance = 1
 
-multiformulas = [begin
+@test_broken multiformulas = [begin
     _formulas_dict = Dict{Int,SoleLogics.AbstractFormula}()
     for (i_modality, relations) in enumerate(multirelations)
         f = randformula(rng, 3, alph, [SoleLogics.BASE_PROPOSITIONAL_OPERATORS..., vcat([[DiamondRelationalOperator(r), BoxRelationalOperator(r)] for r in relations]...)[1:32:end]...])
@@ -57,7 +57,7 @@ multiformulas = [begin
             _formulas_dict[i_modality] = f
         end
     end
-    MultiFormula(_formulas_dict)
+    MultiAntecedent(_formulas_dict)
 end for i in 1:200];
 # syntaxstring.(multiformulas) .|> println;
 

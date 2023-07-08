@@ -133,7 +133,7 @@ function capacity(Xm::UniformFullDimensionalOneStepRelationalMemoset{U,<:Interva
         ninstances(Xm),
         nmetaconditions(Xm),
         nrelations(Xm),
-        div(size(Xm, 1)*(size(Xm, 2)),2),
+        div(size(Xm, 1)*(size(Xm, 1)+1),2),
     ])
 end
 function capacity(Xm::UniformFullDimensionalOneStepRelationalMemoset{U,<:Interval2D}) where {U}
@@ -141,8 +141,8 @@ function capacity(Xm::UniformFullDimensionalOneStepRelationalMemoset{U,<:Interva
         ninstances(Xm),
         nmetaconditions(Xm),
         nrelations(Xm),
-        div(size(Xm, 1)*(size(Xm, 2)),2),
-        div(size(Xm, 3)*(size(Xm, 4)),2),
+        div(size(Xm, 1)*(size(Xm, 1)+1),2),
+        div(size(Xm, 3)*(size(Xm, 3)+1),2),
     ])
 end
 
@@ -164,7 +164,7 @@ end
     i_metacond   :: Integer,
     i_relation   :: Integer
 ) where {U,W<:Interval}
-    Xm.d[w.x, w.y, i_instance, i_metacond, i_relation]
+    Xm.d[w.x, w.y-1, i_instance, i_metacond, i_relation]
 end
 @inline function Base.getindex(
     Xm           :: UniformFullDimensionalOneStepRelationalMemoset{U,W},
@@ -173,7 +173,7 @@ end
     i_metacond   :: Integer,
     i_relation   :: Integer
 ) where {U,W<:Interval2D}
-    Xm.d[w.x.x, w.x.y, w.y.x, w.y.y, i_instance, i_metacond, i_relation]
+    Xm.d[w.x.x, w.x.y-1, w.y.x, w.y.y-1, i_instance, i_metacond, i_relation]
 end
 
 ############################################################################################
@@ -197,7 +197,7 @@ Base.@propagate_inbounds @inline function Base.setindex!(
     i_metacond::Integer,
     i_relation::Integer,
 ) where {U}
-    Xm.d[w.x, w.y, i_instance, i_metacond, i_relation] = gamma
+    Xm.d[w.x, w.y-1, i_instance, i_metacond, i_relation] = gamma
 end
 
 Base.@propagate_inbounds @inline function Base.setindex!(
@@ -208,7 +208,7 @@ Base.@propagate_inbounds @inline function Base.setindex!(
     i_metacond::Integer,
     i_relation::Integer,
 ) where {U}
-    Xm.d[w.x.x, w.x.y, w.y.x, w.y.y, i_instance, i_metacond, i_relation] = gamma
+    Xm.d[w.x.x, w.x.y-1, w.y.x, w.y.y-1, i_instance, i_metacond, i_relation] = gamma
 end
 
 ############################################################################################
@@ -217,13 +217,13 @@ function hasnans(Xm::UniformFullDimensionalOneStepRelationalMemoset{U,OneWorld})
     any(_isnan.(Xm.d))
 end
 function hasnans(Xm::UniformFullDimensionalOneStepRelationalMemoset{U,<:Interval}) where {U}
-    any([hasnans(Xm.d[x,y,:,:,:])
-        for x in 1:size(Xm, 1) for y in (x+1):size(Xm, 2)])
+    any([hasnans(Xm.d[x,y-1,:,:,:])
+        for x in 1:size(Xm, 1) for y in (x+1):(size(Xm, 2)+1)])
 end
 function hasnans(Xm::UniformFullDimensionalOneStepRelationalMemoset{U,<:Interval2D}) where {U}
-    any([hasnans(Xm.d[xx,xy,yx,yy,:,:,:])
-        for xx in 1:size(Xm, 1) for xy in (xx+1):size(Xm, 2)
-        for yx in 1:size(Xm, 3) for yy in (yx+1):size(Xm, 4)])
+    any([hasnans(Xm.d[xx,xy-1,yx,yy-1,:,:,:])
+        for xx in 1:size(Xm, 1) for xy in (xx+1):(size(Xm, 2)+1)
+        for yx in 1:size(Xm, 3) for yy in (yx+1):(size(Xm, 4)+1)])
 end
 
 ############################################################################################

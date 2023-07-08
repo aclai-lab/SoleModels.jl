@@ -56,7 +56,7 @@ prints or returns a string representation of model `m`.
  the `info` structure for `m`;
 - `show_subtree_info::Bool = false`: when set to `true`, the header is printed for
 models in the sub-tree of `m`;
-- `show_metrics::Bool = true`: when set to `true`, performance metrics at each point of the
+- `show_metrics::Bool = false`: when set to `true`, performance metrics at each point of the
 subtree are shown, whenever they are available in the `info` structure;
 - `max_depth::Union{Nothing,Int} = nothing`: when it is an `Int`, models in the sub-tree
 with a depth higher than `max_depth` are ellipsed with "...";
@@ -75,28 +75,6 @@ printmodel(m::AbstractModel; kwargs...) = printmodel(stdout, m; kwargs...)
 # DEFAULT_HEADER = :brief
 DEFAULT_HEADER = false
 
-"""$(doc_printdisplay_model)"""
-function displaymodel(
-    m::AbstractModel;
-    header = DEFAULT_HEADER,
-    indentation_str = "",
-    indentation = default_indentation,
-    depth = 0,
-    max_depth = nothing,
-    show_subtree_info = false,
-    show_metrics = false,
-    show_intermediate_finals = false,
-    tree_mode = false,
-    syntaxstring_kwargs = (;),
-)
-    println("Please, provide method displaymodel(::$(typeof(m)); kwargs...). " *
-        "See help for displaymodel.")
-end
-
-############################################################################################
-############################################################################################
-############################################################################################
-
 # Utility macro for recursively displaying submodels
 macro _display_submodel(
     submodel,
@@ -112,7 +90,7 @@ macro _display_submodel(
     kwargs
 )
     quote
-        displaymodel($(esc(submodel));
+        _displaymodel($(esc(submodel));
             indentation_str = $(esc(indentation_str)),
             indentation = $(esc(indentation)),
             depth = $(esc(depth))+1,
@@ -128,14 +106,44 @@ macro _display_submodel(
     end
 end
 
-function get_metrics_string(
-    m::ConstantModel,
-    digits = 2
+"""$(doc_printdisplay_model)"""
+function displaymodel(
+    m::AbstractModel;
+    header = DEFAULT_HEADER,
+    indentation_str = "",
+    indentation = default_indentation,
+    depth = 0,
+    max_depth = nothing,
+    show_subtree_info = false,
+    show_metrics = false,
+    show_intermediate_finals = false,
+    tree_mode = false,
+    syntaxstring_kwargs = (;),
+    kwargs...
 )
-    "$(leafmetrics(m; digits = digits))"
+    @_display_submodel m indentation_str indentation depth max_depth show_subtree_info show_metrics show_intermediate_finals tree_mode syntaxstring_kwargs kwargs
 end
 
-function displaymodel(
+function _displaymodel(
+    m::AbstractModel;
+    kwargs...,
+)
+    println("Please, provide method _displaymodel(::$(typeof(m)); kwargs...). " *
+        "See help for displaymodel.")
+end
+
+############################################################################################
+############################################################################################
+############################################################################################
+
+function get_metrics_string(
+    m::AbstractModel;
+    digits = 2
+)
+    "$(readmetrics(m; digits = digits))"
+end
+
+function _displaymodel(
     m::ConstantModel;
     header = DEFAULT_HEADER,
     indentation_str = "",
@@ -162,7 +170,7 @@ function displaymodel(
     String(take!(io))
 end
 
-function displaymodel(
+function _displaymodel(
     m::FunctionModel;
     header = DEFAULT_HEADER,
     indentation_str = "",
@@ -188,7 +196,7 @@ function displaymodel(
     String(take!(io))
 end
 
-function displaymodel(
+function _displaymodel(
     m::Rule;
     header = DEFAULT_HEADER,
     indentation_str = "",
@@ -199,8 +207,8 @@ function displaymodel(
     show_metrics = false,
     show_intermediate_finals = false,
     tree_mode = (subtreeheight(m) != 1),
-    arrow = "🠮", # ⮞, 🡆, 🠮, 🠲, =>
     syntaxstring_kwargs = (;),
+    arrow = "🠮", # ⮞, 🡆, 🠮, 🠲, =>
     kwargs...,
 )
     io = IOBuffer()
@@ -226,8 +234,13 @@ function displaymodel(
         pipe = "$(indentation_list_children) "
         # println(io, "$(indentation_str*pipe)$(antecedent(m))")
         #println(io, "$(pipe)$(antecedent(m))")
-        print(io, "$(pipe)$(syntaxstring(antecedent(m); (haskey(info(m), :syntaxstring_kwargs) ? info(m)[:syntaxstring_kwargs] : (;))..., syntaxstring_kwargs..., kwargs...))")
+        if show_intermediate_finals != false && haskey(info(m), :this)
+            @warn "One intermediate final was hidden. TODO expand code!"
+        end
+        ant_str = syntaxstring(antecedent(m); (haskey(info(m), :syntaxstring_kwargs) ? info(m).syntaxstring_kwargs : (;))..., syntaxstring_kwargs..., kwargs...)
         if tree_mode
+            show_metrics != false && print(io, "$(pipe)$(get_metrics_string(m; (show_metrics isa NamedTuple ? show_metrics : [])...))")
+            print(io, "$(pipe)$(ant_str)")
             println(io, "")
             pad_str = indentation_str*repeat(indentation_hspace, length(pipe)-length(indentation_last_space)+2)
             print(io, "$(pad_str*indentation_last_first)$(TICK)")
@@ -235,6 +248,8 @@ function displaymodel(
             subm_str = @_display_submodel consequent(m) ind_str indentation depth max_depth show_subtree_info show_metrics show_intermediate_finals tree_mode syntaxstring_kwargs kwargs
             print(io, subm_str)
         else
+            print(io, "$(pipe)$(ant_str)")
+            show_metrics != false && print(io, " : $(get_metrics_string(m; (show_metrics isa NamedTuple ? show_metrics : [])...))")
             ind_str = ""
             subm_str = @_display_submodel consequent(m) ind_str indentation depth max_depth show_subtree_info show_metrics show_intermediate_finals tree_mode syntaxstring_kwargs kwargs
             print(io, "  $(arrow) ")
@@ -247,7 +262,7 @@ function displaymodel(
     String(take!(io))
 end
 
-function displaymodel(
+function _displaymodel(
     m::Branch;
     header = DEFAULT_HEADER,
     indentation_str = "",
@@ -282,10 +297,10 @@ function displaymodel(
     ########################################################################################
     if isnothing(max_depth) || depth < max_depth
         pipe = "$(indentation_list_children) "
-        line_str = "$(pipe)$(syntaxstring(antecedent(m); (haskey(info(m), :syntaxstring_kwargs) ? info(m)[:syntaxstring_kwargs] : (;))..., syntaxstring_kwargs..., kwargs...))"
+        line_str = "$(pipe)$(syntaxstring(antecedent(m); (haskey(info(m), :syntaxstring_kwargs) ? info(m).syntaxstring_kwargs : (;))..., syntaxstring_kwargs..., kwargs...))"
         if show_intermediate_finals != false && haskey(info(m), :this)
             ind_str = ""
-            subm_str = @_display_submodel info(m)[:this] ind_str indentation (depth-1) max_depth show_subtree_info show_metrics show_intermediate_finals tree_mode syntaxstring_kwargs kwargs
+            subm_str = @_display_submodel info(m).this ind_str indentation (depth-1) max_depth show_subtree_info show_metrics show_intermediate_finals tree_mode syntaxstring_kwargs kwargs
             line_str = rpad(line_str, show_intermediate_finals isa Integer ? show_intermediate_finals : default_intermediate_finals_rpad) * subm_str
             print(io, line_str)
         else
@@ -310,7 +325,7 @@ function displaymodel(
 end
 
 
-function displaymodel(
+function _displaymodel(
     m::DecisionList;
     header = DEFAULT_HEADER,
     indentation_str = "",
@@ -348,14 +363,14 @@ function displaymodel(
         for (i_rule, rule) in enumerate(rulebase(m))
             # pipe = indentation_any_first
             pipe = indentation_any_first*"[$(i_rule)/$(length(rulebase(m)))]┐"
-            println(io, "$(indentation_str*pipe)$(syntaxstring(antecedent(rule); (haskey(info(rule), :syntaxstring_kwargs) ? info(rule)[:syntaxstring_kwargs] : (;))..., syntaxstring_kwargs..., kwargs...))")
+            println(io, "$(indentation_str*pipe)$(syntaxstring(antecedent(rule); (haskey(info(rule), :syntaxstring_kwargs) ? info(rule).syntaxstring_kwargs : (;))..., syntaxstring_kwargs..., kwargs...))")
             pad_str = indentation_str*indentation_any_space*repeat(indentation_hspace, length(pipe)-length(indentation_any_space)-1)
             print(io, "$(pad_str*indentation_last_first)")
             ind_str = pad_str*indentation_last_space
             subm_str = @_display_submodel consequent(rule) ind_str indentation depth max_depth show_subtree_info show_metrics show_intermediate_finals tree_mode syntaxstring_kwargs kwargs
             print(io, subm_str)
         end
-        pipe = indentation_last_first*"$(indentiation_cross)"
+        pipe = indentation_last_first*"$(indentation_cross)"
         print(io, "$(indentation_str*pipe)")
         # print(io, "$(indentation_str*indentation_last_space*repeat(indentation_hspace, length(pipe)-length(indentation_last_space)-1)*indentation_last_space)")
         ind_str = indentation_str*indentation_last_space*repeat(indentation_hspace, length(pipe)-length(indentation_last_space)-1)*indentation_last_space
@@ -369,7 +384,7 @@ function displaymodel(
     String(take!(io))
 end
 
-function displaymodel(
+function _displaymodel(
     m::DecisionTree;
     header = DEFAULT_HEADER,
     indentation_str = "",
@@ -407,7 +422,7 @@ function displaymodel(
     String(take!(io))
 end
 
-function displaymodel(
+function _displaymodel(
     m::DecisionForest;
     header = DEFAULT_HEADER,
     indentation_str = "",
@@ -447,7 +462,7 @@ function displaymodel(
     String(take!(io))
 end
 
-function displaymodel(
+function _displaymodel(
     m::MixedSymbolicModel;
     header = DEFAULT_HEADER,
     indentation_str = "",

@@ -37,7 +37,7 @@ function initlogiset(
     U = Union{featvaltype.(features)...}
     featstruct = Array{U,length(_maxchannelsize)*2+2}(
             undef,
-            vcat([[s,s+1] for s in _maxchannelsize]...)...,
+            vcat([[s, s] for s in _maxchannelsize]...)...,
             _ninstances,
             length(features)
         )

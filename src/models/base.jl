@@ -6,142 +6,6 @@ using SoleLogics: LeftmostLinearForm, LeftmostConjunctiveForm, LeftmostDisjuncti
 # Util
 typename(::Type{T}) where T = eval(nameof(T))
 
-"""
-    abstract type AbstractBooleanCondition end
-
-A boolean condition is a condition that evaluates to a boolean truth value (`true`/`false`),
-when checked on a logical interpretation.
-
-See also
-[`TrueCondition`](@ref),
-[`LogicalTruthCondition`](@ref),
-[`check`](@ref),
-[`syntaxstring`](@ref).
-"""
-abstract type AbstractBooleanCondition end
-
-function syntaxstring(c::AbstractBooleanCondition; kwargs...)
-    return error("Please, provide method syntaxstring(::$(typeof(c)); kwargs...).")
-end
-
-function Base.show(io::IO, c::AbstractBooleanCondition)
-    print(io, "$(typeof(c))($(syntaxstring(c)))")
-end
-
-# Check on a boolean condition
-function check(c::AbstractBooleanCondition, i::AbstractInterpretation, args...; kwargs...)
-    return error("Please, provide method check(::$(typeof(c)), " *
-        "i::$(typeof(i)), args...; kwargs...).")
-end
-function check(
-    c::AbstractBooleanCondition,
-    d::AbstractInterpretationSet,
-    args...;
-    kwargs...
-)
-    map(
-        i_instance->check(c, slicedataset(d, [i_instance]; return_view = true), args...; kwargs...)[1],
-        1:ninstances(d)
-    )
-end
-
-"""
-    abstract type AbstractLogicalBooleanCondition <: AbstractBooleanCondition end
-
-A boolean condition based on a formula of a given logic, that is
-to be checked on a logical interpretation.
-
-See also
-[`formula`](@ref),
-[`syntaxstring`](@ref),
-[`check`](@ref),
-[`AbstractBooleanCondition`](@ref).
-"""
-abstract type AbstractLogicalBooleanCondition <: AbstractBooleanCondition end
-
-"""
-    formula(c::AbstractLogicalBooleanCondition)::AbstractFormula
-
-Return the logical formula (see [`SoleLogics`](@ref) package) of a given
-logical boolean condition.
-
-See also
-[`syntaxstring`](@ref),
-[`AbstractLogicalBooleanCondition`](@ref).
-"""
-function formula(c::AbstractLogicalBooleanCondition)::AbstractFormula
-    return error("Please, provide method formula(::$(typeof(c))).")
-end
-
-function syntaxstring(c::AbstractLogicalBooleanCondition; kwargs...)
-    syntaxstring(formula(c); kwargs...)
-end
-
-"""
-    struct TrueCondition <: AbstractLogicalBooleanCondition end
-
-A true condition is the boolean condition that always yields `true`.
-
-See also
-[`LogicalTruthCondition`](@ref),
-[`AbstractLogicalBooleanCondition`](@ref).
-"""
-struct TrueCondition <: AbstractLogicalBooleanCondition end
-
-formula(::TrueCondition) = SyntaxTree(⊤)
-check(::TrueCondition, i::AbstractInterpretation, args...; kwargs...) = true
-check(::TrueCondition, d::AbstractInterpretationSet, args...; kwargs...) =
-    fill(true, ninstances(d))
-
-"""
-    struct LogicalTruthCondition{F<:AbstractFormula} <: AbstractLogicalBooleanCondition
-        formula::F
-    end
-
-A boolean condition that, on a given logical interpretation,
-a logical formula evaluates to the `top` of the logic's algebra.
-
-See also
-[`formula`](@ref),
-[`AbstractLogicalBooleanCondition`](@ref).
-"""
-struct LogicalTruthCondition{F<:AbstractFormula} <: AbstractLogicalBooleanCondition
-    formula::F
-
-    function LogicalTruthCondition{F}(
-        formula::F
-    ) where {F<:AbstractFormula}
-        new{F}(formula)
-    end
-
-    function LogicalTruthCondition(
-        formula::F
-    ) where {F<:AbstractFormula}
-        LogicalTruthCondition{F}(formula)
-    end
-end
-
-formula(c::LogicalTruthCondition) = c.formula
-
-function check(c::LogicalTruthCondition, i::AbstractInterpretation, args...; kwargs...)
-    istop(check(formula(c), i, args...; kwargs...))
-end
-function check(
-    c::LogicalTruthCondition,
-    d::AbstractInterpretationSet,
-    args...;
-    kwargs...,
-)
-    map(istop, check(formula(c), d, args...; kwargs...))
-end
-
-############################################################################################
-
-# Helpers
-convert(::Type{AbstractBooleanCondition}, f::AbstractFormula) = LogicalTruthCondition(f)
-convert(::Type{AbstractBooleanCondition}, tok::AbstractSyntaxToken) = LogicalTruthCondition(SyntaxTree(tok))
-convert(::Type{AbstractBooleanCondition}, ::typeof(⊤)) = TrueCondition()
-
 ############################################################################################
 
 """
@@ -225,7 +89,7 @@ end
         m::AbstractModel,
         d::AbstractInterpretationSet;
         check_args::Tuple = (),
-        check_kwargs::NamedTuple = (; use_memo = [ThreadSafeDict{SyntaxTree,WorldSet{worldtype(d)}}() for i in 1:ninstances(d)]),
+        check_kwargs::NamedTuple = (;),
         functional_args::Tuple = (),
         functional_kwargs::NamedTuple = (;),
         kwargs...
@@ -301,6 +165,8 @@ issymbolic(::AbstractModel) = false
 """
     info(m::AbstractModel)::NamedTuple = m.info
     info(m::AbstractModel, key) = m.info[key]
+    info(m::AbstractModel, key, defaultval)
+    info!(m::AbstractModel, key, val)
 
 Return the `info` structure for model `m`; this structure is used
 for storing additional information that does not affect the model's behavior.
@@ -309,6 +175,7 @@ about the model's statistical performance during the learning phase.
 """
 info(m::AbstractModel)::NamedTuple = m.info
 info(m::AbstractModel, key) = m.info[key]
+info(m::AbstractModel, key, defaultval) = Base.get(m.info, key, defaultval)
 info!(m::AbstractModel, key, value) = (m.info[key] = value; m)
 
 
@@ -605,7 +472,7 @@ in order to obtain an outcome.
 """
     struct Rule{
         O,
-        C<:AbstractBooleanCondition,
+        C<:AbstractAntecedent,
         FM<:AbstractModel
     } <: ConstrainedModel{O,FM}
         antecedent::C
@@ -625,13 +492,13 @@ Note that `FM` refers to the Feasible Models (`FM`) allowed in the model's sub-t
 See also
 [`antecedent`](@ref),
 [`consequent`](@ref),
-[`AbstractBooleanCondition`](@ref),
+[`AbstractAntecedent`](@ref),
 [`ConstrainedModel`](@ref),
 [`AbstractModel`](@ref).
 """
 struct Rule{
     O,
-    C<:AbstractBooleanCondition,
+    C<:AbstractAntecedent,
     FM<:AbstractModel
 } <: ConstrainedModel{O,FM}
     antecedent::C
@@ -639,11 +506,11 @@ struct Rule{
     info::NamedTuple
 
     function Rule{O}(
-        antecedent::Union{AbstractSyntaxToken,AbstractFormula,AbstractBooleanCondition},
+        antecedent::Union{AbstractSyntaxToken,AbstractFormula,AbstractAntecedent},
         consequent::Any,
         info::NamedTuple = (;),
     ) where {O}
-        antecedent = convert(AbstractBooleanCondition, antecedent)
+        antecedent = convert(AbstractAntecedent, antecedent)
         C = typeof(antecedent)
         consequent = wrap(consequent, AbstractModel{O})
         FM = typeintersect(propagate_feasiblemodels(consequent), AbstractModel{<:O})
@@ -652,7 +519,7 @@ struct Rule{
     end
 
     function Rule(
-        antecedent::Union{AbstractSyntaxToken,AbstractFormula,AbstractBooleanCondition},
+        antecedent::Union{AbstractSyntaxToken,AbstractFormula,AbstractAntecedent},
         consequent::Any,
         info::NamedTuple = (;),
     )
@@ -665,7 +532,7 @@ struct Rule{
         consequent::Any,
         info::NamedTuple = (;),
     )
-        antecedent = TrueCondition()
+        antecedent = TrueAntecedent()
         consequent = wrap(consequent)
         O = outcometype(consequent)
         Rule{O}(antecedent, consequent, info)
@@ -673,7 +540,7 @@ struct Rule{
 end
 
 """
-    antecedent(m::Union{Rule,Branch})::AbstractBooleanCondition
+    antecedent(m::Union{Rule,Branch})::AbstractAntecedent
 
 Return the antecedent of a rule/branch;
 that is, the condition to be evaluated upon applying the model.
@@ -698,8 +565,8 @@ See also
 """
 consequent(m::Rule) = m.consequent
 
-conditiontype(::Type{M}) where {M<:Rule{O,C}} where {O,C} = C
-conditiontype(m::Rule) = conditiontype(typeof(m))
+antecedenttype(::Type{M}) where {M<:Rule{O,C}} where {O,C} = C
+antecedenttype(m::Rule) = antecedenttype(typeof(m))
 
 issymbolic(::Rule) = true
 
@@ -750,7 +617,7 @@ function apply(
     d::AbstractInterpretationSet,
     i_instance::Integer;
     check_args::Tuple = (),
-    check_kwargs::NamedTuple = (; use_memo = [Dict{SyntaxTree,WorldSet{worldtype(d)}}() for i in 1:ninstances(d)]),
+    check_kwargs::NamedTuple = (;),
     kwargs...
 )
     if check_antecedent(m, d, i_instance, check_args...; check_kwargs...) == true
@@ -765,21 +632,21 @@ function apply(
 end
 
 # Helper
-function formula(m::Rule{O,<:Union{LogicalTruthCondition,TrueCondition}}) where {O}
+function formula(m::Rule{O,<:Union{TruthAntecedent,TrueAntecedent}}) where {O}
     formula(antecedent(m))
 end
 
 # Helpers
-function conjuncts(m::Rule{O,<:LogicalTruthCondition{<:LeftmostConjunctiveForm}}) where {O}
+function conjuncts(m::Rule{O,<:TruthAntecedent{<:LeftmostConjunctiveForm}}) where {O}
     conjuncts(formula(m))
 end
-function nconjuncts(m::Rule{O,<:LogicalTruthCondition{<:LeftmostConjunctiveForm}}) where {O}
+function nconjuncts(m::Rule{O,<:TruthAntecedent{<:LeftmostConjunctiveForm}}) where {O}
     nconjuncts(formula(m))
 end
-function disjuncts(m::Rule{O,<:LogicalTruthCondition{<:LeftmostDisjunctiveForm}}) where {O}
+function disjuncts(m::Rule{O,<:TruthAntecedent{<:LeftmostDisjunctiveForm}}) where {O}
     disjuncts(formula(m))
 end
-function ndisjuncts(m::Rule{O,<:LogicalTruthCondition{<:LeftmostDisjunctiveForm}}) where {O}
+function ndisjuncts(m::Rule{O,<:TruthAntecedent{<:LeftmostDisjunctiveForm}}) where {O}
     ndisjuncts(formula(m))
 end
 
@@ -787,12 +654,13 @@ end
 function Base.getindex(
     m::Rule{O,C},
     idxs::AbstractVector{<:Integer},
-) where {O,SS<:LeftmostLinearForm,C<:LogicalTruthCondition{SS}}
+) where {O,SS<:LeftmostLinearForm,C<:TruthAntecedent{SS}}
+    a = antecedent(m)
     Rule{O,C}(
-        LogicalTruthCondition{SS}(begin
-            ants = children(formula(m))
+        TruthAntecedent{SS}(begin
+            ants = children(formula(a))
             SS(ants[idxs])
-        end),
+        end, checkmode(a)),
         consequent(m)
     )
 end
@@ -803,7 +671,7 @@ end
 """
     struct Branch{
         O,
-        C<:AbstractBooleanCondition,
+        C<:AbstractAntecedent,
         FM<:AbstractModel
     } <: ConstrainedModel{O,FM}
         antecedent::C
@@ -817,7 +685,7 @@ the semantics:
 
     IF (antecedent) THEN (consequent_1) ELSE (consequent_2) END
 
-where the antecedent is boolean condition to be tested and the consequents are the feasible
+where the antecedent is a (boolean) condition to be tested and the consequents are the feasible
 local outcomes of the block.
 
 Note that `FM` refers to the Feasible Models (`FM`) allowed in the model's sub-tree.
@@ -826,13 +694,13 @@ See also
 [`antecedent`](@ref),
 [`posconsequent`](@ref),
 [`negconsequent`](@ref),
-[`AbstractBooleanCondition`](@ref),
+[`AbstractAntecedent`](@ref),
 [`Rule`](@ref),
 [`ConstrainedModel`](@ref), [`AbstractModel`](@ref).
 """
 struct Branch{
     O,
-    C<:AbstractBooleanCondition,
+    C<:AbstractAntecedent,
     FM<:AbstractModel
 } <: ConstrainedModel{O,FM}
     antecedent::C
@@ -841,12 +709,12 @@ struct Branch{
     info::NamedTuple
 
     function Branch(
-        antecedent::Union{AbstractSyntaxToken,AbstractFormula,AbstractBooleanCondition},
+        antecedent::Union{AbstractSyntaxToken,AbstractFormula,AbstractAntecedent},
         posconsequent::Any,
         negconsequent::Any,
         info::NamedTuple = (;),
     )
-        antecedent = convert(AbstractBooleanCondition, antecedent)
+        antecedent = convert(AbstractAntecedent, antecedent)
         C = typeof(antecedent)
         posconsequent = wrap(posconsequent)
         negconsequent = wrap(negconsequent)
@@ -858,7 +726,7 @@ struct Branch{
     end
 
     function Branch(
-        antecedent::Union{AbstractSyntaxToken,AbstractFormula,AbstractBooleanCondition},
+        antecedent::Union{AbstractSyntaxToken,AbstractFormula,AbstractAntecedent},
         (posconsequent, negconsequent)::Tuple{Any,Any},
         info::NamedTuple = (;),
     )
@@ -893,8 +761,8 @@ See also
 """
 negconsequent(m::Branch) = m.negconsequent
 
-conditiontype(::Type{M}) where {M<:Branch{O,C}} where {O,C} = C
-conditiontype(m::Branch) = conditiontype(typeof(m))
+antecedenttype(::Type{M}) where {M<:Branch{O,C}} where {O,C} = C
+antecedenttype(m::Branch) = antecedenttype(typeof(m))
 
 issymbolic(::Branch) = true
 
@@ -931,11 +799,11 @@ function apply(
 end
 
 function apply(
-    m::Branch{O,<:LogicalTruthCondition},
+    m::Branch{O,<:TruthAntecedent},
     d::AbstractInterpretationSet,
     i_instance::Integer;
     check_args::Tuple = (),
-    check_kwargs::NamedTuple = (; use_memo = [Dict{SyntaxTree,WorldSet{worldtype(d)}}() for i in 1:ninstances(d)]),
+    check_kwargs::NamedTuple = (;),
     kwargs...
 ) where {O}
     if check_antecedent(m, d, i_instance, check_args...; check_kwargs...) == true
@@ -954,10 +822,10 @@ function apply(
 end
 
 function apply(
-    m::Branch{O,<:LogicalTruthCondition},
+    m::Branch{O,<:TruthAntecedent},
     d::AbstractInterpretationSet;
     check_args::Tuple = (),
-    check_kwargs::NamedTuple = (; use_memo = [ThreadSafeDict{SyntaxTree,WorldSet{worldtype(d)}}() for i in 1:ninstances(d)]),
+    check_kwargs::NamedTuple = (;),
     kwargs...
 ) where {O}
     cs = check_antecedent(m, d, check_args...; check_kwargs...)
@@ -986,15 +854,24 @@ function apply(
 end
 
 # Helper
-function formula(m::Branch{O,<:Union{LogicalTruthCondition,TrueCondition}}) where {O}
+function formula(m::Branch{O,<:Union{TruthAntecedent,TrueAntecedent}}) where {O}
     formula(antecedent(m))
 end
 
+# Helper
 function Base.getindex(
-    m::Branch{O,<:LogicalTruthCondition{<:LeftmostLinearForm}},
-    args...
-) where {O}
-    return Base.getindex(formula(m), args...)
+    m::Branch{O,C},
+    idxs::AbstractVector{<:Integer},
+) where {O,SS<:LeftmostLinearForm,C<:TruthAntecedent{SS}}
+    a = antecedent(m)
+    Branch{O,C}(
+        TruthAntecedent{SS}(begin
+            ants = children(formula(a))
+            SS(ants[idxs])
+        end, checkmode(a)),
+        posconsequent(m),
+        negconsequent(m)
+    )
 end
 
 ############################################################################################
@@ -1002,7 +879,7 @@ end
 """
     struct DecisionList{
         O,
-        C<:AbstractBooleanCondition,
+        C<:AbstractAntecedent,
         FM<:AbstractModel
     } <: ConstrainedModel{O,FM}
         rulebase::Vector{Rule{_O,_C,_FM} where {_O<:O,_C<:C,_FM<:FM}}
@@ -1035,7 +912,7 @@ See also
 """
 struct DecisionList{
     O,
-    C<:AbstractBooleanCondition,
+    C<:AbstractAntecedent,
     FM<:AbstractModel
 } <: ConstrainedModel{O,FM}
     rulebase::Vector{Rule{_O,_C,_FM} where {_O<:O,_C<:C,_FM<:FM}}
@@ -1049,7 +926,7 @@ struct DecisionList{
     )
         defaultconsequent = wrap(defaultconsequent)
         O = Union{outcometype(defaultconsequent),outcometype.(rulebase)...}
-        C = Union{conditiontype.(rulebase)...}
+        C = Union{antecedenttype.(rulebase)...}
         FM = typeintersect(Union{propagate_feasiblemodels(defaultconsequent),propagate_feasiblemodels.(rulebase)...}, AbstractModel{<:O})
         # FM = typeintersect(Union{propagate_feasiblemodels(defaultconsequent),propagate_feasiblemodels.(rulebase)...}, AbstractModel{O})
         # FM = Union{propagate_feasiblemodels(defaultconsequent),propagate_feasiblemodels.(rulebase)...}
@@ -1062,8 +939,8 @@ end
 rulebase(m::DecisionList) = m.rulebase
 defaultconsequent(m::DecisionList) = m.defaultconsequent
 
-conditiontype(::Type{M}) where {M<:DecisionList{O,C}} where {O,C} = C
-conditiontype(m::DecisionList) = conditiontype(typeof(m))
+antecedenttype(::Type{M}) where {M<:DecisionList{O,C}} where {O,C} = C
+antecedenttype(m::DecisionList) = antecedenttype(typeof(m))
 
 issymbolic(::DecisionList) = true
 
@@ -1087,7 +964,7 @@ function apply(
     m::DecisionList{O},
     d::AbstractInterpretationSet;
     check_args::Tuple = (),
-    check_kwargs::NamedTuple = (; use_memo = [ThreadSafeDict{SyntaxTree,WorldSet{worldtype(d)}}() for i in 1:ninstances(d)]),
+    check_kwargs::NamedTuple = (;),
 ) where {O}
     nsamp = ninstances(d)
     pred = Vector{O}(undef, nsamp)
@@ -1120,7 +997,7 @@ function apply!(
     m::DecisionList{O},
     d::AbstractInterpretationSet;
     check_args::Tuple = (),
-    check_kwargs::NamedTuple = (; use_memo = [ThreadSafeDict{SyntaxTree,WorldSet{worldtype(d)}}() for i in 1:ninstances(d)]),
+    check_kwargs::NamedTuple = (;),
     compute_metrics::Union{Symbol,Bool} = false,
 ) where {O}
     nsamp = ninstances(d)
@@ -1221,7 +1098,7 @@ sub-tree of `Branch` and `LeafModel`:
 
     struct DecisionTree{
     O,
-        C<:AbstractBooleanCondition,
+        C<:AbstractAntecedent,
         FFM<:LeafModel
     } <: ConstrainedModel{O,Union{<:Branch{<:O,<:C},<:FFM}}
         root::M where {M<:Union{FFM,Branch}}
@@ -1236,7 +1113,7 @@ See also [`ConstrainedModel`](@ref), [`MixedSymbolicModel`](@ref), [`DecisionLis
 """
 struct DecisionTree{
     O,
-    C<:AbstractBooleanCondition,
+    C<:AbstractAntecedent,
     FFM<:LeafModel
 } <: ConstrainedModel{O,Union{<:Branch{<:O,<:C}, <:FFM}}
     root::M where {M<:Union{FFM,Branch}}
@@ -1245,8 +1122,8 @@ struct DecisionTree{
     function DecisionTree(
         root::Union{FFM,Branch{O,C,Union{Branch{<:O,C2},FFM}}},
         info::NamedTuple = (;),
-    ) where {O,C<:AbstractBooleanCondition,C2<:C,FFM<:LeafModel{<:O}}
-        new{O,root isa LeafModel ? AbstractBooleanCondition : C,FFM}(root, info)
+    ) where {O,C<:AbstractAntecedent,C2<:C,FFM<:LeafModel{<:O}}
+        new{O,root isa LeafModel ? AbstractAntecedent : C,FFM}(root, info)
     end
 
     function DecisionTree(
@@ -1256,7 +1133,7 @@ struct DecisionTree{
         root = wrap(root)
         M = typeof(root)
         O = outcometype(root)
-        C = (root isa LeafModel ? AbstractBooleanCondition : conditiontype(M))
+        C = (root isa LeafModel ? AbstractAntecedent : antecedenttype(M))
         # FM = typeintersect(Union{M,feasiblemodelstype(M)}, AbstractModel{<:O})
         FM = typeintersect(Union{propagate_feasiblemodels(M)}, AbstractModel{<:O})
         FFM = typeintersect(FM, LeafModel{<:O})
@@ -1272,9 +1149,9 @@ end
 
 root(m::DecisionTree) = m.root
 
-conditiontype(::Type{M}) where {M<:DecisionTree{O,C}} where {O,C} = C
-conditiontype(::Type{M}) where {M<:DecisionTree{O,C,FFM}} where {O,C,FFM} = C
-conditiontype(m::DecisionTree) = conditiontype(typeof(m))
+antecedenttype(::Type{M}) where {M<:DecisionTree{O,C}} where {O,C} = C
+antecedenttype(::Type{M}) where {M<:DecisionTree{O,C,FFM}} where {O,C,FFM} = C
+antecedenttype(m::DecisionTree) = antecedenttype(typeof(m))
 
 issymbolic(::DecisionTree) = true
 
@@ -1317,7 +1194,7 @@ A `Decision Forest` is a symbolic model that wraps an ensemble of models
 
     struct DecisionForest{
         O,
-        C<:AbstractBooleanCondition,
+        C<:AbstractAntecedent,
         FFM<:LeafModel
     } <: ConstrainedModel{O,Union{<:Branch{<:O,<:C},<:FFM}}
         trees::Vector{<:DecisionTree}
@@ -1330,7 +1207,7 @@ See also [`ConstrainedModel`](@ref), [`MixedSymbolicModel`](@ref), [`DecisionLis
 """
 struct DecisionForest{
     O,
-    C<:AbstractBooleanCondition,
+    C<:AbstractAntecedent,
     FFM<:LeafModel
 } <: ConstrainedModel{O,Union{<:Branch{<:O,<:C},<:FFM}}
     trees::Vector{<:DecisionTree}
@@ -1342,7 +1219,7 @@ struct DecisionForest{
     )
         @assert length(trees) > 0 "Cannot instantiate forest with no trees!"
         O = Union{outcometype.(trees)...}
-        C = Union{conditiontype.(trees)...}
+        C = Union{antecedenttype.(trees)...}
         FM = typeintersect(Union{propagate_feasiblemodels.(trees)...}, AbstractModel{<:O})
         FFM = typeintersect(FM, LeafModel{<:O})
         check_model_constraints.(DecisionForest{O}, typeof.(trees), FM, O)
@@ -1352,8 +1229,8 @@ end
 
 trees(forest::DecisionForest) = forest.trees
 
-conditiontype(::Type{M}) where {M<:DecisionForest{O,C}} where {O,C} = C
-conditiontype(m::DecisionForest) = conditiontype(typeof(m))
+antecedenttype(::Type{M}) where {M<:DecisionForest{O,C}} where {O,C} = C
+antecedenttype(m::DecisionForest) = antecedenttype(typeof(m))
 
 issymbolic(::DecisionForest) = false
 

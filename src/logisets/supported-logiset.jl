@@ -130,6 +130,9 @@ struct SupportedLogiset{
         @assert !xor(isnothing(conditions), isnothing(relations)) "Please, provide " *
             "both conditions and relations in order to use a one-step memoset."
 
+        conditions = unique(conditions)
+        relations  = unique(relations)
+
         if use_onestep_memoization != false
             @assert !isnothing(conditions) && !isnothing(relations) "Please, provide " *
                 "both conditions and relations in order to use a one-step memoset."
@@ -208,8 +211,9 @@ function featvalue(
     i_instance::Integer,
     w::W,
     f::AbstractFeature,
+    args...
 ) where {W<:AbstractWorld}
-    featvalue(base(X), i_instance, w, f)
+    featvalue(base(X), i_instance, w, f, args...)
 end
 
 frame(X::SupportedLogiset, i_instance::Integer) = frame(base(X), i_instance)

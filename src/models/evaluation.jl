@@ -3,20 +3,45 @@ using MLJBase
 using SoleModels: LeafModel
 import SoleLogics: npropositions
 
-function leafmetrics(
-    m::ConstantModel{L};
-    digits = 2
-) where {L}
-    if haskey(info(m), :supporting_labels)
-        _gts = info(m)[:supporting_labels]
-        _preds = fill(outcome(m), length(_gts))
+"""
+    readmetrics(m::AbstractModel; kwargs...)
+
+Return a NamedTuple with some performance metrics for the given symbolic model.
+Performance metrics can be computed when the `info` structure of the model:
+    - :supporting_labels
+    - :supporting_predictions
+
+"""
+function readmetrics(m::LeafModel{L}; digits = 2) where {L<:Label}
+    merge(if haskey(info(m), :supporting_labels) && haskey(info(m), :supporting_predictions)
+        _gts = info(m).supporting_labels
+        _preds = _gts = info(m).supporting_predictions
         if L <: CLabel
             (; ninstances = length(_gts), confidence = round(MLJBase.accuracy(_gts, _preds); digits = digits))
         elseif L <: RLabel
             (; ninstances = length(_gts), mae = round(MLJBase.mae(_gts, _preds); digits = digits))
         else
-            error("Could not compute leafmetrics with unknown label type: $(L).")
+            error("Could not compute readmetrics with unknown label type: $(L).")
         end
+    elseif haskey(info(m), :supporting_labels)
+        return (; ninstances = length(info(m).supporting_labels))
+    elseif haskey(info(consequent(m)), :supporting_labels)
+        return (; ninstances = length(info(m).supporting_labels))
+    else
+        return (;)
+    end, (; coverage = 1.0))
+end
+
+function readmetrics(m::Rule; kwargs...)
+    if haskey(info(m), :supporting_labels) && haskey(info(consequent(m)), :supporting_labels)
+        _gts = info(m).supporting_labels
+        _gts_leaf = info(consequent(m)).supporting_labels
+        coverage = length(_gts_leaf)/length(_gts)
+        merge(readmetrics(consequent(m); kwargs...), (; coverage = coverage))
+    elseif haskey(info(m), :supporting_labels)
+        return (; ninstances = length(info(m).supporting_labels))
+    elseif haskey(info(consequent(m)), :supporting_labels)
+        return (; ninstances = length(info(m).supporting_labels))
     else
         return (;)
     end
@@ -81,19 +106,19 @@ function evaluaterule(
 end
 
 # """
-#     npropositions(rule::Rule{O,<:TrueCondition}) where {O}
-#     npropositions(rule::Rule{O,<:LogicalTruthCondition}) where {O}
+#     npropositions(rule::Rule{O,<:TrueAntecedent}) where {O}
+#     npropositions(rule::Rule{O,<:TruthAntecedent}) where {O}
 
 # See also
 # [`Rule`](@ref),
-# [`TrueCondition`](@ref),
-# [`LogicalTruthCondition`](@ref),
+# [`TrueAntecedent`](@ref),
+# [`TruthAntecedent`](@ref),
 # [`antecedent`](@ref),
 # [`formula`](@ref),
 # [`n_propositions`](@ref).
 # """
-# npropositions(rule::Rule{O,<:TrueCondition}) where {O} = 1
-# npropositions(rule::Rule{O,<:LogicalTruthCondition}) where {O} = npropositions(antecedent(rule))
+# npropositions(rule::Rule{O,<:TrueAntecedent}) where {O} = 1
+# npropositions(rule::Rule{O,<:TruthAntecedent}) where {O} = npropositions(antecedent(rule))
 
 """
     rulemetrics(

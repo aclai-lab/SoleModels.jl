@@ -1,6 +1,10 @@
+using ProgressMeter
 using SoleData: AbstractMultiModalDataset
 import SoleData: ninstances, nvariables, nmodalities, eachmodality
 
+function islogiseed(dataset)
+    return error("Please, provide method islogiseed(dataset::$(typeof(dataset))).")
+end
 function initlogiset(dataset, features)
     return error("Please, provide method initlogiset(dataset::$(typeof(dataset)), features::$(typeof(features))).")
 end
@@ -25,7 +29,7 @@ function allworlds(dataset, i_instance)
 end
 
 # Multimodal dataset interface
-function ismultimodal(dataset)
+function ismultilogiseed(dataset)
     false
 end
 function nmodalities(dataset)
@@ -35,11 +39,14 @@ function eachmodality(dataset)
     return error("Please, provide method eachmodality(dataset::$(typeof(dataset))).")
 end
 
-function ismultimodal(dataset::AbstractMultiModalDataset)
+function ismultilogiseed(dataset::MultiLogiset)
+    true
+end
+function ismultilogiseed(dataset::AbstractMultiModalDataset)
     true
 end
 
-function ismultimodal(dataset::Union{AbstractVector,Tuple})
+function ismultilogiseed(dataset::Union{AbstractVector,Tuple})
     true
 end
 function nmodalities(dataset::Union{AbstractVector,Tuple})
@@ -69,7 +76,7 @@ If `dataset` represents a multimodal dataset, the following methods should be de
 while its modalities (iterated via `eachmodality`) should provide the methods above:
 
 ```julia
-    ismultimodal(dataset)
+    ismultilogiseed(dataset)
     nmodalities(dataset)
     eachmodality(dataset)
 ```
@@ -90,10 +97,11 @@ function scalarlogiset(
     use_onestep_memoization          :: Union{Bool,Type{<:AbstractOneStepMemoset}} = !isnothing(conditions) && !isnothing(relations),
     onestep_precompute_globmemoset   :: Bool = (use_onestep_memoization != false),
     onestep_precompute_relmemoset    :: Bool = false,
+    print_progress                   :: Bool = false,
 )
     some_features_were_specified = !isnothing(features)
 
-    if ismultimodal(dataset)
+    if ismultilogiseed(dataset)
 
         kwargs = (;
             use_full_memoization = use_full_memoization,
@@ -146,9 +154,9 @@ function scalarlogiset(
         is_propositional_dataset = all(i_instance->nworlds(frame(dataset, i_instance)) == 1, 1:ninstances(dataset))
         features = begin
             if is_propositional_dataset
-                [UnivariateValue(i_var) for i_var in 1:nvariables(dataset)]
+                [UnivariateValue{vareltype(dataset, i_var)}(i_var) for i_var in 1:nvariables(dataset)]
             else
-                cat([[UnivariateMax(i_var), UnivariateMin(i_var)] for i_var in 1:nvariables(dataset)]...)
+                vcat([[UnivariateMax{vareltype(dataset, i_var)}(i_var), UnivariateMin{vareltype(dataset, i_var)}(i_var)] for i_var in 1:nvariables(dataset)]...)
             end
         end
     end
@@ -193,7 +201,9 @@ function scalarlogiset(
     _ninstances = ninstances(dataset)
 
     # Compute features
-    # p = Progress(_ninstances, 1, "Computing EMD...")
+    if print_progress
+        p = Progress(_ninstances, 1, "Computing logiset...")
+    end
     @inbounds Threads.@threads for i_instance in 1:_ninstances
         for w in allworlds(dataset, i_instance)
             for (i_feature,feature) in enum_features
@@ -201,7 +211,9 @@ function scalarlogiset(
                 featvalue!(X, featval, i_instance, w, feature, i_feature)
             end
         end
-        # next!(p)
+        if print_progress
+            next!(p)
+        end
     end
 
     if !use_full_memoization && !use_onestep_memoization
@@ -375,7 +387,7 @@ function naturalgrouping(
     end
 
     columnnames = names(X)
-    percol_framess = [unique((i_instance)->(_frame(X[:,col], i_instance)), 1:ninstances(X)) for col in columnnames]
+    percol_framess = [unique(map((i_instance)->(_frame(X[:,col], i_instance)), 1:ninstances(X))) for col in columnnames]
 
     # Must have common frame across instances
     _uniform_columns = (length.(percol_framess) .== 1)
@@ -409,7 +421,19 @@ function naturalgrouping(
     percol_frames = getindex.(percol_framess, 1)
 
     var_grouping = begin
-        unique_frames = sort(unique(percol_frames))
+        unique_frames = sort(unique(percol_frames); lt = (x,y)->begin
+            if hasmethod(dimensionality, (typeof(x),)) && hasmethod(dimensionality, (typeof(y),))
+                if dimensionality(x) == dimensionality(y)
+                    isless(SoleData.channelsize(x), SoleData.channelsize(y))
+                else
+                    isless(dimensionality(x), dimensionality(y))
+                end
+            elseif hasmethod(dimensionality, (typeof(x),))
+                true
+            else
+                false
+            end
+        end)
 
         percol_modality = [findfirst((ucs)->(ucs==cs), unique_frames) for cs in percol_frames]
 

@@ -148,7 +148,7 @@ advanceformula(f::AbstractFormula, assumed_formula::Union{Nothing,AbstractFormul
     isnothing(assumed_formula) ? f : ∧(assumed_formula, f)
 
 advanceformula(r::Rule, assumed_formula::Union{Nothing,AbstractFormula}) =
-    Rule(LogicalTruthCondition(advanceformula(formula(r), assumed_formula)), consequent(r), info(r))
+    Rule(TruthAntecedent(advanceformula(formula(r), assumed_formula)), consequent(r), info(r))
 
 ############################################################################################
 ############################################################################################
@@ -170,7 +170,7 @@ listimmediaterules(m::AbstractModel{O} where {O})::Rule{<:O} =
         end
     end)
 
-listimmediaterules(m::LeafModel) = [Rule(TrueCondition, m)]
+listimmediaterules(m::LeafModel) = [Rule(TrueAntecedent, m)]
 
 listimmediaterules(m::Rule) = [m]
 
@@ -187,7 +187,7 @@ function listimmediaterules(m::DecisionList{O,C,FM}) where {O,C,FM}
         push!(normalized_rules, rule)
         assumed_formula = advanceformula(SoleLogics.NEGATION(formula(rule)), assumed_formula)
     end
-    default_antecedent = isnothing(assumed_formula) ? TrueCondition : LogicalTruthCondition(assumed_formula)
+    default_antecedent = isnothing(assumed_formula) ? TrueAntecedent : TruthAntecedent(assumed_formula)
     push!(normalized_rules, Rule(default_antecedent, defaultconsequent(m)))
     normalized_rules
 end
@@ -201,10 +201,15 @@ listimmediaterules(m::MixedSymbolicModel) = listimmediaterules(root(m))
 ############################################################################################
 
 """
-    listrules(m::AbstractModel; force_syntaxtree::Bool = false, use_shortforms::Bool = true)::Vector{<:Rule}
+    listrules(
+        m::AbstractModel;
+        force_syntaxtree::Bool = false,
+        use_shortforms::Bool = true,
+        use_leftmostlinearform::Bool = false,
+    )::Vector{<:Rule}
 
 Return a list of rules capturing the knowledge enclosed in symbolic model.
-The behavior of a symbolic model can be extracted and represented as a
+The behavior of any symbolic model can be extracted and represented as a
 set of mutually exclusive (and jointly exaustive, if the model is closed) rules,
 which can be useful for many purposes.
 
@@ -280,32 +285,32 @@ end
 listrules(m::LeafModel; kwargs...) = [m]
 
 function listrules(
-    m::Rule{O,<:TrueCondition};
+    m::Rule{O,<:TrueAntecedent};
     kwargs...,
 ) where {O}
     [m]
 end
 
 function listrules(
-    m::Rule{O,<:LogicalTruthCondition};
+    m::Rule{O,<:TruthAntecedent};
     force_syntaxtree::Bool = false
 ) where {O}
     ant = force_syntaxtree ? tree(formula(m)) : formula(m)
-    [(force_syntaxtree ? Rule{O}(LogicalTruthCondition(ant), consequent(m), info(m)) : m)]
+    [(force_syntaxtree ? Rule{O}(TruthAntecedent(ant), consequent(m), info(m)) : m)]
 end
 
 function listrules(
-    m::Branch{O,<:TrueCondition};
+    m::Branch{O,<:TrueAntecedent};
     kwargs...,
 ) where {O}
     pos_rules = begin
         submodels = listrules(posconsequent(m); kwargs...)
-        submodels isa Vector{<:LeafModel} ? [Rule{O,TrueCondition}(fm) for fm in submodels] : submodels
+        submodels isa Vector{<:LeafModel} ? [Rule{O,TrueAntecedent}(fm) for fm in submodels] : submodels
     end
 
     neg_rules = begin
         submodels = listrules(negconsequent(m); kwargs...)
-        submodels isa Vector{<:LeafModel} ? [Rule{O,TrueCondition}(fm) for fm in submodels] : submodels
+        submodels isa Vector{<:LeafModel} ? [Rule{O,TrueAntecedent}(fm) for fm in submodels] : submodels
     end
 
     return [
@@ -315,42 +320,81 @@ function listrules(
 end
 
 function listrules(
-    m::Branch{O,<:LogicalTruthCondition};
+    m::Branch{O,<:TruthAntecedent};
     use_shortforms::Bool = true,
     force_syntaxtree::Bool = false,
     use_leftmostlinearform::Bool = false,
     kwargs...,
 ) where {O}
-    using_shortform = use_shortforms && haskey(info(m), :shortform)
-    ant = (using_shortform ? info(m, :shortform) : m)
-    antformula = formula(ant)
-
-    pos_antformula = force_syntaxtree ? tree(antformula)  : antformula
-    neg_antformula = force_syntaxtree ? ¬tree(antformula) : ¬antformula
 
     _subrules = [
-        [(pos_antformula, r) for r in listrules(posconsequent(m); use_shortforms = use_shortforms, use_leftmostlinearform = use_leftmostlinearform, force_syntaxtree = force_syntaxtree, kwargs...)]...,
-        [(neg_antformula, r) for r in listrules(negconsequent(m); use_shortforms = use_shortforms, use_leftmostlinearform = use_leftmostlinearform, force_syntaxtree = force_syntaxtree, kwargs...)]...
+        [(true, r) for r in listrules(posconsequent(m); use_shortforms = use_shortforms, use_leftmostlinearform = use_leftmostlinearform, force_syntaxtree = force_syntaxtree, kwargs...)]...,
+        [(false, r) for r in listrules(negconsequent(m); use_shortforms = use_shortforms, use_leftmostlinearform = use_leftmostlinearform, force_syntaxtree = force_syntaxtree, kwargs...)]...
     ]
 
-    rules = map(((antformula, subrule),)->begin
+    rules = map(((flag, subrule),)->begin
             # @show info(subrule)
+            known_infokeys = [:supporting_labels, :supporting_predictions, :shortform, :this, :multipathformula]
+            ks = setdiff(keys(info(m)), known_infokeys)
+            if length(ks) > 0
+                @warn "Dropping info keys: $(join(repr.(ks), ", "))"
+            end
+
+            i = (;)
+            if haskey(info(m), :supporting_labels)
+                i = merge((;), (;
+                    supporting_labels = info(m).supporting_labels,
+                ))
+            end
+            if haskey(info(m), :supporting_predictions)
+                i = merge((;), (;
+                    supporting_predictions = info(m).supporting_predictions,
+                ))
+            end
+
+            antformula, using_shortform = begin
+                if (use_shortforms && haskey(info(subrule), :shortform))
+                    formula(info(subrule)[:shortform]), true
+                else
+                    (flag ? formula(antecedent(m)) : ¬formula(antecedent(m))), false
+                end
+            end
+            antformula = force_syntaxtree ? tree(antformula) : antformula
+            # @show using_shortform
+            # @show antformula
+            # @show typeof(subrule)
+
             if subrule isa LeafModel
-                Rule(LogicalTruthCondition(antformula), subrule, merge(info(subrule), (; shortform = LogicalTruthCondition(antformula))))
-            elseif (use_shortforms && haskey(info(subrule), :shortform))
-                Rule(info(subrule)[:shortform], consequent(subrule), info(subrule))
-            else
-                f = begin
-                    f = formula(subrule)
-                    if use_leftmostlinearform
-                        subantformulas = (f isa LeftmostLinearForm ? children(f) : [f])
-                        lf = LeftmostConjunctiveForm([antformula, subantformulas...])
-                        force_syntaxtree ? tree(lf) : lf
+                ant = TruthAntecedent(SoleLogics.normalize(antformula; allow_proposition_flipping = true))
+                subi = (;)
+                # if use_shortforms
+                #     subi = merge((;), (;
+                #         shortform = ant
+                #     ))
+                # end
+                Rule(ant, subrule, merge(info(subrule), subi, i))
+            elseif subrule isa Rule
+                ant = begin
+                    if using_shortform
+                        TruthAntecedent(antformula)
                     else
-                        antformula ∧ f
+                        # Combine antecedents
+                        f = begin
+                            f = formula(subrule)
+                            if use_leftmostlinearform
+                                subantformulas = (f isa LeftmostLinearForm ? children(f) : [f])
+                                lf = LeftmostConjunctiveForm([antformula, subantformulas...])
+                                force_syntaxtree ? tree(lf) : lf
+                            else
+                                antformula ∧ f
+                            end
+                        end
+                        TruthAntecedent(SoleLogics.normalize(f; allow_proposition_flipping = true))
                     end
                 end
-                Rule(LogicalTruthCondition(f), consequent(subrule))
+                Rule(ant, consequent(subrule), merge(info(subrule), i))
+            else
+                error("Unexpected rule type: $(typeof(subrule)).")
             end
         end, _subrules)
 
@@ -368,3 +412,67 @@ listrules(m::MixedSymbolicModel; kwargs...) = listrules(root(m); kwargs...)
 ############################################################################################
 ############################################################################################
 ############################################################################################
+
+
+function joinrules(
+    rules::AbstractVector{
+        <:Rule{<:Any,<:SoleModels.AbstractAntecedent,<:SoleModels.ConstantModel}
+    },
+    silent = false
+)
+    alloutcomes = unique(outcome.(consequent.(rules)))
+    # @show info.(rules)
+    # @show info.(consequent.(rules))
+    return [begin
+        these_rules = filter(r->outcome(consequent(r)) == _outcome, rules)
+        leafinfo, ruleinfo = begin
+            if !silent
+                known_infokeys = [:supporting_labels, :supporting_predictions, :shortform, :this, :multipathformula]
+                for i in [info.(these_rules)..., info.(consequent.(these_rules))...]
+                    ks = setdiff(keys(i), known_infokeys)
+                    if length(ks) > 0
+                        @warn "Dropping info keys: $(join(repr.(ks), ", "))"
+                    end
+                end
+            end
+            leafinfo = begin
+                leafinfo = (;)
+                if any([haskey(info(c), :supporting_labels) for c in consequent.(these_rules)])
+                    leafinfo = merge(leafinfo, (;
+                        supporting_labels = vcat([info(c, :supporting_labels) for c in consequent.(these_rules) if haskey(info(c), :supporting_labels)]...)
+                    ))
+                end
+                if any([haskey(info(c), :supporting_predictions) for c in consequent.(these_rules)])
+                    leafinfo = merge(leafinfo, (;
+                        supporting_predictions = vcat([info(c, :supporting_predictions) for c in consequent.(these_rules) if haskey(info(c), :supporting_predictions)]...)
+                    ))
+                end
+                leafinfo
+            end
+            ruleinfo = begin
+                ruleinfo = (;)
+                if any([haskey(info(r), :supporting_labels) for r in these_rules])
+                    ruleinfo = merge(ruleinfo, (;
+                        supporting_labels = vcat([info(r, :supporting_labels) for r in these_rules if haskey(info(r), :supporting_labels)]...)
+                    ))
+                end
+                if any([haskey(info(r), :supporting_predictions) for r in these_rules])
+                    ruleinfo = merge(ruleinfo, (;
+                        supporting_predictions = vcat([info(r, :supporting_predictions) for r in these_rules if haskey(info(r), :supporting_predictions)]...)
+                    ))
+                end
+                if any([haskey(info(r), :shortform) for r in these_rules])
+                    ruleinfo = merge(ruleinfo, (;
+                        shortform = LeftmostDisjunctiveForm(vcat([formula(info(r, :shortform)) for r in these_rules if haskey(info(r), :shortform)]...))
+                    ))
+                end
+                ruleinfo
+            end
+            leafinfo, ruleinfo
+        end
+        formulas = formula.(antecedent.(these_rules))
+        newant = LeftmostDisjunctiveForm(formulas)
+        newcons = ConstantModel(_outcome, leafinfo)
+        Rule(newant, newcons, ruleinfo)
+    end for _outcome in alloutcomes]
+end

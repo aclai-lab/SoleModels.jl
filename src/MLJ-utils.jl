@@ -17,7 +17,13 @@ function fix_y(y)
             nothing
         end
     end
-    y = Vector{(is_classification ? String : Float64)}(y)
+    y = begin
+        if is_classification
+            Vector{String}(string.(y))
+        else
+            Vector{Float64}(y)
+        end
+    end
     y, classes_seen
 end
 

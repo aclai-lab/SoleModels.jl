@@ -1,3 +1,5 @@
+using SoleLogics: AbstractKripkeStructure, AbstractInterpretationSet, AbstractFrame
+using SoleLogics: TruthValue
 import SoleData: modality, nmodalities, eachmodality
 
 """
@@ -13,7 +15,7 @@ See also
 [`AbstractLogiset`](@ref),
 [`minify`](@ref).
 """
-struct MultiLogiset{L<:AbstractLogiset}
+struct MultiLogiset{L<:AbstractLogiset} <: AbstractInterpretationSet{AbstractKripkeStructure{W where W<:AbstractWorld,C where C<:AbstractCondition{_F where _F<:AbstractFeature},T where T<:TruthValue,FR where FR<:AbstractFrame{W where W<:SoleLogics.AbstractWorld}}}
 
     modalities  :: Vector{L}
 
@@ -93,7 +95,7 @@ function displaystructure(X::MultiLogiset; indent_str = "", include_ninstances =
         else
             out *= "$(indent_str)├"
         end
-        out *= "[$(i_modality)] "
+        out *= "{$i_modality} "
         # \t\t\t$(humansize(mod))\t(worldtype: $(worldtype(mod)))"
         out *= displaystructure(mod; indent_str = indent_str * (i_modality == nmodalities(X) ? "  " : "│ "), include_ninstances = false)
         push!(pieces, out)
@@ -163,75 +165,6 @@ end
 
 ############################################################################################
 
-using SoleLogics: AbstractFormula, AbstractSyntaxStructure, AbstractOperator
-import SoleLogics: syntaxstring, joinformulas
-
-import SoleLogics: tree
-
-"""
-A logical formula that can be checked on a `MultiLogiset`, associating
-a set of subformulas to each modality
-"""
-struct MultiFormula{
-    F<:AbstractFormula,
-} <: AbstractSyntaxStructure
-    formulas::Dict{Int,F}
-end
-
-function MultiFormula(i_modality, formula::SyntaxTree)
-    MultiFormula(Dict{Int,SyntaxTree}(i_modality => formula))
-end
-
-function SoleLogics.tree(f::MultiFormula)
-    return error("Cannot convert object of type MultiFormula to a SyntaxTree.")
-end
-
-function syntaxstring(
-    f::MultiFormula;
-    hidemodality = false,
-    variable_names_map::Union{Nothing,AbstractDict,AbstractVector,AbstractVector{<:Union{AbstractDict,AbstractVector}}} = nothing,
-    kwargs...
-)
-    map_is_multimodal = begin
-        if !isnothing(variable_names_map) && all(e->!(e isa Union{AbstractDict,AbstractVector}), variable_names_map)
-            @warn "With multimodal formulas, variable_names_map should be a vector of vectors/maps of " *
-                "variable names. Got $(typeof(variable_names_map)) instead. This may fail, " *
-                "or lead to unexpected results."
-            false
-        else
-            !isnothing(variable_names_map)
-        end
-    end
-    join([begin
-        _variable_names_map = map_is_multimodal ? variable_names_map[i_modality] : variable_names_map
-        φ = syntaxstring(f.formulas[i_modality]; variable_names_map = _variable_names_map, kwargs...)
-        hidemodality ? "$φ" : "{$(i_modality)}($φ)"
-    end for i_modality in sort(collect(keys(f.formulas)))], " $(CONJUNCTION) ")
-end
-
-function joinformulas(op::SoleLogics.AbstractOperator, children::NTuple{N,MultiFormula{F}}) where {N,F}
-    formulas = Dict{Int,F}()
-    i_modalities = unique(vcat(collect.(keys.([ch.formulas for ch in children]))...))
-    for i_modality in i_modalities
-        chs = filter(ch->haskey(ch.formulas, i_modality), children)
-        fs = map(ch->ch.formulas[i_modality], chs)
-        formulas[i_modality] = joinformulas(op, fs)
-    end
-    return MultiFormula(formulas)
-end
-
-function check(
-    φ::MultiFormula,
-    X::MultiLogiset,
-    i_instance::Integer,
-    args...;
-    kwargs...,
-)
-    # TODO in the fuzzy case: use collatetruth(fuzzy algebra, ∧, ...)
-    all([check(f, X, i_modality, i_instance, args...; kwargs...)
-        for (i_modality, f) in φ.formulas])
-end
-
 function check(
     φ::SoleLogics.AbstractFormula,
     X::MultiLogiset,
@@ -242,10 +175,3 @@ function check(
 )
     check(φ, modality(X, i_modality), i_instance, args...; kwargs...)
 end
-
-
-# # TODO join MultiFormula leads to a SyntaxTree with MultiFormula children
-# function joinformulas(op::AbstractOperator, children::NTuple{N,MultiFormula{F}}) where {N,F}
-# end
-
-# TODO MultiFormula parser

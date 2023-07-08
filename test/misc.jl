@@ -7,7 +7,7 @@ using SoleLogics
 using SoleModels
 using SoleModels: AbstractModel
 using SoleModels: ConstantModel, LeafModel
-using SoleModels: LogicalTruthCondition, TrueCondition
+using SoleModels: TruthAntecedent, TrueAntecedent
 using SoleModels: listrules, formula, displaymodel, submodels
 
 io = IOBuffer()
@@ -71,60 +71,60 @@ st_100 = @test_nowarn SyntaxTree(prop_100)
 p = @test_nowarn SoleLogics.parsebaseformula("p")
 p_tree = @test_nowarn SoleLogics.parsetree("p")
 
-# @test LogicalTruthCondition(p) == LogicalTruthCondition{Formula}(p)
-# @test LogicalTruthCondition(p_tree) == LogicalTruthCondition{SyntaxTree}(p_tree)
+# @test TruthAntecedent(p) == TruthAntecedent{Formula}(p)
+# @test TruthAntecedent(p_tree) == TruthAntecedent{SyntaxTree}(p_tree)
 
 # phi = @test_nowarn SoleLogics.parsebaseformula("p∧q∨r")
 # phi_tree = @test_nowarn SoleLogics.parsetree("p∧q∨r")
-# @test LogicalTruthCondition(phi) == LogicalTruthCondition{Formula}(phi)
-# @test LogicalTruthCondition(phi_tree) == LogicalTruthCondition{SyntaxTree}(phi_tree)
+# @test TruthAntecedent(phi) == TruthAntecedent{Formula}(phi)
+# @test TruthAntecedent(phi_tree) == TruthAntecedent{SyntaxTree}(phi_tree)
 
 # phi2 = @test_nowarn SoleLogics.parsebaseformula("q∧s→r")
 # phi2_tree = @test_nowarn SoleLogics.parsetree("q∧s→r")
-# @test LogicalTruthCondition(phi2) == LogicalTruthCondition{Formula}(phi2)
-# @test LogicalTruthCondition(phi2_tree) == LogicalTruthCondition{SyntaxTree}(phi2_tree)
+# @test TruthAntecedent(phi2) == TruthAntecedent{Formula}(phi2)
+# @test TruthAntecedent(phi2_tree) == TruthAntecedent{SyntaxTree}(phi2_tree)
 
-@test LogicalTruthCondition(p) != LogicalTruthCondition{Formula}(p)
-@test LogicalTruthCondition(p_tree) != LogicalTruthCondition{SyntaxTree}(p_tree)
+@test TruthAntecedent(p) != TruthAntecedent{Formula}(p)
+@test TruthAntecedent(p_tree) != TruthAntecedent{SyntaxTree}(p_tree)
 
-@test LogicalTruthCondition(p) isa LogicalTruthCondition{<:Formula}
-@test LogicalTruthCondition(p_tree) isa LogicalTruthCondition{<:SyntaxTree}
+@test TruthAntecedent(p) isa TruthAntecedent{<:Formula}
+@test TruthAntecedent(p_tree) isa TruthAntecedent{<:SyntaxTree}
 
 phi = @test_nowarn SoleLogics.parsebaseformula("p∧q∨r")
 phi_tree = @test_nowarn SoleLogics.parsetree("p∧q∨r")
-@test LogicalTruthCondition(phi) isa LogicalTruthCondition{<:Formula}
-@test LogicalTruthCondition(phi_tree) isa LogicalTruthCondition{<:SyntaxTree}
+@test TruthAntecedent(phi) isa TruthAntecedent{<:Formula}
+@test TruthAntecedent(phi_tree) isa TruthAntecedent{<:SyntaxTree}
 
 phi2 = @test_nowarn SoleLogics.parsebaseformula("q∧s→r")
 phi2_tree = @test_nowarn SoleLogics.parsetree("q∧s→r")
-@test LogicalTruthCondition(phi2) isa LogicalTruthCondition{<:Formula}
-@test LogicalTruthCondition(phi2_tree) isa LogicalTruthCondition{<:SyntaxTree}
+@test TruthAntecedent(phi2) isa TruthAntecedent{<:Formula}
+@test TruthAntecedent(phi2_tree) isa TruthAntecedent{<:SyntaxTree}
 
 formula_p = @test_nowarn SoleLogics.parsebaseformula("p")
 formula_q = @test_nowarn SoleLogics.parsebaseformula("q")
 formula_r = @test_nowarn SoleLogics.parsebaseformula("r")
 formula_s = @test_nowarn SoleLogics.parsebaseformula("s")
 
-############################### LogicalTruthCondition ######################################
-cond_r = @test_nowarn LogicalTruthCondition(st_r)
-cond_s = @test_nowarn LogicalTruthCondition(st_s)
-cond_t = @test_nowarn LogicalTruthCondition(st_t)
-cond_q = @test_nowarn LogicalTruthCondition(st_q)
+############################### TruthAntecedent ######################################
+cond_r = @test_nowarn TruthAntecedent(st_r)
+cond_s = @test_nowarn TruthAntecedent(st_s)
+cond_t = @test_nowarn TruthAntecedent(st_t)
+cond_q = @test_nowarn TruthAntecedent(st_q)
 
-cond_not_r = @test_nowarn LogicalTruthCondition(¬(formula(cond_r)))
-cond_not_s = @test_nowarn LogicalTruthCondition(¬(formula(cond_s)))
+cond_not_r = @test_nowarn TruthAntecedent(¬(formula(cond_r)))
+cond_not_s = @test_nowarn TruthAntecedent(¬(formula(cond_s)))
 
-cond_1 = @test_nowarn LogicalTruthCondition(st_1)
-cond_100 = @test_nowarn LogicalTruthCondition(st_100)
+cond_1 = @test_nowarn TruthAntecedent(st_1)
+cond_100 = @test_nowarn TruthAntecedent(st_100)
 
 ##################################### Rule #################################################
-r1_string = @test_nowarn Rule(LogicalTruthCondition(∧(∧(prop_r,prop_s),prop_t)),outcome_string)
-r2_string = @test_nowarn Rule(LogicalTruthCondition(¬(prop_r)),outcome_string)
+r1_string = @test_nowarn Rule(TruthAntecedent(∧(∧(prop_r,prop_s),prop_t)),outcome_string)
+r2_string = @test_nowarn Rule(TruthAntecedent(¬(prop_r)),outcome_string)
 
 r_true_string = @test_nowarn Rule(outcome_string)
 r_true_number = @test_nowarn Rule(cmodel_number)
 
-r1_r2_string = @test_nowarn Rule(LogicalTruthCondition(∧(∧(prop_r,prop_s),prop_t)), r2_string)
+r1_r2_string = @test_nowarn Rule(TruthAntecedent(∧(∧(prop_r,prop_s),prop_t)), r2_string)
 
 rmodel_number = @test_nowarn Rule(phi, cmodel_number)
 rmodel_integer = @test_nowarn Rule(phi, cmodel_integer)
@@ -245,7 +245,7 @@ branch_r0 = @test_nowarn Branch(formula_r, (branch_s, "yes"))
 branch_r = @test_nowarn Branch(formula_r, (branch_r0, "yes"))
 branch_r = @test_nowarn Branch(formula_r, (branch_r, "yes"))
 
-branch_true = @test_nowarn Branch(TrueCondition(), (branch_r, "yes"))
+branch_true = @test_nowarn Branch(TrueAntecedent(), (branch_r, "yes"))
 
 @test typeof(branch_r0) == typeof(branch_r)
 

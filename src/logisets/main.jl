@@ -45,7 +45,6 @@ include("multilogiset.jl")
 export check, AnchoredFormula
 
 # Model checking algorithms for logisets and multilogisets
-include("check-modes.jl")
 include("check.jl")
 
 export nfeatures

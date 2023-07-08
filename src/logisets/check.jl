@@ -17,7 +17,7 @@ function check(
     φ::SoleLogics.SyntaxTree,
     X::AbstractLogiset{W,U},
     i_instance::Integer,
-    w::Union{Nothing,<:AbstractWorld,AbstractVector{<:AbstractWorld}} = nothing;
+    w::Union{Nothing,<:AbstractWorld} = nothing;
     use_memo::Union{Nothing,AbstractMemoset{<:AbstractWorld},AbstractVector{<:AbstractDict{<:FT,<:WorldSet}}} = nothing,
     perform_normalization::Bool = true,
     memo_max_height::Union{Nothing,Int} = nothing,
@@ -26,8 +26,6 @@ function check(
 
     if isnothing(w)
         w = nothing
-    elseif w isa AbstractVector
-        w = w[i_instance]
     end
     @assert SoleLogics.isglobal(φ) || !isnothing(w) "Please, specify a world in order " *
         "to check non-global formula: $(syntaxstring(φ))."

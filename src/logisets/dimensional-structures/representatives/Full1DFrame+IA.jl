@@ -136,13 +136,8 @@ representatives(fr::Full1DFrame, w::Interval{Int}, ::_IA_E,  ::UnivariateMax, ::
 #                               |IA_I          ?              |
 #                               '-----------------------------'
 # TODO write the correct `representatives` methods, instead of these fallbacks:
-representatives(fr::Full1DFrame, w::Interval, r::_IA_AorO, f::AbstractFeature, a::Aggregator) =
-    Iterators.flatten([representatives(fr, w, r, f, a) for r in IA72IARelations(IA_AorO)])
-representatives(fr::Full1DFrame, w::Interval, r::_IA_AiorOi, f::AbstractFeature, a::Aggregator) =
-    Iterators.flatten([representatives(fr, w, r, f, a) for r in IA72IARelations(IA_AiorOi)])
-representatives(fr::Full1DFrame, w::Interval, r::_IA_DorBorE, f::AbstractFeature, a::Aggregator) =
-    Iterators.flatten([representatives(fr, w, r, f, a) for r in IA72IARelations(IA_DorBorE)])
-representatives(fr::Full1DFrame, w::Interval, r::_IA_DiorBiorEi, f::AbstractFeature, a::Aggregator) =
-    Iterators.flatten([representatives(fr, w, r, f, a) for r in IA72IARelations(IA_DiorBiorEi)])
-representatives(fr::Full1DFrame, w::Interval, r::_IA_I, f::AbstractFeature, a::Aggregator) =
-    Iterators.flatten([representatives(fr, w, r, f, a) for r in IA72IARelations(IA_I)])
+representatives(fr::Full1DFrame, w::Interval, r::_IA_AorO,        f::AbstractFeature, a::Aggregator) = Iterators.flatten([representatives(fr, w, r, f, a) for r in IA72IARelations(IA_AorO)])
+representatives(fr::Full1DFrame, w::Interval, r::_IA_AiorOi,      f::AbstractFeature, a::Aggregator) = Iterators.flatten([representatives(fr, w, r, f, a) for r in IA72IARelations(IA_AiorOi)])
+representatives(fr::Full1DFrame, w::Interval, r::_IA_DorBorE,     f::AbstractFeature, a::Aggregator) = Iterators.flatten([representatives(fr, w, r, f, a) for r in IA72IARelations(IA_DorBorE)])
+representatives(fr::Full1DFrame, w::Interval, r::_IA_DiorBiorEi,  f::AbstractFeature, a::Aggregator) = Iterators.flatten([representatives(fr, w, r, f, a) for r in IA72IARelations(IA_DiorBiorEi)])
+representatives(fr::Full1DFrame, w::Interval, r::_IA_I,           f::AbstractFeature, a::Aggregator) = Iterators.flatten([representatives(fr, w, r, f, a) for r in IA72IARelations(IA_I)])
