@@ -347,7 +347,6 @@ end
 # nfeatures(X::SupportedLogiset)                  = nfeatures(base(X))
 # nrelations(X::SupportedLogiset)                 = nrelations(base(X))
 # relations(X::SupportedLogiset)                  = relations(base(X))
-# fwd(X::SupportedLogiset)                        = fwd(base(X))
 # worldtype(X::SupportedLogiset{V,W}) where {V,W} = W
 
 # TODO remove:

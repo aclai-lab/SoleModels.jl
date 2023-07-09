@@ -1,37 +1,9 @@
 
-############################################################################################
-# Check algorithms
-############################################################################################
-
-function check(
-    φ::SoleLogics.AbstractFormula,
-    X::AbstractLogiset,
-    i_instance::Integer,
-    args...;
-    kwargs...
-)
-    check(tree(φ), X, i_instance, args...; kwargs...)
-end
-
-function check(
-    φ::SoleLogics.SyntaxTree{
-        Union{
-            DiamondRelationalOperator{typeof(SoleLogics.tocenterrel)},
-            BoxRelationalOperator{typeof(SoleLogics.tocenterrel)},
-        }
-    },
-    X::AbstractLogiset,
-    i_instance::Integer;
-    kwargs...
-)
-    check(first(children(φ)), X, i_instance, SoleLogics.centralworld(frame(X, i_instance)); kwargs...)
-end
-
 function check(
     φ::SoleLogics.SyntaxTree,
     X::AbstractLogiset{W,U},
     i_instance::Integer,
-    w::Union{Nothing,<:AbstractWorld} = nothing;
+    w::Union{Nothing,<:AbstractWorld};
     use_memo::Union{Nothing,AbstractMemoset{<:AbstractWorld},AbstractVector{<:AbstractDict{<:FT,<:WorldSet}}} = nothing,
     perform_normalization::Bool = true,
     memo_max_height::Union{Nothing,Int} = nothing,
