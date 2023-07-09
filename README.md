@@ -31,7 +31,7 @@ These definitions provide a unified base for implementing symbolic algorithms, s
 - Branches: structures with `IF antecedent THEN pos_consequent ELSE neg_consequent END` semantics.
 
 Remember:
-- An antecedent is any *condition* that can be checked on a machine learning *instance*, yielding a `true/false` value;
+- An antecedent is a logical formula that can be checked on a logical interpretation (that is, an *instance* of a symbolic learning dataset), yielding a truth value (e.g., `true/false`);
 - A consequent is... anything you want, really, even another model (spoiler: a Branch with Branch consequents is a Decision Tree 😉).
 
 More specifically, antecedents can be *logical formulas* and, in such case, the symbolic models

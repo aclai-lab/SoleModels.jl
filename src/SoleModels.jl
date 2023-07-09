@@ -83,18 +83,10 @@ using .DimensionalDatasets: globalrel
 ############################################################################################
 ############################################################################################
 
-include("models/check-modes.jl")
-
-include("models/antecedents.jl")
-
-export MultiAntecedent
-
-include("models/multi-antecedents.jl")
-
 export outcometype, outputtype
 
 export Rule, Branch
-export check_antecedent
+export antecedenttops
 export antecedent, consequent
 export posconsequent, negconsequent
 

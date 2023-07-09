@@ -38,7 +38,7 @@ alph = ExplicitAlphabet([SoleModels.ScalarCondition(rand(rng, generic_features),
 
 i_instance = 1
 
-@test_broken multiformulas = [begin
+multiformulas = [begin
     _formulas_dict = Dict{Int,SoleLogics.AbstractFormula}()
     for (i_modality, relations) in enumerate(multirelations)
         f = randformula(rng, 3, alph, [SoleLogics.BASE_PROPOSITIONAL_OPERATORS..., vcat([[DiamondRelationalOperator(r), BoxRelationalOperator(r)] for r in relations]...)[1:32:end]...])
@@ -47,17 +47,20 @@ i_instance = 1
             coin = rand(2:3)
             f = begin
                 if coin == 1
-                    AnchoredFormula(f, SoleModels.GlobalCheck())
+                    BoxRelationalOperator(globalrel)(f)
                 elseif coin == 2
-                    AnchoredFormula(f, SoleModels.CenteredCheck())
+                    BoxRelationalOperator(SoleLogics.tocenterrel)(f)
+                # else
+                    # TODO operator for going to a world. Note that this cannot be done with singletons...
+                    # AnchoredFormula(f, SoleModels.WorldCheck(rand(collect(allworlds(modality(multilogiset, i_modality), i_instance)))))
                 else
-                    AnchoredFormula(f, SoleModels.WorldCheck(rand(collect(allworlds(modality(multilogiset, i_modality), i_instance)))))
+                    f
                 end
             end
             _formulas_dict[i_modality] = f
         end
     end
-    MultiAntecedent(_formulas_dict)
+    MultiFormula(_formulas_dict)
 end for i in 1:200];
 # syntaxstring.(multiformulas) .|> println;
 

@@ -1,4 +1,5 @@
 using Test
+using Logging
 using StatsBase
 using Random
 using SoleLogics
@@ -6,23 +7,25 @@ using SoleModels
 using SoleModels.DimensionalDatasets
 
 n_instances = 2
-_nvars = 2
+nvars = 2
 
-for (dataset, relations) in [
-    # (Array(reshape(1.0:4.0, _nvars,n_instances)), []),
-    (Array(reshape(1.0:4.0, _nvars,n_instances)), [globalrel]),
-    (Array(reshape(1.0:12.0, 3,_nvars,n_instances)), [IARelations..., globalrel]),
-    (Array(reshape(1.0:36.0, 3,3,_nvars,n_instances)), [IA2DRelations..., globalrel]),
+generic_features_oneworld = collect(Iterators.flatten([[SoleModels.UnivariateValue{Float64}(i_var)] for i_var in 1:nvars]))
+generic_features = collect(Iterators.flatten([[UnivariateMax{Float64}(i_var), UnivariateMin{Float64}(i_var)] for i_var in 1:nvars]))
+
+for (dataset, relations, features) in [
+    # (Array(reshape(1.0:4.0, nvars,n_instances)), []),
+    (Array(reshape(1.0:4.0, nvars,n_instances)), [globalrel], generic_features_oneworld),
+    (Array(reshape(1.0:12.0, 3,nvars,n_instances)), [IARelations..., globalrel], generic_features),
+    (Array(reshape(1.0:36.0, 3,3,nvars,n_instances)), [IA2DRelations..., globalrel], generic_features),
 ]
 
-nvars = nvariables(dataset)
+@test nvars == nvariables(dataset)
 
-generic_features = collect(Iterators.flatten([[UnivariateMax(i_var), UnivariateMin(i_var)] for i_var in 1:nvars]))
-logiset = @test_logs (:warn,) scalarlogiset(dataset, generic_features; use_full_memoization = false, use_onestep_memoization = false)
+logiset = @test_nowarn scalarlogiset(dataset, features; use_full_memoization = false, use_onestep_memoization = false)
 
 logiset = @test_nowarn scalarlogiset(dataset; use_full_memoization = false, use_onestep_memoization = false)
 
-metaconditions = [ScalarMetaCondition(feature, >) for feature in generic_features]
+metaconditions = [ScalarMetaCondition(feature, >) for feature in features]
 @test_nowarn SupportedLogiset(logiset, ())
 @test_throws AssertionError SupportedLogiset(logiset, [Dict()])
 @test_throws AssertionError SupportedLogiset(logiset, [Dict{SyntaxTree,WorldSet{worldtype(logiset)}}()])
@@ -31,24 +34,24 @@ metaconditions = [ScalarMetaCondition(feature, >) for feature in generic_feature
 @test_throws AssertionError SupportedLogiset(logiset; use_full_memoization = false)
 @test_throws AssertionError SupportedLogiset(logiset; use_onestep_memoization = true)
 
-@test_logs (:warn,) SupportedLogiset(logiset; use_full_memoization = true, use_onestep_memoization = true, conditions = metaconditions, relations = [relations..., identityrel])
+@test_logs min_level=Logging.Error SupportedLogiset(logiset; use_full_memoization = true, use_onestep_memoization = true, conditions = metaconditions, relations = [relations..., identityrel])
 
-supported_logiset = @test_nowarn SupportedLogiset(logiset; use_full_memoization = true, use_onestep_memoization = true, conditions = metaconditions, relations = relations)
+supported_logiset = @test_logs min_level=Logging.Error SupportedLogiset(logiset; use_full_memoization = true, use_onestep_memoization = true, conditions = metaconditions, relations = relations)
 @test_throws AssertionError SupportedLogiset(logiset, (supported_logiset, [Dict{SyntaxTree,WorldSet{worldtype(logiset)}}() for i in 1:n_instances]))
-supported_logiset = @test_nowarn SupportedLogiset(logiset; use_full_memoization = false, use_onestep_memoization = true, conditions = metaconditions, relations = relations)
+supported_logiset = @test_logs min_level=Logging.Error SupportedLogiset(logiset; use_full_memoization = false, use_onestep_memoization = true, conditions = metaconditions, relations = relations)
 
 @test_nowarn SupportedLogiset(logiset, (supported_logiset, [Dict{SyntaxTree,WorldSet{worldtype(logiset)}}() for i in 1:n_instances]))
 @test_nowarn SupportedLogiset(logiset, ([Dict{SyntaxTree,WorldSet{worldtype(logiset)}}() for i in 1:n_instances], supported_logiset))
 
-supported_logiset = @test_nowarn SupportedLogiset(logiset; use_full_memoization = true, conditions = metaconditions, relations = relations)
+supported_logiset = @test_logs min_level=Logging.Error SupportedLogiset(logiset; use_full_memoization = true, conditions = metaconditions, relations = relations)
 
-metaconditions = vcat([[ScalarMetaCondition(feature, >), ScalarMetaCondition(feature, <)] for feature in generic_features]...)
-complete_supported_logiset = @test_nowarn SupportedLogiset(logiset; use_full_memoization = true, conditions = metaconditions, relations = relations)
+metaconditions = vcat([[ScalarMetaCondition(feature, >), ScalarMetaCondition(feature, <)] for feature in features]...)
+complete_supported_logiset = @test_logs min_level=Logging.Error SupportedLogiset(logiset; use_full_memoization = true, conditions = metaconditions, relations = relations)
 
 rng = Random.MersenneTwister(1)
-alph = ExplicitAlphabet([SoleModels.ScalarCondition(rand(rng, generic_features), rand(rng, [>, <]), rand(rng)) for i in 1:n_instances]);
+alph = ExplicitAlphabet([SoleModels.ScalarCondition(rand(rng, features), rand(rng, [>, <]), rand(rng)) for i in 1:n_instances]);
 # syntaxstring.(alph)
-_formulas = [randformula(rng, 3, alph, [SoleLogics.BASE_PROPOSITIONAL_OPERATORS..., vcat([[DiamondRelationalOperator(r), BoxRelationalOperator(r)] for r in relations]...)[1:16:end]...]) for i in 1:20];
+_formulas = [randformula(rng, 3, alph, [SoleLogics.BASE_PROPOSITIONAL_OPERATORS..., vcat([[DiamondRelationalOperator(r), BoxRelationalOperator(r)] for r in filter(r->r != globalrel, relations)]...)[1:16:end]...]) for i in 1:20];
 # syntaxstring.(_formulas) .|> println;
 
 i_instance = 1

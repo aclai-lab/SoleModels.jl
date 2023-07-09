@@ -20,7 +20,7 @@ the (binary) test operator function.
     operator::TestOperator,
     featval::T1,
     threshold::T2
-) where {T1, T2}
+) where {T1,T2}
     operator(featval, threshold)
 end
 

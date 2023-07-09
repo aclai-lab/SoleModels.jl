@@ -14,6 +14,20 @@ function check(
 end
 
 function check(
+    φ::SoleLogics.SyntaxTree{
+        Union{
+            DiamondRelationalOperator{typeof(SoleLogics.tocenterrel)},
+            BoxRelationalOperator{typeof(SoleLogics.tocenterrel)},
+        }
+    },
+    X::AbstractLogiset,
+    i_instance::Integer;
+    kwargs...
+)
+    check(first(children(φ)), X, i_instance, SoleLogics.centralworld(frame(X, i_instance)); kwargs...)
+end
+
+function check(
     φ::SoleLogics.SyntaxTree,
     X::AbstractLogiset{W,U},
     i_instance::Integer,
@@ -25,10 +39,12 @@ function check(
 ) where {W<:AbstractWorld,U,FT<:SoleLogics.AbstractFormula}
 
     if isnothing(w)
-        w = nothing
+        if nworlds(frame(X, i_instance)) == 1
+            w = first(allworlds(frame(X, i_instance)))
+        end
     end
-    @assert SoleLogics.isglobal(φ) || !isnothing(w) "Please, specify a world in order " *
-        "to check non-global formula: $(syntaxstring(φ))."
+    @assert SoleLogics.isgrounded(φ) || !isnothing(w) "Please, specify a world in order " *
+        "to check non-grounded formula: $(syntaxstring(φ))."
 
     setformula(memo_structure::AbstractDict{<:AbstractFormula}, φ::AbstractFormula, val) = memo_structure[SoleLogics.tree(φ)] = val
     readformula(memo_structure::AbstractDict{<:AbstractFormula}, φ::AbstractFormula) = memo_structure[SoleLogics.tree(φ)]

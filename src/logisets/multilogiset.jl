@@ -175,3 +175,119 @@ function check(
 )
     check(φ, modality(X, i_modality), i_instance, args...; kwargs...)
 end
+
+############################################################################################
+
+using SoleLogics: AbstractFormula, AbstractSyntaxStructure, AbstractOperator
+import SoleLogics: syntaxstring, joinformulas
+
+import SoleLogics: tree
+import SoleLogics: normalize
+
+"""
+    struct MultiFormula{F<:AbstractFormula} <: AbstractSyntaxStructure
+        modforms::Dict{Int,F}
+    end
+
+A symbolic antecedent that can be checked on a `MultiLogiset`, associating
+antecedents to modalities.
+"""
+struct MultiFormula{F<:AbstractFormula} <: AbstractSyntaxStructure
+    modforms::Dict{Int,F}
+end
+
+subformulatype(::Type{<:M}) where {F,M<:MultiFormula{F}} = F
+subformulatype(::MultiFormula{F}) where {F} = F
+
+function SoleLogics.tree(f::MultiFormula)
+    return error("Cannot convert object of type $(typeof(f)) to a SyntaxTree.")
+end
+
+modforms(f::MultiFormula) = f.modforms
+
+function MultiFormula(i_modality::Integer, modant::AbstractFormula)
+    F = eval(nameof(typeof(modant)))
+    MultiFormula(Dict{Int,F}(i_modality => modant))
+end
+
+function syntaxstring(
+    f::MultiFormula;
+    hidemodality = false,
+    variable_names_map::Union{Nothing,AbstractDict,AbstractVector,AbstractVector{<:Union{AbstractDict,AbstractVector}}} = nothing,
+    kwargs...
+)
+    map_is_multimodal = begin
+        if !isnothing(variable_names_map) && all(e->!(e isa Union{AbstractDict,AbstractVector}), variable_names_map)
+            @warn "With multimodal formulas, variable_names_map should be a vector of vectors/maps of " *
+                "variable names. Got $(typeof(variable_names_map)) instead. This may fail, " *
+                "or lead to unexpected results."
+            false
+        else
+            !isnothing(variable_names_map)
+        end
+    end
+    join([begin
+        _variable_names_map = map_is_multimodal ? variable_names_map[i_modality] : variable_names_map
+        φ = syntaxstring(modforms(f)[i_modality]; variable_names_map = _variable_names_map, kwargs...)
+        hidemodality ? "$φ" : "{$(i_modality)}($φ)"
+    end for i_modality in sort(collect(keys(modforms(f))))], " $(CONJUNCTION) ")
+end
+
+function joinformulas(op::typeof(∧), children::NTuple{N,MultiFormula}) where {N}
+    F = eval(nameof(SoleBase._typejoin(subformulatype.(children)...)))
+    new_formulas = Dict{Int,F}()
+    i_modalities = unique(vcat(collect.(keys.([modforms(ch) for ch in children]))...))
+    for i_modality in i_modalities
+        chs = filter(ch->haskey(modforms(ch), i_modality), children)
+        fs = map(ch->modforms(ch)[i_modality], chs)
+        new_formulas[i_modality] = (length(fs) == 1 ? first(fs) : joinformulas(op, fs))
+    end
+    return MultiFormula(new_formulas)
+end
+
+# function joinformulas(op::typeof(¬), children::NTuple{N,MultiFormula{F}}) where {N,F}
+#     if length(children) > 1
+#         error("Cannot negate $(length(children)) MultiFormula's.")
+#     end
+#     f = first(children)
+#     ks = keys(modforms(f))
+#     if length(ks) != 1
+#         error("Cannot negate a $(length(ks))-MultiFormula.")
+#     end
+#     i_modality = first(ks)
+#     MultiFormula(i_modality, ¬(modforms(f)[i_modality]))
+# end
+function joinformulas(op::AbstractOperator, children::NTuple{N,MultiFormula}) where {N}
+    if !all(c->length(modforms(c)) == 1, children)
+        error("Cannot join $(length(children)) MultiFormula's by means of $(op). " *
+            "$(children)\n" *
+            "$(map(c->length(modforms(c)), children)).")
+    end
+    ks = map(c->first(keys(modforms(c))), children)
+    if !allequal(ks)
+        error("Cannot join $(length(children)) MultiFormula's by means of $(op)." *
+            "Found different modalities: $(unique(ks)).")
+    end
+    i_modality = first(ks)
+    MultiFormula(i_modality, joinformulas(op, map(c->modforms(c)[i_modality], children)))
+end
+
+function SoleLogics.normalize(φ::MultiFormula{F}; kwargs...) where {F<:AbstractFormula}
+    MultiFormula(Dict{Int,F}([i_modality => SoleLogics.normalize(f; kwargs...) for (i_modality,f) in pairs(modforms(φ))]))
+end
+
+function check(
+    φ::MultiFormula,
+    X::MultiLogiset,
+    i_instance::Integer,
+    args...;
+    kwargs...,
+)
+    # TODO in the fuzzy case: use collatetruth(fuzzy algebra, ∧, ...)
+    all([check(f, X, i_modality, i_instance, args...; kwargs...)
+        for (i_modality, f) in modforms(φ)])
+end
+
+# # TODO join MultiFormula leads to a SyntaxTree with MultiFormula children
+# function joinformulas(op::AbstractOperator, children::NTuple{N,MultiFormula{F}}) where {N,F}
+# end

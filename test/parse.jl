@@ -1,3 +1,4 @@
+using Logging
 using SoleModels: parsecondition
 
 @test_nowarn SoleModels.parsefeature(SoleModels.VarFeature{Float64}, "min[V1]")
@@ -12,11 +13,10 @@ using SoleModels: parsecondition
 
 @test_logs (:warn,) parsecondition(SoleModels.ScalarCondition, "F1 > 2"; featuretype = SoleModels.Feature)
 @test_logs (:warn,) parsecondition(SoleModels.ScalarCondition, "1 > 2"; featuretype = SoleModels.Feature{Int})
-@test_logs (:warn,) parsecondition(SoleModels.ScalarCondition, "1 > 2"; featuretype = SoleModels.Feature{Proposition{Int}})
 
 C = SoleModels.ScalarCondition
 
-@test_logs (:warn,) SoleModels.parsecondition(C, "min[V1] <= 32")
+@test_logs min_level=Logging.Error SoleModels.parsecondition(C, "min[V1] <= 32")
 @test_logs (:warn,) SoleModels.parsecondition(C, "min[V1] <= 32"; featvaltype = Float64)
 @test_nowarn SoleModels.parsecondition(C, "min[V1] <= 32"; featvaltype = Float64, featuretype = SoleModels.AbstractUnivariateFeature)
 

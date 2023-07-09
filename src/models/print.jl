@@ -249,9 +249,9 @@ function _displaymodel(
             print(io, subm_str)
         else
             print(io, "$(pipe)$(ant_str)")
-            show_metrics != false && print(io, " : $(get_metrics_string(m; (show_metrics isa NamedTuple ? show_metrics : [])...))")
             ind_str = ""
-            subm_str = @_display_submodel consequent(m) ind_str indentation depth max_depth show_subtree_info show_metrics show_intermediate_finals tree_mode syntaxstring_kwargs kwargs
+            subm_str = @_display_submodel consequent(m) ind_str indentation depth max_depth show_subtree_info false show_intermediate_finals tree_mode syntaxstring_kwargs kwargs
+            show_metrics != false && (subm_str = rstrip(subm_str, '\n') * " : $(get_metrics_string(m; (show_metrics isa NamedTuple ? show_metrics : [])...))")
             print(io, "  $(arrow) ")
             print(io, subm_str)
         end
@@ -370,7 +370,7 @@ function _displaymodel(
             subm_str = @_display_submodel consequent(rule) ind_str indentation depth max_depth show_subtree_info show_metrics show_intermediate_finals tree_mode syntaxstring_kwargs kwargs
             print(io, subm_str)
         end
-        pipe = indentation_last_first*"$(indentation_cross)"
+        pipe = indentation_last_first*"$(CROSS)"
         print(io, "$(indentation_str*pipe)")
         # print(io, "$(indentation_str*indentation_last_space*repeat(indentation_hspace, length(pipe)-length(indentation_last_space)-1)*indentation_last_space)")
         ind_str = indentation_str*indentation_last_space*repeat(indentation_hspace, length(pipe)-length(indentation_last_space)-1)*indentation_last_space

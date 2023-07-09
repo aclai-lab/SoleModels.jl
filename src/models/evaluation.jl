@@ -32,12 +32,12 @@ function readmetrics(m::LeafModel{L}; digits = 2) where {L<:Label}
     end, (; coverage = 1.0))
 end
 
-function readmetrics(m::Rule; kwargs...)
+function readmetrics(m::Rule; digits = 2, kwargs...)
     if haskey(info(m), :supporting_labels) && haskey(info(consequent(m)), :supporting_labels)
         _gts = info(m).supporting_labels
         _gts_leaf = info(consequent(m)).supporting_labels
         coverage = length(_gts_leaf)/length(_gts)
-        merge(readmetrics(consequent(m); kwargs...), (; coverage = coverage))
+        merge(readmetrics(consequent(m); digits = digits, kwargs...), (; coverage = round(coverage; digits = digits)))
     elseif haskey(info(m), :supporting_labels)
         return (; ninstances = length(info(m).supporting_labels))
     elseif haskey(info(consequent(m)), :supporting_labels)
@@ -65,13 +65,13 @@ See also
 [`Rule`](@ref),
 [`AbstractInterpretationSet`](@ref),
 [`Label`](@ref),
-[`check_antecedent`](@ref).
+[`antecedenttops`](@ref).
 """
 function evaluaterule(
-    rule::Rule{O, C, FM},
+    rule::Rule{O,A,FM},
     X::AbstractInterpretationSet,
     Y::AbstractVector{<:Label}
-) where {O,C,FM<:AbstractModel}
+) where {O,A,FM<:AbstractModel}
     ys = apply(rule,X)
 
     antsat = ys .!= nothing
@@ -106,19 +106,14 @@ function evaluaterule(
 end
 
 # """
-#     npropositions(rule::Rule{O,<:TrueAntecedent}) where {O}
-#     npropositions(rule::Rule{O,<:TruthAntecedent}) where {O}
+#     npropositions(rule::Rule{O,<:AbstractFormula}) where {O}
 
 # See also
 # [`Rule`](@ref),
-# [`TrueAntecedent`](@ref),
-# [`TruthAntecedent`](@ref),
+# [`AbstractFormula`](@ref),
 # [`antecedent`](@ref),
-# [`formula`](@ref),
-# [`n_propositions`](@ref).
 # """
-# npropositions(rule::Rule{O,<:TrueAntecedent}) where {O} = 1
-# npropositions(rule::Rule{O,<:TruthAntecedent}) where {O} = npropositions(antecedent(rule))
+# npropositions(rule::Rule{O,<:AbstractFormula}) where {O} = npropositions(antecedent(rule))
 
 """
     rulemetrics(
@@ -146,10 +141,10 @@ See also
 [`consequent`](@ref).
 """
 function rulemetrics(
-    rule::Rule{O, C, FM},
+    rule::Rule{O,A,FM},
     X::AbstractInterpretationSet,
     Y::AbstractVector{<:Label}
-) where {O,C,FM<:AbstractModel}
+) where {O,A,FM<:AbstractModel}
     eval_result = evaluaterule(rule, X, Y)
     ys = eval_result[:ys]
     antsat = eval_result[:antsat]

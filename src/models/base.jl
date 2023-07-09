@@ -1,7 +1,10 @@
 import Base: convert, length, getindex, isopen
-import SoleLogics: check, syntaxstring
+
 using SoleData: slicedataset
+
+import SoleLogics: check, syntaxstring
 using SoleLogics: LeftmostLinearForm, LeftmostConjunctiveForm, LeftmostDisjunctiveForm
+using SoleModels: TopFormula
 
 # Util
 typename(::Type{T}) where T = eval(nameof(T))
@@ -424,7 +427,6 @@ its `outcometype` `O`.
 
 See also [`feasiblemodelstype`](@ref), [`ConstrainedModel`](@ref).
 """
-
 propagate_feasiblemodels(M::Type{<:AbstractModel}) = Union{typename(M){outcometype(M)}, feasiblemodelstype(M)}
 propagate_feasiblemodels(m::AbstractModel) = propagate_feasiblemodels(typeof(m))
 
@@ -472,10 +474,10 @@ in order to obtain an outcome.
 """
     struct Rule{
         O,
-        C<:AbstractAntecedent,
+        A<:AbstractFormula,
         FM<:AbstractModel
     } <: ConstrainedModel{O,FM}
-        antecedent::C
+        antecedent::A
         consequent::FM
         info::NamedTuple
     end
@@ -485,41 +487,41 @@ the semantics:
 
     IF (antecedent) THEN (consequent) END
 
-where the antecedent is a condition to be tested and the consequent is the local outcome of the block.
+where the antecedent is a formula to be checked,
+and the consequent is the local outcome of the block.
 
 Note that `FM` refers to the Feasible Models (`FM`) allowed in the model's sub-tree.
 
 See also
 [`antecedent`](@ref),
 [`consequent`](@ref),
-[`AbstractAntecedent`](@ref),
+[`AbstractFormula`](@ref),
 [`ConstrainedModel`](@ref),
 [`AbstractModel`](@ref).
 """
 struct Rule{
     O,
-    C<:AbstractAntecedent,
+    A<:AbstractFormula,
     FM<:AbstractModel
 } <: ConstrainedModel{O,FM}
-    antecedent::C
+    antecedent::A
     consequent::FM
     info::NamedTuple
 
     function Rule{O}(
-        antecedent::Union{AbstractSyntaxToken,AbstractFormula,AbstractAntecedent},
+        antecedent::Union{AbstractSyntaxToken,AbstractFormula},
         consequent::Any,
         info::NamedTuple = (;),
     ) where {O}
-        antecedent = convert(AbstractAntecedent, antecedent)
-        C = typeof(antecedent)
+        A = typeof(antecedent)
         consequent = wrap(consequent, AbstractModel{O})
         FM = typeintersect(propagate_feasiblemodels(consequent), AbstractModel{<:O})
         check_model_constraints(Rule{O}, typeof(consequent), FM, O)
-        new{O,C,FM}(antecedent, consequent, info)
+        new{O,A,FM}(antecedent, consequent, info)
     end
 
     function Rule(
-        antecedent::Union{AbstractSyntaxToken,AbstractFormula,AbstractAntecedent},
+        antecedent::Union{AbstractSyntaxToken,AbstractFormula},
         consequent::Any,
         info::NamedTuple = (;),
     )
@@ -532,7 +534,7 @@ struct Rule{
         consequent::Any,
         info::NamedTuple = (;),
     )
-        antecedent = TrueAntecedent()
+        antecedent = TopFormula()
         consequent = wrap(consequent)
         O = outcometype(consequent)
         Rule{O}(antecedent, consequent, info)
@@ -540,15 +542,15 @@ struct Rule{
 end
 
 """
-    antecedent(m::Union{Rule,Branch})::AbstractAntecedent
+    antecedent(m::Union{Rule,Branch})::AbstractFormula
 
-Return the antecedent of a rule/branch;
-that is, the condition to be evaluated upon applying the model.
+Return the antecedent of a rule/branch,
+that is, the formula to be checked upon applying the model.
 
 See also
 [`apply`](@ref),
 [`consequent`](@ref),
-[`check_antecedent`](@ref),
+[`antecedenttops`](@ref),
 [`Rule`](@ref),
 [`Branch`](@ref).
 """
@@ -565,13 +567,13 @@ See also
 """
 consequent(m::Rule) = m.consequent
 
-antecedenttype(::Type{M}) where {M<:Rule{O,C}} where {O,C} = C
+antecedenttype(::Type{M}) where {M<:Rule{O,A}} where {O,A} = A
 antecedenttype(m::Rule) = antecedenttype(typeof(m))
 
 issymbolic(::Rule) = true
 
 """
-    function check_antecedent(
+    function antecedenttops(
         m::Union{Rule,Branch},
         args...;
         kwargs...
@@ -579,20 +581,14 @@ issymbolic(::Rule) = true
         check(antecedent(m), id, args...; kwargs...)
     end
 
-Simply checks the antecedent of a rule on an instance or dataset.
+Simply check the antecedent of a rule on an instance or dataset.
 
 See also
 [`antecedent`](@ref),
 [`Rule`](@ref),
 [`Branch`](@ref).
 """
-function check_antecedent(
-    m::Rule,
-    args...;
-    kwargs...
-)
-    check(antecedent(m), args...; kwargs...)
-end
+function antecedenttops end
 
 function apply(
     m::Rule,
@@ -601,7 +597,7 @@ function apply(
     check_kwargs::NamedTuple = (;),
     kwargs...
 )
-    if check_antecedent(m, i, check_args...; check_kwargs...)
+    if antecedenttops(m, i, check_args...; check_kwargs...)
         apply(consequent(m), i;
             check_args = check_args,
             check_kwargs = check_kwargs,
@@ -620,7 +616,7 @@ function apply(
     check_kwargs::NamedTuple = (;),
     kwargs...
 )
-    if check_antecedent(m, d, i_instance, check_args...; check_kwargs...) == true
+    if antecedenttops(m, d, i_instance, check_args...; check_kwargs...)
         apply(consequent(m), d, i_instance;
             check_args = check_args,
             check_kwargs = check_kwargs,
@@ -631,38 +627,27 @@ function apply(
     end
 end
 
-# Helper
-function formula(m::Rule{O,<:Union{TruthAntecedent,TrueAntecedent}}) where {O}
-    formula(antecedent(m))
-end
-
 # Helpers
-function conjuncts(m::Rule{O,<:TruthAntecedent{<:LeftmostConjunctiveForm}}) where {O}
-    conjuncts(formula(m))
+function conjuncts(m::Rule{O,<:LeftmostConjunctiveForm}) where {O}
+    conjuncts(antecedent(m))
 end
-function nconjuncts(m::Rule{O,<:TruthAntecedent{<:LeftmostConjunctiveForm}}) where {O}
-    nconjuncts(formula(m))
+function nconjuncts(m::Rule{O,<:LeftmostConjunctiveForm}) where {O}
+    nconjuncts(antecedent(m))
 end
-function disjuncts(m::Rule{O,<:TruthAntecedent{<:LeftmostDisjunctiveForm}}) where {O}
-    disjuncts(formula(m))
+function disjuncts(m::Rule{O,<:LeftmostDisjunctiveForm}) where {O}
+    disjuncts(antecedent(m))
 end
-function ndisjuncts(m::Rule{O,<:TruthAntecedent{<:LeftmostDisjunctiveForm}}) where {O}
-    ndisjuncts(formula(m))
+function ndisjuncts(m::Rule{O,<:LeftmostDisjunctiveForm}) where {O}
+    ndisjuncts(antecedent(m))
 end
 
 # Helper
 function Base.getindex(
-    m::Rule{O,C},
+    m::Rule{O,A},
     idxs::AbstractVector{<:Integer},
-) where {O,SS<:LeftmostLinearForm,C<:TruthAntecedent{SS}}
+) where {O,A<:LeftmostLinearForm}
     a = antecedent(m)
-    Rule{O,C}(
-        TruthAntecedent{SS}(begin
-            ants = children(formula(a))
-            SS(ants[idxs])
-        end, checkmode(a)),
-        consequent(m)
-    )
+    Rule{O}(A(children(a)[idxs]), consequent(m))
 end
 
 
@@ -671,10 +656,10 @@ end
 """
     struct Branch{
         O,
-        C<:AbstractAntecedent,
+        A<:AbstractFormula,
         FM<:AbstractModel
     } <: ConstrainedModel{O,FM}
-        antecedent::C
+        antecedent::A
         posconsequent::FM
         negconsequent::FM
         info::NamedTuple
@@ -683,10 +668,12 @@ end
 A `Branch` is one of the fundamental building blocks of symbolic modeling, and has
 the semantics:
 
-    IF (antecedent) THEN (consequent_1) ELSE (consequent_2) END
+    IF (antecedent) THEN (positive consequent) ELSE (negative consequent) END
 
-where the antecedent is a (boolean) condition to be tested and the consequents are the feasible
-local outcomes of the block.
+where the antecedent is a formula to be checked and the consequents are the feasible
+local outcomes of the block. If checking the antecedent evaluates to the top of the algebra,
+then the positive consequent is applied; otherwise, the negative consequenti is applied.
+
 
 Note that `FM` refers to the Feasible Models (`FM`) allowed in the model's sub-tree.
 
@@ -694,39 +681,39 @@ See also
 [`antecedent`](@ref),
 [`posconsequent`](@ref),
 [`negconsequent`](@ref),
-[`AbstractAntecedent`](@ref),
+[`istop`](@ref),
+[`AbstractFormula`](@ref),
 [`Rule`](@ref),
 [`ConstrainedModel`](@ref), [`AbstractModel`](@ref).
 """
 struct Branch{
     O,
-    C<:AbstractAntecedent,
+    A<:AbstractFormula,
     FM<:AbstractModel
 } <: ConstrainedModel{O,FM}
-    antecedent::C
+    antecedent::A
     posconsequent::FM
     negconsequent::FM
     info::NamedTuple
 
     function Branch(
-        antecedent::Union{AbstractSyntaxToken,AbstractFormula,AbstractAntecedent},
+        antecedent::Union{AbstractSyntaxToken,AbstractFormula},
         posconsequent::Any,
         negconsequent::Any,
         info::NamedTuple = (;),
     )
-        antecedent = convert(AbstractAntecedent, antecedent)
-        C = typeof(antecedent)
+        A = typeof(antecedent)
         posconsequent = wrap(posconsequent)
         negconsequent = wrap(negconsequent)
         O = Union{outcometype(posconsequent),outcometype(negconsequent)}
         FM = typeintersect(Union{propagate_feasiblemodels(posconsequent),propagate_feasiblemodels(negconsequent)}, AbstractModel{<:O})
         check_model_constraints(Branch{O}, typeof(posconsequent), FM, O)
         check_model_constraints(Branch{O}, typeof(negconsequent), FM, O)
-        new{O,C,FM}(antecedent, posconsequent, negconsequent, info)
+        new{O,A,FM}(antecedent, posconsequent, negconsequent, info)
     end
 
     function Branch(
-        antecedent::Union{AbstractSyntaxToken,AbstractFormula,AbstractAntecedent},
+        antecedent::Union{AbstractSyntaxToken,AbstractFormula},
         (posconsequent, negconsequent)::Tuple{Any,Any},
         info::NamedTuple = (;),
     )
@@ -761,20 +748,12 @@ See also
 """
 negconsequent(m::Branch) = m.negconsequent
 
-antecedenttype(::Type{M}) where {M<:Branch{O,C}} where {O,C} = C
+antecedenttype(::Type{M}) where {M<:Branch{O,A}} where {O,A} = A
 antecedenttype(m::Branch) = antecedenttype(typeof(m))
 
 issymbolic(::Branch) = true
 
 isopen(m::Branch) = isopen(posconsequent(m)) || isopen(negconsequent(m))
-
-function check_antecedent(
-    m::Branch,
-    args...;
-    kwargs...
-)
-    check(antecedent(m), args...; kwargs...)
-end
 
 function apply(
     m::Branch,
@@ -783,7 +762,7 @@ function apply(
     check_kwargs::NamedTuple = (;),
     kwargs...
 )
-    if check_antecedent(m, i, check_args...; check_kwargs...)
+    if antecedenttops(m, i, check_args...; check_kwargs...)
         apply(posconsequent(m), i;
             check_args = check_args,
             check_kwargs = check_kwargs,
@@ -799,14 +778,14 @@ function apply(
 end
 
 function apply(
-    m::Branch{O,<:TruthAntecedent},
+    m::Branch,
     d::AbstractInterpretationSet,
     i_instance::Integer;
     check_args::Tuple = (),
     check_kwargs::NamedTuple = (;),
     kwargs...
-) where {O}
-    if check_antecedent(m, d, i_instance, check_args...; check_kwargs...) == true
+)
+    if antecedenttops(m, d, i_instance, check_args...; check_kwargs...)
         apply(posconsequent(m), d, i_instance;
             check_args = check_args,
             check_kwargs = check_kwargs,
@@ -822,13 +801,13 @@ function apply(
 end
 
 function apply(
-    m::Branch{O,<:TruthAntecedent},
+    m::Branch,
     d::AbstractInterpretationSet;
     check_args::Tuple = (),
     check_kwargs::NamedTuple = (;),
     kwargs...
-) where {O}
-    cs = check_antecedent(m, d, check_args...; check_kwargs...)
+)
+    cs = antecedenttops(m, d, check_args...; check_kwargs...)
     cpos = findall((c)->c==true, cs)
     cneg = findall((c)->c==false, cs)
     out = Array{outputtype(m)}(undef,length(cs))
@@ -854,35 +833,35 @@ function apply(
 end
 
 # Helper
-function formula(m::Branch{O,<:Union{TruthAntecedent,TrueAntecedent}}) where {O}
-    formula(antecedent(m))
-end
-
-# Helper
 function Base.getindex(
-    m::Branch{O,C},
+    m::Branch{O,A},
     idxs::AbstractVector{<:Integer},
-) where {O,SS<:LeftmostLinearForm,C<:TruthAntecedent{SS}}
+) where {O,A<:LeftmostLinearForm}
     a = antecedent(m)
-    Branch{O,C}(
-        TruthAntecedent{SS}(begin
-            ants = children(formula(a))
-            SS(ants[idxs])
-        end, checkmode(a)),
-        posconsequent(m),
-        negconsequent(m)
-    )
+    Branch{O}(A(children(a)[idxs]), posconsequent(m), negconsequent(m))
 end
 
+############################################################################################
+############################################################################################
+
+antecedenttops(m::Union{Rule,Branch}, i::AbstractInterpretation, args...; kwargs...) = istop(check(antecedent(m), i, args...; kwargs...))
+antecedenttops(m::Union{Rule,Branch}, d::AbstractInterpretationSet, i_instance::Integer, args...; kwargs...) = istop(check(antecedent(m), d, i_instance, args...; kwargs...))
+antecedenttops(m::Union{Rule,Branch}, d::AbstractInterpretationSet, args...; kwargs...) = istop.(check(antecedent(m), d, args...; kwargs...))
+
+antecedenttops(::Union{Rule{O,<:TopFormula},Branch{O,<:TopFormula}}, i::AbstractInterpretation, args...; kwargs...) where {O} = true
+antecedenttops(::Union{Rule{O,<:TopFormula},Branch{O,<:TopFormula}}, d::AbstractInterpretationSet, i_instance::Integer, args...; kwargs...) where {O} = true
+antecedenttops(::Union{Rule{O,<:TopFormula},Branch{O,<:TopFormula}}, d::AbstractInterpretationSet, args...; kwargs...) where {O} = fill(true, ninstances(d))
+
+############################################################################################
 ############################################################################################
 
 """
     struct DecisionList{
         O,
-        C<:AbstractAntecedent,
+        A<:AbstractFormula,
         FM<:AbstractModel
     } <: ConstrainedModel{O,FM}
-        rulebase::Vector{Rule{_O,_C,_FM} where {_O<:O,_C<:C,_FM<:FM}}
+        rulebase::Vector{Rule{_O,_C,_FM} where {_O<:O,_C<:A,_FM<:FM}}
         defaultconsequent::FM
         info::NamedTuple
     end
@@ -896,7 +875,7 @@ has the semantics of an IF-ELSEIF-ELSE block:
     ELSEIF (antecedent_n) THEN (consequent_n)
     ELSE (consequent_default) END
 
-where the antecedents are conditions to be tested and the consequents are the feasible
+where the antecedents are formulas to be, and the consequents are the feasible
 local outcomes of the block.
 Using the classical semantics, the antecedents are evaluated in order,
 and a consequent is returned as soon as a valid antecedent is found,
@@ -912,10 +891,10 @@ See also
 """
 struct DecisionList{
     O,
-    C<:AbstractAntecedent,
+    A<:AbstractFormula,
     FM<:AbstractModel
 } <: ConstrainedModel{O,FM}
-    rulebase::Vector{Rule{_O,_C,_FM} where {_O<:O,_C<:C,_FM<:FM}}
+    rulebase::Vector{Rule{_O,_C,_FM} where {_O<:O,_C<:A,_FM<:FM}}
     defaultconsequent::FM
     info::NamedTuple
 
@@ -926,20 +905,20 @@ struct DecisionList{
     )
         defaultconsequent = wrap(defaultconsequent)
         O = Union{outcometype(defaultconsequent),outcometype.(rulebase)...}
-        C = Union{antecedenttype.(rulebase)...}
+        A = Union{antecedenttype.(rulebase)...}
         FM = typeintersect(Union{propagate_feasiblemodels(defaultconsequent),propagate_feasiblemodels.(rulebase)...}, AbstractModel{<:O})
         # FM = typeintersect(Union{propagate_feasiblemodels(defaultconsequent),propagate_feasiblemodels.(rulebase)...}, AbstractModel{O})
         # FM = Union{propagate_feasiblemodels(defaultconsequent),propagate_feasiblemodels.(rulebase)...}
         check_model_constraints.(DecisionList{O}, typeof.(rulebase), FM, O)
         check_model_constraints(DecisionList{O}, typeof(defaultconsequent), FM, O)
-        new{O,C,FM}(rulebase, defaultconsequent, info)
+        new{O,A,FM}(rulebase, defaultconsequent, info)
     end
 end
 
 rulebase(m::DecisionList) = m.rulebase
 defaultconsequent(m::DecisionList) = m.defaultconsequent
 
-antecedenttype(::Type{M}) where {M<:DecisionList{O,C}} where {O,C} = C
+antecedenttype(::Type{M}) where {M<:DecisionList{O,A}} where {O,A} = A
 antecedenttype(m::DecisionList) = antecedenttype(typeof(m))
 
 issymbolic(::DecisionList) = true
@@ -953,7 +932,7 @@ function apply(
     check_kwargs::NamedTuple = (;),
 )
     for rule in rulebase(m)
-        if check(m, i, check_args...; check_kwargs...)
+        if antecedenttops(rule, i, check_args...; check_kwargs...)
             return consequent(rule)
         end
     end
@@ -976,8 +955,7 @@ function apply(
         uncovered_d = slicedataset(d, uncovered_idxs; return_view = true)
 
         idxs_sat = findall(
-            # check_antecedent(rule, d, check_args...; check_kwargs...) .== true
-            check_antecedent(rule, uncovered_d, check_args...; check_kwargs...) .== true
+            antecedenttops(rule, uncovered_d, check_args...; check_kwargs...)
         )
         idxs_sat = uncovered_idxs[idxs_sat]
         uncovered_idxs = setdiff(uncovered_idxs, idxs_sat)
@@ -1012,8 +990,7 @@ function apply!(
         uncovered_d = slicedataset(d, uncovered_idxs; return_view = true)
 
         idxs_sat = findall(
-            # check_antecedent(rule, d, check_args...; check_kwargs...) .== true
-            check_antecedent(rule, uncovered_d, check_args...; check_kwargs...) .== true
+            antecedenttops(rule, uncovered_d, check_args...; check_kwargs...)
         )
         idxs_sat = uncovered_idxs[idxs_sat]
         uncovered_idxs = setdiff(uncovered_idxs, idxs_sat)
@@ -1090,7 +1067,7 @@ IF-THEN-ELSE blocks:
         END
     END
 
-where the antecedents are conditions to be tested and the consequents are the feasible
+where the antecedents are formulas to be, and the consequents are the feasible
 local outcomes of the block.
 
 In practice, a `DecisionTree` simply wraps a constrained
@@ -1098,9 +1075,9 @@ sub-tree of `Branch` and `LeafModel`:
 
     struct DecisionTree{
     O,
-        C<:AbstractAntecedent,
+        A<:AbstractFormula,
         FFM<:LeafModel
-    } <: ConstrainedModel{O,Union{<:Branch{<:O,<:C},<:FFM}}
+    } <: ConstrainedModel{O,Union{<:Branch{<:O,<:A},<:FFM}}
         root::M where {M<:Union{FFM,Branch}}
         info::NamedTuple
     end
@@ -1113,17 +1090,17 @@ See also [`ConstrainedModel`](@ref), [`MixedSymbolicModel`](@ref), [`DecisionLis
 """
 struct DecisionTree{
     O,
-    C<:AbstractAntecedent,
+    A<:AbstractFormula,
     FFM<:LeafModel
-} <: ConstrainedModel{O,Union{<:Branch{<:O,<:C}, <:FFM}}
+} <: ConstrainedModel{O,Union{<:Branch{<:O,<:A},<:FFM}}
     root::M where {M<:Union{FFM,Branch}}
     info::NamedTuple
 
     function DecisionTree(
-        root::Union{FFM,Branch{O,C,Union{Branch{<:O,C2},FFM}}},
+        root::Union{FFM,Branch{O,A,Union{Branch{<:O,A2},FFM}}},
         info::NamedTuple = (;),
-    ) where {O,C<:AbstractAntecedent,C2<:C,FFM<:LeafModel{<:O}}
-        new{O,root isa LeafModel ? AbstractAntecedent : C,FFM}(root, info)
+    ) where {O,A<:AbstractFormula,A2<:A,FFM<:LeafModel{<:O}}
+        new{O,root isa LeafModel ? AbstractFormula : A,FFM}(root, info)
     end
 
     function DecisionTree(
@@ -1133,24 +1110,24 @@ struct DecisionTree{
         root = wrap(root)
         M = typeof(root)
         O = outcometype(root)
-        C = (root isa LeafModel ? AbstractAntecedent : antecedenttype(M))
+        A = (root isa LeafModel ? AbstractFormula : antecedenttype(M))
         # FM = typeintersect(Union{M,feasiblemodelstype(M)}, AbstractModel{<:O})
         FM = typeintersect(Union{propagate_feasiblemodels(M)}, AbstractModel{<:O})
         FFM = typeintersect(FM, LeafModel{<:O})
-        @assert M <: Union{<:FFM,<:Branch{<:O,<:C,<:Union{Branch,FFM}}} "" *
-            "Cannot instantiate DecisionTree{$(O),$(C),$(FFM)}(...) with root of " *
+        @assert M <: Union{<:FFM,<:Branch{<:O,<:A,<:Union{Branch,FFM}}} "" *
+            "Cannot instantiate DecisionTree{$(O),$(A),$(FFM)}(...) with root of " *
             "type $(typeof(root)). Note that the should be either a LeafModel or a " *
             "bounded Branch. " *
-            "$(M) <: $(Union{LeafModel,Branch{<:O,<:C,<:Union{Branch,FFM}}}) should hold."
+            "$(M) <: $(Union{LeafModel,Branch{<:O,<:A,<:Union{Branch,FFM}}}) should hold."
         check_model_constraints(DecisionTree{O}, typeof(root), FM, O)
-        new{O,C,FFM}(root, info)
+        new{O,A,FFM}(root, info)
     end
 end
 
 root(m::DecisionTree) = m.root
 
-antecedenttype(::Type{M}) where {M<:DecisionTree{O,C}} where {O,C} = C
-antecedenttype(::Type{M}) where {M<:DecisionTree{O,C,FFM}} where {O,C,FFM} = C
+antecedenttype(::Type{M}) where {M<:DecisionTree{O,A}} where {O,A} = A
+antecedenttype(::Type{M}) where {M<:DecisionTree{O,A,FFM}} where {O,A,FFM} = A
 antecedenttype(m::DecisionTree) = antecedenttype(typeof(m))
 
 issymbolic(::DecisionTree) = true
@@ -1194,9 +1171,9 @@ A `Decision Forest` is a symbolic model that wraps an ensemble of models
 
     struct DecisionForest{
         O,
-        C<:AbstractAntecedent,
+        A<:AbstractFormula,
         FFM<:LeafModel
-    } <: ConstrainedModel{O,Union{<:Branch{<:O,<:C},<:FFM}}
+    } <: ConstrainedModel{O,Union{<:Branch{<:O,<:A},<:FFM}}
         trees::Vector{<:DecisionTree}
         info::NamedTuple
     end
@@ -1207,9 +1184,9 @@ See also [`ConstrainedModel`](@ref), [`MixedSymbolicModel`](@ref), [`DecisionLis
 """
 struct DecisionForest{
     O,
-    C<:AbstractAntecedent,
+    A<:AbstractFormula,
     FFM<:LeafModel
-} <: ConstrainedModel{O,Union{<:Branch{<:O,<:C},<:FFM}}
+} <: ConstrainedModel{O,Union{<:Branch{<:O,<:A},<:FFM}}
     trees::Vector{<:DecisionTree}
     info::NamedTuple
 
@@ -1219,17 +1196,17 @@ struct DecisionForest{
     )
         @assert length(trees) > 0 "Cannot instantiate forest with no trees!"
         O = Union{outcometype.(trees)...}
-        C = Union{antecedenttype.(trees)...}
+        A = Union{antecedenttype.(trees)...}
         FM = typeintersect(Union{propagate_feasiblemodels.(trees)...}, AbstractModel{<:O})
         FFM = typeintersect(FM, LeafModel{<:O})
         check_model_constraints.(DecisionForest{O}, typeof.(trees), FM, O)
-        new{O,C,FFM}(trees, info)
+        new{O,A,FFM}(trees, info)
     end
 end
 
 trees(forest::DecisionForest) = forest.trees
 
-antecedenttype(::Type{M}) where {M<:DecisionForest{O,C}} where {O,C} = C
+antecedenttype(::Type{M}) where {M<:DecisionForest{O,A}} where {O,A} = A
 antecedenttype(m::DecisionForest) = antecedenttype(typeof(m))
 
 issymbolic(::DecisionForest) = false
@@ -1282,7 +1259,7 @@ and IF-ELSEIF-ELSE blocks:
         END
     END
 
-where the antecedents are conditinos and the consequents are the feasible
+where the antecedents are formulas to be checked, and the consequents are the feasible
 local outcomes of the block.
 
 In Sole.jl, this logic can implemented using `ConstrainedModel`s such as

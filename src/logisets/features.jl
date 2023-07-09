@@ -36,6 +36,8 @@ end
 
 ############################################################################################
 
+import SoleLogics: atomtype
+
 """
     struct Feature{A} <: AbstractFeature
         atom::A
@@ -50,14 +52,21 @@ struct Feature{A} <: AbstractFeature
     atom::A
 end
 
+atomtype(::Type{<:Feature{A}}) where {A} = A
+atomtype(::Feature{A}) where {A} = A
+
 syntaxstring(f::Feature; kwargs...) = string(f.atom)
 
 function parsefeature(
-    ::Type{Feature},
+    ::Type{F},
     expression::String;
     kwargs...
-)
-    Feature(expression)
+) where {F<:Feature}
+    if F == Feature
+        F(expression)
+    else
+        F(parse(atomtype(F), expression))
+    end
 end
 
 ############################################################################################

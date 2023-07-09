@@ -255,8 +255,7 @@ struct ScalarOneStepMemoset{
                 relations = filter(l->l≠globalrel, relations)
                 if worldtype == OneWorld || all(i_instance->nworlds(frame(X, i_instance)) == 1, 1:ninstances(X))
                     @warn "ScalarOneStepMemoset: " *
-                        "Found globalrel in relations but single-world case is" *
-                        "identified."
+                        "Found globalrel in relations in a single-world case."
                     false
                 else
                     true
@@ -477,7 +476,7 @@ function concatdatasets(Xms::ScalarOneStepMemoset{U}...) where {U}
         "$(@show relations.(Xms))"
     ScalarOneStepMemoset{U}(
         concatdatasets(relmemoset.(Xms)...),
-        concatdatasets(globmemoset.(Xms)...),
+        (any(isnothing.(globmemoset.(Xms))) ? nothing : concatdatasets(globmemoset.(Xms)...)),
         metaconditions(first(Xms)),
         relations(first(Xms)),
     )

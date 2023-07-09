@@ -7,14 +7,14 @@ Abstract type simple formulas of given templates.
 abstract type AbstractTemplatedFormula <: SoleLogics.AbstractFormula end
 
 """
-Templated formula for ⊤.
+Templated formula for ⊤, which always checks top.
 """
 struct TopFormula <: AbstractTemplatedFormula end
 tree(::TopFormula) = SyntaxTree(⊤)
 negation(::TopFormula) = BotFormula()
 
 """
-Templated formula for ⊥.
+Templated formula for ⊥, which always checks bottom.
 """
 struct BotFormula <: AbstractTemplatedFormula end
 tree(::BotFormula) = SyntaxTree(⊥)

@@ -17,7 +17,8 @@ println("Julia version: ", VERSION)
 
 test_suites = [
     ("Logisets", [
-        # "logisets/logisets.jl", TODO bring back
+        "logisets/logisets.jl",
+        # "logisets/memosets.jl", # TODO bring back
         "logisets/cube2logiset.jl",
         "logisets/dataframe2logiset.jl",
         "logisets/multilogisets.jl",

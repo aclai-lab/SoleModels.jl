@@ -130,8 +130,8 @@ struct SupportedLogiset{
         @assert !xor(isnothing(conditions), isnothing(relations)) "Please, provide " *
             "both conditions and relations in order to use a one-step memoset."
 
-        conditions = unique(conditions)
-        relations  = unique(relations)
+        isnothing(conditions) || (conditions = unique(conditions))
+        isnothing(relations) || (relations  = unique(relations))
 
         if use_onestep_memoization != false
             @assert !isnothing(conditions) && !isnothing(relations) "Please, provide " *
@@ -157,7 +157,7 @@ struct SupportedLogiset{
             push!(supports, full_memoset_type(base, conditions))
         end
 
-        @assert length(supports) > 0 "Cannot instantiate SupportedLogiset with no supports " *
+        @assert length(supports) > 0 "Cannot instantiate SupportedLogiset with no supports. " *
             "Please, specify use_full_memoization = true and/or " *
             "use_onestep_memoization = true."
 
