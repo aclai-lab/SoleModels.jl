@@ -92,11 +92,9 @@ function Tables.columnnames(row::Tuple{MultiLogiset,Integer})
     1:nmodalities(row[1])
 end
 
-using MLJBase
-using MLJModelInterface
-import MLJModelInterface: selectrows, _selectrows
+import MLJBase: selectrows
 
-function MLJModelInterface.selectrows(X::Union{AbstractLogiset,MultiLogiset}, r)
+function selectrows(X::Union{AbstractLogiset,MultiLogiset}, r)
     r = r isa Integer ? (r:r) : r
     # return slicedataset(X, r; return_view = true)
     return Tables.subset(X, r)

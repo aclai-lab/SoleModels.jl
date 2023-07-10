@@ -1,9 +1,12 @@
 
+"""
+TODO docstring
+"""
 function check(
     φ::SoleLogics.SyntaxTree,
     X::AbstractLogiset{W,U},
     i_instance::Integer,
-    w::Union{Nothing,<:AbstractWorld};
+    w::Union{Nothing,<:AbstractWorld} = nothing; # TODO remove defaulting
     use_memo::Union{Nothing,AbstractMemoset{<:AbstractWorld},AbstractVector{<:AbstractDict{<:FT,<:WorldSet}}} = nothing,
     perform_normalization::Bool = true,
     memo_max_height::Union{Nothing,Int} = nothing,
@@ -76,10 +79,11 @@ function check(
 
                 worldset = begin
                     if !isnothing(onestep_memoset) && SoleLogics.height(ψ) == 1 && tok isa SoleLogics.AbstractRelationalOperator &&
+                            ((SoleLogics.relation(tok) == globalrel && nworlds(fr) != 1) || !SoleLogics.isgrounding(SoleLogics.relation(tok))) &&
                             SoleLogics.ismodal(tok) && SoleLogics.isunary(tok) && SoleLogics.isdiamond(tok) &&
                             token(first(children(ψ))) isa Proposition &&
                             # Note: metacond with same aggregator also works. TODO maybe use Conditions with aggregators inside and look those up.
-                            (onestep_memoset_is_complete || metacond(atom(token(first(children(ψ))))) in metaconditions(onestep_memoset)) &&
+                            (onestep_memoset_is_complete || (metacond(atom(token(first(children(ψ))))) in metaconditions(onestep_memoset))) &&
                             true
                         # println("ONESTEP!")
                         # println(syntaxstring(ψ))

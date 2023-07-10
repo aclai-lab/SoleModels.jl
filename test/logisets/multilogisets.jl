@@ -19,11 +19,11 @@ multilogiset = @test_nowarn scalarlogiset(multidataset)
 
 generic_features = collect(Iterators.flatten([[UnivariateMax(i_var), UnivariateMin(i_var)] for i_var in 1:_nvars]))
 metaconditions = [ScalarMetaCondition(feature, >) for feature in generic_features]
-multilogiset = @test_nowarn scalarlogiset(multidataset; use_full_memoization = false, use_onestep_memoization = true, conditions = metaconditions, relations = multirelations)
-multilogiset = @test_nowarn scalarlogiset(multidataset; use_full_memoization = true, use_onestep_memoization = true, conditions = metaconditions, relations = multirelations)
+multilogiset = @test_logs (:warn,) scalarlogiset(multidataset; use_full_memoization = false, use_onestep_memoization = true, conditions = metaconditions, relations = multirelations)
+multilogiset = @test_logs (:warn,) scalarlogiset(multidataset; use_full_memoization = true, use_onestep_memoization = true, conditions = metaconditions, relations = multirelations)
 
 metaconditions = vcat([[ScalarMetaCondition(feature, >), ScalarMetaCondition(feature, <)] for feature in generic_features]...)
-complete_supported_multilogiset = @test_nowarn scalarlogiset(multidataset; use_full_memoization = true, use_onestep_memoization = true, conditions = metaconditions, relations = multirelations)
+complete_supported_multilogiset = @test_logs (:warn,) scalarlogiset(multidataset; use_full_memoization = true, use_onestep_memoization = true, conditions = metaconditions, relations = multirelations)
 
 
 @test_nowarn slicedataset(multilogiset, [2,1])
@@ -43,18 +43,17 @@ multiformulas = [begin
     for (i_modality, relations) in enumerate(multirelations)
         f = randformula(rng, 3, alph, [SoleLogics.BASE_PROPOSITIONAL_OPERATORS..., vcat([[DiamondRelationalOperator(r), BoxRelationalOperator(r)] for r in relations]...)[1:32:end]...])
         if rand(Bool)
-            # coin = rand(1:3)
-            coin = rand(2:3)
+            coin = rand(1:2)
             f = begin
                 if coin == 1
                     BoxRelationalOperator(globalrel)(f)
-                elseif coin == 2
+                else
                     BoxRelationalOperator(SoleLogics.tocenterrel)(f)
                 # else
                     # TODO operator for going to a world. Note that this cannot be done with singletons...
                     # AnchoredFormula(f, SoleModels.WorldCheck(rand(collect(allworlds(modality(multilogiset, i_modality), i_instance)))))
-                else
-                    f
+                # else
+                #     f
                 end
             end
             _formulas_dict[i_modality] = f

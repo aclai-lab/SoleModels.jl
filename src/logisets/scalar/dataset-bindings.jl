@@ -151,12 +151,16 @@ function scalarlogiset(
     end
 
     if isnothing(features)
-        is_propositional_dataset = all(i_instance->nworlds(frame(dataset, i_instance)) == 1, 1:ninstances(dataset))
         features = begin
-            if is_propositional_dataset
-                [UnivariateValue{vareltype(dataset, i_var)}(i_var) for i_var in 1:nvariables(dataset)]
+            if isnothing(conditions)
+                is_propositional_dataset = all(i_instance->nworlds(frame(dataset, i_instance)) == 1, 1:ninstances(dataset))
+                if is_propositional_dataset
+                    [UnivariateValue{vareltype(dataset, i_var)}(i_var) for i_var in 1:nvariables(dataset)]
+                else
+                    vcat([[UnivariateMax{vareltype(dataset, i_var)}(i_var), UnivariateMin{vareltype(dataset, i_var)}(i_var)] for i_var in 1:nvariables(dataset)]...)
+                end
             else
-                vcat([[UnivariateMax{vareltype(dataset, i_var)}(i_var), UnivariateMin{vareltype(dataset, i_var)}(i_var)] for i_var in 1:nvariables(dataset)]...)
+                unique(feature.(conditions))
             end
         end
     end

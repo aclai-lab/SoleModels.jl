@@ -1,5 +1,5 @@
 using SoleModels
-using MLJBase
+using MLJBase: accuracy, mae
 using SoleModels: LeafModel
 import SoleLogics: npropositions
 
@@ -17,9 +17,9 @@ function readmetrics(m::LeafModel{L}; digits = 2) where {L<:Label}
         _gts = info(m).supporting_labels
         _preds = _gts = info(m).supporting_predictions
         if L <: CLabel
-            (; ninstances = length(_gts), confidence = round(MLJBase.accuracy(_gts, _preds); digits = digits))
+            (; ninstances = length(_gts), confidence = round(accuracy(_gts, _preds); digits = digits))
         elseif L <: RLabel
-            (; ninstances = length(_gts), mae = round(MLJBase.mae(_gts, _preds); digits = digits))
+            (; ninstances = length(_gts), mae = round(mae(_gts, _preds); digits = digits))
         else
             error("Could not compute readmetrics with unknown label type: $(L).")
         end
