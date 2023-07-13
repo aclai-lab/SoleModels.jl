@@ -31,7 +31,7 @@ function parsefeature(
     kwargs...
 )
     return error("Please, provide method parsefeature(::$(FT), " *
-        " expression::$(typeof(expression)); kwargs...).")
+        "expression::$(typeof(expression)); kwargs...).")
 end
 
 ############################################################################################
