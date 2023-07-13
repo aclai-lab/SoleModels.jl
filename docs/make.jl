@@ -5,7 +5,7 @@ DocMeta.setdocmeta!(SoleModels, :DocTestSetup, :(using SoleModels); recursive=tr
 
 makedocs(;
     modules=[SoleModels],
-    authors="Eduard I. STAN, Giovanni PAGLIARINI",
+    authors="Giovanni Pagliarini, Eduard I. Stan",
     repo="https://github.com/aclai-lab/SoleModels.jl/blob/{commit}{path}#{line}",
     sitename="SoleModels.jl",
     format=Documenter.HTML(;
@@ -20,4 +20,8 @@ makedocs(;
 
 deploydocs(;
     repo="github.com/aclai-lab/SoleModels.jl",
+    devbranch = "main",
+    target = "build",
+    branch = "gh-pages",
+    versions = ["stable" => "v^", "v#.#"],
 )

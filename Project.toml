@@ -1,6 +1,6 @@
 name = "SoleModels"
 uuid = "4249d9c7-3290-4ddd-961c-e1d3ec2467f8"
-authors = ["Eduard I. STAN", "Giovanni PAGLIARINI"]
+authors = ["Michele GHIOTTI", "Giovanni PAGLIARINI", "Eduard I. STAN"]
 version = "0.1.0"
 
 [deps]
@@ -40,7 +40,7 @@ ProgressMeter = "1"
 Reexport = "1"
 Revise = "3"
 SoleBase = "0.9.2"
-SoleData = "0.9.0"
+SoleData = "0.9.1"
 SoleLogics = "0.3.0"
 StatsBase = "0.34"
 Suppressor = "0.2"

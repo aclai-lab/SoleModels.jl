@@ -13,8 +13,8 @@
 
 *SoleModels.jl* defines the building blocks of *symbolic* modeling and learning.
 It features:
-- Definitions for symbolic models (decision trees/forests, rules, etc.);
-- Optimized data structures, useful when learning models from datasets;
+- Definitions for symbolic models (decision trees/forests, rules, branches, etc.);
+- Optimized data structures, useful when learning models from machine learning datasets;
 - Support for mixed, neuro-symbolic computation.
 
 These definitions provide a unified base for implementing symbolic algorithms, such as:
@@ -32,9 +32,10 @@ These definitions provide a unified base for implementing symbolic algorithms, s
 
 Remember:
 - An antecedent is a logical formula that can be checked on a logical interpretation (that is, an *instance* of a symbolic learning dataset), yielding a truth value (e.g., `true/false`);
-- A consequent is... anything you want, really, even another model (spoiler: a Branch with Branch consequents is a Decision Tree 😉).
+- A consequent is another model, for example, a (final) constant model or branch to be applied.
 
-More specifically, antecedents can be *logical formulas* and, in such case, the symbolic models
+Within this framework, a decision tree is no other than a branch with branch and final consequents.
+NoteThat antecedents can consist of *logical formulas* and, in such case, the symbolic models
 are can be applied to *logical interpretations*.
 For more information, refer to [*SoleLogics.jl*](https://github.com/aclai-lab/SoleLogics.jl), the underlying logical layer.
 
