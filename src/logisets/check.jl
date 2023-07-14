@@ -1,7 +1,5 @@
 
-"""
-TODO docstring
-"""
+# TODO docstring
 function check(
     φ::SoleLogics.SyntaxTree,
     X::AbstractLogiset{W,U},

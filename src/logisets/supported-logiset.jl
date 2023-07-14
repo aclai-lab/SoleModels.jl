@@ -1,9 +1,8 @@
+# # Examples
+# TODO add example showing that checking is faster when using this structure.
 """
 A logiset associated to a number of cascading full or one-step
 memoization structures, that are used when checking formulas.
-
-# Examples
-TODO add example showing that checking is faster when using this structure.
 
 See also
 [`SuportedLogiset`](@ref),

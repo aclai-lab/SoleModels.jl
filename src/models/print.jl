@@ -109,19 +109,9 @@ end
 """$(doc_printdisplay_model)"""
 function displaymodel(
     m::AbstractModel;
-    header = DEFAULT_HEADER,
-    indentation_str = "",
-    indentation = default_indentation,
-    depth = 0,
-    max_depth = nothing,
-    show_subtree_info = false,
-    show_metrics = false,
-    show_intermediate_finals = false,
-    tree_mode = false,
-    syntaxstring_kwargs = (;),
     kwargs...
 )
-    @_display_submodel m indentation_str indentation depth max_depth show_subtree_info show_metrics show_intermediate_finals tree_mode syntaxstring_kwargs kwargs
+    _displaymodel(m; kwargs...)
 end
 
 function _displaymodel(
@@ -248,11 +238,11 @@ function _displaymodel(
             subm_str = @_display_submodel consequent(m) ind_str indentation depth max_depth show_subtree_info show_metrics show_intermediate_finals tree_mode syntaxstring_kwargs kwargs
             print(io, subm_str)
         else
-            print(io, "$(pipe)$(ant_str)")
-            ind_str = ""
+            line = "$(pipe)$(ant_str)" * "  $(arrow) "
+            ind_str = indentation_str * repeat(" ", length(line) + length("▣") + 1)
             subm_str = @_display_submodel consequent(m) ind_str indentation depth max_depth show_subtree_info false show_intermediate_finals tree_mode syntaxstring_kwargs kwargs
             show_metrics != false && (subm_str = rstrip(subm_str, '\n') * " : $(get_metrics_string(m; (show_metrics isa NamedTuple ? show_metrics : [])...))")
-            print(io, "  $(arrow) ")
+            print(io, line)
             print(io, subm_str)
         end
     else

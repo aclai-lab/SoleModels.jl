@@ -17,12 +17,11 @@ Base.findfirst(p::UniqueVectors.EqualTo, uv::UniqueVector) = get(uv.lookup, p.x,
 _in(item, uv::UniqueVector) = haskey(uv.lookup, item)
 _findfirst(p::UniqueVectors.EqualTo, uv::UniqueVector) = get(uv.lookup, p.x, nothing)
 
+# TODO complete and explain
 """
 A full memoization structure used for checking formulas of scalar conditions on
 datasets with scalar features. This structure is the equivalent to [`FullMemoset`](@ref),
 but with scalar features some important optimizations can be done.
-
-TODO explain
 
 See also
 [`FullMemoset`](@ref),

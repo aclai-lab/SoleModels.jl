@@ -88,15 +88,14 @@ abstract type AbstractFullMemoset{W<:AbstractWorld,U,FT<:AbstractFeature,FR<:Abs
 
 ############################################################################################
 
+# # Examples
+# TODO add example showing that checking is faster when using this structure.
 """
 A generic, full memoization structure that works for any *crisp* logic;
 For each instance of a dataset,
 this structure associates formulas to the set of worlds where the
 formula holds; it was introduced by Emerson-Clarke for the
 well-known model checking algorithm for CTL*.
-
-# Examples
-TODO add example showing that checking is faster when using this structure.
 
 See also
 [`SuportedLogiset`](@ref),

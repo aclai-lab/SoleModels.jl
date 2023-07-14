@@ -349,6 +349,7 @@ function naturalconditions(
     metaconditions
 end
 
+# TODO examples
 """
     naturalgrouping(
         X::AbstractDataFrame;
@@ -359,8 +360,6 @@ Return variables grouped by their logical nature;
 the nature of a variable is automatically derived
 from its type (e.g., Real, Vector{<:Real} or Matrix{<:Real}) and frame.
 All instances must have the same frame (e.g., channel size/number of worlds).
-
-TODO example
 """
 function naturalgrouping(
     X::AbstractDataFrame;

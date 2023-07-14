@@ -159,6 +159,30 @@ advanceformula(r::Rule, assumed_formula::Union{Nothing,AbstractFormula}) =
 
 List the immediate rules equivalent to a symbolic model.
 
+# Examples
+```julia-repl
+julia> using SoleLogics
+
+julia> branch = Branch(SoleLogics.parseformula("p"), Branch(SoleLogics.parseformula("q"), "YES", "NO"), "NO")
+ p
+├✔ q
+│├✔ YES
+│└✘ NO
+└✘ NO
+
+
+julia> printmodel.(listimmediaterules(branch); tree_mode = true);
+▣ p
+└✔ q
+ ├✔ YES
+ └✘ NO
+
+▣ ¬(p)
+└✔ NO
+
+
+```
+
 See also [`listrules`](@ref), [`issymbolic`](@ref), [`AbstractModel`](@ref).
 """
 listimmediaterules(m::AbstractModel{O} where {O})::Rule{<:O} =
@@ -200,6 +224,12 @@ listimmediaterules(m::MixedSymbolicModel) = listimmediaterules(root(m))
 ############################################################################################
 ############################################################################################
 
+# TODO @Michi esempi
+# TODO
+# The keyword argument `force_syntaxtree`, when set to true, causes the logical antecedents
+# in the returned rules to be represented as `SyntaxTree`s, as opposed to other syntax
+# structure (e.g., `LeftmostConjunctiveForm`).
+
 """
     listrules(
         m::AbstractModel;
@@ -210,67 +240,35 @@ listimmediaterules(m::MixedSymbolicModel) = listimmediaterules(root(m))
     )::Vector{<:Rule}
 
 Return a list of rules capturing the knowledge enclosed in symbolic model.
-The behavior of any symbolic model can be extracted and represented as a
+The behavior of any symbolic model can be synthesised and represented as a
 set of mutually exclusive (and jointly exaustive, if the model is closed) rules,
 which can be useful for many purposes.
 
-The keyword argument `force_syntaxtree`, when set to true, causes the logical antecedents
-in the returned rules to be represented as `SyntaxTree`s, as opposed to other syntax
-structure (e.g., `LeftmostConjunctiveForm`).
-
 # Examples
-# TODO @Michi questi esempi non sono chiari: cosa è r2_string?
 ```julia-repl
-@test listrules(r2_string) isa Vector{<:Rule}
-julia> print(join(displaymodel.(listrules(rule); header = false)))
-┐¬(r)
-└ ✔ YES
+julia> using SoleLogics
 
-julia> print(join(displaymodel.(listrules(decision_list); header = false)))
-┐(r ∧ s) ∧ t
-└ ✔ YES
-┐¬(r)
-└ ✔ YES
-┐⊤
-└ ✔ YES
+julia> branch = Branch(SoleLogics.parseformula("p"), Branch(SoleLogics.parseformula("q"), "YES", "NO"), "NO")
+ p
+├✔ q
+│├✔ YES
+│└✘ NO
+└✘ NO
 
-@test listrules(rcmodel) isa Vector{<:Rule}
-julia> print(join(displaymodel.(listrules(rule_cascade); header = false)))
-┐(p ∧ (q ∨ r)) ∧ ((p ∧ (q ∨ r)) ∧ (p ∧ (q ∨ r)))
-└ ✔ 1
 
-julia> print(join(displaymodel.(listrules(branch); header = false)))
-┐r ∧ s
-└ ✔ YES
-┐r ∧ (¬(s))
-└ ✔ NO
-┐(¬(r)) ∧ (t ∧ q)
-└ ✔ YES
-┐(¬(r)) ∧ (t ∧ (¬(q)))
-└ ✔ NO
-┐(¬(r)) ∧ (¬(t))
-└ ✔ YES
+julia> printmodel.(listrules(branch); tree_mode = true);
+▣ p ∧ q
+└✔ YES
 
-julia> print(join(displaymodel.(listrules(decision_tree); header = false)))
-┐r ∧ s
-└ ✔ YES
-┐r ∧ (¬(s))
-└ ✔ NO
-┐(¬(r)) ∧ (t ∧ q)
-└ ✔ YES
-┐(¬(r)) ∧ (t ∧ (¬(q)))
-└ ✔ NO
-┐(¬(r)) ∧ (¬(t))
-└ ✔ YES
+▣ p ∧ ¬q
+└✔ NO
 
-julia> print(join(displaymodel.(listrules(mixed_symbolic_model); header = false)))
-┐q
-└ ✔ 2
-┐¬(q)
-└ ✔ 1.5
+▣ ¬p
+└✔ NO
+
 ```
 
-See also [`listimmediaterules`](@ref), [`issymbolic`](@ref), [`LeafModel`](@ref),
+See also [`listimmediaterules`](@ref), [`joinrules`](@ref), [`issymbolic`](@ref), [`LeafModel`](@ref),
 [`AbstractModel`](@ref).
 """
 function listrules(m::AbstractModel; kwargs...)
@@ -358,7 +356,7 @@ function listrules(
                 if (use_shortforms && haskey(info(subrule), :shortform))
                     info(subrule)[:shortform], true
                 else
-                    (flag ? antecedent(m) : antecedent(m)), false
+                    (flag ? antecedent(m) : ¬antecedent(m)), false
                 end
             end
             antformula = force_syntaxtree ? tree(antformula) : antformula
@@ -415,6 +413,47 @@ listrules(m::MixedSymbolicModel; kwargs...) = listrules(root(m); kwargs...)
 ############################################################################################
 
 
+"""
+    joinrules(rules::AbstractVector{<:Rule})::Vector{<:Rule}
+
+Return a set of rules, with exactly one rule per different outcome from the input set of rules.
+For each outcome, the output rule is computed as the logical disjunction of the antecedents
+of the input rules for that outcome.
+
+# Examples
+```julia-repl
+julia> using SoleLogics
+
+julia> branch = Branch(SoleLogics.parseformula("p"), Branch(SoleLogics.parseformula("q"), "YES", "NO"), "NO")
+ p
+├✔ q
+│├✔ YES
+│└✘ NO
+└✘ NO
+
+
+julia> printmodel.(listrules(branch); tree_mode = true);
+▣ p ∧ q
+└✔ YES
+
+▣ p ∧ ¬q
+└✔ NO
+
+▣ ¬p
+└✔ NO
+
+julia> printmodel.(joinrules(listrules(branch)); tree_mode = true);
+▣ (p ∧ q)
+└✔ YES
+
+▣ (p ∧ ¬q) ∨ ¬p
+└✔ NO
+
+```
+
+See also [`listrules`](@ref), [`issymbolic`](@ref), [`DISJUNCTION`](@ref), [`LeafModel`](@ref),
+[`AbstractModel`](@ref).
+"""
 function joinrules(
     rules::AbstractVector{
         <:Rule{<:Any,<:SoleModels.AbstractFormula,<:SoleModels.ConstantModel}

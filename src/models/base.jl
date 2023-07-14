@@ -152,11 +152,11 @@ end
 Return whether a model is symbolic or not.
 A model is said to be `symbolic` when its application relies on checking formulas
 of a certain logical language (see [`SoleLogics`](@ref) package) on the instance.
-Symbolic models provide a form of transparent and interpretable modeling.
+Symbolic models provide a form of transparent and interpretable modeling,
+as a symbolic model can be synthethised into a set of mutually exclusive logical rules.
 
 Instead, a model is said to be functional when it encodes an algebraic mathematical
 function (e.g., a neural network).
-TODO explain listrules/cascade/rules A symbolic model is one where the computation has a *rule-base structure*.
 
 See also
 [`apply`](@ref),
@@ -261,6 +261,7 @@ apply(m::ConstantModel, d::AbstractInterpretationSet; kwargs...) = fill(outcome(
 convert(::Type{ConstantModel{O}}, o::O) where {O} = ConstantModel{O}(o)
 convert(::Type{<:AbstractModel{F}}, m::ConstantModel) where {F} = ConstantModel{F}(m)
 
+# TODO @Michele explain functional_args/functional_kwargs
 """
     struct FunctionModel{O} <: LeafModel{O}
         f::FunctionWrapper{O}
@@ -271,8 +272,6 @@ A `FunctionModel` is a `LeafModel` that applies a native Julia `Function`
 in order to compute the outcome. Over efficiency concerns, it is mandatory to make explicit
 the output type `O` by wrapping the `Function` into an object of type
 `FunctionWrapper{O}`.
-
-TODO @Michele explain functional_args/functional_kwargs
 
 See also [`ConstantModel`](@ref), [`FunctionWrapper`](@ref), [`LeafModel`](@ref).
 """

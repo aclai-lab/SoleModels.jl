@@ -49,9 +49,7 @@ function readfeature(
     return error("Please, provide method readfeature(::$(typeof(X)), featchannel::$(typeof(featchannel)), w::$(typeof(w)), feature::$(typeof(feature))).")
 end
 
-"""
-TODO
-"""
+# TODO docstring
 function featvalue(
     X::AbstractLogiset{W},
     i_instance::Integer,

@@ -539,12 +539,11 @@ end
 
 ############################################################################################
 
+# TODO explain
 """
 A generic, one-step memoization structure used for checking specific formulas
 of scalar conditions on
 datasets with scalar features. The formulas are of type ⟨R⟩ (f ⋈ t)
-
-TODO explain
 
 See also
 [`FullMemoset`](@ref),
