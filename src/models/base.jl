@@ -146,6 +146,8 @@ function apply(
     map(i_instance->apply(m, d, i_instance; kwargs...), 1:ninstances(d))
 end
 
+# Symbolic models encode a *rule-based thought process*,
+# and provide a form of transparent and interpretable computation.
 """
     issymbolic(::AbstractModel)::Bool
 
@@ -153,10 +155,14 @@ Return whether a model is symbolic or not.
 A model is said to be `symbolic` when its application relies on checking formulas
 of a certain logical language (see [`SoleLogics`](@ref) package) on the instance.
 Symbolic models provide a form of transparent and interpretable modeling,
-as a symbolic model can be synthethised into a set of mutually exclusive logical rules.
+as a symbolic model can be synthethised into a set of mutually exclusive logical rules
+that can often be translated into natural language.
 
-Instead, a model is said to be functional when it encodes an algebraic mathematical
-function (e.g., a neural network).
+Examples of purely symbolic models are [`Rule`](@ref)s, [`Branch`](@ref),
+[`DecisionList`](@ref)s and [`DecisionTree`](@ref)s.
+Examples of non-symbolic models are those encoding algebraic mathematical
+functions (e.g., neural networks). Note that [`DecisionForest`](@ref)s are
+not purely symbolic, as they rely on an algebraic aggregation step.
 
 See also
 [`apply`](@ref),

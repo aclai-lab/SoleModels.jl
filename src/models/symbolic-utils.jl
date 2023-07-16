@@ -225,11 +225,6 @@ listimmediaterules(m::MixedSymbolicModel) = listimmediaterules(root(m))
 ############################################################################################
 
 # TODO @Michi esempi
-# TODO
-# The keyword argument `force_syntaxtree`, when set to true, causes the logical antecedents
-# in the returned rules to be represented as `SyntaxTree`s, as opposed to other syntax
-# structure (e.g., `LeftmostConjunctiveForm`).
-
 """
     listrules(
         m::AbstractModel;
@@ -243,6 +238,10 @@ Return a list of rules capturing the knowledge enclosed in symbolic model.
 The behavior of any symbolic model can be synthesised and represented as a
 set of mutually exclusive (and jointly exaustive, if the model is closed) rules,
 which can be useful for many purposes.
+
+The keyword argument `force_syntaxtree`, when set to true, causes the logical antecedents
+in the returned rules to be represented as `SyntaxTree`s, as opposed to other syntax
+structure (e.g., `LeftmostConjunctiveForm`).
 
 # Examples
 ```julia-repl
