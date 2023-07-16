@@ -1,7 +1,7 @@
 name = "SoleModels"
 uuid = "4249d9c7-3290-4ddd-961c-e1d3ec2467f8"
 authors = ["Michele GHIOTTI", "Giovanni PAGLIARINI", "Eduard I. STAN"]
-version = "0.1.0"
+version = "0.2.0"
 
 [deps]
 BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
@@ -39,9 +39,9 @@ julia = "1"
 ProgressMeter = "1"
 Reexport = "1"
 Revise = "3"
-SoleBase = "0.9.2"
-SoleData = "0.9.1"
-SoleLogics = "0.3.0"
+SoleBase = "0.10"
+SoleData = "0.10"
+SoleLogics = "0.4"
 StatsBase = "0.34"
 Suppressor = "0.2"
 ThreadSafeDicts = "0.1.0"
