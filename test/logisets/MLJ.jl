@@ -12,11 +12,11 @@ multidataset, multirelations = collect.(zip([
 multilogiset = @test_nowarn scalarlogiset(multidataset)
 multilogiset = scalarlogiset(multidataset; relations = multirelations, conditions = vcat([[SoleModels.ScalarMetaCondition(UnivariateMin(i), >), SoleModels.ScalarMetaCondition(UnivariateMax(i), <)] for i in 1:_nvars]...))
 
-@test_nowarn X = modality(multilogiset, 1)
+X = @test_nowarn modality(multilogiset, 1)
 @test_nowarn selectrows(X, 1:10)
 @test_nowarn selectrows(multilogiset, 1:10)
 @test_nowarn selectrows(SoleModels.base(X), 1:10)
-@test_nowarn X = modality(multilogiset, 2)
+X = @test_nowarn modality(multilogiset, 2)
 @test_nowarn selectrows(SoleModels.base(X), 1:10)
 
 mod2 = modality(multilogiset, 2)
