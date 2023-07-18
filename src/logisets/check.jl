@@ -97,7 +97,7 @@ function check(
                     elseif tok isa SoleLogics.AbstractOperator
                         _c(SoleLogics.collateworlds(fr, tok, map(f->readformula(memo_structure, f), children(ψ))))
                     elseif tok isa Proposition
-                        condition = atom(tok)
+                        condition = atom(tok) # TODO write check(tok, X, i_instance, _w) and use it here instead of checkcondition.
                         _f(_w->checkcondition(condition, X, i_instance, _w), _c(allworlds(fr)))
                     else
                         error("Unexpected token encountered in _check: $(typeof(tok))")
