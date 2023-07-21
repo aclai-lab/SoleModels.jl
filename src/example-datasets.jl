@@ -1,14 +1,19 @@
 using HTTP
 using ZipFile
-using ARFFFiles
 using DataFrames
 
 using DataStructures: OrderedDict
 
 # SoleModels.load_arff_dataset("NATOPS")
 
-function load_arff_dataset(dataset_name, path = "http://www.timeseriesclassification.com/ClassificationDownloads/$(dataset_name).zip")
-# function load_arff_dataset(dataset_name, path = "../datasets/Multivariate_arff/$(dataset_name)")
+function load_arff_dataset(
+    dataset_name,
+    split = :all;
+    path = "http://www.timeseriesclassification.com/ClassificationDownloads/$(dataset_name).zip"
+)
+    @assert split in [:train, :test, :split, :all] "Unexpected value for split parameter: $(split). Allowed: :train, :test, :split, :all."
+
+    # function load_arff_dataset(dataset_name, path = "../datasets/Multivariate_arff/$(dataset_name)")
     (X_train, y_train), (X_test, y_test) = begin
         if(any(startswith.(path, ["https://", "http://"])))
             r = HTTP.get(path);
@@ -132,7 +137,17 @@ function load_arff_dataset(dataset_name, path = "http://www.timeseriesclassifica
 
     @assert nrow(X_train) == length(y_train) "$(nrow(X_train)), $(length(y_train))"
 
-    ((X_train, y_train), (X_test,  y_test))
+    if split == :all
+        vcat(X_train, X_test), vcat(y_train, y_test)
+    elseif split == :train
+        (X_train, y_train)
+    elseif split == :test
+        (X_test, y_test)
+    elseif split == :traintest
+        ((X_train, y_train), (X_test,  y_test))
+    else
+        error("Unexpected value for split parameter: $(split)")
+    end
 end
 
 const _ARFF_SPACE       = UInt8(' ')
