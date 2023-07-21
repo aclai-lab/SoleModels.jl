@@ -137,6 +137,8 @@ function load_arff_dataset(
 
     @assert nrow(X_train) == length(y_train) "$(nrow(X_train)), $(length(y_train))"
 
+    y_train = categorical(y_train)
+    y_test = categorical(y_test)
     if split == :all
         vcat(X_train, X_test), vcat(y_train, y_test)
     elseif split == :train
