@@ -15,7 +15,7 @@ Performance metrics can be computed when the `info` structure of the model:
 function readmetrics(m::LeafModel{L}; digits = 2) where {L<:Label}
     merge(if haskey(info(m), :supporting_labels) && haskey(info(m), :supporting_predictions)
         _gts = info(m).supporting_labels
-        _preds = _gts = info(m).supporting_predictions
+        _preds = info(m).supporting_predictions
         if L <: CLabel
             (; ninstances = length(_gts), confidence = round(accuracy(_gts, _preds); digits = digits))
         elseif L <: RLabel
