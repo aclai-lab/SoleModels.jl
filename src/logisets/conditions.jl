@@ -1,7 +1,7 @@
 
 using SoleLogics: AbstractAlphabet
 using Random
-import SoleLogics: negation, propositions
+import SoleLogics: hasdual, dual, propositions
 
 import Base: isequal, hash, in, isfinite, length
 

@@ -380,9 +380,9 @@ function featchannel_onestep_aggregation(
         # Find metacond with same aggregator
         i_metacond = findfirst((m)->feature(m) == feature(metacond) && existential_aggregator(test_operator(m)) == existential_aggregator(test_operator(metacond)), metaconditions(Xm))
         if isnothing(i_metacond)
-            i_neg_metacond = _findfirst(isequal(negation(metacond)), metaconditions(Xm))
+            i_neg_metacond = _findfirst(isequal(dual(metacond)), metaconditions(Xm))
             error("Could not find metacondition $(metacond) in memoset of type $(typeof(Xm)) " *
-                "($(!isnothing(i_neg_metacond) ? "but negation was found " *
+                "($(!isnothing(i_neg_metacond) ? "but dual was found " *
                 "with i_metacond = $(i_neg_metacond)!" : "")).")
         end
     end
@@ -433,9 +433,9 @@ function check(
     if isnothing(i_metacond)
         i_metacond = findfirst((m)->feature(m) == feature(metacond) && existential_aggregator(test_operator(m)) == existential_aggregator(test_operator(metacond)), metaconditions(Xm))
         if isnothing(i_metacond)
-            i_neg_metacond = _findfirst(isequal(negation(metacond)), metaconditions(Xm))
+            i_neg_metacond = _findfirst(isequal(dual(metacond)), metaconditions(Xm))
             error("Could not find metacondition $(metacond) in memoset of type $(typeof(Xm)) " *
-                "($(!isnothing(i_neg_metacond) ? "but negation was found " *
+                "($(!isnothing(i_neg_metacond) ? "but dual was found " *
                 "with i_metacond = $(i_neg_metacond)!" : "")).")
         end
     end

@@ -20,8 +20,9 @@ test_operator(f::ScalarPropositionFormula) = test_operator(proposition(f))
 threshold(f::ScalarPropositionFormula) = threshold(proposition(f))
 
 tree(f::ScalarPropositionFormula) = SyntaxTree(f.p)
-negation(f::ScalarPropositionFormula{U}) where {U} =
-    ScalarPropositionFormula{U}(negation(p))
+hasdual(f::ScalarPropositionFormula) = true
+dual(f::ScalarPropositionFormula{U}) where {U} =
+    ScalarPropositionFormula{U}(dual(p))
 
 ############################################################################################
 
@@ -102,15 +103,17 @@ end
 
 tree(f::ScalarUniversalFormula) = BoxRelationalOperator(f.relation)(Proposition(f.p))
 
-function negation(formula::ScalarExistentialFormula{U}) where {U}
+hasdual(f::ScalarExistentialFormula) = true
+function dual(formula::ScalarExistentialFormula{U}) where {U}
     ScalarUniversalFormula{U}(
         relation(formula),
-        negation(proposition(formula))
+        dual(proposition(formula))
     )
 end
-function negation(formula::ScalarUniversalFormula{U}) where {U}
+hasdual(f::ScalarUniversalFormula) = true
+function dual(formula::ScalarUniversalFormula{U}) where {U}
     ScalarExistentialFormula{U}(
         relation(formula),
-        negation(proposition(formula))
+        dual(proposition(formula))
     )
 end

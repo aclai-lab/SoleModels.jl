@@ -19,7 +19,7 @@ for representing the infinite set of conditions that arise with a free threshold
 
 See also
 [`AbstractCondition`](@ref),
-[`negation`](@ref),
+[`dual`](@ref),
 [`ScalarCondition`](@ref).
 """
 struct ScalarMetaCondition{FT<:AbstractFeature,O<:TestOperator} <: AbstractCondition{FT}
@@ -39,7 +39,8 @@ end
 feature(m::ScalarMetaCondition) = m.feature
 test_operator(m::ScalarMetaCondition) = m.test_operator
 
-negation(m::ScalarMetaCondition) = ScalarMetaCondition(feature(m), inverse_test_operator(test_operator(m)))
+hasdual(::ScalarMetaCondition) = true
+dual(m::ScalarMetaCondition) = ScalarMetaCondition(feature(m), inverse_test_operator(test_operator(m)))
 
 syntaxstring(m::ScalarMetaCondition; kwargs...) =
     "$(_syntaxstring_metacondition(m; kwargs...)) ⍰"
@@ -111,7 +112,7 @@ In this case, the feature a [`UnivariateMin`](@ref) object.
 
 See also
 [`AbstractCondition`](@ref),
-[`negation`](@ref),
+[`dual`](@ref),
 [`ScalarMetaCondition`](@ref).
 """
 struct ScalarCondition{U,FT,M<:ScalarMetaCondition{FT}} <: AbstractCondition{FT}
@@ -152,7 +153,8 @@ threshold(c::ScalarCondition) = c.threshold
 feature(c::ScalarCondition) = feature(metacond(c))
 test_operator(c::ScalarCondition) = test_operator(metacond(c))
 
-negation(c::ScalarCondition) = ScalarCondition(negation(metacond(c)), threshold(c))
+hasdual(::ScalarCondition) = true
+dual(c::ScalarCondition) = ScalarCondition(dual(metacond(c)), threshold(c))
 
 function checkcondition(c::ScalarCondition, args...; kwargs...)
     apply_test_operator(test_operator(c), featvalue(feature(c), args...; kwargs...), threshold(c))
