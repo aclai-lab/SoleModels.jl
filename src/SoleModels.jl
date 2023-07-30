@@ -95,6 +95,8 @@ export posconsequent, negconsequent
 export DecisionList
 export rulebase, defaultconsequent
 
+export apply, apply!
+
 export DecisionTree
 export root
 
