@@ -1,7 +1,7 @@
 name = "SoleModels"
 uuid = "4249d9c7-3290-4ddd-961c-e1d3ec2467f8"
 authors = ["Michele GHIOTTI", "Giovanni PAGLIARINI", "Eduard I. STAN"]
-version = "0.2.1"
+version = "0.2.2"
 
 [deps]
 BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
@@ -41,12 +41,12 @@ DataStructures = "0.18"
 FillArrays = "1"
 FunctionWrappers = "1"
 Graphs = "1.8.0"
+HTTP = "1.9.14"
 Lazy = "0.15.1"
 MLJBase = "0.21.11"
 MLJModelInterface = "1.8.0"
 ProgressMeter = "1"
 Reexport = "1"
-HTTP = "1.9.14"
 Revise = "3"
 SoleBase = "0.11"
 SoleData = "0.10"
@@ -56,6 +56,7 @@ Suppressor = "0.2"
 Tables = "1.10.1"
 ThreadSafeDicts = "0.1.0"
 UniqueVectors = "1.2.0"
+ZipFile = "0.10.1"
 julia = "1"
 
 [extras]
