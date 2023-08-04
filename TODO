@@ -1,2 +1,2 @@
-- struct EnsambleModel (with parametrized aggregation) and DecisionForest
--	PatchModel, a closed model providing a default consequent to an open model
+☐ struct EnsambleModel (with parametrized aggregation) and DecisionForest
+☐	PatchModel, a closed model providing a default consequent to an open model

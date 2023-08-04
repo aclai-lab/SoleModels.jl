@@ -53,7 +53,7 @@ export nfeatures
 
 include("scalar/main.jl")
 
-# Tables interface for Logiset's, so that it can be integrated with MLJ
+# Tables interface for logiset's, so that it can be integrated with MLJ
 include("MLJ-interface.jl")
 
 export initlogiset, ninstances, maxchannelsize, worldtype, dimensionality, allworlds, featvalue

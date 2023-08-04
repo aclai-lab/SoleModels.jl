@@ -234,14 +234,6 @@ function scalarlogiset(
     end
 end
 
-
-const MixedCondition = Union{
-    <:Union{SoleModels.VarFeature,Base.Callable},                       # feature (i.e., callables to be associated to all variables, or SoleModels.VarFeature objects);
-    <:Tuple{Base.Callable,Integer},                                     # (callable,var_id);
-    <:Tuple{TestOperator,<:Union{SoleModels.VarFeature,Base.Callable}}, # (test_operator,features);
-    <:ScalarMetaCondition,                                              # ScalarMetaCondition;
-}
-
 function naturalconditions(
     dataset,
     mixed_conditions   :: AbstractVector,
@@ -260,30 +252,30 @@ function naturalconditions(
 
     def_test_operators = is_propositional_dataset ? [≥] : [≥, <]
 
-    # univar_condition(i_var,cond::SoleModels.CanonicalFeatureGeq) = ([≥],DimensionalDatasets.UnivariateMin{featvaltype}(i_var))
-    # univar_condition(i_var,cond::SoleModels.CanonicalFeatureLeq) = ([<],DimensionalDatasets.UnivariateMax{featvaltype}(i_var))
-    # univar_condition(i_var,cond::SoleModels.CanonicalFeatureGeqSoft) = ([≥],DimensionalDatasets.UnivariateSoftMin{featvaltype}(i_var, cond.alpha))
-    # univar_condition(i_var,cond::SoleModels.CanonicalFeatureLeqSoft) = ([<],DimensionalDatasets.UnivariateSoftMax{featvaltype}(i_var, cond.alpha))
+    univar_condition(i_var,cond::SoleModels.CanonicalFeatureGeq) = ([≥],UnivariateMin{featvaltype}(i_var))
+    univar_condition(i_var,cond::SoleModels.CanonicalFeatureLeq) = ([<],UnivariateMax{featvaltype}(i_var))
+    univar_condition(i_var,cond::SoleModels.CanonicalFeatureGeqSoft) = ([≥],UnivariateSoftMin{featvaltype}(i_var, cond.alpha))
+    univar_condition(i_var,cond::SoleModels.CanonicalFeatureLeqSoft) = ([<],UnivariateSoftMax{featvaltype}(i_var, cond.alpha))
     function univar_condition(i_var,(test_ops,cond)::Tuple{<:AbstractVector{<:TestOperator},typeof(identity)})
         V = vareltype(dataset, i_var)
         if !isconcretetype(V)
             @warn "Building UnivariateValue with non-concrete feature type: $(V)."
         end
-        return (test_ops,DimensionalDatasets.UnivariateValue{V}(i_var))
+        return (test_ops,UnivariateValue{V}(i_var))
     end
     function univar_condition(i_var,(test_ops,cond)::Tuple{<:AbstractVector{<:TestOperator},typeof(minimum)})
         V = vareltype(dataset, i_var)
         if !isconcretetype(V)
             @warn "Building UnivariateMin with non-concrete feature type: $(V)."
         end
-        return (test_ops,DimensionalDatasets.UnivariateMin{V}(i_var))
+        return (test_ops,UnivariateMin{V}(i_var))
     end
     function univar_condition(i_var,(test_ops,cond)::Tuple{<:AbstractVector{<:TestOperator},typeof(maximum)})
         V = vareltype(dataset, i_var)
         if !isconcretetype(V)
             @warn "Building UnivariateMax with non-concrete feature type: $(V)."
         end
-        return (test_ops,DimensionalDatasets.UnivariateMax{V}(i_var))
+        return (test_ops,UnivariateMax{V}(i_var))
     end
     function univar_condition(i_var,(test_ops,cond)::Tuple{<:AbstractVector{<:TestOperator},Base.Callable})
         V = featvaltype
@@ -293,7 +285,7 @@ function naturalconditions(
         end
         # f = function (x) return V(cond(x)) end # breaks because it does not create a closure.
         f = cond
-        return (test_ops,DimensionalDatasets.UnivariateFeature{V}(i_var, f))
+        return (test_ops,UnivariateFeature{V}(i_var, f))
     end
     univar_condition(i_var,::Any) = throw_n_log("Unknown mixed_feature type: $(cond), $(typeof(cond))")
 

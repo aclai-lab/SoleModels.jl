@@ -162,15 +162,6 @@ struct SupportedLogiset{
 
         SupportedLogiset(base, supports)
     end
-
-    # TODO Helper
-    # function SupportedLogiset(
-    #     X                   :: ... AbstractScalarLogiset{W,V,FT,FR};
-    #     kwargs...,
-    # ) where {V,FT<:AbstractFeature,W<:AbstractWorld,FR<:AbstractFrame{W}}
-    #     SupportedLogiset(Logiset(X); kwargs...)
-    # end
-
 end
 
 base(X::SupportedLogiset)     = X.base

@@ -15,12 +15,20 @@ include("random.jl")
 
 include("representatives.jl")
 
-include("dataset-bindings.jl")
-
 # # Types for representing common associations between features and operators
-# include("canonical-conditions.jl") TODO remove
-# const MixedCondition = Union{AbstractFeature,CanonicalFeature,Function,Tuple{TestOperator,Function},Tuple{TestOperator,AbstractFeature}}
-# Union{AbstractFeature,CanonicalFeature,Function,Tuple{TestOperator,Function},Tuple{TestOperator,AbstractFeature}}
+include("canonical-conditions.jl") # TODO remove
+
+const MixedCondition = Union{
+    CanonicalFeature,
+    #
+    <:SoleModels.AbstractFeature,                                            # feature
+    <:Base.Callable,                                                         # feature function (i.e., callables to be associated to all variables);
+    <:Tuple{Base.Callable,Integer},                                          # (callable,var_id);
+    <:Tuple{TestOperator,<:Union{SoleModels.AbstractFeature,Base.Callable}}, # (test_operator,features);
+    <:ScalarMetaCondition,                                                   # ScalarMetaCondition;
+}
+
+include("dataset-bindings.jl")
 
 include("memosets.jl")
 
