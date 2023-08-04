@@ -5,9 +5,15 @@ using SoleData: AbstractDimensionalDataset,
 
 import SoleData: ninstances, nvariables
 
-import SoleModels: scalarlogiset,
-    initlogiset, initlogiset, frame,
+import SoleModels:
+    islogiseed, initlogiset, frame,
     featchannel, readfeature, featvalue, vareltype
+
+function islogiseed(
+    dataset::AbstractDimensionalDataset,
+)
+    true
+end
 
 function initlogiset(
     dataset::AbstractDimensionalDataset,
@@ -91,6 +97,12 @@ end
 ############################################################################################
 
 using DataFrames
+
+function islogiseed(
+    dataset::AbstractDataFrame,
+)
+    true
+end
 
 function initlogiset(
     dataset::AbstractDataFrame,

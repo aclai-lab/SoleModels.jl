@@ -19,7 +19,7 @@ include("representatives.jl")
 include("canonical-conditions.jl") # TODO remove
 
 const MixedCondition = Union{
-    CanonicalFeature,
+    CanonicalCondition,
     #
     <:SoleModels.AbstractFeature,                                            # feature
     <:Base.Callable,                                                         # feature function (i.e., callables to be associated to all variables);

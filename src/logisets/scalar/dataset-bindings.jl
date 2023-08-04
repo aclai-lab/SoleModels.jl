@@ -1,9 +1,10 @@
 using ProgressMeter
 using SoleData: AbstractMultiModalDataset
-import SoleData: ninstances, nvariables, nmodalities, eachmodality
+import SoleData: ninstances, nvariables, nmodalities, eachmodality, displaystructure
 
 function islogiseed(dataset)
-    return error("Please, provide method islogiseed(dataset::$(typeof(dataset))).")
+    false
+    # return error("Please, provide method islogiseed(dataset::$(typeof(dataset))).")
 end
 function initlogiset(dataset, features)
     return error("Please, provide method initlogiset(dataset::$(typeof(dataset)), features::$(typeof(features))).")
@@ -39,6 +40,10 @@ function eachmodality(dataset)
     return error("Please, provide method eachmodality(dataset::$(typeof(dataset))).")
 end
 
+function modality(dataset, i_modality)
+    eachmodality(dataset)[i_modality]
+end
+
 function ismultilogiseed(dataset::MultiLogiset)
     true
 end
@@ -47,13 +52,48 @@ function ismultilogiseed(dataset::AbstractMultiModalDataset)
 end
 
 function ismultilogiseed(dataset::Union{AbstractVector,Tuple})
-    true
+    all(islogiseed, dataset) # && allequal(ninstances, eachmodality(dataset))
 end
 function nmodalities(dataset::Union{AbstractVector,Tuple})
+    @assert ismultilogiseed(dataset) "$(typeof(dataset))"
     length(dataset)
 end
 function eachmodality(dataset::Union{AbstractVector,Tuple})
+    # @assert ismultilogiseed(dataset) "$(typeof(dataset))"
     dataset
+end
+function ninstances(dataset::Union{AbstractVector,Tuple})
+    @assert ismultilogiseed(dataset) "$(typeof(dataset))"
+    ninstances(first(dataset))
+end
+
+function displaystructure(dataset; indent_str = "", include_ninstances = true, kwargs...)
+    if ismultilogiseed(dataset)
+        pieces = []
+        push!(pieces, "multilogiseed with $(nmodalities(dataset)) modalities ($(humansize(dataset)))")
+        # push!(pieces, indent_str * "├ # modalities:\t$(nmodalities(dataset))")
+        if include_ninstances
+            push!(pieces, indent_str * "├ # instances:\t$(ninstances(dataset))")
+        end
+        # push!(pieces, indent_str * "├ modalitytype:\t$(modalitytype(dataset))")
+        for (i_modality, mod) in enumerate(eachmodality(dataset))
+            out = ""
+            if i_modality == nmodalities(dataset)
+                out *= "$(indent_str)└"
+            else
+                out *= "$(indent_str)├"
+            end
+            out *= "{$i_modality} "
+            # \t\t\t$(humansize(mod))\t(worldtype: $(worldtype(mod)))"
+            out *= displaystructure(mod; indent_str = indent_str * (i_modality == nmodalities(dataset) ? "  " : "│ "), include_ninstances = false, kwargs...)
+            push!(pieces, out)
+        end
+        return join(pieces, "\n")
+    elseif islogiseed(dataset)
+        return "logiseed ($(humansize(dataset)))\n$(dataset)" |> x->"$(replace(x, "\n"=>"$(indent_str)\n"))\n"
+    else
+        return "?? dataset of type $(typeof(dataset)) ($(humansize(dataset))) ??\n$(dataset)\n" |> x->"$(replace(x, "\n"=>"$(indent_str)\n"))\n"
+    end
 end
 
 
@@ -88,7 +128,7 @@ See also
 """
 function scalarlogiset(
     dataset,
-    features::Union{Nothing,AbstractVector{<:VarFeature},AbstractVector{<:Union{Nothing,<:AbstractVector}}} = nothing;
+    features::Union{Nothing,MixedCondition,AbstractVector{<:VarFeature},AbstractVector{<:Union{Nothing,MixedCondition,<:AbstractVector}}} = nothing;
     #
     use_full_memoization             :: Union{Bool,Type{<:Union{AbstractOneStepMemoset,AbstractFullMemoset}}} = true,
     #
@@ -98,6 +138,7 @@ function scalarlogiset(
     onestep_precompute_globmemoset   :: Bool = (use_onestep_memoization != false),
     onestep_precompute_relmemoset    :: Bool = false,
     print_progress                   :: Bool = false,
+    # featvaltype = nothing
 )
     some_features_were_specified = !isnothing(features)
 
@@ -111,12 +152,13 @@ function scalarlogiset(
         )
 
         features = begin
-            if features isa Union{Nothing,AbstractVector{<:VarFeature}}
+            if features isa Union{Nothing,MixedCondition,AbstractVector{<:VarFeature}}
                 fill(features, nmodalities(dataset))
-            elseif features isa AbstractVector{<:Union{Nothing,AbstractVector}}
+            elseif features isa AbstractVector{<:Union{Nothing,MixedCondition,AbstractVector}}
                 features
             else
                 error("Cannot build multimodal scalar logiset with features " *
+                    "$(features), " *
                     "$(displaysyntaxvector(features)).")
             end
         end
@@ -143,10 +185,25 @@ function scalarlogiset(
             end
         end
 
-        return MultiLogiset([
-            scalarlogiset(_dataset, _features; conditions = _conditions, relations = _relations, kwargs...)
-                for (_dataset, _features, _conditions, _relations) in
-                    zip(eachmodality(dataset), features, conditions, relations)
+        if print_progress
+            p = Progress(nmodalities(dataset), 1, "Computing multilogiset...")
+        end
+        return MultiLogiset([begin
+                # println("Modality $(i_modality)/$(nmodalities(dataset))")
+                X = scalarlogiset(
+                    _dataset,
+                    _features;
+                    conditions = _conditions,
+                    relations = _relations,
+                    print_progress = false,
+                    kwargs...
+                )
+                if print_progress
+                    next!(p)
+                end
+                X
+            end for (i_modality, (_dataset, _features, _conditions, _relations)) in
+                    enumerate(zip(eachmodality(dataset), features, conditions, relations))
             ])
     end
 
@@ -162,6 +219,15 @@ function scalarlogiset(
             else
                 unique(feature.(conditions))
             end
+        end
+    else
+        if isnothing(conditions)
+            featvaltype = eltype(dataset)
+            conditions = naturalconditions(dataset, features, featvaltype)
+            features = unique(feature.(conditions))
+        else
+            error("Unexpected case (TODO)." *
+                "features = $(typeof(features)), conditions = $(typeof(conditions))")
         end
     end
 
@@ -237,8 +303,12 @@ end
 function naturalconditions(
     dataset,
     mixed_conditions   :: AbstractVector,
-    featvaltype        :: Type = DEFAULT_VARFEATVALTYPE
+    featvaltype        :: Union{Nothing,Type} = nothing
 )
+    if isnothing(featvaltype)
+        featvaltype = DEFAULT_VARFEATVALTYPE
+    end
+
     nvars = nvariables(dataset)
 
     @assert all(isa.(mixed_conditions, MixedCondition)) "" *
@@ -252,10 +322,10 @@ function naturalconditions(
 
     def_test_operators = is_propositional_dataset ? [≥] : [≥, <]
 
-    univar_condition(i_var,cond::SoleModels.CanonicalFeatureGeq) = ([≥],UnivariateMin{featvaltype}(i_var))
-    univar_condition(i_var,cond::SoleModels.CanonicalFeatureLeq) = ([<],UnivariateMax{featvaltype}(i_var))
-    univar_condition(i_var,cond::SoleModels.CanonicalFeatureGeqSoft) = ([≥],UnivariateSoftMin{featvaltype}(i_var, cond.alpha))
-    univar_condition(i_var,cond::SoleModels.CanonicalFeatureLeqSoft) = ([<],UnivariateSoftMax{featvaltype}(i_var, cond.alpha))
+    univar_condition(i_var,cond::SoleModels.CanonicalConditionGeq) = ([≥],UnivariateMin{featvaltype}(i_var))
+    univar_condition(i_var,cond::SoleModels.CanonicalConditionLeq) = ([<],UnivariateMax{featvaltype}(i_var))
+    univar_condition(i_var,cond::SoleModels.CanonicalConditionGeqSoft) = ([≥],UnivariateSoftMin{featvaltype}(i_var, cond.alpha))
+    univar_condition(i_var,cond::SoleModels.CanonicalConditionLeqSoft) = ([<],UnivariateSoftMax{featvaltype}(i_var, cond.alpha))
     function univar_condition(i_var,(test_ops,cond)::Tuple{<:AbstractVector{<:TestOperator},typeof(identity)})
         V = vareltype(dataset, i_var)
         if !isconcretetype(V)
@@ -297,7 +367,7 @@ function naturalconditions(
 
     # single-variable conditions
     unpackcondition(cond::Any) = cond
-    # unpackcondition(cond::CanonicalFeature) = cond
+    # unpackcondition(cond::CanonicalCondition) = cond
     unpackcondition(cond::Base.Callable) = (def_test_operators, cond)
     function unpackcondition(cond::Tuple{Base.Callable,Integer})
         return univar_condition(cond[2], (def_test_operators, cond[1]))
@@ -313,7 +383,7 @@ function naturalconditions(
         mixed_conditions,
     )
     variable_specific_conditions = filter(x->
-        # isa(x, CanonicalFeature) ||
+        isa(x, CanonicalCondition) ||
         # isa(x, Tuple{<:AbstractVector{<:TestOperator},Base.Callable}) ||
         (isa(x, Tuple{AbstractVector,Base.Callable}) && !isa(x, Tuple{AbstractVector,AbstractFeature})),
         mixed_conditions,
