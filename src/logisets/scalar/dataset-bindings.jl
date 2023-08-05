@@ -396,7 +396,7 @@ function naturalconditions(
         "$(length(readymade_conditions)) + $(length(variable_specific_conditions)) == $(length(mixed_conditions))."
 
     for cond in readymade_conditions
-        push!(metaconditions, cond)
+        append!(metaconditions, cond)
     end
 
     for i_var in 1:nvars
