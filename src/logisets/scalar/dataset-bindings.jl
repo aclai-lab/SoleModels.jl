@@ -379,7 +379,7 @@ function naturalconditions(
     mixed_conditions = unpackcondition.(mixed_conditions)
 
     readymade_conditions          = filter(x->
-        isa(x, Vector{ScalarMetaCondition}),
+        isa(x, Vector{<:ScalarMetaCondition}),
         mixed_conditions,
     )
     variable_specific_conditions = filter(x->
@@ -390,8 +390,8 @@ function naturalconditions(
     )
 
     @assert length(readymade_conditions) + length(variable_specific_conditions) == length(mixed_conditions) "" *
-        "Unexpected " *
-        "mixed_conditions. $(mixed_conditions). " *
+        "Unexpected mixed_conditions. " *
+        "$(mixed_conditions). " *
         "$(filter(x->(! (x in readymade_conditions) && ! (x in variable_specific_conditions)), mixed_conditions)). " *
         "$(length(readymade_conditions)) + $(length(variable_specific_conditions)) == $(length(mixed_conditions))."
 
