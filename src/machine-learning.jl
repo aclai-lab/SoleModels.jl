@@ -84,7 +84,7 @@ function bestguess(
             countmap(labels)
         else
             @assert length(labels) === length(weights) "Cannot compute " *
-             "best guess with uneven number of votes " *
+             "best guess with mismatching number of votes " *
              "$(length(labels)) and weights $(length(weights))."
             countmap(labels, weights)
         end
