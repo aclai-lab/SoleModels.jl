@@ -196,6 +196,15 @@ See also [`Interval`](@ref),
 struct UnivariateFeature{U} <: AbstractUnivariateFeature{U}
     i_variable::Integer
     f::Function
+    function UnivariateFeature{U}(feat::UnivariateFeature) where {U<:Real}
+        return new{U}(i_variable(f), feat.f)
+    end
+    function UnivariateFeature{U}(i_variable::Integer, f::Function) where {U<:Real}
+        return new{U}(i_variable, f)
+    end
+    function UnivariateFeature(i_variable::Integer, f::Function)
+        return UnivariateFeature{DEFAULT_VARFEATVALTYPE}(i_variable, f)
+    end
 end
 featurename(f::UnivariateFeature) = string(f.f)
 

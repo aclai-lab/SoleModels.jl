@@ -239,8 +239,12 @@ function scalarlogiset(
             conditions = naturalconditions(dataset, features, featvaltype)
             features = unique(feature.(conditions))
         else
-            error("Unexpected case (TODO)." *
-                "features = $(typeof(features)), conditions = $(typeof(conditions))")
+            if !all(f->f isa VarFeature, features) # or AbstractFeature
+                error("Unexpected case (TODO). " *
+                    "features = $(typeof(features)), conditions = $(typeof(conditions)). " *
+                    "Suspects: $(filter(f->!(f isa VarFeature), features))"
+                )
+            end
         end
     end
 
