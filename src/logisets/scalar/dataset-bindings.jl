@@ -142,14 +142,14 @@ function scalarlogiset(
 )
     is_feature(features) = (f isa MixedCondition)
     is_nofeatures(features) = isnothing(features)
-    is_unifeatures(features) = features isa AbstractVector && all(f->is_feature(f), features)
-    is_multifeatures(features) = features isa AbstractVector && all(fs->(is_nofeatures(fs) || is_unifeatures(fs)), features)
+    is_unifeatures(features) = (features isa AbstractVector && all(f->is_feature(f), features))
+    is_multifeatures(features) = (features isa AbstractVector && all(fs->(is_nofeatures(fs) || is_unifeatures(fs)), features))
 
     @assert (is_nofeatures(features) ||
             is_unifeatures(features) ||
             is_multifeatures(features)) "Unexpected features (type: $(typeof(features))).\n" *
             "$(features)" *
-            "Suspects: $(filter(f->!is_feature(f) && !is_nofeatures(f) && !is_unifeatures(f)), features))"
+            "Suspects: $(filter(f->(!is_feature(f) && !is_nofeatures(f) && !is_unifeatures(f)), features))"
 
     if ismultilogiseed(dataset)
 
