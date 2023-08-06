@@ -140,10 +140,10 @@ function scalarlogiset(
     print_progress                   :: Bool = false,
     # featvaltype = nothing
 )
-    is_feature(features) = (f isa MixedCondition)
-    is_nofeatures(features) = isnothing(features)
-    is_unifeatures(features) = (features isa AbstractVector && all(f->is_feature(f), features))
-    is_multifeatures(features) = (features isa AbstractVector && all(fs->(is_nofeatures(fs) || is_unifeatures(fs)), features))
+    is_feature(f) = (f isa MixedCondition)
+    is_nofeatures(_features) = isnothing(_features)
+    is_unifeatures(_features) = (_features isa AbstractVector && all(f->is_feature(f), _features))
+    is_multifeatures(_features) = (_features isa AbstractVector && all(fs->(is_nofeatures(fs) || is_unifeatures(fs)), _features))
 
     @assert (is_nofeatures(features) ||
             is_unifeatures(features) ||
@@ -215,6 +215,10 @@ function scalarlogiset(
                     enumerate(zip(eachmodality(dataset), features, conditions, relations))
             ])
     end
+
+    @assert is_nofeatures(features) || is_unifeatures(features) "Unexpected features (type: $(typeof(features))).\n" *
+        "$(features)" *
+        "Suspects: $(filter(f->(!is_feature(f) && !is_nofeatures(f) && !is_unifeatures(f)), features))"
 
     if isnothing(features)
         features = begin
