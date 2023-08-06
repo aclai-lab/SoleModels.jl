@@ -41,7 +41,7 @@ export MultiLogiset, eachmodality, modality, nmodalities
 
 export MultiFormula, modforms
 
-# Multiframe version of logisets, for representing multimodal datasets
+# Multi-frame version of logisets, for representing multimodal datasets
 include("multilogiset.jl")
 
 export check, AnchoredFormula
