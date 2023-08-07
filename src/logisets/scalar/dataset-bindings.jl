@@ -67,6 +67,25 @@ function ninstances(dataset::Union{AbstractVector,Tuple})
     ninstances(first(dataset))
 end
 
+function instances(
+    dataset::Union{AbstractVector,Tuple},
+    inds::AbstractVector{<:Integer},
+    return_view::Union{Val{true},Val{false}} = Val(false);
+    kwargs...
+)
+    @assert ismultilogiseed(dataset) "$(typeof(dataset))"
+    map(modality->instances(modality, inds, return_view; kwargs...), eachmodality(dataset))
+end
+
+function concatdatasets(datasets::Union{AbstractVector,Tuple}...)
+    @assert all(ismultilogiseed.(datasets)) "$(typeof.(datasets))"
+    @assert allequal(nmodalities.(datasets)) "Cannot concatenate multilogiseed's of type ($(typeof.(datasets))) with mismatching " *
+        "number of modalities: $(nmodalities.(datasets))"
+    MultiLogiset([
+        concatdatasets([modality(dataset, i_mod) for dataset in datasets]...) for i_mod in 1:nmodalities(first(datasets))
+    ])
+end
+
 function displaystructure(dataset; indent_str = "", include_ninstances = true, kwargs...)
     if ismultilogiseed(dataset)
         pieces = []
