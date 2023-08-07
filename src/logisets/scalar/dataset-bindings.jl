@@ -1,6 +1,7 @@
 using ProgressMeter
 using SoleData: AbstractMultiModalDataset
 import SoleData: ninstances, nvariables, nmodalities, eachmodality, displaystructure
+import SoleData: instances, concatdatasets
 
 function islogiseed(dataset)
     false
