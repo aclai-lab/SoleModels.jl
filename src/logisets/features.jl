@@ -22,6 +22,7 @@ function Base.show(io::IO, f::AbstractFeature)
     # print(io, "$(syntaxstring(f))")
 end
 
+# TODO check whether this is this necessary or wanted, and remove Base.hash(a::VarFeature) maybe?
 Base.isequal(a::AbstractFeature, b::AbstractFeature) = syntaxstring(a) == syntaxstring(b)
 Base.hash(a::AbstractFeature) = Base.hash(syntaxstring(a))
 

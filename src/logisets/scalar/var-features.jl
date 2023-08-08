@@ -48,9 +48,11 @@ See also [`AbstractWorld`](@ref).
 featvaltype(::Type{<:VarFeature{U}}) where {U} = U
 featvaltype(::VarFeature{U}) where {U} = U
 
-# # TODO Necessary?
-# Base.isequal(a::FT, b::FT) where {FT<:VarFeature} = Base.isequal(map(x->getfield(a, x), fieldnames(typeof(a))), map(x->getfield(b, x), fieldnames(typeof(b))))
-# Base.hash(a::VarFeature) = Base.hash(map(x->getfield(a, x), fieldnames(typeof(a)))) + Base.hash("")
+# Note this is necessary when wrapping lambda functions or closures:
+# f = [UnivariateFeature{Float64}(1, x->[1.,2.,3.][i]) for i in 1:3] |> unique
+# map(x->SoleModels.computefeature(x, rand(1,2)), f)
+Base.isequal(a::FT, b::FT) where {FT<:VarFeature} = Base.isequal(map(x->getfield(a, x), fieldnames(typeof(a))), map(x->getfield(b, x), fieldnames(typeof(b))))
+Base.hash(a::VarFeature) = Base.hash(map(x->getfield(a, x), fieldnames(typeof(a)))) + Base.hash(typeof(a))
 
 """
     computefeature(f::VarFeature{U}, featchannel; kwargs...)::U where {U}
