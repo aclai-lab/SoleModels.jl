@@ -258,6 +258,9 @@ function scalarlogiset(
             featvaltype = eltype(dataset)
             conditions = naturalconditions(dataset, features, featvaltype)
             features = unique(feature.(conditions))
+            if use_onestep_memoization == false
+                conditions = nothing
+            end
         else
             if !all(f->f isa VarFeature, features) # or AbstractFeature
                 error("Unexpected case (TODO). " *
