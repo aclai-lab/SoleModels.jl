@@ -1,7 +1,8 @@
 using FillArrays
+using CategoricalArrays
 
 doc_supervised_ml = """
-    const CLabel  = Union{String,Integer}
+    const CLabel  = Union{String,Integer,CategoricalValue}
     const RLabel  = AbstractFloat
     const Label   = Union{CLabel,RLabel}
 
@@ -9,7 +10,7 @@ Types for supervised machine learning labels (classification and regression).
 """
 
 """$(doc_supervised_ml)"""
-const CLabel  = Union{String,Integer}
+const CLabel  = Union{String,Integer,CategoricalValue}
 """$(doc_supervised_ml)"""
 const RLabel  = AbstractFloat
 """$(doc_supervised_ml)"""
@@ -82,18 +83,18 @@ function bestguess(
         if isnothing(weights)
             countmap(labels)
         else
-            @assert length(labels) === length(weights) "Can't compute" *
-             " best guess with uneven number of votes" *
-             " $(length(labels)) and weights $(length(weights))."
+            @assert length(labels) === length(weights) "Cannot compute " *
+             "best guess with mismatching number of votes " *
+             "$(length(labels)) and weights $(length(weights))."
             countmap(labels, weights)
         end
     end
 
     if !suppress_parity_warning && sum(counts[argmax(counts)] .== values(counts)) > 1
-        println("Warning: parity encountered in bestguess.")
-        println("Counts ($(length(labels)) elements): $(counts)")
-        println("Argmax: $(argmax(counts))")
-        println("Max: $(counts[argmax(counts)]) (sum = $(sum(values(counts))))")
+        @warn "Parity encountered in bestguess! " *
+            "counts ($(length(labels)) elements): $(counts), " *
+            "argmax: $(argmax(counts)), " *
+            "max: $(counts[argmax(counts)]) (sum = $(sum(values(counts))))"
     end
     argmax(counts)
 end

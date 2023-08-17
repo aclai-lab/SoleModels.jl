@@ -2,7 +2,7 @@ using SoleModels
 using SoleLogics
 using FunctionWrappers: FunctionWrapper
 using SoleModels: AbstractModel
-using SoleModels: ConstantModel, FinalModel
+using SoleModels: ConstantModel, LeafModel
 using SoleModels: ConstrainedModel, check_model_constraints
 using Test
 
@@ -10,16 +10,16 @@ using Test
 
 io = IOBuffer()
 
-p = SoleLogics.parseformula("p")
-phi = SoleLogics.parseformula("p∧q∨r")
-phi2 = SoleLogics.parseformula("q∧s→r")
+p = SoleLogics.parsebaseformula("p")
+phi = SoleLogics.parsebaseformula("p∧q∨r")
+phi2 = SoleLogics.parsebaseformula("q∧s→r")
 
-formula_p = SoleLogics.parseformula("p")
-formula_q = SoleLogics.parseformula("q")
-formula_r = SoleLogics.parseformula("r")
-formula_s = SoleLogics.parseformula("s")
+formula_p = SoleLogics.parsebaseformula("p")
+formula_q = SoleLogics.parsebaseformula("q")
+formula_r = SoleLogics.parsebaseformula("r")
+formula_s = SoleLogics.parsebaseformula("s")
 
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Final models ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Leaf models ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 @test_nowarn ConstantModel(1,(;))
 @test_nowarn ConstantModel(1)
@@ -78,7 +78,7 @@ rmodel_float = @test_nowarn Rule{Float64}(phi,rmodel_float0)
 rmodel_float2 = @test_nowarn Rule{Float64}(phi,rmodel_float)
 @test typeof(rmodel_float2) == typeof(rmodel_float)
 # @test typeof(rmodel_float) == typeof(Rule{Float64,Union{Rule{Float64},ConstantModel{Float64}}}(phi,rmodel_float0))
-# @test typeof(rmodel_float) != typeof(Rule{Float64,Union{Rule{Float64},FinalModel{Float64}}}(phi,rmodel_float0))
+# @test typeof(rmodel_float) != typeof(Rule{Float64,Union{Rule{Float64},LeafModel{Float64}}}(phi,rmodel_float0))
 # @test typeof(rmodel_float) == typeof(Rule{Float64,Union{Rule,ConstantModel}}(phi,rmodel_float0))
 
 rmodel2_float = @test_nowarn Rule(phi2, rmodel_float)

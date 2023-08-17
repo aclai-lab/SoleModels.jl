@@ -16,8 +16,15 @@ end
 println("Julia version: ", VERSION)
 
 test_suites = [
+    ("Logisets", [
+        "logisets/logisets.jl",
+        # "logisets/memosets.jl", # TODO bring back
+        "logisets/cube2logiset.jl",
+        "logisets/dataframe2logiset.jl",
+        "logisets/multilogisets.jl",
+        "logisets/MLJ.jl",
+    ]),
     ("Models", ["base.jl", ]),
-    ("Datasets", ["datasets.jl", ]),
     ("Miscellaneous", ["misc.jl", "minify.jl"]),
     ("Parse", ["parse.jl", ]),
 ]

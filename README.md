@@ -1,4 +1,6 @@
-# *SoleModels.jl* – Symbolic Learning Models
+<div align="center"><a href="https://github.com/aclai-lab/Sole.jl"><img src="logo.png" alt="" title="This package is part of Sole.jl" width="200"></a></div>
+
+# SoleModels.jl – Symbolic Learning Models
 
 [![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://aclai-lab.github.io/SoleModels.jl/stable)
 [![Build Status](https://api.cirrus-ci.com/github/aclai-lab/SoleModels.jl.svg?branch=main)](https://cirrus-ci.com/github/aclai-lab/SoleModels.jl)
@@ -11,8 +13,8 @@
 
 *SoleModels.jl* defines the building blocks of *symbolic* modeling and learning.
 It features:
-- Definitions for symbolic models (decision trees/forests, rules, etc.);
-- Optimized data structures, useful when learning models from datasets;
+- Definitions for symbolic models (decision trees/forests, rules, branches, etc.);
+- Optimized data structures, useful when learning models from machine learning datasets;
 - Support for mixed, neuro-symbolic computation.
 
 These definitions provide a unified base for implementing symbolic algorithms, such as:
@@ -24,15 +26,16 @@ These definitions provide a unified base for implementing symbolic algorithms, s
 
 ### Basic models:
 
-- Final models: wrapping native Julia computation (e.g., constants, functions);
+- Leaf models: wrapping native Julia computation (e.g., constants, functions);
 - Rules: structures with `IF antecedent THEN consequent END` semantics;
 - Branches: structures with `IF antecedent THEN pos_consequent ELSE neg_consequent END` semantics.
 
 Remember:
-- An antecedent is any *condition* that can be checked on a machine learning *instance*, yielding a `true/false` value;
-- A consequent is... anything you want, really, even another model (spoiler: a Branch with Branch consequents is a Decision Tree 😉).
+- An antecedent is a logical formula that can be checked on a logical interpretation (that is, an *instance* of a symbolic learning dataset), yielding a truth value (e.g., `true/false`);
+- A consequent is another model, for example, a (final) constant model or branch to be applied.
 
-More specifically, antecedents can be *logical formulas* and, in such case, the symbolic models
+Within this framework, a decision tree is no other than a branch with branch and final consequents.
+NoteThat antecedents can consist of *logical formulas* and, in such case, the symbolic models
 are can be applied to *logical interpretations*.
 For more information, refer to [*SoleLogics.jl*](https://github.com/aclai-lab/SoleLogics.jl), the underlying logical layer.
 
