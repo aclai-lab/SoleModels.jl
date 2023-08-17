@@ -70,7 +70,8 @@ See also
 function evaluaterule(
     rule::Rule{O,A,FM},
     X::AbstractInterpretationSet,
-    Y::AbstractVector{<:Label}
+    Y::AbstractVector{<:Label};
+    kwargs...,
 ) where {O,A,FM<:AbstractModel}
     ys = apply(rule,X)
 
@@ -143,9 +144,10 @@ See also
 function rulemetrics(
     rule::Rule{O,A,FM},
     X::AbstractInterpretationSet,
-    Y::AbstractVector{<:Label}
+    Y::AbstractVector{<:Label};
+    kwargs...,
 ) where {O,A,FM<:AbstractModel}
-    eval_result = evaluaterule(rule, X, Y)
+    eval_result = evaluaterule(rule, X, Y; kwargs...)
     ys = eval_result[:ys]
     antsat = eval_result[:antsat]
     n_instances = ninstances(X)

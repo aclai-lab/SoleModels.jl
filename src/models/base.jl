@@ -2,7 +2,7 @@ import Base: convert, length, getindex, isopen
 
 using SoleData: slicedataset
 
-import SoleLogics: check, syntaxstring
+import SoleLogics: check, syntaxstring, conjuncts, nconjuncts, disjuncts, ndisjuncts
 using SoleLogics: LeftmostLinearForm, LeftmostConjunctiveForm, LeftmostDisjunctiveForm
 using SoleModels: TopFormula
 

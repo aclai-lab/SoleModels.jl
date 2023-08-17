@@ -280,6 +280,28 @@ function SoleLogics.normalize(φ::MultiFormula{F}; kwargs...) where {F<:Abstract
     MultiFormula(Dict{Int,F}([i_modality => SoleLogics.normalize(f; kwargs...) for (i_modality,f) in pairs(modforms(φ))]))
 end
 
+function conjunctiveformulas(children::NTuple{N,MultiFormula}) where {N}
+    @assert N > 0 "Nothing in tuple passed, there must be at least one element"
+
+    if N == 1
+        return first(children)
+    end
+
+    return joinformulas(∧,(children[1],conjunctiveformulas(children[2:end])))
+end
+
+npropositions(φ::LeftmostConjunctiveForm{<:MultiFormula}) = npropositions(children(φ))
+npropositions(φ::MultiFormula{<:SyntaxTree}) = npropositions((φ,))
+function npropositions(children::NTuple{N,MultiFormula}) where {N}
+    i_modalities = unique(vcat(collect.(keys.([modforms(ch) for ch in children]))...))
+
+    return sum([begin
+        chs = filter(ch->haskey(modforms(ch), i_modality), children)
+        fs = map(ch->modforms(ch)[i_modality], chs)
+        npropositions.(fs)
+    end for i_modality in i_modalities])
+end
+
 function check(
     φ::MultiFormula,
     X::MultiLogiset,
@@ -292,6 +314,39 @@ function check(
         for (i_modality, f) in modforms(φ)])
 end
 
+function check(
+    φ::MultiFormula,
+    d::AbstractInterpretationSet{M},
+    args...;
+    kwargs...,
+)::Vector{truthtype(M)} where {M<:AbstractInterpretation}
+    X = MultiLogiset(d)
+    map(i_instance->check(
+        φ,
+        X,
+        i_instance,
+        args...;
+        kwargs...
+    ), 1:ninstances(d))
+end
+
 # # TODO join MultiFormula leads to a SyntaxTree with MultiFormula children
 # function joinformulas(op::AbstractOperator, children::NTuple{N,MultiFormula{F}}) where {N,F}
 # end
+
+function check(
+    φ::LeftmostConjunctiveForm{<:MultiFormula},
+    X::AbstractInterpretationSet{<:AbstractKripkeStructure},
+    i_instance::Integer,
+    args...;
+    kwargs...
+)
+    λ = conjunctiveformulas((children(φ)...,))
+    check(λ, MultiLogiset(X), i_instance, args...; kwargs...)
+end
+
+function npropositions(
+    φ::LeftmostConjunctiveForm{<:MultiFormula},
+)
+
+end
