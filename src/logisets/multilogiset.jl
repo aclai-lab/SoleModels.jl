@@ -1,5 +1,6 @@
 using SoleLogics: AbstractKripkeStructure, AbstractInterpretationSet, AbstractFrame
 using SoleLogics: TruthValue
+import SoleLogics: npropositions
 import SoleData: modality, nmodalities, eachmodality
 
 """
@@ -280,17 +281,7 @@ function SoleLogics.normalize(φ::MultiFormula{F}; kwargs...) where {F<:Abstract
     MultiFormula(Dict{Int,F}([i_modality => SoleLogics.normalize(f; kwargs...) for (i_modality,f) in pairs(modforms(φ))]))
 end
 
-function conjunctiveformulas(children::NTuple{N,MultiFormula}) where {N}
-    @assert N > 0 "Nothing in tuple passed, there must be at least one element"
-
-    if N == 1
-        return first(children)
-    end
-
-    return joinformulas(∧,(children[1],conjunctiveformulas(children[2:end])))
-end
-
-npropositions(φ::LeftmostConjunctiveForm{<:MultiFormula}) = npropositions(children(φ))
+npropositions(φ::LeftmostConjunctiveForm{<:MultiFormula}) = npropositions((children(φ)...,))
 npropositions(φ::MultiFormula{<:SyntaxTree}) = npropositions((φ,))
 function npropositions(children::NTuple{N,MultiFormula}) where {N}
     i_modalities = unique(vcat(collect.(keys.([modforms(ch) for ch in children]))...))
@@ -329,6 +320,15 @@ function check(
         kwargs...
     ), 1:ninstances(d))
 end
+function check(
+    φ::MultiFormula,
+    d::AbstractInterpretationSet{M},
+    i_instance::Integer,
+    args...;
+    kwargs...,
+) where {M<:AbstractInterpretation}
+    return check(φ,MultiLogiset(d),i_instance,args...;kwargs...)
+end
 
 # # TODO join MultiFormula leads to a SyntaxTree with MultiFormula children
 # function joinformulas(op::AbstractOperator, children::NTuple{N,MultiFormula{F}}) where {N,F}
@@ -336,17 +336,11 @@ end
 
 function check(
     φ::LeftmostConjunctiveForm{<:MultiFormula},
-    X::AbstractInterpretationSet{<:AbstractKripkeStructure},
+    d::AbstractInterpretationSet{M},
     i_instance::Integer,
     args...;
     kwargs...
-)
-    λ = conjunctiveformulas((children(φ)...,))
-    check(λ, MultiLogiset(X), i_instance, args...; kwargs...)
-end
-
-function npropositions(
-    φ::LeftmostConjunctiveForm{<:MultiFormula},
-)
-
+) where {M<:AbstractInterpretation}
+    X = MultiLogiset(d)
+    all([check(c,X,i_instance,args...; kwargs...) for c in children(φ)])
 end
