@@ -1,6 +1,6 @@
 using SoleLogics: AbstractKripkeStructure, AbstractInterpretationSet, AbstractFrame
 using SoleLogics: TruthValue
-import SoleLogics: npropositions
+import SoleLogics: npropositions, ntokens
 import SoleData: modality, nmodalities, eachmodality
 
 """
@@ -282,15 +282,17 @@ function SoleLogics.normalize(φ::MultiFormula{F}; kwargs...) where {F<:Abstract
 end
 
 npropositions(φ::LeftmostConjunctiveForm{<:MultiFormula}) = npropositions((children(φ)...,))
-npropositions(φ::MultiFormula{<:SyntaxTree}) = npropositions((φ,))
+npropositions(φ::MultiFormula{<:SyntaxTree}) =
+    sum([npropositions(modant) for (_,modant) in modforms(φ)])
 function npropositions(children::NTuple{N,MultiFormula}) where {N}
-    i_modalities = unique(vcat(collect.(keys.([modforms(ch) for ch in children]))...))
+    return sum([npropositions(child) for child in children])
+end
 
-    return sum([begin
-        chs = filter(ch->haskey(modforms(ch), i_modality), children)
-        fs = map(ch->modforms(ch)[i_modality], chs)
-        npropositions.(fs)
-    end for i_modality in i_modalities])
+ntokens(φ::LeftmostConjunctiveForm{<:MultiFormula}) = ntokens((children(φ)...,))
+ntokens(φ::MultiFormula{<:SyntaxTree}) =
+    sum([ntokens(modant) for (_,modant) in modforms(φ)])
+function ntokens(children::NTuple{N,MultiFormula}) where {N}
+    return sum([ntokens(child) for child in children])
 end
 
 function check(
@@ -326,7 +328,7 @@ function check(
     i_instance::Integer,
     args...;
     kwargs...,
-) where {M<:AbstractInterpretation}
+) where {M<:SoleLogics.AbstractKripkeStructure}
     return check(φ,MultiLogiset(d),i_instance,args...;kwargs...)
 end
 
@@ -340,7 +342,7 @@ function check(
     i_instance::Integer,
     args...;
     kwargs...
-) where {M<:AbstractInterpretation}
+) where {M<:SoleLogics.AbstractKripkeStructure}
     X = MultiLogiset(d)
     all([check(c,X,i_instance,args...; kwargs...) for c in children(φ)])
 end

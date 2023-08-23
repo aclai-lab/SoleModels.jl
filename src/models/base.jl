@@ -1232,7 +1232,7 @@ function apply(
     kwargs...
 )
     pred = hcat([apply(t, d; kwargs...) for t in trees(f)]...)
-    return [best_guess(pred[i,:]; suppress_parity_warning = suppress_parity_warning) for i in 1:size(pred,1)]
+    return [bestguess(pred[i,:]; suppress_parity_warning = suppress_parity_warning) for i in 1:size(pred,1)]
 end
 
 function nnodes(f::DecisionForest)
