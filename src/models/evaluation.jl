@@ -73,7 +73,11 @@ function evaluaterule(
     Y::AbstractVector{<:Label};
     kwargs...,
 ) where {O,A,FM<:AbstractModel}
+    #println("Evaluation rule in time...")
     ys = apply(rule,X)
+    #if X isa SupportedLogiset
+    #    println("# Memoized Values: $(nmemoizedvalues(X))")
+    #end
 
     antsat = ys .!= nothing
 
@@ -160,8 +164,8 @@ function rulemetrics(
             # Number of incorrectly classified instances divided by number of instances
             # satisfying the rule condition.
             # TODO: failure
-            misclassified_instances = length(findall(ys .!= Y))
-            misclassified_instances / n_satisfy
+            misclassified_instances = length(findall(ys[antsat] .!= Y[antsat]))
+            n_satisfy == 0 ? 1.0 : (misclassified_instances / n_satisfy)
         elseif outcometype(consequent(rule)) <: RLabel
             # Mean Squared Error (mse)
             mse(ys[antsat], Y[antsat])
