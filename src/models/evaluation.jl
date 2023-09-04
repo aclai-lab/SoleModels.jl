@@ -175,6 +175,7 @@ function rulemetrics(
     end
 
     return (;
+        antsat    = antsat,
         support   = rule_support,
         error     = rule_error,
         length    = npropositions(antecedent(rule)),
