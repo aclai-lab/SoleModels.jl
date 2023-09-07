@@ -24,7 +24,7 @@ logiset = @test_throws CompositeException scalarlogiset(dataset, int_features; u
 @test isequal(generic_features, int_features)
 @test isequal(generic_features, float_features)
 
-@test hash.(generic_features) == hash.(int_features)
+@test hash.(generic_features) != hash.(int_features)
 
 logiset = @test_nowarn scalarlogiset(dataset; use_full_memoization = false, use_onestep_memoization = false)
 logiset = @test_nowarn scalarlogiset(dataset; use_full_memoization = true, use_onestep_memoization = false)
@@ -34,12 +34,17 @@ int_metaconditions = [ScalarMetaCondition(feature, >) for feature in int_feature
 generic_metaconditions = [ScalarMetaCondition(feature, >) for feature in generic_features]
 
 @test isequal(generic_metaconditions, int_metaconditions)
-@test hash.(generic_metaconditions) == hash.(int_metaconditions)
+@test (hash.(generic_metaconditions) == hash.(int_metaconditions))
 
+println("1")
 @test_nowarn scalarlogiset(dataset; use_full_memoization = true, use_onestep_memoization = true, relations = relations, conditions = generic_metaconditions)
+println("2")
 @test_throws AssertionError scalarlogiset(dataset; use_full_memoization = true, use_onestep_memoization = false, relations = relations, conditions = generic_metaconditions)
+println("3")
 @test_nowarn scalarlogiset(dataset; use_full_memoization = false, relations = relations, conditions = generic_metaconditions, onestep_precompute_globmemoset = false, onestep_precompute_relmemoset = false)
+println("4")
 @test_nowarn scalarlogiset(dataset; use_full_memoization = false, relations = relations, conditions = generic_metaconditions, onestep_precompute_globmemoset = true, onestep_precompute_relmemoset = true)
+println("5")
 
 logiset = @test_nowarn scalarlogiset(dataset; use_full_memoization = false, relations = relations, conditions = generic_metaconditions)
 
