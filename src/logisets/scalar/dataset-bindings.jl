@@ -1,6 +1,7 @@
 using ProgressMeter
 using SoleData: AbstractMultiModalDataset
 import SoleData: ninstances, nvariables, nmodalities, eachmodality, displaystructure
+import SoleData: instances, concatdatasets
 
 function islogiseed(dataset)
     false
@@ -67,6 +68,25 @@ function ninstances(dataset::Union{AbstractVector,Tuple})
     ninstances(first(dataset))
 end
 
+function instances(
+    dataset::Union{AbstractVector,Tuple},
+    inds::AbstractVector{<:Integer},
+    return_view::Union{Val{true},Val{false}} = Val(false);
+    kwargs...
+)
+    @assert ismultilogiseed(dataset) "$(typeof(dataset))"
+    map(modality->instances(modality, inds, return_view; kwargs...), eachmodality(dataset))
+end
+
+function concatdatasets(datasets::Union{AbstractVector,Tuple}...)
+    @assert all(ismultilogiseed.(datasets)) "$(typeof.(datasets))"
+    @assert allequal(nmodalities.(datasets)) "Cannot concatenate multilogiseed's of type ($(typeof.(datasets))) with mismatching " *
+        "number of modalities: $(nmodalities.(datasets))"
+    MultiLogiset([
+        concatdatasets([modality(dataset, i_mod) for dataset in datasets]...) for i_mod in 1:nmodalities(first(datasets))
+    ])
+end
+
 function displaystructure(dataset; indent_str = "", include_ninstances = true, kwargs...)
     if ismultilogiseed(dataset)
         pieces = []
@@ -97,14 +117,15 @@ function displaystructure(dataset; indent_str = "", include_ninstances = true, k
 end
 
 
+# TODO explain kwargs
 """
-    scalarlogiset(dataset, features::AbstractVector{<:VarFeature})
+    scalarlogiset(dataset, features; kwargs...)
 
 Converts a dataset structure (with variables) to a logiset with scalar-valued features.
 If `dataset` is not a multimodal dataset, the following methods should be defined:
 
 ```julia
-    initlogiset(dataset, features::AbstractVector{<:VarFeature})
+    initlogiset(dataset, features)
     ninstances(dataset)
     nvariables(dataset)
     frame(dataset, i_instance::Integer)
@@ -128,7 +149,7 @@ See also
 """
 function scalarlogiset(
     dataset,
-    features::Union{Nothing,MixedCondition,AbstractVector{<:VarFeature},AbstractVector{<:Union{Nothing,MixedCondition,<:AbstractVector}}} = nothing;
+    features::Union{Nothing,AbstractVector} = nothing;
     #
     use_full_memoization             :: Union{Bool,Type{<:Union{AbstractOneStepMemoset,AbstractFullMemoset}}} = true,
     #
@@ -140,7 +161,16 @@ function scalarlogiset(
     print_progress                   :: Bool = false,
     # featvaltype = nothing
 )
-    some_features_were_specified = !isnothing(features)
+    is_feature(f) = (f isa MixedCondition)
+    is_nofeatures(_features) = isnothing(_features)
+    is_unifeatures(_features) = (_features isa AbstractVector && all(f->is_feature(f), _features))
+    is_multifeatures(_features) = (_features isa AbstractVector && all(fs->(is_nofeatures(fs) || is_unifeatures(fs)), _features))
+
+    @assert (is_nofeatures(features) ||
+            is_unifeatures(features) ||
+            is_multifeatures(features)) "Unexpected features (type: $(typeof(features))).\n" *
+            "$(features)" *
+            "Suspects: $(filter(f->(!is_feature(f) && !is_nofeatures(f) && !is_unifeatures(f)), features))"
 
     if ismultilogiseed(dataset)
 
@@ -152,9 +182,9 @@ function scalarlogiset(
         )
 
         features = begin
-            if features isa Union{Nothing,MixedCondition,AbstractVector{<:VarFeature}}
+            if is_unifeatures(features) || is_nofeatures(features)
                 fill(features, nmodalities(dataset))
-            elseif features isa AbstractVector{<:Union{Nothing,MixedCondition,AbstractVector}}
+            elseif is_multifeatures(features)
                 features
             else
                 error("Cannot build multimodal scalar logiset with features " *
@@ -207,6 +237,10 @@ function scalarlogiset(
             ])
     end
 
+    @assert is_nofeatures(features) || is_unifeatures(features) "Unexpected features (type: $(typeof(features))).\n" *
+        "$(features)" *
+        "Suspects: $(filter(f->(!is_feature(f) && !is_nofeatures(f) && !is_unifeatures(f)), features))"
+
     if isnothing(features)
         features = begin
             if isnothing(conditions)
@@ -225,25 +259,49 @@ function scalarlogiset(
             featvaltype = eltype(dataset)
             conditions = naturalconditions(dataset, features, featvaltype)
             features = unique(feature.(conditions))
+            if use_onestep_memoization == false
+                conditions = nothing
+            end
         else
-            error("Unexpected case (TODO)." *
-                "features = $(typeof(features)), conditions = $(typeof(conditions))")
+            if !all(f->f isa VarFeature, features) # or AbstractFeature
+                error("Unexpected case (TODO). " *
+                    "features = $(typeof(features)), conditions = $(typeof(conditions)). " *
+                    "Suspects: $(filter(f->!(f isa VarFeature), features))"
+                )
+            end
         end
     end
+
+    # Too bad this breaks the code
+    # if !isnothing(conditions)
+    #     conditions = unique(conditions)
+    # end
+    features = unique(features)
 
     features_ok = filter(f->isconcretetype(SoleModels.featvaltype(f)), features)
     features_notok = filter(f->!isconcretetype(SoleModels.featvaltype(f)), features)
 
+
     if length(features_notok) > 0
         if all(preserveseltype, features_notok) && all(f->f isa AbstractUnivariateFeature, features_notok)
-            features_notok_fixed = [begin
+            _fixfeature(f) = begin
                 U = vareltype(dataset, i_variable(f))
                 eval(nameof(typeof(f))){U}(f)
-            end for f in features_notok]
-            if some_features_were_specified
+            end
+            features_notok_fixed = [_fixfeature(f) for f in features_notok]
+            # TODO
+            # conditions_ok = filter(c->!(feature(c) in features_notok), conditions)
+            # conditions_notok = filter(c->(feature(c) in features_notok), conditions)
+            # conditions_notok_fixed = [begin
+            #     @assert c isa ScalarMetaCondition "$(typeof(c))"
+            #     f = feature(c)
+            #     ScalarMetaCondition(_fixfeature(f), test_operator(c))
+            # end for c in conditions_notok]
+            if !is_nofeatures(features)
                 @warn "Patching $(length(features_notok)) features using vareltype."
             end
             features = [features_ok..., features_notok_fixed...]
+            # conditions = [conditions_ok..., conditions_notok_fixed...]
         else
             @warn "Could not infer feature value type for some of the specified features. " *
                     "Please specify the feature value type upon construction. Untyped " *
@@ -251,7 +309,16 @@ function scalarlogiset(
         end
     end
     features = UniqueVector(features)
-    
+
+    # Too bad this breaks the code
+    # if !isnothing(conditions)
+    #     orphan_feats = filter(f->!(f in feature.(conditions)), features)
+
+    #     if length(orphan_feats) > 0
+    #         @warn "Orphan features found: $(orphan_feats)"
+    #     end
+    # end
+
     # Initialize the logiset structure
     X = initlogiset(dataset, features)
 
@@ -299,6 +366,7 @@ function scalarlogiset(
         )
     end
 end
+
 
 function naturalconditions(
     dataset,

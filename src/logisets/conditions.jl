@@ -3,7 +3,7 @@ using SoleLogics: AbstractAlphabet
 using Random
 import SoleLogics: hasdual, dual, propositions
 
-import Base: isequal, hash, in, isfinite, length
+import Base: in, isfinite, length
 
 """
     abstract type AbstractCondition{FT<:AbstractFeature} end
@@ -47,8 +47,14 @@ function Base.show(io::IO, c::AbstractCondition)
     # print(io, "$(syntaxstring(c))")
 end
 
+# This makes sure that, say, a Float64 min[V1] is equal to a Float32 min[V1]
+# Useful, but not exactly correct
 Base.isequal(a::AbstractCondition, b::AbstractCondition) = syntaxstring(a) == syntaxstring(b) # nameof(x) == nameof(feature)
 Base.hash(a::AbstractCondition) = Base.hash(syntaxstring(a))
+# TODO remove
+# Base.isequal(a::AbstractCondition, b::AbstractCondition) = Base.isequal(map(x->getfield(a, x), fieldnames(typeof(a))), map(x->getfield(b, x), fieldnames(typeof(b))))
+# Base.hash(a::AbstractCondition) = Base.hash(map(x->getfield(a, x), fieldnames(typeof(a)))) + Base.hash(typeof(a))
+
 
 function parsecondition(
     C::Type{<:AbstractCondition},

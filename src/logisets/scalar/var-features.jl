@@ -2,7 +2,7 @@ import SoleModels: AbstractFeature
 
 using SoleData: channelvariable
 
-import Base: isequal, hash, show
+import Base: show
 import SoleLogics: syntaxstring
 
 # Feature brackets
@@ -47,10 +47,6 @@ See also [`AbstractWorld`](@ref).
 """
 featvaltype(::Type{<:VarFeature{U}}) where {U} = U
 featvaltype(::VarFeature{U}) where {U} = U
-
-# # TODO Necessary?
-# Base.isequal(a::FT, b::FT) where {FT<:VarFeature} = Base.isequal(map(x->getfield(a, x), fieldnames(typeof(a))), map(x->getfield(b, x), fieldnames(typeof(b))))
-# Base.hash(a::VarFeature) = Base.hash(map(x->getfield(a, x), fieldnames(typeof(a)))) + Base.hash("")
 
 """
     computefeature(f::VarFeature{U}, featchannel; kwargs...)::U where {U}
@@ -196,6 +192,15 @@ See also [`Interval`](@ref),
 struct UnivariateFeature{U} <: AbstractUnivariateFeature{U}
     i_variable::Integer
     f::Function
+    function UnivariateFeature{U}(feat::UnivariateFeature) where {U<:Real}
+        return new{U}(i_variable(f), feat.f)
+    end
+    function UnivariateFeature{U}(i_variable::Integer, f::Function) where {U<:Real}
+        return new{U}(i_variable, f)
+    end
+    function UnivariateFeature(i_variable::Integer, f::Function)
+        return UnivariateFeature{DEFAULT_VARFEATVALTYPE}(i_variable, f)
+    end
 end
 featurename(f::UnivariateFeature) = string(f.f)
 

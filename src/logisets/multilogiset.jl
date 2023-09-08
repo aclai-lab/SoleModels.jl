@@ -73,8 +73,10 @@ function instances(
 end
 
 function concatdatasets(Xs::MultiLogiset...)
+    @assert allequal(nmodalities.(Xs)) "Cannot concatenate MultiLogiset's with mismatching " *
+        "number of modalities: $(nmodalities.(Xs))"
     MultiLogiset([
-        concatdatasets([eachmodality(X)[i_mod] for X in Xs]...) for i_mod in 1:nmodalities(Xs)
+        concatdatasets([modality(X, i_mod) for X in Xs]...) for i_mod in 1:nmodalities(first(Xs))
     ])
 end
 
@@ -162,7 +164,7 @@ end
 # nrelations(X::MultiLogiset, i_modality::Integer) = nrelations(modality(X, i_modality))
 # Base.length(X::MultiLogiset) = length(nmodalities(X))
 # Base.push!(X::MultiLogiset, f::AbstractLogiset) = push!(eachmodality(X), f)
-# Base.getindex(X::MultiLogiset, i_modality::Integer) = eachmodality(X)[i_modality]
+# Base.getindex(X::MultiLogiset, i_modality::Integer) = modality(X, i_modality)
 # Base.iterate(X::MultiLogiset, state=1)   = state > nmodalities(X) ? nothing : (modality(X, state), state+1)
 
 ############################################################################################

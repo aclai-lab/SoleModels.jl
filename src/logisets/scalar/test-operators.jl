@@ -67,6 +67,10 @@ universal_aggregator(::typeof(==)) = ∩
 aggregator_bottom(::typeof(maximum), T::Type) = typemin(T)
 aggregator_bottom(::typeof(minimum), T::Type) = typemax(T)
 
+# Helpers
+aggregator_bottom(::typeof(maximum), T::Type{Real}) = typemin(Float64)
+aggregator_bottom(::typeof(minimum), T::Type{Real}) = typemax(Float64)
+
 aggregator_to_binary(::typeof(maximum)) = max
 aggregator_to_binary(::typeof(minimum)) = min
 

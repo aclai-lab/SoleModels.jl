@@ -19,11 +19,11 @@ multilogiset = @test_nowarn scalarlogiset(multidataset)
 
 generic_features = collect(Iterators.flatten([[UnivariateMax(i_var), UnivariateMin(i_var)] for i_var in 1:_nvars]))
 metaconditions = [ScalarMetaCondition(feature, >) for feature in generic_features]
-multilogiset = @test_logs (:warn,) scalarlogiset(multidataset; use_full_memoization = false, use_onestep_memoization = true, conditions = metaconditions, relations = multirelations)
-multilogiset = @test_logs (:warn,) scalarlogiset(multidataset; use_full_memoization = true, use_onestep_memoization = true, conditions = metaconditions, relations = multirelations)
+multilogiset = @test_logs min_level=Logging.Error scalarlogiset(multidataset; use_full_memoization = false, use_onestep_memoization = true, conditions = metaconditions, relations = multirelations)
+multilogiset = @test_logs min_level=Logging.Error scalarlogiset(multidataset; use_full_memoization = true, use_onestep_memoization = true, conditions = metaconditions, relations = multirelations)
 
 metaconditions = vcat([[ScalarMetaCondition(feature, >), ScalarMetaCondition(feature, <)] for feature in generic_features]...)
-complete_supported_multilogiset = @test_logs (:warn,) scalarlogiset(multidataset; use_full_memoization = true, use_onestep_memoization = true, conditions = metaconditions, relations = multirelations)
+complete_supported_multilogiset = @test_logs min_level=Logging.Error scalarlogiset(multidataset; use_full_memoization = true, use_onestep_memoization = true, conditions = metaconditions, relations = multirelations)
 
 
 @test_nowarn slicedataset(multilogiset, [2,1])

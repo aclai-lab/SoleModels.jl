@@ -47,6 +47,10 @@ function initlogiset(
             _ninstances,
             length(features)
         )
+    # if !isconcretetype(U) # TODO only in this case but this breaks code
+        # @warn "Abstract featvaltype detected upon initializing UniformFullDimensionalLogiset logiset: $(U)."
+        fill!(featstruct, 0)
+    # end
     return UniformFullDimensionalLogiset{U,W,N}(featstruct, features)
 end
 
