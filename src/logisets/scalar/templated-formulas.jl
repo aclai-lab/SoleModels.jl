@@ -1,5 +1,7 @@
 using SoleLogics: AbstractRelation
 
+import SoleLogics: value
+
 using SoleModels: AbstractFeature, TestOperator, ScalarCondition
 
 """
