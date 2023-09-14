@@ -1,7 +1,7 @@
 using SoleModels
 using MLJBase: accuracy, mae
 using SoleModels: LeafModel
-import SoleLogics: npropositions
+import SoleLogics: natoms
 
 """
     readmetrics(m::AbstractModel; kwargs...)
@@ -106,14 +106,14 @@ function evaluaterule(
 end
 
 # """
-#     npropositions(rule::Rule{O,<:AbstractFormula}) where {O}
+#     natoms(rule::Rule{O,<:AbstractFormula}) where {O}
 
 # See also
 # [`Rule`](@ref),
 # [`AbstractFormula`](@ref),
 # [`antecedent`](@ref),
 # """
-# npropositions(rule::Rule{O,<:AbstractFormula}) where {O} = npropositions(antecedent(rule))
+# natoms(rule::Rule{O,<:AbstractFormula}) where {O} = natoms(antecedent(rule))
 
 """
     rulemetrics(
@@ -129,7 +129,7 @@ Calculate metrics for a rule with respect to a labelled dataset and returns a `N
     - For classification problems: number of instances that were not classified
     correctly divided by the total number of instances;
     - For regression problems: mean squared error;
-- `length`: number of propositions in the rule's antecedent.
+- `length`: number of atoms in the rule's antecedent.
 
 See also
 [`Rule`](@ref),
@@ -171,7 +171,7 @@ function rulemetrics(
     return (;
         support   = rule_support,
         error     = rule_error,
-        length    = npropositions(antecedent(rule)),
+        length    = natoms(antecedent(rule)),
     )
 end
 

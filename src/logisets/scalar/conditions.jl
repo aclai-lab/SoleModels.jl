@@ -308,8 +308,8 @@ end
 
 Base.isfinite(::Type{<:UnboundedScalarConditions}) = false
 
-function Base.in(p::Proposition{<:ScalarCondition}, a::UnboundedScalarConditions)
-    fc = atom(p)
+function Base.in(p::Atom{<:ScalarCondition}, a::UnboundedScalarConditions)
+    fc = value(p)
     idx = findfirst(mc->mc == metacond(fc), a.metaconditions)
     return !isnothing(idx)
 end
@@ -360,19 +360,19 @@ struct BoundedScalarConditions{C<:ScalarCondition} <: AbstractConditionalAlphabe
     end
 end
 
-function propositions(a::BoundedScalarConditions)
+function atoms(a::BoundedScalarConditions)
     Iterators.flatten(
         map(
             ((mc,thresholds),)->map(
-                threshold->Proposition(ScalarCondition(mc, threshold)),
+                threshold->Atom(ScalarCondition(mc, threshold)),
                 thresholds),
             a.grouped_featconditions
         )
     ) |> collect
 end
 
-function Base.in(p::Proposition{<:ScalarCondition}, a::BoundedScalarConditions)
-    fc = atom(p)
+function Base.in(p::Atom{<:ScalarCondition}, a::BoundedScalarConditions)
+    fc = value(p)
     grouped_featconditions = a.grouped_featconditions
     idx = findfirst(((mc,thresholds),)->mc == metacond(fc), grouped_featconditions)
     return !isnothing(idx) && Base.in(threshold(fc), last(grouped_featconditions[idx]))

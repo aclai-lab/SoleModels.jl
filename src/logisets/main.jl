@@ -17,7 +17,7 @@ import Tables: istable, rows, subset, getcolumn, columnnames, rowaccess
 # Features to be computed on worlds of dataset instances
 include("features.jl")
 
-# Conditions on the features, to be wrapped in Proposition's
+# Conditions on the features, to be wrapped in Atom's
 include("conditions.jl")
 
 # Templates for formulas of conditions (e.g., templates for ⊤, p, ⟨R⟩p, etc.)

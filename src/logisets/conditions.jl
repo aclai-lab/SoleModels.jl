@@ -1,7 +1,7 @@
 
 using SoleLogics: AbstractAlphabet
 using Random
-import SoleLogics: hasdual, dual, propositions
+import SoleLogics: hasdual, dual, atoms
 
 import Base: in, isfinite, length
 
@@ -10,10 +10,10 @@ import Base: in, isfinite, length
 
 Abstract type for representing conditions that can be interpreted and evaluated
 on worlds of instances of a logical dataset. In logical contexts,
-these are wrapped into `Proposition`s.
+these are wrapped into `Atom`s.
 
 See also
-[`Proposition`](@ref),
+[`Atom`](@ref),
 [`syntaxstring`](@ref),
 [`ScalarMetaCondition`](@ref),
 [`ScalarCondition`](@ref).

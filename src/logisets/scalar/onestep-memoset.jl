@@ -172,7 +172,7 @@ usesfullmemo(::Union{AbstractScalarOneStepRelationalMemoset,AbstractScalarOneSte
 ############################################################################################
 ############################################################################################
 
-# Compute modal dataset propositions and 1-modal decisions
+# Compute modal dataset atoms and 1-modal decisions
 struct ScalarOneStepMemoset{
     U<:Number,
     W<:AbstractWorld,

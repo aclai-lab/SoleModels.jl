@@ -14,10 +14,10 @@ struct ScalarPropositionFormula{U} <: ScalarFormula{U}
     p :: ScalarCondition{U}
 end
 
-proposition(f::ScalarPropositionFormula) = Proposition(f.p)
-feature(f::ScalarPropositionFormula) = feature(proposition(f))
-test_operator(f::ScalarPropositionFormula) = test_operator(proposition(f))
-threshold(f::ScalarPropositionFormula) = threshold(proposition(f))
+value(f::ScalarPropositionFormula) = Atom(f.p)
+feature(f::ScalarPropositionFormula) = feature(value(f))
+test_operator(f::ScalarPropositionFormula) = test_operator(value(f))
+threshold(f::ScalarPropositionFormula) = threshold(value(f))
 
 tree(f::ScalarPropositionFormula) = SyntaxTree(f.p)
 hasdual(f::ScalarPropositionFormula) = true
@@ -29,11 +29,11 @@ dual(f::ScalarPropositionFormula{U}) where {U} =
 abstract type ScalarOneStepFormula{U} <: ScalarFormula{U} end
 
 relation(f::ScalarOneStepFormula) = f.relation
-proposition(f::ScalarOneStepFormula) = Proposition(f.p)
-metacond(f::ScalarOneStepFormula) = metacond(atom(proposition(f)))
-feature(f::ScalarOneStepFormula) = feature(atom(proposition(f)))
-test_operator(f::ScalarOneStepFormula) = test_operator(atom(proposition(f)))
-threshold(f::ScalarOneStepFormula) = threshold(atom(proposition(f)))
+value(f::ScalarOneStepFormula) = Atom(f.p)
+metacond(f::ScalarOneStepFormula) = metacond(value(value(f)))
+feature(f::ScalarOneStepFormula) = feature(value(value(f)))
+test_operator(f::ScalarOneStepFormula) = test_operator(value(value(f)))
+threshold(f::ScalarOneStepFormula) = threshold(value(value(f)))
 
 """
 Templated formula for ⟨R⟩ f ⋈ t.
@@ -91,7 +91,7 @@ struct ScalarExistentialFormula{U} <: ScalarOneStepFormula{U}
     end
 end
 
-tree(f::ScalarExistentialFormula) = DiamondRelationalOperator(f.relation)(Proposition(f.p))
+tree(f::ScalarExistentialFormula) = DiamondRelationalOperator(f.relation)(Atom(f.p))
 
 """
 Templated formula for [R] f ⋈ t.
@@ -101,19 +101,19 @@ struct ScalarUniversalFormula{U} <: ScalarOneStepFormula{U}
     p         :: ScalarCondition{U}
 end
 
-tree(f::ScalarUniversalFormula) = BoxRelationalOperator(f.relation)(Proposition(f.p))
+tree(f::ScalarUniversalFormula) = BoxRelationalOperator(f.relation)(Atom(f.p))
 
 hasdual(f::ScalarExistentialFormula) = true
 function dual(formula::ScalarExistentialFormula{U}) where {U}
     ScalarUniversalFormula{U}(
         relation(formula),
-        dual(proposition(formula))
+        dual(value(formula))
     )
 end
 hasdual(f::ScalarUniversalFormula) = true
 function dual(formula::ScalarUniversalFormula{U}) where {U}
     ScalarExistentialFormula{U}(
         relation(formula),
-        dual(proposition(formula))
+        dual(value(formula))
     )
 end

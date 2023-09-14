@@ -365,7 +365,7 @@ function listrules(
 
             if subrule isa LeafModel
                 ant = antformula
-                normalize && (ant = SoleLogics.normalize(ant; allow_proposition_flipping = true))
+                normalize && (ant = SoleLogics.normalize(ant; allow_atom_flipping = true))
                 subi = (;)
                 # if use_shortforms
                 #     subi = merge((;), (;
@@ -389,7 +389,7 @@ function listrules(
                         end
                     end
                 end
-                normalize && (ant = SoleLogics.normalize(ant; allow_proposition_flipping = true))
+                normalize && (ant = SoleLogics.normalize(ant; allow_atom_flipping = true))
                 Rule(ant, consequent(subrule), merge(info(subrule), i))
             else
                 error("Unexpected rule type: $(typeof(subrule)).")

@@ -35,7 +35,7 @@ include("example-datasets.jl")
 
 export AbstractFeature, Feature
 
-export propositions
+export atoms
 
 export slicedataset, concatdatasets
 

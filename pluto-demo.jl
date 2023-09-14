@@ -28,16 +28,16 @@ md"""
 """
 
 # ╔═╡ 065f6660-f44f-483e-8f39-cb1bd116ce1f
-Proposition("p")
+Atom("p")
 
 # ╔═╡ 0deca737-1bbe-49fa-927c-90d16e4cf3f6
-Proposition{String}("p")
+Atom{String}("p")
 
 # ╔═╡ 76b644a6-a2e5-4794-bd2d-aeaf0cb7f61a
-Proposition(123)
+Atom(123)
 
 # ╔═╡ 2dd37d36-b86b-4e9c-afd6-ce1084669a11
-Proposition{Int64}(123)
+Atom{Int64}(123)
 
 # ╔═╡ c91e0387-276b-4869-9a5e-f45e79479d38
 # Instantiate a propositional interpretation
@@ -48,8 +48,8 @@ I = TruthDict(["p" => true, "q" => false])
 φ2 = parseformula("¬(p ∧ q)")
 
 # ╔═╡ 198be476-f170-482a-9d67-55d174ecc2da
-# Parse a formula with integer as propositions
-φ3 = parseformula("¬(1 ∧ 2)"; proposition_parser = (x -> Proposition(parse(Int64, x))))
+# Parse a formula with integer as atoms
+φ3 = parseformula("¬(1 ∧ 2)"; atom_parser = (x -> Atom(parse(Int64, x))))
 
 # ╔═╡ 32cc4dca-8bf0-42d2-b638-b3ac793407fe
 md"""
@@ -108,7 +108,7 @@ end
 # ╔═╡ 9a9d0d2f-df64-4cca-aa22-0b75787f18e3
 begin
 	# Construct the global formula: "there exists at least one interval that..."
-	glob_φ = global_diamond(φ)
+	glob_φ = globaldiamond(φ)
 	syntaxstring(glob_φ; variable_names_map = names(X_df))
 end
 
@@ -181,7 +181,7 @@ begin
 	ruleset = listrules(tree_train);
 
 	# Print ruleset
-	printmodel.(ruleset; show_metrics = true, threshold_digits = 2, variable_names_map = [names(X_df)], parentheses_at_propositions = false);
+	printmodel.(ruleset; show_metrics = true, threshold_digits = 2, variable_names_map = [names(X_df)], parenthesize_atoms = false);
 end
 
 # ╔═╡ 00310a1c-c4f4-43bc-a60c-a6113434f242
@@ -217,7 +217,7 @@ begin
 	# Build a formula on scalar conditions
 	condition1 = ScalarCondition(features[1], >, -0.5)
 	condition2 = ScalarCondition(features[2], <, 0)
-	φ = Proposition(condition1) ∧ Proposition(condition2)
+	φ = Atom(condition1) ∧ Atom(condition2)
 	syntaxstring(φ; variable_names_map = names(X_df))
 end
 
@@ -231,8 +231,8 @@ begin
 end
 
 # ╔═╡ 655e01fd-f369-4a45-be51-f4d35dfa08c3
-# Create propositions
-p, q = Proposition.(["p", "q"])
+# Create atoms
+p, q = Atom.(["p", "q"])
 
 # ╔═╡ 1ea1d21e-d2c8-40f1-8b81-fe99504c2eed
 begin
