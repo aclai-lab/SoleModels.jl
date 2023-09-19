@@ -36,8 +36,9 @@ Atom{String}("p")
 # ╔═╡ 76b644a6-a2e5-4794-bd2d-aeaf0cb7f61a
 Atom(123)
 
-# ╔═╡ 2dd37d36-b86b-4e9c-afd6-ce1084669a11
-Atom{Int64}(123)
+# ╔═╡ 655e01fd-f369-4a45-be51-f4d35dfa08c3
+# Create atoms
+@atoms p q # Shortcut for `p, q = Atom.(["p", "q"])`
 
 # ╔═╡ c91e0387-276b-4869-9a5e-f45e79479d38
 # Instantiate a propositional interpretation
@@ -48,13 +49,31 @@ I = TruthDict(["p" => true, "q" => false])
 φ2 = parseformula("¬(p ∧ q)")
 
 # ╔═╡ 198be476-f170-482a-9d67-55d174ecc2da
-# Parse a formula with integer as atoms
+# Parse a formula with integer atoms
 φ3 = parseformula("¬(1 ∧ 2)"; atom_parser = (x -> Atom(parse(Int64, x))))
+
+# ╔═╡ a14b58da-73e5-4c16-9136-343e289be763
+begin
+	# Create a new logical operator `⊕`
+	import SoleLogics: arity
+	const ⊕ = SoleLogics.NamedOperator{:⊕}()
+	SoleLogics.arity(::Type{SoleLogics.NamedOperator{:⊕}}) = 2
+
+	parseformula("¬p ∧ q") ⊕ p |> syntaxstring
+end
+
+# ╔═╡ d3fb3373-3fae-4aca-90b7-718535252703
+# Generate a random formula with the new operator `⊕`
+φ5 = randformula(Random.MersenneTwister(5), 2, [p,q], [¬, ∨, ⊕])
 
 # ╔═╡ 32cc4dca-8bf0-42d2-b638-b3ac793407fe
 md"""
 ### Modal Logic
 """
+
+# ╔═╡ a01c8457-42e6-47ed-bfca-bd8c278d9574
+# Generate a random MODAL formula
+φ10 = randformula(Random.MersenneTwister(14), 3, [p,q], SoleLogics.BASE_MODAL_OPERATORS)
 
 # ╔═╡ 7c533604-a185-4b52-837c-420f2078840f
 # Pick the first world
@@ -80,19 +99,6 @@ end
 # Construct a logiset from a DataFrame
 logiset = scalarlogiset(X_df, features)
 
-# ╔═╡ ae1b7375-e85f-48ff-abe4-b1b476d217f0
-# Check the formula on the first interval of every instance
-[check(φ, logiset, i, SoleModels.Interval(1,2)) for i in 1:ninstances(X_df)]
-
-# ╔═╡ dea67564-e905-4a49-9717-ca8071a4d489
-md"""
-## Learning and inspecting a Modal Decision Tree
-"""
-
-# ╔═╡ 99b1da9b-517a-4a84-8d0c-26e9f9ff6e15
-# Instantiate the modal extension of CART, that uses relations from the coarser Interval Algebra "IA7"
-model = ModalDecisionTree(; relations = :IA7)
-
 # ╔═╡ 6b494cfc-485d-4f56-9221-9923fc44a4e5
 # Check the formula on the interpretation
 check(φ, I)
@@ -105,27 +111,6 @@ begin
 	println("With paretheses:\t" * syntaxstring(φ; remove_redundant_parentheses = false))
 end
 
-# ╔═╡ 9a9d0d2f-df64-4cca-aa22-0b75787f18e3
-begin
-	# Construct the global formula: "there exists at least one interval that..."
-	glob_φ = globaldiamond(φ)
-	syntaxstring(glob_φ; variable_names_map = names(X_df))
-end
-
-# ╔═╡ 61e70caa-3365-4efb-9b83-509fb4470ebe
-# Check the global formula (note how the world does not matter, since its a global formula)
-[check(glob_φ, logiset, i) for i in 1:ninstances(logiset)]
-
-# ╔═╡ a14b58da-73e5-4c16-9136-343e289be763
-begin
-	# Create a new logical operator `⊕`
-	import SoleLogics: arity
-	const ⊕ = SoleLogics.NamedOperator{:⊕}()
-	SoleLogics.arity(::Type{SoleLogics.NamedOperator{:⊕}}) = 2
-
-	parseformula("¬p ∧ q") ⊕ p |> syntaxstring
-end
-
 # ╔═╡ 2f15f508-9bb3-452f-a831-f60144457fa4
 begin
 	# Give XOR semantics to the operator `⊕`
@@ -133,14 +118,6 @@ begin
 	SoleLogics.collatetruth(::SoleLogics.BooleanAlgebra, ::typeof(⊕), (t1, t2)::NTuple{2,Bool}) = Base.xor(t1, t2)
 	check(φ, I)
 end
-
-# ╔═╡ d3fb3373-3fae-4aca-90b7-718535252703
-# Generate a random formula with the new operator `⊕`
-φ5 = randformula(Random.MersenneTwister(5), 2, [p,q], [¬, ∨, ⊕])
-
-# ╔═╡ a01c8457-42e6-47ed-bfca-bd8c278d9574
-# Generate a random MODAL formula
-φ10 = randformula(Random.MersenneTwister(14), 3, [p,q], SoleLogics.BASE_MODAL_OPERATORS)
 
 # ╔═╡ bf9f189d-f11d-4830-888d-b5953d6b5690
 begin
@@ -158,6 +135,30 @@ begin
 
 	[w => check(φ, K, w) for w in worlds]
 end
+
+# ╔═╡ ae1b7375-e85f-48ff-abe4-b1b476d217f0
+# Check the formula on the first interval of every instance
+[check(φ, logiset, i, SoleModels.Interval(1,2)) for i in 1:ninstances(X_df)]
+
+# ╔═╡ 9a9d0d2f-df64-4cca-aa22-0b75787f18e3
+begin
+	# Construct the global formula: "there exists at least one interval that..."
+	glob_φ = globaldiamond(φ)
+	syntaxstring(glob_φ; variable_names_map = names(X_df))
+end
+
+# ╔═╡ 61e70caa-3365-4efb-9b83-509fb4470ebe
+# Check the global formula (note how the world does not matter, since its a global formula)
+[check(glob_φ, logiset, i) for i in 1:ninstances(logiset)]
+
+# ╔═╡ dea67564-e905-4a49-9717-ca8071a4d489
+md"""
+## Learning and inspecting a Modal Decision Tree
+"""
+
+# ╔═╡ 99b1da9b-517a-4a84-8d0c-26e9f9ff6e15
+# Instantiate the modal extension of CART, that uses relations from the coarser Interval Algebra "IA7"
+model = ModalDecisionTree(; relations = :IA7)
 
 # ╔═╡ 7655458a-d5af-44d9-9ff6-74db67f3d5d4
 # Print model
@@ -212,45 +213,10 @@ evaluate!(mach,
 )
 
 
-# ╔═╡ c371c4a8-6b16-4e49-ba94-2dfb433618d2
-begin
-	# Build a formula on scalar conditions
-	condition1 = ScalarCondition(features[1], >, -0.5)
-	condition2 = ScalarCondition(features[2], <, 0)
-	φ = Atom(condition1) ∧ Atom(condition2)
-	syntaxstring(φ; variable_names_map = names(X_df))
-end
-
-# ╔═╡ 7685d19e-cc98-4031-a6f9-29ecccc9f417
-begin
-	using SoleModels
-	using DataFrames
-	
-	# Load an example time-series classification dataset as a tuple (DataFrame, Vector{String})
-	X_df, y = SoleModels.load_arff_dataset("NATOPS")
-end
-
-# ╔═╡ 655e01fd-f369-4a45-be51-f4d35dfa08c3
-# Create atoms
-p, q = Atom.(["p", "q"])
-
-# ╔═╡ 1ea1d21e-d2c8-40f1-8b81-fe99504c2eed
-begin
-	using Random
-	
-	# Create a random formula
-	φ4 = randformula(Random.MersenneTwister(107), 3, [p,q], SoleLogics.BASE_PROPOSITIONAL_OPERATORS)
-	
-	φ4 |> syntaxstring |> println
-	
-	# Minimize the formula (according to pre-defined, simple rules, e.g., De Morgan)
-	normalize(φ4) |> syntaxstring |> println
-end
-
 # ╔═╡ 9ee33338-6985-4745-ab74-7caeac73496e
 begin
 	using MLJ
-	using Random
+	# using Random
 	using DataFrames
 	
 	using ModalDecisionTrees
@@ -275,6 +241,37 @@ begin
 	# Compute accuracy 
 	yhat = predict_mode(mach, X_df[test_idxs,:])
 	MLJ.accuracy(yhat, y[test_idxs])
+end
+
+# ╔═╡ c371c4a8-6b16-4e49-ba94-2dfb433618d2
+begin
+	# Build a formula on scalar conditions
+	condition1 = ScalarCondition(features[1], >, -0.5)
+	condition2 = ScalarCondition(features[2], <, 0)
+	φ = Atom(condition1) ∧ Atom(condition2)
+	syntaxstring(φ; variable_names_map = names(X_df))
+end
+
+# ╔═╡ 7685d19e-cc98-4031-a6f9-29ecccc9f417
+begin
+	using SoleModels
+	using DataFrames
+	
+	# Load an example time-series classification dataset as a tuple (DataFrame, Vector{String})
+	X_df, y = SoleModels.load_arff_dataset("NATOPS")
+end
+
+# ╔═╡ 1ea1d21e-d2c8-40f1-8b81-fe99504c2eed
+begin
+	using Random
+	
+	# Create a random formula
+	φ4 = randformula(Random.MersenneTwister(107), 3, [p,q], SoleLogics.BASE_PROPOSITIONAL_OPERATORS)
+	
+	φ4 |> syntaxstring |> println
+	
+	# Minimize the formula (according to pre-defined, simple rules, e.g., De Morgan)
+	normalize(φ4) |> syntaxstring |> println
 end
 
 # ╔═╡ be89d82c-8c79-4619-abf3-73a8698bd961
@@ -1733,7 +1730,6 @@ version = "1.0.1+0"
 # ╠═065f6660-f44f-483e-8f39-cb1bd116ce1f
 # ╠═0deca737-1bbe-49fa-927c-90d16e4cf3f6
 # ╠═76b644a6-a2e5-4794-bd2d-aeaf0cb7f61a
-# ╠═2dd37d36-b86b-4e9c-afd6-ce1084669a11
 # ╠═655e01fd-f369-4a45-be51-f4d35dfa08c3
 # ╠═be89d82c-8c79-4619-abf3-73a8698bd961
 # ╠═c91e0387-276b-4869-9a5e-f45e79479d38
