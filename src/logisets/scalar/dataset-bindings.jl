@@ -117,8 +117,9 @@ function displaystructure(dataset; indent_str = "", include_ninstances = true, k
 end
 
 
+# TODO explain kwargs
 """
-    scalarlogiset(dataset, features)
+    scalarlogiset(dataset, features; kwargs...)
 
 Converts a dataset structure (with variables) to a logiset with scalar-valued features.
 If `dataset` is not a multimodal dataset, the following methods should be defined:
@@ -271,19 +272,36 @@ function scalarlogiset(
         end
     end
 
+    # Too bad this breaks the code
+    # if !isnothing(conditions)
+    #     conditions = unique(conditions)
+    # end
+    features = unique(features)
+
     features_ok = filter(f->isconcretetype(SoleModels.featvaltype(f)), features)
     features_notok = filter(f->!isconcretetype(SoleModels.featvaltype(f)), features)
 
+
     if length(features_notok) > 0
         if all(preserveseltype, features_notok) && all(f->f isa AbstractUnivariateFeature, features_notok)
-            features_notok_fixed = [begin
+            _fixfeature(f) = begin
                 U = vareltype(dataset, i_variable(f))
                 eval(nameof(typeof(f))){U}(f)
-            end for f in features_notok]
+            end
+            features_notok_fixed = [_fixfeature(f) for f in features_notok]
+            # TODO
+            # conditions_ok = filter(c->!(feature(c) in features_notok), conditions)
+            # conditions_notok = filter(c->(feature(c) in features_notok), conditions)
+            # conditions_notok_fixed = [begin
+            #     @assert c isa ScalarMetaCondition "$(typeof(c))"
+            #     f = feature(c)
+            #     ScalarMetaCondition(_fixfeature(f), test_operator(c))
+            # end for c in conditions_notok]
             if !is_nofeatures(features)
                 @warn "Patching $(length(features_notok)) features using vareltype."
             end
             features = [features_ok..., features_notok_fixed...]
+            # conditions = [conditions_ok..., conditions_notok_fixed...]
         else
             @warn "Could not infer feature value type for some of the specified features. " *
                     "Please specify the feature value type upon construction. Untyped " *
@@ -291,7 +309,16 @@ function scalarlogiset(
         end
     end
     features = UniqueVector(features)
-    
+
+    # Too bad this breaks the code
+    # if !isnothing(conditions)
+    #     orphan_feats = filter(f->!(f in feature.(conditions)), features)
+
+    #     if length(orphan_feats) > 0
+    #         @warn "Orphan features found: $(orphan_feats)"
+    #     end
+    # end
+
     # Initialize the logiset structure
     X = initlogiset(dataset, features)
 
@@ -339,6 +366,7 @@ function scalarlogiset(
         )
     end
 end
+
 
 function naturalconditions(
     dataset,

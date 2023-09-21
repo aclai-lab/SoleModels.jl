@@ -63,7 +63,7 @@ multiformulas = [begin
 end for i in 1:200];
 # syntaxstring.(multiformulas) .|> println;
 
-@test_throws MethodError checkcondition(atom(alph.propositions[1]), multilogiset, i_instance)
+@test_throws MethodError checkcondition(value(alph.atoms[1]), multilogiset, i_instance)
 
 c1 = @test_nowarn [check(φ, multilogiset, i_instance) for φ in multiformulas]
 c3 = @test_nowarn [check(φ, complete_supported_multilogiset, i_instance) for φ in multiformulas]

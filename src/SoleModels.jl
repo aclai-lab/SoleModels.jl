@@ -35,7 +35,7 @@ include("example-datasets.jl")
 
 export AbstractFeature, Feature
 
-export propositions
+export atoms
 
 export slicedataset, concatdatasets
 
@@ -120,5 +120,7 @@ include("machine-learning.jl")
 export rulemetrics, readmetrics
 
 include("models/evaluation.jl")
+
+include("deprecate.jl")
 
 end

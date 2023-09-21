@@ -197,7 +197,7 @@ function _displaymodel(
     show_metrics = false,
     show_intermediate_finals = false,
     tree_mode = (subtreeheight(m) != 1),
-    syntaxstring_kwargs = (; parentheses_at_propositions = true),
+    syntaxstring_kwargs = (; parenthesize_atoms = true),
     arrow = "🠮", # ⮞, 🡆, 🠮, 🠲, =>
     kwargs...,
 )
@@ -263,7 +263,7 @@ function _displaymodel(
     show_metrics = false,
     show_intermediate_finals = false,
     tree_mode = true, # subtreeheight(m) != 1
-    syntaxstring_kwargs = (; parentheses_at_propositions = true),
+    syntaxstring_kwargs = (; parenthesize_atoms = true),
     kwargs...,
 )
     io = IOBuffer()
@@ -326,7 +326,7 @@ function _displaymodel(
     show_metrics = false,
     show_intermediate_finals = false,
     tree_mode = true,
-    syntaxstring_kwargs = (; parentheses_at_propositions = true),
+    syntaxstring_kwargs = (; parenthesize_atoms = true),
     kwargs...,
 )
     io = IOBuffer()
@@ -385,7 +385,7 @@ function _displaymodel(
     show_metrics = false,
     show_intermediate_finals = false,
     tree_mode = true,
-    syntaxstring_kwargs = (; parentheses_at_propositions = true),
+    syntaxstring_kwargs = (; parenthesize_atoms = true),
     kwargs...,
 )
     io = IOBuffer()
@@ -423,7 +423,7 @@ function _displaymodel(
     show_metrics = false,
     show_intermediate_finals = false,
     tree_mode = true,
-    syntaxstring_kwargs = (; parentheses_at_propositions = true),
+    syntaxstring_kwargs = (; parenthesize_atoms = true),
     kwargs...,
 )
     io = IOBuffer()
@@ -463,7 +463,7 @@ function _displaymodel(
     show_metrics = false,
     show_intermediate_finals = false,
     tree_mode = true,
-    syntaxstring_kwargs = (; parentheses_at_propositions = true),
+    syntaxstring_kwargs = (; parenthesize_atoms = true),
     kwargs...,
 )
     io = IOBuffer()

@@ -48,20 +48,20 @@ cmodels_num = @test_nowarn [cmodel_float, cmodel_number, cmodel_integer]
 @test_nowarn ConstantModel{Int}[cmodel_number, cmodel_integer]
 @test_nowarn ConstantModel{Number}[cmodel_number, cmodel_integer]
 
-##################### String Propositions and SyntaxTree consequent ########################
-prop_r = @test_nowarn Proposition("r")
-prop_s = @test_nowarn Proposition("s")
-prop_t = @test_nowarn Proposition("t")
-prop_q = @test_nowarn Proposition("q")
+##################### String Atoms and SyntaxTree consequent ########################
+prop_r = @test_nowarn Atom("r")
+prop_s = @test_nowarn Atom("s")
+prop_t = @test_nowarn Atom("t")
+prop_q = @test_nowarn Atom("q")
 
 st_r = @test_nowarn SyntaxTree(prop_r)
 st_s = @test_nowarn SyntaxTree(prop_s)
 st_t = @test_nowarn SyntaxTree(prop_t)
 st_q = @test_nowarn SyntaxTree(prop_q)
 
-#################### Integer Propositions and SyntaxTree consequent ########################
-prop_1 = @test_nowarn Proposition(1)
-prop_100 = @test_nowarn Proposition(100)
+#################### Integer Atoms and SyntaxTree consequent ########################
+prop_1 = @test_nowarn Atom(1)
+prop_100 = @test_nowarn Atom(100)
 
 ##################################### SyntaxTree ###########################################
 st_1 = @test_nowarn SyntaxTree(prop_1)

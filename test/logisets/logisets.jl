@@ -64,18 +64,18 @@ cond1 = SoleModels.ScalarCondition(features[1], >, 0.9)
 cond2 = SoleModels.ScalarCondition(features[2], >, 0.3)
 
 for w in worlds
-    @test (featvalue(scalar_logiset, 1, w, features[1]) > 0.9) == check(Proposition(cond1) ∧ ⊤, scalar_logiset, 1, w)
-    @test (featvalue(scalar_logiset, 1, w, features[2]) > 0.3) == check(Proposition(cond2) ∧ ⊤, scalar_logiset, 1, w)
+    @test (featvalue(scalar_logiset, 1, w, features[1]) > 0.9) == check(Atom(cond1) ∧ ⊤, scalar_logiset, 1, w)
+    @test (featvalue(scalar_logiset, 1, w, features[2]) > 0.3) == check(Atom(cond2) ∧ ⊤, scalar_logiset, 1, w)
 end
 
 # Propositional formula
-φ = ⊤ → Proposition(cond1) ∧ Proposition(cond2)
+φ = ⊤ → Atom(cond1) ∧ Atom(cond2)
 for w in worlds
     @test ((featvalue(scalar_logiset, 1, w, features[1]) > 0.9) && (featvalue(scalar_logiset, 1, w, features[2]) > 0.3)) == check(φ, scalar_logiset, 1, w)
 end
 
 # Modal formula
-φ = ◊(⊤ → Proposition(cond1) ∧ Proposition(cond2))
+φ = ◊(⊤ → Atom(cond1) ∧ Atom(cond2))
 for w in worlds
     @test check(φ, scalar_logiset, 1, w) == (length(accessibles(fr, w)) > 0 && any([
         ((featvalue(scalar_logiset, 1, v, features[1]) > 0.9) && (featvalue(scalar_logiset, 1, v, features[2]) > 0.3))

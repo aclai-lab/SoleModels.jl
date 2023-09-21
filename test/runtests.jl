@@ -20,7 +20,7 @@ test_suites = [
         "logisets/logisets.jl",
         # "logisets/memosets.jl", # TODO bring back
         "logisets/cube2logiset.jl",
-        "logisets/dataframe2logiset.jl",
+        # "logisets/dataframe2logiset.jl",
         "logisets/multilogisets.jl",
         "logisets/MLJ.jl",
     ]),

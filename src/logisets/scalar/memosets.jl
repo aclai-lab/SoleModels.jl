@@ -1,21 +1,23 @@
 using UniqueVectors
 import Base: in, findfirst
 
-using Suppressor
-
 _in(item, uv) = Base.in(item, uv)
 _findfirst(p::UniqueVectors.EqualTo, uv) = Base.findfirst(p, uv)
 
-# TODO suppress warnings:
-# @suppress begin
-# Fixes
-# https://github.com/garrison/UniqueVectors.jl/issues/24
-Base.in(item, uv::UniqueVector) = haskey(uv.lookup, item)
-Base.findfirst(p::UniqueVectors.EqualTo, uv::UniqueVector) = get(uv.lookup, p.x, nothing)
-# end
+function Base.in(item, uv::UniqueVector{<:Union{AbstractFeature,AbstractCondition,AbstractRelation}})
+    haskey(uv.lookup, item)
+end
 
-_in(item, uv::UniqueVector) = haskey(uv.lookup, item)
-_findfirst(p::UniqueVectors.EqualTo, uv::UniqueVector) = get(uv.lookup, p.x, nothing)
+function Base.in(item::T, uv::UniqueVector{T}) where {T<:Union{AbstractFeature,AbstractCondition,AbstractRelation}}
+    haskey(uv.lookup, item)
+end
+
+function Base.findfirst(p::UniqueVectors.EqualTo, uv::UniqueVector{<:Union{AbstractFeature,AbstractCondition,AbstractRelation}})
+    get(uv.lookup, p.x, nothing)
+end
+
+_in(item, uv::UniqueVector{<:Union{AbstractFeature,AbstractCondition,AbstractRelation}}) = haskey(uv.lookup, item)
+_findfirst(p::UniqueVectors.EqualTo, uv::UniqueVector{<:Union{AbstractFeature,AbstractCondition,AbstractRelation}}) = get(uv.lookup, p.x, nothing)
 
 # TODO complete and explain
 """

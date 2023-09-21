@@ -8,9 +8,9 @@ import Base: rand
         metaconditions::Union{Nothing,ScalarMetaCondition,AbstractVector{<:ScalarMetaCondition}} = nothing,
         feature::Union{Nothing,AbstractFeature,AbstractVector{<:AbstractFeature}} = nothing,
         test_operator::Union{Nothing,TestOperator,AbstractVector{<:TestOperator}} = nothing,
-    )::Proposition
+    )::Atom
 
-Randomly sample a `Proposition` holding a `ScalarCondition` from conditional alphabet `a`,
+Randomly sample an `Atom` holding a `ScalarCondition` from conditional alphabet `a`,
 such that:
 - if `metaconditions` are specified, then the set of metaconditions (feature-operator pairs)
 is limited to `metaconditions`;
@@ -31,7 +31,7 @@ function Base.rand(
     metaconditions::Union{Nothing,ScalarMetaCondition,AbstractVector{<:ScalarMetaCondition}} = nothing,
     features::Union{Nothing,AbstractFeature,AbstractVector{<:AbstractFeature}} = nothing,
     test_operators::Union{Nothing,TestOperator,AbstractVector{<:TestOperator}} = nothing,
-)::Proposition
+)::Atom
 
     # Transform values to singletons
     metaconditions = metaconditions isa ScalarMetaCondition ? [metaconditions] : metaconditions
@@ -77,5 +77,5 @@ function Base.rand(
 
     mc_thresholds = rand(rng, filtered_featconds)
 
-    return Proposition(ScalarCondition(first(mc_thresholds), rand(rng, last(mc_thresholds))))
+    return Atom(ScalarCondition(first(mc_thresholds), rand(rng, last(mc_thresholds))))
 end

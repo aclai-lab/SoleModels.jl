@@ -22,9 +22,15 @@ function Base.show(io::IO, f::AbstractFeature)
     # print(io, "$(syntaxstring(f))")
 end
 
-# TODO check whether this is this necessary or wanted, and remove Base.hash(a::VarFeature) maybe?
-Base.isequal(a::AbstractFeature, b::AbstractFeature) = syntaxstring(a) == syntaxstring(b)
-Base.hash(a::AbstractFeature) = Base.hash(syntaxstring(a))
+# Note this is necessary when wrapping lambda functions or closures:
+# f = [UnivariateFeature{Float64}(1, x->[1.,2.,3.][i]) for i in 1:3] |> unique
+# map(x->SoleModels.computefeature(x, rand(1,2)), f)
+Base.isequal(a::AbstractFeature, b::AbstractFeature) = Base.isequal(map(x->getfield(a, x), fieldnames(typeof(a))), map(x->getfield(b, x), fieldnames(typeof(b))))
+Base.hash(a::AbstractFeature) = Base.hash(map(x->getfield(a, x), fieldnames(typeof(a)))) + Base.hash(typeof(a))
+
+# Base.isequal(a::AbstractFeature, b::AbstractFeature) = syntaxstring(a) == syntaxstring(b)
+# Base.hash(a::AbstractFeature) = Base.hash(syntaxstring(a))
+
 
 function parsefeature(
     FT::Type{<:AbstractFeature},
@@ -37,7 +43,7 @@ end
 
 ############################################################################################
 
-import SoleLogics: atomtype
+import SoleLogics: valuetype
 
 """
     struct Feature{A} <: AbstractFeature
@@ -53,8 +59,8 @@ struct Feature{A} <: AbstractFeature
     atom::A
 end
 
-atomtype(::Type{<:Feature{A}}) where {A} = A
-atomtype(::Feature{A}) where {A} = A
+valuetype(::Type{<:Feature{A}}) where {A} = A
+valuetype(::Feature{A}) where {A} = A
 
 syntaxstring(f::Feature; kwargs...) = string(f.atom)
 
@@ -66,7 +72,7 @@ function parsefeature(
     if F == Feature
         F(expression)
     else
-        F(parse(atomtype(F), expression))
+        F(parse(valuetype(F), expression))
     end
 end
 

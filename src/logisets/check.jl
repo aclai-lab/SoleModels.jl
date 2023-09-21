@@ -37,7 +37,7 @@ function check(
 
     if perform_normalization
         # Only allow flippings when no onestep is used.
-        φ = normalize(φ; profile = :modelchecking, allow_proposition_flipping = isnothing(onestep_memoset))
+        φ = normalize(φ; profile = :modelchecking, allow_atom_flipping = isnothing(onestep_memoset))
     end
 
     X, memo_structure = begin
@@ -79,13 +79,13 @@ function check(
                     if !isnothing(onestep_memoset) && SoleLogics.height(ψ) == 1 && tok isa SoleLogics.AbstractRelationalOperator &&
                             ((SoleLogics.relation(tok) == globalrel && nworlds(fr) != 1) || !SoleLogics.isgrounding(SoleLogics.relation(tok))) &&
                             SoleLogics.ismodal(tok) && SoleLogics.isunary(tok) && SoleLogics.isdiamond(tok) &&
-                            token(first(children(ψ))) isa Proposition &&
+                            token(first(children(ψ))) isa Atom &&
                             # Note: metacond with same aggregator also works. TODO maybe use Conditions with aggregators inside and look those up.
-                            (onestep_memoset_is_complete || (metacond(atom(token(first(children(ψ))))) in metaconditions(onestep_memoset))) &&
+                            (onestep_memoset_is_complete || (metacond(value(token(first(children(ψ))))) in metaconditions(onestep_memoset))) &&
                             true
                         # println("ONESTEP!")
                         # println(syntaxstring(ψ))
-                        condition = atom(token(first(children(ψ))))
+                        condition = value(token(first(children(ψ))))
                         _metacond = metacond(condition)
                         _rel = SoleLogics.relation(tok)
                         _feature = feature(condition)
@@ -96,8 +96,8 @@ function check(
                         end, _c(allworlds(fr)))
                     elseif tok isa SoleLogics.AbstractOperator
                         _c(SoleLogics.collateworlds(fr, tok, map(f->readformula(memo_structure, f), children(ψ))))
-                    elseif tok isa Proposition
-                        condition = atom(tok) # TODO write check(tok, X, i_instance, _w) and use it here instead of checkcondition.
+                    elseif tok isa Atom
+                        condition = value(tok) # TODO write check(tok, X, i_instance, _w) and use it here instead of checkcondition.
                         _f(_w->checkcondition(condition, X, i_instance, _w), _c(allworlds(fr)))
                     else
                         error("Unexpected token encountered in _check: $(typeof(tok))")
