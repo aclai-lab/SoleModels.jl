@@ -1,7 +1,8 @@
 using SoleLogics: AbstractKripkeStructure, AbstractInterpretationSet, AbstractFrame
 using SoleLogics: TruthValue
-import SoleLogics: npropositions, ntokens
+import SoleLogics: natoms, ntokens
 import SoleData: modality, nmodalities, eachmodality
+import Base: hash, isequal
 
 """
     struct MultiLogiset{L<:AbstractLogiset}
@@ -210,6 +211,8 @@ end
 
 modforms(f::MultiFormula) = f.modforms
 
+Base.isequal(a::MultiFormula, b::MultiFormula) = syntaxstring(a) == syntaxstring(b)
+
 function MultiFormula(i_modality::Integer, modant::AbstractFormula)
     F = eval(nameof(typeof(modant)))
     MultiFormula(Dict{Int,F}(i_modality => modant))
@@ -281,11 +284,11 @@ function SoleLogics.normalize(φ::MultiFormula{F}; kwargs...) where {F<:Abstract
     MultiFormula(Dict{Int,F}([i_modality => SoleLogics.normalize(f; kwargs...) for (i_modality,f) in pairs(modforms(φ))]))
 end
 
-npropositions(φ::LeftmostConjunctiveForm{<:MultiFormula}) = npropositions((children(φ)...,))
-npropositions(φ::MultiFormula{<:SyntaxTree}) =
-    sum([npropositions(modant) for (_,modant) in modforms(φ)])
-function npropositions(children::NTuple{N,MultiFormula}) where {N}
-    return sum([npropositions(child) for child in children])
+natoms(φ::LeftmostConjunctiveForm{<:MultiFormula}) = natoms((children(φ)...,))
+natoms(φ::MultiFormula{<:SyntaxTree}) =
+    sum([natoms(modant) for (_,modant) in modforms(φ)])
+function natoms(children::NTuple{N,MultiFormula}) where {N}
+    return sum([natoms(child) for child in children])
 end
 
 ntokens(φ::LeftmostConjunctiveForm{<:MultiFormula}) = ntokens((children(φ)...,))
