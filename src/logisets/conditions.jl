@@ -81,7 +81,7 @@ end
 
 checkcondition(c::ValueCondition, args...; kwargs...) = featvalue(c.feature, args...; kwargs...)
 
-syntaxstring(c::ValueCondition; kwargs...) = string(c.feature)
+syntaxstring(c::ValueCondition; kwargs...) = syntaxstring(c.feature)
 
 function parsecondition(
     ::Type{ValueCondition},
@@ -122,7 +122,7 @@ end
 
 checkcondition(c::FunctionalCondition, args...; kwargs...) = (c.f)(featvalue(c.feature, args...; kwargs...))
 
-syntaxstring(c::FunctionalCondition; kwargs...) = "$(c.f)($(c.feature))"
+syntaxstring(c::FunctionalCondition; kwargs...) = string(c.f, "(", syntaxstring(c.feature), ")")
 
 function parsecondition(
     ::Type{FunctionalCondition},
