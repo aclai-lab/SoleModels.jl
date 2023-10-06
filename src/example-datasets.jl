@@ -9,7 +9,7 @@ using DataStructures: OrderedDict
 function load_arff_dataset(
     dataset_name,
     split = :all;
-    path = "http://www.timeseriesclassification.com/ClassificationDownloads/$(dataset_name).zip"
+    path = "http://www.timeseriesclassification.com/aeon-toolkit/$(dataset_name).zip"
 )
     @assert split in [:train, :test, :split, :all] "Unexpected value for split parameter: $(split). Allowed: :train, :test, :split, :all."
 
