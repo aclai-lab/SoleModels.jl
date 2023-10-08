@@ -213,22 +213,9 @@ evaluate!(mach,
 )
 
 
-# ╔═╡ a00c4abe-5534-4c42-9464-d5a6867b9802
-begin
-	# Randomly split the data: 20% training, 80% testing
-	N = nrow(X_df)
-	p = randperm(Random.MersenneTwister(1), N)
-	train_idxs, test_idxs = p[1:round(Int, N*.2)], p[round(Int, N*.2)+1:end]
-	
-	mach = machine(model, X_df, y)
-	
-	# Train.
-	@time fit!(mach; rows=train_idxs)
-	
-	# Compute accuracy 
-	yhat = predict_mode(mach, X_df[test_idxs,:])
-	MLJ.accuracy(yhat, y[test_idxs])
-end
+# ╔═╡ be89d82c-8c79-4619-abf3-73a8698bd961
+# Manually compose a formula
+φ = ¬(p ∧ q)
 
 # ╔═╡ 1ea1d21e-d2c8-40f1-8b81-fe99504c2eed
 begin
@@ -243,10 +230,6 @@ begin
 	normalize(φ4) |> syntaxstring |> println
 end
 
-# ╔═╡ be89d82c-8c79-4619-abf3-73a8698bd961
-# Manually compose a formula
-φ = ¬(p ∧ q)
-
 # ╔═╡ 7685d19e-cc98-4031-a6f9-29ecccc9f417
 begin
 	using SoleModels
@@ -254,6 +237,15 @@ begin
 	
 	# Load an example time-series classification dataset as a tuple (DataFrame, Vector{String})
 	X_df, y = SoleModels.load_arff_dataset("NATOPS")
+end
+
+# ╔═╡ c371c4a8-6b16-4e49-ba94-2dfb433618d2
+begin
+	# Build a formula on scalar conditions
+	condition1 = ScalarCondition(features[1], >, -0.5)
+	condition2 = ScalarCondition(features[2], <, 0)
+	φ = Atom(condition1) ∧ Atom(condition2)
+	syntaxstring(φ; variable_names_map = names(X_df))
 end
 
 # ╔═╡ 9ee33338-6985-4745-ab74-7caeac73496e
@@ -269,13 +261,21 @@ begin
 	X_df, y = SoleModels.load_arff_dataset("NATOPS")
 end
 
-# ╔═╡ c371c4a8-6b16-4e49-ba94-2dfb433618d2
+# ╔═╡ a00c4abe-5534-4c42-9464-d5a6867b9802
 begin
-	# Build a formula on scalar conditions
-	condition1 = ScalarCondition(features[1], >, -0.5)
-	condition2 = ScalarCondition(features[2], <, 0)
-	φ = Atom(condition1) ∧ Atom(condition2)
-	syntaxstring(φ; variable_names_map = names(X_df))
+	# Randomly split the data: 20% training, 80% testing
+	N = nrow(X_df)
+	p = randperm(Random.MersenneTwister(1), N)
+	train_idxs, test_idxs = p[1:round(Int, N*.2)], p[round(Int, N*.2)+1:end]
+	
+	mach = machine(model, X_df, y)
+	
+	# Train.
+	@time fit!(mach; rows=train_idxs)
+	
+	# Compute accuracy 
+	yhat = predict_mode(mach, X_df[test_idxs,:])
+	MLJ.accuracy(yhat, y[test_idxs])
 end
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
