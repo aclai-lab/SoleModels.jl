@@ -123,7 +123,7 @@ end
 begin
 	# Give XOR semantics to the operator `⊕`
 	import SoleLogics: collatetruth
-	SoleLogics.collatetruth(::SoleLogics.BooleanAlgebra, ::typeof(⊕), (t1, t2)::NTuple{2,Bool}) = Base.xor(t1, t2)
+	SoleLogics.collatetruth(::typeof(⊕), (t1, t2)::NTuple{2,Bool}) = Base.xor(t1, t2)
 	check(φ5, I)
 end
 

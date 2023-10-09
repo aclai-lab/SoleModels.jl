@@ -287,7 +287,7 @@ function check(
     args...;
     kwargs...,
 )
-    # TODO in the fuzzy case: use collatetruth(fuzzy algebra, ∧, ...)
+    # TODO in the fuzzy case: use collatetruth(∧, fuzzy truth values...)
     all([check(f, X, i_modality, i_instance, args...; kwargs...)
         for (i_modality, f) in modforms(φ)])
 end
