@@ -228,9 +228,6 @@ begin
 	MLJ.accuracy(yhat, y2[test_idxs])
 end
 
-# ╔═╡ a900782f-0d2a-47ed-a44d-569acf87c280
-
-
 # ╔═╡ 7655458a-d5af-44d9-9ff6-74db67f3d5d4
 # Print model
 report(mach).printmodel()
@@ -282,6 +279,9 @@ evaluate!(mach,
         verbosity=0,
         check_measure=false
 )
+
+
+# ╔═╡ a900782f-0d2a-47ed-a44d-569acf87c280
 
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
@@ -1523,5 +1523,6 @@ version = "17.4.0+0"
 # ╠═00310a1c-c4f4-43bc-a60c-a6113434f242
 # ╠═b3417b90-c910-407a-939b-5190602c5899
 # ╠═3cdf0a35-edd0-4a02-9410-94e828d0f519
+# ╠═a900782f-0d2a-47ed-a44d-569acf87c280
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
