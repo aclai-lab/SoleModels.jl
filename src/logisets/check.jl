@@ -9,7 +9,7 @@ function check(
     perform_normalization::Bool = true,
     memo_max_height::Union{Nothing,Int} = nothing,
     onestep_memoset_is_complete = false,
-) where {W<:AbstractWorld,U,FT<:SoleLogics.AbstractFormula}
+) where {W<:AbstractWorld,U,FT<:SoleLogics.Formula}
 
     if isnothing(w)
         if nworlds(frame(X, i_instance)) == 1
@@ -19,13 +19,13 @@ function check(
     @assert SoleLogics.isgrounded(φ) || !isnothing(w) "Please, specify a world in order " *
         "to check non-grounded formula: $(syntaxstring(φ))."
 
-    setformula(memo_structure::AbstractDict{<:AbstractFormula}, φ::AbstractFormula, val) = memo_structure[SoleLogics.tree(φ)] = val
-    readformula(memo_structure::AbstractDict{<:AbstractFormula}, φ::AbstractFormula) = memo_structure[SoleLogics.tree(φ)]
-    hasformula(memo_structure::AbstractDict{<:AbstractFormula}, φ::AbstractFormula) = haskey(memo_structure, SoleLogics.tree(φ))
+    setformula(memo_structure::AbstractDict{<:Formula}, φ::Formula, val) = memo_structure[SoleLogics.tree(φ)] = val
+    readformula(memo_structure::AbstractDict{<:Formula}, φ::Formula) = memo_structure[SoleLogics.tree(φ)]
+    hasformula(memo_structure::AbstractDict{<:Formula}, φ::Formula) = haskey(memo_structure, SoleLogics.tree(φ))
 
-    setformula(memo_structure::AbstractMemoset, φ::AbstractFormula, val) = Base.setindex!(memo_structure, i_instance, SoleLogics.tree(φ), val)
-    readformula(memo_structure::AbstractMemoset, φ::AbstractFormula) = Base.getindex(memo_structure, i_instance, SoleLogics.tree(φ))
-    hasformula(memo_structure::AbstractMemoset, φ::AbstractFormula) = haskey(memo_structure, i_instance, SoleLogics.tree(φ))
+    setformula(memo_structure::AbstractMemoset, φ::Formula, val) = Base.setindex!(memo_structure, i_instance, SoleLogics.tree(φ), val)
+    readformula(memo_structure::AbstractMemoset, φ::Formula) = Base.getindex(memo_structure, i_instance, SoleLogics.tree(φ))
+    hasformula(memo_structure::AbstractMemoset, φ::Formula) = haskey(memo_structure, i_instance, SoleLogics.tree(φ))
 
     onestep_memoset = begin
         if X isa SupportedLogiset && supporttypes(X) <: Tuple{<:AbstractOneStepMemoset,<:AbstractFullMemoset}
@@ -94,7 +94,7 @@ function check(
                             gamma = featchannel_onestep_aggregation(X, onestep_memoset, _featchannel, i_instance, world, _rel, _metacond)
                             apply_test_operator(test_operator(_metacond), gamma, threshold(condition))
                         end, _c(allworlds(fr)))
-                    elseif tok isa SoleLogics.AbstractOperator
+                    elseif tok isa SoleLogics.Operator # TODO differentiate Connectives and Truth
                         _c(SoleLogics.collateworlds(fr, tok, map(f->readformula(memo_structure, f), children(ψ))))
                     elseif tok isa Atom
                         condition = value(tok) # TODO write check(tok, X, i_instance, _w) and use it here instead of checkcondition.

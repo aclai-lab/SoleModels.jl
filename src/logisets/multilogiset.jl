@@ -1,5 +1,5 @@
 using SoleLogics: AbstractKripkeStructure, AbstractInterpretationSet, AbstractFrame
-using SoleLogics: TruthValue
+using SoleLogics: Truth
 import SoleData: modality, nmodalities, eachmodality
 
 """
@@ -16,7 +16,7 @@ See also
 [`minify`](@ref).
 """
 struct MultiLogiset{L<:AbstractLogiset} <: AbstractInterpretationSet{
-    AbstractKripkeStructure{W,C where C<:AbstractCondition{_F where _F<:AbstractFeature},T where T<:TruthValue,FR where FR<:AbstractFrame{W}} where W<:AbstractWorld
+    AbstractKripkeStructure{W,C where C<:AbstractCondition{_F where _F<:AbstractFeature},T where T<:Truth,FR where FR<:AbstractFrame{W}} where W<:AbstractWorld
 }
 
     modalities  :: Vector{L}
@@ -170,7 +170,7 @@ end
 ############################################################################################
 
 function check(
-    φ::SoleLogics.AbstractFormula,
+    φ::SoleLogics.Formula,
     X::MultiLogiset,
     i_modality::Integer,
     i_instance::Integer,
@@ -182,21 +182,21 @@ end
 
 ############################################################################################
 
-using SoleLogics: AbstractFormula, AbstractSyntaxStructure, AbstractOperator
+using SoleLogics: Formula, AbstractSyntaxStructure, Operator
 import SoleLogics: syntaxstring, joinformulas
 
 import SoleLogics: tree
 import SoleLogics: normalize
 
 """
-    struct MultiFormula{F<:AbstractFormula} <: AbstractSyntaxStructure
+    struct MultiFormula{F<:Formula} <: AbstractSyntaxStructure
         modforms::Dict{Int,F}
     end
 
 A symbolic antecedent that can be checked on a `MultiLogiset`, associating
 antecedents to modalities.
 """
-struct MultiFormula{F<:AbstractFormula} <: AbstractSyntaxStructure
+struct MultiFormula{F<:Formula} <: AbstractSyntaxStructure
     modforms::Dict{Int,F}
 end
 
@@ -209,7 +209,7 @@ end
 
 modforms(f::MultiFormula) = f.modforms
 
-function MultiFormula(i_modality::Integer, modant::AbstractFormula)
+function MultiFormula(i_modality::Integer, modant::Formula)
     F = eval(nameof(typeof(modant)))
     MultiFormula(Dict{Int,F}(i_modality => modant))
 end
@@ -261,7 +261,7 @@ end
 #     i_modality = first(ks)
 #     MultiFormula(i_modality, ¬(modforms(f)[i_modality]))
 # end
-function joinformulas(op::AbstractOperator, children::NTuple{N,MultiFormula}) where {N}
+function joinformulas(op::Operator, children::NTuple{N,MultiFormula}) where {N}
     if !all(c->length(modforms(c)) == 1, children)
         error("Cannot join $(length(children)) MultiFormula's by means of $(op). " *
             "$(children)\n" *
@@ -276,7 +276,7 @@ function joinformulas(op::AbstractOperator, children::NTuple{N,MultiFormula}) wh
     MultiFormula(i_modality, joinformulas(op, map(c->modforms(c)[i_modality], children)))
 end
 
-function SoleLogics.normalize(φ::MultiFormula{F}; kwargs...) where {F<:AbstractFormula}
+function SoleLogics.normalize(φ::MultiFormula{F}; kwargs...) where {F<:Formula}
     MultiFormula(Dict{Int,F}([i_modality => SoleLogics.normalize(f; kwargs...) for (i_modality,f) in pairs(modforms(φ))]))
 end
 
@@ -293,5 +293,5 @@ function check(
 end
 
 # # TODO join MultiFormula leads to a SyntaxTree with MultiFormula children
-# function joinformulas(op::AbstractOperator, children::NTuple{N,MultiFormula{F}}) where {N,F}
+# function joinformulas(op::Operator, children::NTuple{N,MultiFormula{F}}) where {N,F}
 # end

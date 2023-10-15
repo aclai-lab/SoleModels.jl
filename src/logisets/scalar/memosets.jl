@@ -34,14 +34,14 @@ struct ScalarChainedMemoset{
     W<:AbstractWorld,
     U,
     FR<:AbstractFrame{W},
-    D<:AbstractVector{<:AbstractDict{<:AbstractFormula,U}},
+    D<:AbstractVector{<:AbstractDict{<:Formula,U}},
 } <: AbstractFullMemoset{W,U,FT where FT<:AbstractFeature,FR}
 
     d :: D
 
     function ScalarChainedMemoset{W,U,FR,D}(
         d::D
-    ) where {W<:AbstractWorld,U,FR<:AbstractFrame{W},D<:AbstractVector{<:AbstractDict{<:AbstractFormula,U}}}
+    ) where {W<:AbstractWorld,U,FR<:AbstractFrame{W},D<:AbstractVector{<:AbstractDict{<:Formula,U}}}
         new{W,U,FR,D}(d)
     end
 
@@ -64,7 +64,7 @@ nmemoizedvalues(Xm::ScalarChainedMemoset) = sum(length.(Xm.d))
 @inline function Base.haskey(
     Xm           :: ScalarChainedMemoset,
     i_instance   :: Integer,
-    f            :: AbstractFormula,
+    f            :: Formula,
 )
     haskey(Xm.d[i_instance], f)
 end
@@ -78,21 +78,21 @@ end
 @inline function Base.getindex(
     Xm           :: ScalarChainedMemoset,
     i_instance   :: Integer,
-    f            :: AbstractFormula,
+    f            :: Formula,
 )
     Xm.d[i_instance][f]
 end
 @inline function Base.setindex!(
     Xm           :: ScalarChainedMemoset,
     i_instance   :: Integer,
-    f            :: AbstractFormula,
+    f            :: Formula,
     threshold    :: U,
 ) where {U}
     Xm.d[i_instance][f] = threshold
 end
 
 function check(
-    f::AbstractFormula,
+    f::Formula,
     Xm::ScalarChainedMemoset{W},
     i_instance::Integer,
     w::W;

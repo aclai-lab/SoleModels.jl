@@ -44,7 +44,7 @@ export MultiFormula, modforms
 # Multi-frame version of logisets, for representing multimodal datasets
 include("multilogiset.jl")
 
-export check, AnchoredFormula
+export check
 
 # Model checking algorithms for logisets and multilogisets
 include("check.jl")

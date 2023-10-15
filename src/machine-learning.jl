@@ -20,7 +20,7 @@ const Label   = Union{CLabel,RLabel}
 const _CLabel = Integer # (classification labels are internally represented as integers)
 const _Label  = Union{_CLabel,RLabel}
 
-const AssociationRule{F} = Rule{F} where {F<:AbstractFormula}
+const AssociationRule{F} = Rule{F} where {F<:Formula}
 const ClassificationRule{L} = Rule{L} where {L<:CLabel}
 const RegressionRule{L} = Rule{L} where {L<:RLabel}
 

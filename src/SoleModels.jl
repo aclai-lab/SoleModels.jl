@@ -8,7 +8,7 @@ using SoleData: _isnan
 using SoleLogics
 using SoleLogics: AbstractInterpretation, AbstractInterpretationSet
 using SoleLogics: AbstractSyntaxToken
-using SoleLogics: AbstractFormula, Formula, synstruct
+using SoleLogics: Formula, synstruct
 using SoleLogics: ⊤, ¬, ∧
 
 using FunctionWrappers: FunctionWrapper

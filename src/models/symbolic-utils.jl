@@ -144,10 +144,10 @@ subtreeheight(m::MixedSymbolicModel) = maximum(subtreeheight, immediatesubmodels
 ############################################################################################
 
 # When `assumed_formula` is assumed, and `f` is known to be true, their conjuction holds.
-advanceformula(f::AbstractFormula, assumed_formula::Union{Nothing,AbstractFormula}) =
+advanceformula(f::Formula, assumed_formula::Union{Nothing,Formula}) =
     isnothing(assumed_formula) ? f : ∧(assumed_formula, f)
 
-advanceformula(r::Rule, assumed_formula::Union{Nothing,AbstractFormula}) =
+advanceformula(r::Rule, assumed_formula::Union{Nothing,Formula}) =
     Rule(advanceformula(antecedent(r), assumed_formula), consequent(r), info(r))
 
 ############################################################################################
@@ -455,7 +455,7 @@ See also [`listrules`](@ref), [`issymbolic`](@ref), [`DISJUNCTION`](@ref), [`Lea
 """
 function joinrules(
     rules::AbstractVector{
-        <:Rule{<:Any,<:SoleModels.AbstractFormula,<:SoleModels.ConstantModel}
+        <:Rule{<:Any,<:SoleModels.Formula,<:SoleModels.ConstantModel}
     },
     silent = false
 )

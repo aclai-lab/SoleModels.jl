@@ -4,7 +4,7 @@ import SoleLogics: tree, dual
 """
 Abstract type simple formulas of given templates.
 """
-abstract type AbstractTemplatedFormula <: SoleLogics.AbstractFormula end
+abstract type AbstractTemplatedFormula <: SoleLogics.Formula end
 
 """
 Templated formula for ⊤, which always checks top.

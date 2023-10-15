@@ -67,7 +67,7 @@ prop_100 = @test_nowarn Atom(100)
 st_1 = @test_nowarn SyntaxTree(prop_1)
 st_100 = @test_nowarn SyntaxTree(prop_100)
 
-################################### Formula ################################################
+@################################### Formulas ###############################################
 p = @test_nowarn SoleLogics.parsebaseformula("p")
 p_tree = @test_nowarn SoleLogics.parsetree("p")
 

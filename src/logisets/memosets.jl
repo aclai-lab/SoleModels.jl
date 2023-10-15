@@ -104,20 +104,20 @@ See also
 """
 struct FullMemoset{
     W<:AbstractWorld,
-    D<:AbstractVector{<:AbstractDict{<:AbstractFormula,<:WorldSet{W}}},
+    D<:AbstractVector{<:AbstractDict{<:Formula,<:WorldSet{W}}},
 } <: AbstractFullMemoset{W,U where U,FT where FT<:AbstractFeature,FR where FR<:AbstractFrame{W}}
 
     d :: D
 
     function FullMemoset{W,D}(
         d::D
-    ) where {W,D<:AbstractVector{<:AbstractDict{<:AbstractFormula,<:Union{<:AbstractVector{W},Nothing}}}}
+    ) where {W,D<:AbstractVector{<:AbstractDict{<:Formula,<:Union{<:AbstractVector{W},Nothing}}}}
         new{W,D}(d)
     end
 
     function FullMemoset(
         d::D
-    ) where {W,D<:AbstractVector{<:AbstractDict{<:AbstractFormula,<:Union{<:AbstractVector{W},Nothing}}}}
+    ) where {W,D<:AbstractVector{<:AbstractDict{<:Formula,<:Union{<:AbstractVector{W},Nothing}}}}
         new{W,D}(d)
     end
 
@@ -139,7 +139,7 @@ nmemoizedvalues(Xm::FullMemoset) = sum(length.(Xm.d))
 @inline function Base.haskey(
     Xm           :: FullMemoset{W},
     i_instance   :: Integer,
-    f            :: AbstractFormula,
+    f            :: Formula,
 ) where {W<:AbstractWorld}
     haskey(Xm.d[i_instance], f)
 end
@@ -153,21 +153,21 @@ end
 @inline function Base.getindex(
     Xm           :: FullMemoset{W},
     i_instance   :: Integer,
-    f            :: AbstractFormula,
+    f            :: Formula,
 ) where {W<:AbstractWorld}
     Xm.d[i_instance][f]
 end
 @inline function Base.setindex!(
     Xm           :: FullMemoset{W},
     i_instance   :: Integer,
-    f            :: AbstractFormula,
+    f            :: Formula,
     ws           :: WorldSet{W},
 ) where {W}
     Xm.d[i_instance][f] = ws
 end
 
 function check(
-    f::AbstractFormula,
+    f::Formula,
     Xm::FullMemoset{W},
     i_instance::Integer,
     w::W;

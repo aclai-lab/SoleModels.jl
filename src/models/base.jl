@@ -479,7 +479,7 @@ in order to obtain an outcome.
 """
     struct Rule{
         O,
-        A<:AbstractFormula,
+        A<:Formula,
         FM<:AbstractModel
     } <: ConstrainedModel{O,FM}
         antecedent::A
@@ -500,13 +500,13 @@ Note that `FM` refers to the Feasible Models (`FM`) allowed in the model's sub-t
 See also
 [`antecedent`](@ref),
 [`consequent`](@ref),
-[`AbstractFormula`](@ref),
+[`Formula`](@ref),
 [`ConstrainedModel`](@ref),
 [`AbstractModel`](@ref).
 """
 struct Rule{
     O,
-    A<:AbstractFormula,
+    A<:Formula,
     FM<:AbstractModel
 } <: ConstrainedModel{O,FM}
     antecedent::A
@@ -514,7 +514,7 @@ struct Rule{
     info::NamedTuple
 
     function Rule{O}(
-        antecedent::Union{AbstractSyntaxToken,AbstractFormula},
+        antecedent::Union{AbstractSyntaxToken,Formula},
         consequent::Any,
         info::NamedTuple = (;),
     ) where {O}
@@ -526,7 +526,7 @@ struct Rule{
     end
 
     function Rule(
-        antecedent::Union{AbstractSyntaxToken,AbstractFormula},
+        antecedent::Union{AbstractSyntaxToken,Formula},
         consequent::Any,
         info::NamedTuple = (;),
     )
@@ -547,7 +547,7 @@ struct Rule{
 end
 
 """
-    antecedent(m::Union{Rule,Branch})::AbstractFormula
+    antecedent(m::Union{Rule,Branch})::Formula
 
 Return the antecedent of a rule/branch,
 that is, the formula to be checked upon applying the model.
@@ -661,7 +661,7 @@ end
 """
     struct Branch{
         O,
-        A<:AbstractFormula,
+        A<:Formula,
         FM<:AbstractModel
     } <: ConstrainedModel{O,FM}
         antecedent::A
@@ -687,13 +687,13 @@ See also
 [`posconsequent`](@ref),
 [`negconsequent`](@ref),
 [`istop`](@ref),
-[`AbstractFormula`](@ref),
+[`Formula`](@ref),
 [`Rule`](@ref),
 [`ConstrainedModel`](@ref), [`AbstractModel`](@ref).
 """
 struct Branch{
     O,
-    A<:AbstractFormula,
+    A<:Formula,
     FM<:AbstractModel
 } <: ConstrainedModel{O,FM}
     antecedent::A
@@ -702,7 +702,7 @@ struct Branch{
     info::NamedTuple
 
     function Branch(
-        antecedent::Union{AbstractSyntaxToken,AbstractFormula},
+        antecedent::Union{AbstractSyntaxToken,Formula},
         posconsequent::Any,
         negconsequent::Any,
         info::NamedTuple = (;),
@@ -718,7 +718,7 @@ struct Branch{
     end
 
     function Branch(
-        antecedent::Union{AbstractSyntaxToken,AbstractFormula},
+        antecedent::Union{AbstractSyntaxToken,Formula},
         (posconsequent, negconsequent)::Tuple{Any,Any},
         info::NamedTuple = (;),
     )
@@ -863,7 +863,7 @@ antecedenttops(::Union{Rule{O,<:TopFormula},Branch{O,<:TopFormula}}, d::Abstract
 """
     struct DecisionList{
         O,
-        A<:AbstractFormula,
+        A<:Formula,
         FM<:AbstractModel
     } <: ConstrainedModel{O,FM}
         rulebase::Vector{Rule{_O,_C,_FM} where {_O<:O,_C<:A,_FM<:FM}}
@@ -896,7 +896,7 @@ See also
 """
 struct DecisionList{
     O,
-    A<:AbstractFormula,
+    A<:Formula,
     FM<:AbstractModel
 } <: ConstrainedModel{O,FM}
     rulebase::Vector{Rule{_O,_C,_FM} where {_O<:O,_C<:A,_FM<:FM}}
@@ -1080,7 +1080,7 @@ sub-tree of `Branch` and `LeafModel`:
 
     struct DecisionTree{
     O,
-        A<:AbstractFormula,
+        A<:Formula,
         FFM<:LeafModel
     } <: ConstrainedModel{O,Union{<:Branch{<:O,<:A},<:FFM}}
         root::M where {M<:Union{FFM,Branch}}
@@ -1095,7 +1095,7 @@ See also [`ConstrainedModel`](@ref), [`MixedSymbolicModel`](@ref), [`DecisionLis
 """
 struct DecisionTree{
     O,
-    A<:AbstractFormula,
+    A<:Formula,
     FFM<:LeafModel
 } <: ConstrainedModel{O,Union{<:Branch{<:O,<:A},<:FFM}}
     root::M where {M<:Union{FFM,Branch}}
@@ -1104,8 +1104,8 @@ struct DecisionTree{
     function DecisionTree(
         root::Union{FFM,Branch{O,A,Union{Branch{<:O,A2},FFM}}},
         info::NamedTuple = (;),
-    ) where {O,A<:AbstractFormula,A2<:A,FFM<:LeafModel{<:O}}
-        new{O,root isa LeafModel ? AbstractFormula : A,FFM}(root, info)
+    ) where {O,A<:Formula,A2<:A,FFM<:LeafModel{<:O}}
+        new{O,root isa LeafModel ? Formula : A,FFM}(root, info)
     end
 
     function DecisionTree(
@@ -1115,7 +1115,7 @@ struct DecisionTree{
         root = wrap(root)
         M = typeof(root)
         O = outcometype(root)
-        A = (root isa LeafModel ? AbstractFormula : antecedenttype(M))
+        A = (root isa LeafModel ? Formula : antecedenttype(M))
         # FM = typeintersect(Union{M,feasiblemodelstype(M)}, AbstractModel{<:O})
         FM = typeintersect(Union{propagate_feasiblemodels(M)}, AbstractModel{<:O})
         FFM = typeintersect(FM, LeafModel{<:O})
@@ -1176,7 +1176,7 @@ A `Decision Forest` is a symbolic model that wraps an ensemble of models
 
     struct DecisionForest{
         O,
-        A<:AbstractFormula,
+        A<:Formula,
         FFM<:LeafModel
     } <: ConstrainedModel{O,Union{<:Branch{<:O,<:A},<:FFM}}
         trees::Vector{<:DecisionTree}
@@ -1189,7 +1189,7 @@ See also [`ConstrainedModel`](@ref), [`MixedSymbolicModel`](@ref), [`DecisionLis
 """
 struct DecisionForest{
     O,
-    A<:AbstractFormula,
+    A<:Formula,
     FFM<:LeafModel
 } <: ConstrainedModel{O,Union{<:Branch{<:O,<:A},<:FFM}}
     trees::Vector{<:DecisionTree}

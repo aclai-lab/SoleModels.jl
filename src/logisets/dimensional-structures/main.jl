@@ -13,7 +13,7 @@ using UniqueVectors
 using SoleBase
 
 using SoleLogics
-using SoleLogics: AbstractFormula, AbstractWorld, AbstractRelation
+using SoleLogics: Formula, AbstractWorld, AbstractRelation
 using SoleLogics: AbstractFrame, AbstractDimensionalFrame, FullDimensionalFrame
 import SoleLogics: worldtype, accessibles, allworlds, alphabet
 

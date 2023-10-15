@@ -1,5 +1,5 @@
 using SoleLogics: AbstractKripkeStructure, AbstractInterpretationSet, AbstractFrame
-using SoleLogics: TruthValue
+using SoleLogics: Truth
 import SoleLogics: alphabet, frame, check
 import SoleLogics: accessibles, allworlds, nworlds
 import SoleLogics: worldtype, frametype
@@ -10,7 +10,7 @@ import SoleLogics: worldtype, frametype
         U,
         FT<:AbstractFeature,
         FR<:AbstractFrame{W},
-    } <: AbstractInterpretationSet{AbstractKripkeStructure{W,C where C<:AbstractCondition{_F where _F<:FT},T where T<:TruthValue,FR}} end
+    } <: AbstractInterpretationSet{AbstractKripkeStructure{W,C where C<:AbstractCondition{_F where _F<:FT},T where T<:Truth,FR}} end
 
 Abstract type for logisets, that is, logical datasets for
 symbolic learning where each instance is a
@@ -30,7 +30,7 @@ abstract type AbstractLogiset{
     U,
     FT<:AbstractFeature,
     FR<:AbstractFrame{W},
-} <: AbstractInterpretationSet{AbstractKripkeStructure{W,C where C<:AbstractCondition{_F where _F<:FT},T where T<:TruthValue,FR}} end
+} <: AbstractInterpretationSet{AbstractKripkeStructure{W,C where C<:AbstractCondition{_F where _F<:FT},T where T<:Truth,FR}} end
 
 function featchannel(
     X::AbstractLogiset{W},

@@ -30,7 +30,7 @@ struct SupportedLogiset{
         supports::_MS
     ) where {W,U,FT,FR,L<:AbstractLogiset{W,U,FT,FR},_MS<:Tuple}
 
-        wrong_supports = filter(supp->!(supp isa Union{<:AbstractVector{<:AbstractDict{<:AbstractFormula,<:WorldSet}},<:Union{AbstractOneStepMemoset,AbstractFullMemoset},<:SupportedLogiset}), supports)
+        wrong_supports = filter(supp->!(supp isa Union{<:AbstractVector{<:AbstractDict{<:Formula,<:WorldSet}},<:Union{AbstractOneStepMemoset,AbstractFullMemoset},<:SupportedLogiset}), supports)
 
         @assert length(wrong_supports) == 0 "Cannot instantiate SupportedLogiset " *
             "with wrong support type(s): $(join(typeof.(wrong_supports), ", ")). " *
@@ -42,7 +42,7 @@ struct SupportedLogiset{
             supports = (full_memoset_type(base),)
         end
         supports = Tuple(vcat(map(supp->begin
-            if supp isa AbstractVector{<:AbstractDict{<:AbstractFormula,<:WorldSet}}
+            if supp isa AbstractVector{<:AbstractDict{<:Formula,<:WorldSet}}
                 [FullMemoset(supp)]
             elseif supp isa SupportedLogiset
                 @assert base == SoleModels.base(supp) "Cannot inherit supports from " *
@@ -108,10 +108,10 @@ struct SupportedLogiset{
     # Helper (avoids ambiguities)
     function SupportedLogiset(
         base::AbstractLogiset,
-        firstsupport::Union{<:AbstractVector{<:AbstractDict{<:AbstractFormula,<:WorldSet}},<:Union{AbstractOneStepMemoset,AbstractFullMemoset},<:SupportedLogiset},
-        supports::Union{<:AbstractVector{<:AbstractDict{<:AbstractFormula,<:WorldSet}},<:Union{AbstractOneStepMemoset,AbstractFullMemoset},<:SupportedLogiset}...
+        firstsupport::Union{<:AbstractVector{<:AbstractDict{<:Formula,<:WorldSet}},<:Union{AbstractOneStepMemoset,AbstractFullMemoset},<:SupportedLogiset},
+        supports::Union{<:AbstractVector{<:AbstractDict{<:Formula,<:WorldSet}},<:Union{AbstractOneStepMemoset,AbstractFullMemoset},<:SupportedLogiset}...
     )
-        SupportedLogiset(base, Union{<:AbstractVector{<:AbstractDict{<:AbstractFormula,<:WorldSet}},<:Union{AbstractOneStepMemoset,AbstractFullMemoset},<:SupportedLogiset}[firstsupport, supports...])
+        SupportedLogiset(base, Union{<:AbstractVector{<:AbstractDict{<:Formula,<:WorldSet}},<:Union{AbstractOneStepMemoset,AbstractFullMemoset},<:SupportedLogiset}[firstsupport, supports...])
     end
 
     function SupportedLogiset(
