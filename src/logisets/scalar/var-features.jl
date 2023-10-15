@@ -121,7 +121,7 @@ function computefeature(f::AbstractUnivariateFeature{U}, featchannel::Any)::U wh
 end
 
 """
-    function variable_name(
+    variable_name(
         f::AbstractUnivariateFeature;
         variable_names_map::Union{Nothing,AbstractDict,AbstractVector} = nothing,
         variable_name_prefix::Union{Nothing,String} = $(repr(UVF_VARPREFIX)),

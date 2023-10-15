@@ -578,7 +578,7 @@ antecedenttype(m::Rule) = antecedenttype(typeof(m))
 issymbolic(::Rule) = true
 
 """
-    function antecedenttops(
+    antecedenttops(
         m::Union{Rule,Branch},
         args...;
         kwargs...

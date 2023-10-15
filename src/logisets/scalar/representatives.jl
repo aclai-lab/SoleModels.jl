@@ -3,7 +3,7 @@ using SoleLogics: AbstractUniModalFrame, AbstractFrame, AbstractRelation, Global
 # TODO: AbstractFrame -> AbstractMultiModalFrame, and provide the same for AbstractUniModalFrame
 
 """
-    function representatives(
+    representatives(
         fr::AbstractFrame{W},
         S::W,
         ::AbstractRelation,

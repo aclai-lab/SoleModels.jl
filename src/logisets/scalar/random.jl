@@ -2,7 +2,7 @@ import Base: rand
 
 # TODO @Michele Examples
 """
-    function Base.rand(
+    Base.rand(
         rng::AbstractRNG,
         a::BoundedScalarConditions;
         metaconditions::Union{Nothing,ScalarMetaCondition,AbstractVector{<:ScalarMetaCondition}} = nothing,
