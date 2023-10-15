@@ -168,11 +168,11 @@ end
 
 function check(
     f::Formula,
-    Xm::FullMemoset{W},
-    i_instance::Integer,
+    i::SoleLogics.LogicalInstance{<:AbstractKripkeStructure,<:FullMemoset{W}},
     w::W;
     kwargs...
 ) where {W<:AbstractWorld}
+    Xm, i_instance = SoleLogics.splat(i)
     w in Base.getindex(Xm, i_instance, f)
 end
 

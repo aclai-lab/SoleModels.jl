@@ -420,12 +420,12 @@ end
 
 function check(
     f::ScalarExistentialFormula,
-    Xm::ScalarOneStepMemoset,
-    i_instance::Integer,
+    i::SoleLogics.LogicalInstance{<:AbstractKripkeStructure,<:ScalarOneStepMemoset{W}},
     w::W,
     rel,
     metacond,
 ) where {W<:AbstractWorld}
+    Xm, i_instance = SoleLogics.splat(i)
     rel = relation(f)
     metacond = metacond(f)
 

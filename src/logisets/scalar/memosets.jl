@@ -93,11 +93,11 @@ end
 
 function check(
     f::Formula,
-    Xm::ScalarChainedMemoset{W},
-    i_instance::Integer,
+    i::SoleLogics.LogicalInstance{<:AbstractKripkeStructure,<:ScalarChainedMemoset{W}},
     w::W;
     kwargs...
 ) where {W<:AbstractWorld}
+    Xm, i_instance = SoleLogics.splat(i)
     return error("TODO implement chained threshold checking algorithm.")
 end
 

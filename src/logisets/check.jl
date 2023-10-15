@@ -2,14 +2,15 @@
 # TODO docstring
 function check(
     φ::SoleLogics.SyntaxTree,
-    X::AbstractLogiset{W,U},
-    i_instance::Integer,
+    i::SoleLogics.LogicalInstance{<:AbstractKripkeStructure,<:AbstractLogiset{W,<:U}},
     w::Union{Nothing,<:AbstractWorld} = nothing; # TODO remove defaulting
     use_memo::Union{Nothing,AbstractMemoset{<:AbstractWorld},AbstractVector{<:AbstractDict{<:FT,<:WorldSet}}} = nothing,
     perform_normalization::Bool = true,
     memo_max_height::Union{Nothing,Int} = nothing,
     onestep_memoset_is_complete = false,
 ) where {W<:AbstractWorld,U,FT<:SoleLogics.Formula}
+
+    X, i_instance = SoleLogics.splat(i)
 
     if isnothing(w)
         if nworlds(frame(X, i_instance)) == 1

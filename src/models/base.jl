@@ -583,7 +583,7 @@ issymbolic(::Rule) = true
         args...;
         kwargs...
     )
-        check(antecedent(m), id, args...; kwargs...)
+        check(antecedent(m), args...; kwargs...)
     end
 
 Simply check the antecedent of a rule on an instance or dataset.
