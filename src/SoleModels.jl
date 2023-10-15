@@ -88,7 +88,7 @@ using .DimensionalDatasets: globalrel
 export outcometype, outputtype
 
 export Rule, Branch
-export antecedenttops
+export checkantecedent
 export antecedent, consequent
 export posconsequent, negconsequent
 

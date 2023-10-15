@@ -65,7 +65,7 @@ See also
 [`Rule`](@ref),
 [`AbstractInterpretationSet`](@ref),
 [`Label`](@ref),
-[`antecedenttops`](@ref).
+[`checkantecedent`](@ref).
 """
 function evaluaterule(
     rule::Rule{O,A,FM},

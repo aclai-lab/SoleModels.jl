@@ -555,7 +555,7 @@ that is, the formula to be checked upon applying the model.
 See also
 [`apply`](@ref),
 [`consequent`](@ref),
-[`antecedenttops`](@ref),
+[`checkantecedent`](@ref),
 [`Rule`](@ref),
 [`Branch`](@ref).
 """
@@ -578,7 +578,7 @@ antecedenttype(m::Rule) = antecedenttype(typeof(m))
 issymbolic(::Rule) = true
 
 """
-    antecedenttops(
+    checkantecedent(
         m::Union{Rule,Branch},
         args...;
         kwargs...
@@ -593,7 +593,7 @@ See also
 [`Rule`](@ref),
 [`Branch`](@ref).
 """
-function antecedenttops end
+function checkantecedent end
 
 function apply(
     m::Rule,
@@ -602,7 +602,7 @@ function apply(
     check_kwargs::NamedTuple = (;),
     kwargs...
 )
-    if antecedenttops(m, i, check_args...; check_kwargs...)
+    if checkantecedent(m, i, check_args...; check_kwargs...)
         apply(consequent(m), i;
             check_args = check_args,
             check_kwargs = check_kwargs,
@@ -621,7 +621,7 @@ function apply(
     check_kwargs::NamedTuple = (;),
     kwargs...
 )
-    if antecedenttops(m, d, i_instance, check_args...; check_kwargs...)
+    if checkantecedent(m, d, i_instance, check_args...; check_kwargs...)
         apply(consequent(m), d, i_instance;
             check_args = check_args,
             check_kwargs = check_kwargs,
@@ -767,7 +767,7 @@ function apply(
     check_kwargs::NamedTuple = (;),
     kwargs...
 )
-    if antecedenttops(m, i, check_args...; check_kwargs...)
+    if checkantecedent(m, i, check_args...; check_kwargs...)
         apply(posconsequent(m), i;
             check_args = check_args,
             check_kwargs = check_kwargs,
@@ -790,7 +790,7 @@ function apply(
     check_kwargs::NamedTuple = (;),
     kwargs...
 )
-    if antecedenttops(m, d, i_instance, check_args...; check_kwargs...)
+    if checkantecedent(m, d, i_instance, check_args...; check_kwargs...)
         apply(posconsequent(m), d, i_instance;
             check_args = check_args,
             check_kwargs = check_kwargs,
@@ -812,7 +812,7 @@ function apply(
     check_kwargs::NamedTuple = (;),
     kwargs...
 )
-    cs = antecedenttops(m, d, check_args...; check_kwargs...)
+    cs = checkantecedent(m, d, check_args...; check_kwargs...)
     cpos = findall((c)->c==true, cs)
     cneg = findall((c)->c==false, cs)
     out = Array{outputtype(m)}(undef,length(cs))
@@ -849,13 +849,13 @@ end
 ############################################################################################
 ############################################################################################
 
-antecedenttops(m::Union{Rule,Branch}, i::AbstractInterpretation, args...; kwargs...) = istop(check(antecedent(m), i, args...; kwargs...))
-antecedenttops(m::Union{Rule,Branch}, d::AbstractInterpretationSet, i_instance::Integer, args...; kwargs...) = istop(check(antecedent(m), d, i_instance, args...; kwargs...))
-antecedenttops(m::Union{Rule,Branch}, d::AbstractInterpretationSet, args...; kwargs...) = istop.(check(antecedent(m), d, args...; kwargs...))
+checkantecedent(m::Union{Rule,Branch}, i::AbstractInterpretation, args...; kwargs...) = istop(check(antecedent(m), i, args...; kwargs...))
+checkantecedent(m::Union{Rule,Branch}, d::AbstractInterpretationSet, i_instance::Integer, args...; kwargs...) = istop(check(antecedent(m), d, i_instance, args...; kwargs...))
+checkantecedent(m::Union{Rule,Branch}, d::AbstractInterpretationSet, args...; kwargs...) = istop.(check(antecedent(m), d, args...; kwargs...))
 
-antecedenttops(::Union{Rule{O,<:TopFormula},Branch{O,<:TopFormula}}, i::AbstractInterpretation, args...; kwargs...) where {O} = true
-antecedenttops(::Union{Rule{O,<:TopFormula},Branch{O,<:TopFormula}}, d::AbstractInterpretationSet, i_instance::Integer, args...; kwargs...) where {O} = true
-antecedenttops(::Union{Rule{O,<:TopFormula},Branch{O,<:TopFormula}}, d::AbstractInterpretationSet, args...; kwargs...) where {O} = fill(true, ninstances(d))
+checkantecedent(::Union{Rule{O,<:TopFormula},Branch{O,<:TopFormula}}, i::AbstractInterpretation, args...; kwargs...) where {O} = true
+checkantecedent(::Union{Rule{O,<:TopFormula},Branch{O,<:TopFormula}}, d::AbstractInterpretationSet, i_instance::Integer, args...; kwargs...) where {O} = true
+checkantecedent(::Union{Rule{O,<:TopFormula},Branch{O,<:TopFormula}}, d::AbstractInterpretationSet, args...; kwargs...) where {O} = fill(true, ninstances(d))
 
 ############################################################################################
 ############################################################################################
@@ -937,7 +937,7 @@ function apply(
     check_kwargs::NamedTuple = (;),
 )
     for rule in rulebase(m)
-        if antecedenttops(rule, i, check_args...; check_kwargs...)
+        if checkantecedent(rule, i, check_args...; check_kwargs...)
             return consequent(rule)
         end
     end
@@ -960,7 +960,7 @@ function apply(
         uncovered_d = slicedataset(d, uncovered_idxs; return_view = true)
 
         idxs_sat = findall(
-            antecedenttops(rule, uncovered_d, check_args...; check_kwargs...)
+            checkantecedent(rule, uncovered_d, check_args...; check_kwargs...)
         )
         idxs_sat = uncovered_idxs[idxs_sat]
         uncovered_idxs = setdiff(uncovered_idxs, idxs_sat)
@@ -995,7 +995,7 @@ function apply!(
         uncovered_d = slicedataset(d, uncovered_idxs; return_view = true)
 
         idxs_sat = findall(
-            antecedenttops(rule, uncovered_d, check_args...; check_kwargs...)
+            checkantecedent(rule, uncovered_d, check_args...; check_kwargs...)
         )
         idxs_sat = uncovered_idxs[idxs_sat]
         uncovered_idxs = setdiff(uncovered_idxs, idxs_sat)
