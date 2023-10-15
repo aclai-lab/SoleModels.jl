@@ -849,9 +849,9 @@ end
 ############################################################################################
 ############################################################################################
 
-checkantecedent(m::Union{Rule,Branch}, i::AbstractInterpretation, args...; kwargs...) = istop(check(antecedent(m), i, args...; kwargs...))
-checkantecedent(m::Union{Rule,Branch}, d::AbstractInterpretationSet, i_instance::Integer, args...; kwargs...) = istop(check(antecedent(m), d, i_instance, args...; kwargs...))
-checkantecedent(m::Union{Rule,Branch}, d::AbstractInterpretationSet, args...; kwargs...) = istop.(check(antecedent(m), d, args...; kwargs...))
+checkantecedent(m::Union{Rule,Branch}, i::AbstractInterpretation, args...; kwargs...) = check(antecedent(m), i, args...; kwargs...)
+checkantecedent(m::Union{Rule,Branch}, d::AbstractInterpretationSet, i_instance::Integer, args...; kwargs...) = check(antecedent(m), d, i_instance, args...; kwargs...)
+checkantecedent(m::Union{Rule,Branch}, d::AbstractInterpretationSet, args...; kwargs...) = check(antecedent(m), d, args...; kwargs...)
 
 checkantecedent(::Union{Rule{O,<:TopFormula},Branch{O,<:TopFormula}}, i::AbstractInterpretation, args...; kwargs...) where {O} = true
 checkantecedent(::Union{Rule{O,<:TopFormula},Branch{O,<:TopFormula}}, d::AbstractInterpretationSet, i_instance::Integer, args...; kwargs...) where {O} = true
