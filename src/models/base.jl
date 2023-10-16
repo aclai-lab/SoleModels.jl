@@ -646,7 +646,7 @@ function ndisjuncts(m::Rule{O,<:LeftmostDisjunctiveForm}) where {O}
     ndisjuncts(antecedent(m))
 end
 
-# Helper
+# Helper: slice a Rule's antecedent
 function Base.getindex(
     m::Rule{O,A},
     idxs::AbstractVector{<:Integer},
@@ -837,7 +837,7 @@ function apply(
     out
 end
 
-# Helper
+# Helper: slice a Branch's antecedent
 function Base.getindex(
     m::Branch{O,A},
     idxs::AbstractVector{<:Integer},
