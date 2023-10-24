@@ -110,7 +110,7 @@ begin
     # Create a new logical operator `⊕`
     import SoleLogics: arity
     const ⊕ = SoleLogics.NamedOperator{:⊕}()
-    SoleLogics.arity(::Type{typeof(⊕)}) = 2
+    SoleLogics.arity(::typeof(⊕)) = 2
 
     parseformula("¬p ∧ q") ⊕ p |> syntaxstring
 end
