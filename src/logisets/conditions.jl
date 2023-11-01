@@ -20,7 +20,7 @@ See also
 """
 abstract type AbstractCondition{FT<:AbstractFeature} end
 
-# Check a condition (e.g, on a world of a logiset instance)
+# Check a condition (e.g., on a world of a logiset instance)
 function checkcondition(c::AbstractCondition, args...; kwargs...)
     return error("Please, provide method checkcondition(::$(typeof(c)), " *
         join(map(t->"::$(t)", typeof.(args)), ", ") * "; kwargs...). " *
