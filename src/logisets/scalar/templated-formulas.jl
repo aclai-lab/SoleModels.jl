@@ -7,7 +7,7 @@ using SoleModels: AbstractFeature, TestOperator, ScalarCondition
 """
 Abstract type for templated formulas on scalar conditions.
 """
-abstract type ScalarFormula{U} <: AbstractTemplatedFormula end
+abstract type ScalarFormula{U} <: SoleLogics.Formula end
 
 """
 Templated formula for f ⋈ t.
