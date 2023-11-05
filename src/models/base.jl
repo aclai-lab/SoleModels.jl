@@ -4,7 +4,6 @@ using SoleData: slicedataset
 
 import SoleLogics: check, syntaxstring
 using SoleLogics: LeftmostLinearForm, LeftmostConjunctiveForm, LeftmostDisjunctiveForm
-using SoleModels: TopFormula
 
 # Util
 typename(::Type{T}) where T = eval(nameof(T))
@@ -514,7 +513,7 @@ struct Rule{
     info::NamedTuple
 
     function Rule{O}(
-        antecedent::Union{AbstractSyntaxToken,Formula},
+        antecedent::Formula,
         consequent::Any,
         info::NamedTuple = (;),
     ) where {O}
@@ -526,7 +525,7 @@ struct Rule{
     end
 
     function Rule(
-        antecedent::Union{AbstractSyntaxToken,Formula},
+        antecedent::Formula,
         consequent::Any,
         info::NamedTuple = (;),
     )
@@ -539,7 +538,7 @@ struct Rule{
         consequent::Any,
         info::NamedTuple = (;),
     )
-        antecedent = TopFormula()
+        antecedent = ⊤
         consequent = wrap(consequent)
         O = outcometype(consequent)
         Rule{O}(antecedent, consequent, info)
@@ -702,7 +701,7 @@ struct Branch{
     info::NamedTuple
 
     function Branch(
-        antecedent::Union{AbstractSyntaxToken,Formula},
+        antecedent::Formula,
         posconsequent::Any,
         negconsequent::Any,
         info::NamedTuple = (;),
@@ -718,7 +717,7 @@ struct Branch{
     end
 
     function Branch(
-        antecedent::Union{AbstractSyntaxToken,Formula},
+        antecedent::Formula,
         (posconsequent, negconsequent)::Tuple{Any,Any},
         info::NamedTuple = (;),
     )
@@ -853,9 +852,9 @@ checkantecedent(m::Union{Rule,Branch}, i::AbstractInterpretation, args...; kwarg
 checkantecedent(m::Union{Rule,Branch}, d::AbstractInterpretationSet, i_instance::Integer, args...; kwargs...) = check(antecedent(m), d, i_instance, args...; kwargs...)
 checkantecedent(m::Union{Rule,Branch}, d::AbstractInterpretationSet, args...; kwargs...) = check(antecedent(m), d, args...; kwargs...)
 
-checkantecedent(::Union{Rule{O,<:TopFormula},Branch{O,<:TopFormula}}, i::AbstractInterpretation, args...; kwargs...) where {O} = true
-checkantecedent(::Union{Rule{O,<:TopFormula},Branch{O,<:TopFormula}}, d::AbstractInterpretationSet, i_instance::Integer, args...; kwargs...) where {O} = true
-checkantecedent(::Union{Rule{O,<:TopFormula},Branch{O,<:TopFormula}}, d::AbstractInterpretationSet, args...; kwargs...) where {O} = fill(true, ninstances(d))
+checkantecedent(::Union{Rule{O,Top},Branch{O,Top}}, i::AbstractInterpretation, args...; kwargs...) where {O} = true
+checkantecedent(::Union{Rule{O,Top},Branch{O,Top}}, d::AbstractInterpretationSet, i_instance::Integer, args...; kwargs...) where {O} = true
+checkantecedent(::Union{Rule{O,Top},Branch{O,Top}}, d::AbstractInterpretationSet, args...; kwargs...) where {O} = fill(true, ninstances(d))
 
 ############################################################################################
 ############################################################################################

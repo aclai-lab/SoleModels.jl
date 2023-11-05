@@ -7,7 +7,6 @@ using SoleLogics
 using SoleModels
 using SoleModels: AbstractModel
 using SoleModels: ConstantModel, LeafModel
-using SoleModels: TopFormula
 using SoleModels: listrules, displaymodel, submodels
 
 io = IOBuffer()
@@ -223,7 +222,7 @@ branch_r0 = @test_nowarn Branch(formula_r, (branch_s, "yes"))
 branch_r = @test_nowarn Branch(formula_r, (branch_r0, "yes"))
 branch_r = @test_nowarn Branch(formula_r, (branch_r, "yes"))
 
-branch_true = @test_nowarn Branch(TopFormula(), (branch_r, "yes"))
+branch_true = @test_nowarn Branch(Top, (branch_r, "yes"))
 
 @test typeof(branch_r0) == typeof(branch_r)
 

@@ -7,7 +7,7 @@ using SoleData: _isnan
 
 using SoleLogics
 using SoleLogics: AbstractInterpretation, AbstractInterpretationSet
-using SoleLogics: AbstractSyntaxToken
+using SoleLogics: SyntaxToken
 using SoleLogics: Formula, synstruct
 using SoleLogics: ⊤, ¬, ∧
 

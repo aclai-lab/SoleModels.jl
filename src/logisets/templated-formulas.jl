@@ -7,22 +7,6 @@ Abstract type simple formulas of given templates.
 abstract type AbstractTemplatedFormula <: SoleLogics.Formula end
 
 """
-Templated formula for ⊤, which always checks top.
-"""
-struct TopFormula <: AbstractTemplatedFormula end
-tree(::TopFormula) = SyntaxTree(⊤)
-hasdual(::TopFormula) = true
-dual(::TopFormula) = BotFormula()
-
-"""
-Templated formula for ⊥, which always checks bottom.
-"""
-struct BotFormula <: AbstractTemplatedFormula end
-tree(::BotFormula) = SyntaxTree(⊥)
-hasdual(::BotFormula) = true
-dual(::BotFormula) = TopFormula()
-
-"""
 Templated formula for ⟨R⟩⊤.
 """
 struct ExistentialTopFormula{R<:AbstractRelation} <: AbstractTemplatedFormula end

@@ -194,7 +194,7 @@ listimmediaterules(m::AbstractModel{O} where {O})::Rule{<:O} =
         end
     end)
 
-listimmediaterules(m::LeafModel) = [Rule(TopFormula, m)]
+listimmediaterules(m::LeafModel) = [Rule(⊤, m)]
 
 listimmediaterules(m::Rule) = [m]
 
@@ -211,7 +211,7 @@ function listimmediaterules(m::DecisionList{O}) where {O}
         push!(normalized_rules, rule)
         assumed_formula = advanceformula(SoleLogics.NEGATION(antecedent(rule)), assumed_formula)
     end
-    default_antecedent = isnothing(assumed_formula) ? TopFormula : assumed_formula
+    default_antecedent = isnothing(assumed_formula) ? ⊤ : assumed_formula
     push!(normalized_rules, Rule{O}(default_antecedent, defaultconsequent(m)))
     normalized_rules
 end
@@ -283,7 +283,7 @@ end
 listrules(m::LeafModel; kwargs...) = [m]
 
 function listrules(
-    m::Rule{O,<:TopFormula};
+    m::Rule{O,Top};
     kwargs...,
 ) where {O}
     [m]
@@ -298,17 +298,17 @@ function listrules(
 end
 
 function listrules(
-    m::Branch{O,<:TopFormula};
+    m::Branch{O,Top};
     kwargs...,
 ) where {O}
     pos_rules = begin
         submodels = listrules(posconsequent(m); kwargs...)
-        submodels isa Vector{<:LeafModel} ? [Rule{O,TopFormula}(fm) for fm in submodels] : submodels
+        submodels isa Vector{<:LeafModel} ? [Rule{O,Top}(fm) for fm in submodels] : submodels
     end
 
     neg_rules = begin
         submodels = listrules(negconsequent(m); kwargs...)
-        submodels isa Vector{<:LeafModel} ? [Rule{O,TopFormula}(fm) for fm in submodels] : submodels
+        submodels isa Vector{<:LeafModel} ? [Rule{O,Top}(fm) for fm in submodels] : submodels
     end
 
     return [
