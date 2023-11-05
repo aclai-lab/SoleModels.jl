@@ -10,7 +10,7 @@ import SoleLogics: worldtype, frametype
         U,
         FT<:AbstractFeature,
         FR<:AbstractFrame{W},
-    } <: AbstractInterpretationSet{AbstractKripkeStructure{W,C where C<:AbstractCondition{_F where _F<:FT},T where T<:Truth,FR}} end
+    } <: AbstractInterpretationSet{AbstractKripkeStructure} end
 
 Abstract type for logisets, that is, logical datasets for
 symbolic learning where each instance is a
@@ -30,7 +30,7 @@ abstract type AbstractLogiset{
     U,
     FT<:AbstractFeature,
     FR<:AbstractFrame{W},
-} <: AbstractInterpretationSet{AbstractKripkeStructure{W,C where C<:AbstractCondition{_F where _F<:FT},T where T<:Truth,FR}} end
+} <: AbstractInterpretationSet{AbstractKripkeStructure} end
 
 function featchannel(
     X::AbstractLogiset{W},

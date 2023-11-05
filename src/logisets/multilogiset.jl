@@ -15,9 +15,7 @@ See also
 [`AbstractLogiset`](@ref),
 [`minify`](@ref).
 """
-struct MultiLogiset{L<:AbstractLogiset} <: AbstractInterpretationSet{
-    AbstractKripkeStructure{W,C where C<:AbstractCondition{_F where _F<:AbstractFeature},T where T<:Truth,FR where FR<:AbstractFrame{W}} where W<:AbstractWorld
-}
+struct MultiLogiset{L<:AbstractLogiset} <: AbstractInterpretationSet{AbstractKripkeStructure}
 
     modalities  :: Vector{L}
 
