@@ -253,7 +253,7 @@ struct ScalarOneStepMemoset{
         compute_globmemoset = begin
             if globalrel in relations
                 relations = filter(l->l≠globalrel, relations)
-                if worldtype == OneWorld || all(i_instance->nworlds(frame(X, i_instance)) == 1, 1:ninstances(X))
+                if W == OneWorld || all(i_instance->nworlds(frame(X, i_instance)) == 1, 1:ninstances(X))
                     @warn "ScalarOneStepMemoset: " *
                         "Found globalrel in relations in a single-world case."
                     false

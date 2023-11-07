@@ -1,6 +1,6 @@
 using SoleLogics: AbstractRelation
 
-import SoleLogics: value
+import SoleLogics: atom
 
 using SoleModels: AbstractFeature, TestOperator, ScalarCondition
 
@@ -16,10 +16,10 @@ struct ScalarPropositionFormula{U} <: ScalarFormula{U}
     p :: ScalarCondition{U}
 end
 
-value(f::ScalarPropositionFormula) = Atom(f.p)
-feature(f::ScalarPropositionFormula) = feature(value(f))
-test_operator(f::ScalarPropositionFormula) = test_operator(value(f))
-threshold(f::ScalarPropositionFormula) = threshold(value(f))
+atom(f::ScalarPropositionFormula) = Atom(f.p)
+feature(f::ScalarPropositionFormula) = feature(atom(f))
+test_operator(f::ScalarPropositionFormula) = test_operator(atom(f))
+threshold(f::ScalarPropositionFormula) = threshold(atom(f))
 
 tree(f::ScalarPropositionFormula) = SyntaxTree(f.p)
 hasdual(f::ScalarPropositionFormula) = true
@@ -31,11 +31,11 @@ dual(f::ScalarPropositionFormula{U}) where {U} =
 abstract type ScalarOneStepFormula{U} <: ScalarFormula{U} end
 
 relation(f::ScalarOneStepFormula) = f.relation
-value(f::ScalarOneStepFormula) = Atom(f.p)
-metacond(f::ScalarOneStepFormula) = metacond(value(value(f)))
-feature(f::ScalarOneStepFormula) = feature(value(value(f)))
-test_operator(f::ScalarOneStepFormula) = test_operator(value(value(f)))
-threshold(f::ScalarOneStepFormula) = threshold(value(value(f)))
+atom(f::ScalarOneStepFormula) = Atom(f.p)
+metacond(f::ScalarOneStepFormula) = metacond(value(atom(f)))
+feature(f::ScalarOneStepFormula) = feature(value(atom(f)))
+test_operator(f::ScalarOneStepFormula) = test_operator(value(atom(f)))
+threshold(f::ScalarOneStepFormula) = threshold(value(atom(f)))
 
 """
 Templated formula for ⟨R⟩ f ⋈ t.
@@ -109,13 +109,13 @@ hasdual(f::ScalarExistentialFormula) = true
 function dual(formula::ScalarExistentialFormula{U}) where {U}
     ScalarUniversalFormula{U}(
         relation(formula),
-        dual(value(formula))
+        dual(atom(formula))
     )
 end
 hasdual(f::ScalarUniversalFormula) = true
 function dual(formula::ScalarUniversalFormula{U}) where {U}
     ScalarExistentialFormula{U}(
         relation(formula),
-        dual(value(formula))
+        dual(atom(formula))
     )
 end

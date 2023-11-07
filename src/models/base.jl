@@ -5,6 +5,8 @@ using SoleData: slicedataset
 import SoleLogics: check, syntaxstring
 using SoleLogics: LeftmostLinearForm, LeftmostConjunctiveForm, LeftmostDisjunctiveForm
 
+import SoleLogics: nleaves, height
+
 # Util
 typename(::Type{T}) where T = eval(nameof(T))
 

@@ -109,7 +109,7 @@ end
 begin
     # Create a new logical operator `⊕`
     import SoleLogics: arity
-    const ⊕ = SoleLogics.NamedOperator{:⊕}()
+    const ⊕ = SoleLogics.NamedConnective{:⊕}()
     SoleLogics.arity(::typeof(⊕)) = 2
 
     parseformula("¬p ∧ q") ⊕ p |> syntaxstring
@@ -123,7 +123,9 @@ end
 begin
 	# Give XOR semantics to the operator `⊕`
 	import SoleLogics: collatetruth
-	SoleLogics.collatetruth(::typeof(⊕), (t1, t2)::NTuple{2,Bool}) = Base.xor(t1, t2)
+    function SoleLogics.collatetruth(::typeof(⊕), (t1, t2)::NTuple{2,BooleanTruth})
+        return Base.xor(istop(t1), istop(t2)) ? TOP : BOT
+    end
 	check(φ5, I)
 end
 
@@ -184,7 +186,7 @@ begin
     # Build a formula on scalar conditions
     condition1 = ScalarCondition(features[1], >, -0.5)
     condition2 = ScalarCondition(features[2], <, 0)
-    φ20 = Proposition(condition1) ∧ Proposition(condition2)
+    φ20 = Atom(condition1) ∧ Atom(condition2)
     syntaxstring(φ20; variable_names_map = names(X_df))
 end
 

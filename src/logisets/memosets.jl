@@ -125,7 +125,7 @@ struct FullMemoset{
         X::AbstractLogiset{W,U,FT,FR},
         perform_initialization = false,
     ) where {W,U,FT<:AbstractFeature,FR<:AbstractFrame{W}}
-        d = [ThreadSafeDict{SyntaxTree,WorldSet{W}}() for i in 1:ninstances(X)]
+        d = [ThreadSafeDict{SyntaxTree,WorldSet{W}}() for i_instance in 1:ninstances(X)]
         D = typeof(d)
         FullMemoset{W,D}(d)
     end

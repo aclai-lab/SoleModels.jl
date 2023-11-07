@@ -95,7 +95,7 @@ function check(
                             gamma = featchannel_onestep_aggregation(X, onestep_memoset, _featchannel, i_instance, world, _rel, _metacond)
                             apply_test_operator(test_operator(_metacond), gamma, threshold(condition))
                         end, _c(allworlds(fr)))
-                    elseif tok isa Connectives
+                    elseif tok isa Connective
                         _c(SoleLogics.collateworlds(fr, tok, map(f->readformula(memo_structure, f), children(ψ))))
                     elseif tok isa SyntaxLeaf
                         condition = value(tok) # TODO write check(tok, X, i_instance, _w) and use it here instead of checkcondition.
