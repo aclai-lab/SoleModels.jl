@@ -10,8 +10,8 @@ using Test
 
 io = IOBuffer()
 
-p = SoleLogics.parsebaseformula("p")
-phi = SoleLogics.parsebaseformula("p∧q∨r")
+p = SoleLogics.parseformula("p")
+phi = SoleLogics.parseformula("p∧q∨r")
 phi2 = SoleLogics.parsebaseformula("q∧s→r")
 
 formula_p = SoleLogics.parsebaseformula("p")

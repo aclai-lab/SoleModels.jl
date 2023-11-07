@@ -95,13 +95,13 @@ function check(
                             gamma = featchannel_onestep_aggregation(X, onestep_memoset, _featchannel, i_instance, world, _rel, _metacond)
                             apply_test_operator(test_operator(_metacond), gamma, threshold(condition))
                         end, _c(allworlds(fr)))
-                    elseif tok isa SoleLogics.Operator # TODO differentiate Connectives and Truth
+                    elseif tok isa Connectives
                         _c(SoleLogics.collateworlds(fr, tok, map(f->readformula(memo_structure, f), children(ψ))))
-                    elseif tok isa Atom
+                    elseif tok isa SyntaxLeaf
                         condition = value(tok) # TODO write check(tok, X, i_instance, _w) and use it here instead of checkcondition.
                         _f(_w->checkcondition(condition, X, i_instance, _w), _c(allworlds(fr)))
                     else
-                        error("Unexpected token encountered in _check: $(typeof(tok))")
+                        error("Unexpected token encountered in check: $(typeof(tok))")
                     end
                 end
                 setformula(memo_structure, ψ, Vector{W}(worldset))

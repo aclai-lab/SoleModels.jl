@@ -13,7 +13,7 @@ Note: if the model is a leaf model, then the returned list will be empty.
 ```julia-repl
 julia> using SoleLogics
 
-julia> branch = Branch(SoleLogics.parsebaseformula("p∧q∨r"), "YES", "NO");
+julia> branch = Branch(SoleLogics.parseformula("p∧q∨r"), "YES", "NO");
 
 julia> immediatesubmodels(branch)
 2-element Vector{SoleModels.ConstantModel{String}}:
@@ -23,7 +23,7 @@ YES
  SoleModels.ConstantModel{String}
 NO
 
-julia> branch2 = Branch(SoleLogics.parsebaseformula("s→p"), branch, 42);
+julia> branch2 = Branch(SoleLogics.parseformula("s→p"), branch, 42);
 
 
 julia> printmodel.(immediatesubmodels(branch2));
@@ -75,7 +75,7 @@ their immediate submodels, and so on.
 ```julia-repl
 julia> using SoleLogics
 
-julia> branch = Branch(SoleLogics.parsebaseformula("p∧q∨r"), "YES", "NO");
+julia> branch = Branch(SoleLogics.parseformula("p∧q∨r"), "YES", "NO");
 
 julia> submodels(branch)
 2-element Vector{SoleModels.ConstantModel{String}}:
@@ -86,7 +86,7 @@ YES
 NO
 
 
-julia> branch2 = Branch(SoleLogics.parsebaseformula("s→p"), branch, 42);
+julia> branch2 = Branch(SoleLogics.parseformula("s→p"), branch, 42);
 
 julia> printmodel.(submodels(branch2));
 Branch
