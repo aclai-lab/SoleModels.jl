@@ -7,7 +7,7 @@ import SoleData: ninstances, nvariables
 
 import SoleModels:
     islogiseed, initlogiset, frame,
-    featchannel, readfeature, featvalue, vareltype
+    featchannel, readfeature, featvalue, vareltype, featvaltype
 
 function islogiseed(
     dataset::AbstractDimensionalDataset,
@@ -40,7 +40,7 @@ function initlogiset(
     features = UniqueVector(features)
     nfeatures = length(features)
 
-    U = Union{featvaltype.(features)...}
+    U = Union{map(f->featvaltype(dataset, f), features)...}
     featstruct = Array{U,length(_maxchannelsize)*2+2}(
             undef,
             vcat([[s, s] for s in _maxchannelsize]...)...,
@@ -73,13 +73,13 @@ function readfeature(
     dataset::AbstractDimensionalDataset,
     featchannel::Any,
     w::W,
-    f::VarFeature{U},
-) where {U,W<:AbstractWorld}
+    f::VarFeature,
+) where {W<:AbstractWorld}
     _interpret_world(::OneWorld, instance::AbstractArray{T,1}) where {T} = instance
     _interpret_world(w::Interval, instance::AbstractArray{T,2}) where {T} = instance[w.x:w.y-1,:]
     _interpret_world(w::Interval2D, instance::AbstractArray{T,3}) where {T} = instance[w.x.x:w.x.y-1,w.y.x:w.y.y-1,:]
     wchannel = _interpret_world(w, featchannel)
-    computefeature(f, wchannel)::U
+    computefeature(f, wchannel)
 end
 
 function featvalue(
@@ -148,13 +148,13 @@ function readfeature(
     dataset::AbstractDataFrame,
     featchannel::Any,
     w::W,
-    f::VarFeature{U},
-) where {U,W<:AbstractWorld}
+    f::VarFeature,
+) where {W<:AbstractWorld}
     _interpret_world(::OneWorld, instance::DataFrameRow) = instance
     _interpret_world(w::Interval, instance::DataFrameRow) = map(varchannel->varchannel[w.x:w.y-1], instance)
     _interpret_world(w::Interval2D, instance::DataFrameRow) = map(varchannel->varchannel[w.x.x:w.x.y-1,w.y.x:w.y.y-1], instance)
     wchannel = _interpret_world(w, featchannel)
-    computefeature(f, wchannel)::U
+    computefeature(f, wchannel)
 end
 
 function featchannel(
@@ -169,13 +169,13 @@ function readfeature(
     dataset::AbstractDataFrame,
     featchannel::Any,
     w::W,
-    f::AbstractUnivariateFeature{U},
-) where {U,W<:AbstractWorld}
+    f::AbstractUnivariateFeature,
+) where {W<:AbstractWorld}
     _interpret_world(::OneWorld, varchannel::T) where {T} = varchannel
     _interpret_world(w::Interval, varchannel::AbstractArray{T,1}) where {T} = varchannel[w.x:w.y-1]
     _interpret_world(w::Interval2D, varchannel::AbstractArray{T,2}) where {T} = varchannel[w.x.x:w.x.y-1,w.y.x:w.y.y-1]
     wchannel = _interpret_world(w, featchannel)
-    computeunivariatefeature(f, wchannel)::U
+    computeunivariatefeature(f, wchannel)
 end
 
 function featvalue(

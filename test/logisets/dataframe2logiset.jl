@@ -13,47 +13,32 @@ dataset, relations = (DataFrame(; NamedTuple([Symbol(i_var) => [rand(3,3) for i_
 
 nvars = nvariables(dataset)
 
-generic_features = collect(Iterators.flatten([[UnivariateMax(i_var), UnivariateMin(i_var)] for i_var in 1:nvars]))
-
-float_features = collect(Iterators.flatten([[UnivariateMax{Float64}(i_var), UnivariateMin{Float64}(i_var)] for i_var in 1:nvars]))
-logiset = @test_nowarn scalarlogiset(dataset, float_features; use_full_memoization = false, use_onestep_memoization = false)
-
-int_features = collect(Iterators.flatten([[UnivariateMax{Int64}(i_var), UnivariateMin{Int64}(i_var)] for i_var in 1:nvars]))
-logiset = @test_throws CompositeException scalarlogiset(dataset, int_features; use_full_memoization = false, use_onestep_memoization = false)
-
-@test isequal(generic_features, int_features)
-@test isequal(generic_features, float_features)
-
-@test hash.(generic_features) != hash.(int_features)
+features = collect(Iterators.flatten([[UnivariateMax(i_var), UnivariateMin(i_var)] for i_var in 1:nvars]))
+logiset = scalarlogiset(dataset, features; use_full_memoization = false, use_onestep_memoization = false)
 
 logiset = @test_nowarn scalarlogiset(dataset; use_full_memoization = false, use_onestep_memoization = false)
 logiset = @test_nowarn scalarlogiset(dataset; use_full_memoization = true, use_onestep_memoization = false)
 
-int_metaconditions = [ScalarMetaCondition(feature, >) for feature in int_features]
-
-generic_metaconditions = [ScalarMetaCondition(feature, >) for feature in generic_features]
-
-@test isequal(generic_metaconditions, int_metaconditions)
-@test (hash.(generic_metaconditions) == hash.(int_metaconditions))
+metaconditions = [ScalarMetaCondition(feature, >) for feature in features]
 
 println("1")
-@test_nowarn scalarlogiset(dataset; use_full_memoization = true, use_onestep_memoization = true, relations = relations, conditions = generic_metaconditions)
+@test_nowarn scalarlogiset(dataset; use_full_memoization = true, use_onestep_memoization = true, relations = relations, conditions = metaconditions)
 println("2")
-@test_throws AssertionError scalarlogiset(dataset; use_full_memoization = true, use_onestep_memoization = false, relations = relations, conditions = generic_metaconditions)
+@test_throws AssertionError scalarlogiset(dataset; use_full_memoization = true, use_onestep_memoization = false, relations = relations, conditions = metaconditions)
 println("3")
-@test_nowarn scalarlogiset(dataset; use_full_memoization = false, relations = relations, conditions = generic_metaconditions, onestep_precompute_globmemoset = false, onestep_precompute_relmemoset = false)
+@test_nowarn scalarlogiset(dataset; use_full_memoization = false, relations = relations, conditions = metaconditions, onestep_precompute_globmemoset = false, onestep_precompute_relmemoset = false)
 println("4")
-@test_nowarn scalarlogiset(dataset; use_full_memoization = false, relations = relations, conditions = generic_metaconditions, onestep_precompute_globmemoset = true, onestep_precompute_relmemoset = true)
+@test_nowarn scalarlogiset(dataset; use_full_memoization = false, relations = relations, conditions = metaconditions, onestep_precompute_globmemoset = true, onestep_precompute_relmemoset = true)
 println("5")
 
-logiset = @test_nowarn scalarlogiset(dataset; use_full_memoization = false, relations = relations, conditions = generic_metaconditions)
+logiset = @test_nowarn scalarlogiset(dataset; use_full_memoization = false, relations = relations, conditions = metaconditions)
 
-generic_complete_metaconditions = vcat([[ScalarMetaCondition(feature, >), ScalarMetaCondition(feature, <)] for feature in generic_features]...)
+generic_complete_metaconditions = vcat([[ScalarMetaCondition(feature, >), ScalarMetaCondition(feature, <)] for feature in features]...)
 
 complete_logiset = @test_nowarn scalarlogiset(dataset; use_full_memoization = false, relations = relations, conditions = generic_complete_metaconditions)
 
 rng = Random.MersenneTwister(1)
-alph = ExplicitAlphabet([SoleModels.ScalarCondition(rand(rng, generic_features), rand(rng, [>, <]), rand(rng)) for i in 1:n_instances]);
+alph = ExplicitAlphabet([SoleModels.ScalarCondition(rand(rng, features), rand(rng, [>, <]), rand(rng)) for i in 1:n_instances]);
 syntaxstring.(alph)
 _formulas = [randformula(rng, 3, alph, [SoleLogics.BASE_PROPOSITIONAL_OPERATORS..., vcat([[DiamondRelationalOperator(r), BoxRelationalOperator(r)] for r in relations]...)[1:16:end]...]) for i in 1:20];
 syntaxstring.(_formulas) .|> println;

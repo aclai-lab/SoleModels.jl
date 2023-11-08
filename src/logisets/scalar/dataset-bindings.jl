@@ -123,8 +123,9 @@ end
 
 Converts a dataset structure (with variables) to a logiset with scalar-valued features.
 If `dataset` is not a multimodal dataset, the following methods should be defined:
-
+TODO explain
 ```julia
+    islogiseed(::typeof(dataset)) = true
     initlogiset(dataset, features)
     ninstances(dataset)
     nvariables(dataset)
@@ -246,9 +247,9 @@ function scalarlogiset(
             if isnothing(conditions)
                 is_propositional_dataset = all(i_instance->nworlds(frame(dataset, i_instance)) == 1, 1:ninstances(dataset))
                 if is_propositional_dataset
-                    [UnivariateValue{vareltype(dataset, i_var)}(i_var) for i_var in 1:nvariables(dataset)]
+                    [UnivariateValue(i_var) for i_var in 1:nvariables(dataset)]
                 else
-                    vcat([[UnivariateMax{vareltype(dataset, i_var)}(i_var), UnivariateMin{vareltype(dataset, i_var)}(i_var)] for i_var in 1:nvariables(dataset)]...)
+                    vcat([[UnivariateMax(i_var), UnivariateMin(i_var)] for i_var in 1:nvariables(dataset)]...)
                 end
             else
                 unique(feature.(conditions))
@@ -276,38 +277,41 @@ function scalarlogiset(
     # if !isnothing(conditions)
     #     conditions = unique(conditions)
     # end
-    features = unique(features)
 
-    features_ok = filter(f->isconcretetype(SoleModels.featvaltype(f)), features)
-    features_notok = filter(f->!isconcretetype(SoleModels.featvaltype(f)), features)
+    # TODO remove, and maybe bring back the unique on conditions...?
+    # features = unique(features)
+
+    # features_ok = filter(f->isconcretetype(SoleModels.featvaltype(dataset, f)), features)
+    # features_notok = filter(f->!isconcretetype(SoleModels.featvaltype(dataset, f)), features)
 
 
-    if length(features_notok) > 0
-        if all(preserveseltype, features_notok) && all(f->f isa AbstractUnivariateFeature, features_notok)
-            _fixfeature(f) = begin
-                U = vareltype(dataset, i_variable(f))
-                eval(nameof(typeof(f))){U}(f)
-            end
-            features_notok_fixed = [_fixfeature(f) for f in features_notok]
-            # TODO
-            # conditions_ok = filter(c->!(feature(c) in features_notok), conditions)
-            # conditions_notok = filter(c->(feature(c) in features_notok), conditions)
-            # conditions_notok_fixed = [begin
-            #     @assert c isa ScalarMetaCondition "$(typeof(c))"
-            #     f = feature(c)
-            #     ScalarMetaCondition(_fixfeature(f), test_operator(c))
-            # end for c in conditions_notok]
-            if !is_nofeatures(features)
-                @warn "Patching $(length(features_notok)) features using vareltype."
-            end
-            features = [features_ok..., features_notok_fixed...]
-            # conditions = [conditions_ok..., conditions_notok_fixed...]
-        else
-            @warn "Could not infer feature value type for some of the specified features. " *
-                    "Please specify the feature value type upon construction. Untyped " *
-                    "features: $(displaysyntaxvector(features_notok))"
-        end
-    end
+    # if length(features_notok) > 0
+    #     if all(preserveseltype, features_notok) && all(f->f isa AbstractUnivariateFeature, features_notok)
+    #         @assert false "TODO"
+    #         _fixfeature(f) = begin
+    #             U = vareltype(dataset, i_variable(f))
+    #             eval(nameof(typeof(f))){U}(f)
+    #         end
+    #         features_notok_fixed = [_fixfeature(f) for f in features_notok]
+    #         # TODO
+    #         # conditions_ok = filter(c->!(feature(c) in features_notok), conditions)
+    #         # conditions_notok = filter(c->(feature(c) in features_notok), conditions)
+    #         # conditions_notok_fixed = [begin
+    #         #     @assert c isa ScalarMetaCondition "$(typeof(c))"
+    #         #     f = feature(c)
+    #         #     ScalarMetaCondition(_fixfeature(f), test_operator(c))
+    #         # end for c in conditions_notok]
+    #         if !is_nofeatures(features)
+    #             @warn "Patching $(length(features_notok)) features using vareltype."
+    #         end
+    #         features = [features_ok..., features_notok_fixed...]
+    #         # conditions = [conditions_ok..., conditions_notok_fixed...]
+    #     else
+    #         @warn "Could not infer feature value type for some of the specified features. " *
+    #                 "Please specify the feature value type upon construction. Untyped " *
+    #                 "features: $(displaysyntaxvector(features_notok))"
+    #     end
+    # end
     features = UniqueVector(features)
 
     # Too bad this breaks the code
@@ -393,30 +397,18 @@ function naturalconditions(
 
     def_test_operators = is_propositional_dataset ? [≥] : [≥, <]
 
-    univar_condition(i_var,cond::SoleModels.CanonicalConditionGeq) = ([≥],UnivariateMin{featvaltype}(i_var))
-    univar_condition(i_var,cond::SoleModels.CanonicalConditionLeq) = ([<],UnivariateMax{featvaltype}(i_var))
-    univar_condition(i_var,cond::SoleModels.CanonicalConditionGeqSoft) = ([≥],UnivariateSoftMin{featvaltype}(i_var, cond.alpha))
-    univar_condition(i_var,cond::SoleModels.CanonicalConditionLeqSoft) = ([<],UnivariateSoftMax{featvaltype}(i_var, cond.alpha))
+    univar_condition(i_var,cond::SoleModels.CanonicalConditionGeq) = ([≥],UnivariateMin(i_var))
+    univar_condition(i_var,cond::SoleModels.CanonicalConditionLeq) = ([<],UnivariateMax(i_var))
+    univar_condition(i_var,cond::SoleModels.CanonicalConditionGeqSoft) = ([≥],UnivariateSoftMin(i_var, cond.alpha))
+    univar_condition(i_var,cond::SoleModels.CanonicalConditionLeqSoft) = ([<],UnivariateSoftMax(i_var, cond.alpha))
     function univar_condition(i_var,(test_ops,cond)::Tuple{<:AbstractVector{<:TestOperator},typeof(identity)})
-        V = vareltype(dataset, i_var)
-        if !isconcretetype(V)
-            @warn "Building UnivariateValue with non-concrete feature type: $(V)."
-        end
-        return (test_ops,UnivariateValue{V}(i_var))
+        return (test_ops,UnivariateValue(i_var))
     end
     function univar_condition(i_var,(test_ops,cond)::Tuple{<:AbstractVector{<:TestOperator},typeof(minimum)})
-        V = vareltype(dataset, i_var)
-        if !isconcretetype(V)
-            @warn "Building UnivariateMin with non-concrete feature type: $(V)."
-        end
-        return (test_ops,UnivariateMin{V}(i_var))
+        return (test_ops,UnivariateMin(i_var))
     end
     function univar_condition(i_var,(test_ops,cond)::Tuple{<:AbstractVector{<:TestOperator},typeof(maximum)})
-        V = vareltype(dataset, i_var)
-        if !isconcretetype(V)
-            @warn "Building UnivariateMax with non-concrete feature type: $(V)."
-        end
-        return (test_ops,UnivariateMax{V}(i_var))
+        return (test_ops,UnivariateMax(i_var))
     end
     function univar_condition(i_var,(test_ops,cond)::Tuple{<:AbstractVector{<:TestOperator},Base.Callable})
         V = featvaltype

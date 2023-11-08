@@ -9,7 +9,7 @@ multidataset, multirelations = collect.(zip([
            (Array(reshape(1.0:360.0, 3,3,_nvars,n_instances)), [IA2DRelations..., globalrel]),
        ]...))
 
-multilogiset = @test_nowarn min_level=Logging.Error scalarlogiset(multidataset)
+multilogiset = @test_nowarn scalarlogiset(multidataset)
 multilogiset = scalarlogiset(multidataset; relations = multirelations, conditions = vcat([[SoleModels.ScalarMetaCondition(UnivariateMin(i), >), SoleModels.ScalarMetaCondition(UnivariateMax(i), <)] for i in 1:_nvars]...))
 
 X = @test_nowarn modality(multilogiset, 1)

@@ -73,4 +73,4 @@ end
 # # TODO remove but probably we need this to stay because of ambiguities!
 # representatives(fr::AbstractFrame{W}, w::W, r::IdentityRel, ::AbstractFeature, ::Aggregator) where {W<:AbstractWorld} = accessibles(fr, w, r)
 # TODO need this?
-# `representatives(fr::AbstractFrame{W}, S::AbstractWorldSet{W}, ::GlobalRel, ::ScalarMetaCondition)`
+# `representatives(fr::AbstractFrame{W}, S::AbstractWorlds{W}, ::GlobalRel, ::ScalarMetaCondition)`

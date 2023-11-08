@@ -11,8 +11,8 @@ using SoleModels: MultivariateFeature,
 
 import SoleModels: computefeature, computeunivariatefeature
 
-function computefeature(f::MultivariateFeature{U}, featchannel::Any)::U where {U}
-    (f.f(featchannel))
+function computefeature(f::MultivariateFeature{U}, featchannel::Any) where {U}
+    (f.f(featchannel))::U
 end
 
 function computeunivariatefeature(f::UnivariateFeature{U}, varchannel::Union{T,AbstractArray{T}}) where {U,T}
@@ -22,32 +22,32 @@ end
 function computeunivariatefeature(f::UnivariateNamedFeature, varchannel::Union{T,AbstractArray{T}}) where {T}
     return error("Cannot intepret UnivariateNamedFeature on any structure at all.")
 end
-function computeunivariatefeature(f::UnivariateValue{U}, varchannel::Union{T,AbstractArray{T}}) where {U<:Real,T}
-    (varchannel isa U ? varchannel : first(varchannel))::U
+function computeunivariatefeature(f::UnivariateValue, varchannel::Union{T,AbstractArray{T}}) where {T}
+    (varchannel isa T ? varchannel : first(varchannel))
 end
-function computeunivariatefeature(f::UnivariateMin{U}, varchannel::AbstractArray{T}) where {U<:Real,T}
-    (minimum(varchannel))::U
+function computeunivariatefeature(f::UnivariateMin, varchannel::AbstractArray{T}) where {T}
+    (minimum(varchannel))
 end
-function computeunivariatefeature(f::UnivariateMax{U}, varchannel::AbstractArray{T}) where {U<:Real,T}
-    (maximum(varchannel))::U
+function computeunivariatefeature(f::UnivariateMax, varchannel::AbstractArray{T}) where {T}
+    (maximum(varchannel))
 end
-function computeunivariatefeature(f::UnivariateSoftMin{U}, varchannel::AbstractArray{T}) where {U<:Real,T}
-    utils.softminimum(varchannel, alpha(f))::U
+function computeunivariatefeature(f::UnivariateSoftMin, varchannel::AbstractArray{T}) where {T}
+    utils.softminimum(varchannel, alpha(f))
 end
-function computeunivariatefeature(f::UnivariateSoftMax{U}, varchannel::AbstractArray{T}) where {U<:Real,T}
-    utils.softmaximum(varchannel, alpha(f))::U
+function computeunivariatefeature(f::UnivariateSoftMax, varchannel::AbstractArray{T}) where {T}
+    utils.softmaximum(varchannel, alpha(f))
 end
 
 # simplified propositional cases:
-function computeunivariatefeature(f::UnivariateMin{U}, varchannel::T) where {U<:Real,T}
-    (minimum(varchannel))::U
+function computeunivariatefeature(f::UnivariateMin, varchannel::T) where {T}
+    (minimum(varchannel))
 end
-function computeunivariatefeature(f::UnivariateMax{U}, varchannel::T) where {U<:Real,T}
-    (maximum(varchannel))::U
+function computeunivariatefeature(f::UnivariateMax, varchannel::T) where {T}
+    (maximum(varchannel))
 end
-function computeunivariatefeature(f::UnivariateSoftMin{U}, varchannel::T) where {U<:Real,T}
-    varchannel::U
+function computeunivariatefeature(f::UnivariateSoftMin, varchannel::T) where {T}
+    varchannel
 end
-function computeunivariatefeature(f::UnivariateSoftMax{U}, varchannel::T) where {U<:Real,T}
-    varchannel::U
+function computeunivariatefeature(f::UnivariateSoftMax, varchannel::T) where {T}
+    varchannel
 end

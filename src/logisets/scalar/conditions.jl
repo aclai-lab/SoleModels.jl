@@ -184,12 +184,12 @@ function syntaxstring(
 end
 
 function parsecondition(
-    ::Type{C},
+    ::Type{ScalarCondition},
     expression::String;
     featuretype::Union{Nothing,Type} = nothing,
     featvaltype::Union{Nothing,Type} = nothing,
     kwargs...
-) where {C<:ScalarCondition}
+)
     if isnothing(featvaltype)
         featvaltype = DEFAULT_VARFEATVALTYPE
         @warn "Please, specify a type for the feature values (featvaltype = ...). " *
@@ -202,7 +202,7 @@ function parsecondition(
             "$(featuretype) will be used. " *
             "(expression = $(repr(expression)))"
     end
-    _parsecondition(C{featvaltype,featuretype}, expression; kwargs...)
+    _parsecondition(ScalarCondition{featvaltype,featuretype}, expression; kwargs...)
 end
 
 function parsecondition(

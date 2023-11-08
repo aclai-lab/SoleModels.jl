@@ -9,8 +9,8 @@ using SoleModels.DimensionalDatasets
 n_instances = 2
 nvars = 2
 
-generic_features_oneworld = collect(Iterators.flatten([[SoleModels.UnivariateValue{Float64}(i_var)] for i_var in 1:nvars]))
-generic_features = collect(Iterators.flatten([[UnivariateMax{Float64}(i_var), UnivariateMin{Float64}(i_var)] for i_var in 1:nvars]))
+generic_features_oneworld = collect(Iterators.flatten([[SoleModels.UnivariateValue(i_var)] for i_var in 1:nvars]))
+generic_features = collect(Iterators.flatten([[UnivariateMax(i_var), UnivariateMin(i_var)] for i_var in 1:nvars]))
 
 for (dataset, relations, features) in [
     # (Array(reshape(1.0:4.0, nvars,n_instances)), []),
@@ -28,30 +28,30 @@ logiset = @test_nowarn scalarlogiset(dataset; use_full_memoization = false, use_
 metaconditions = [ScalarMetaCondition(feature, >) for feature in features]
 @test_nowarn SupportedLogiset(logiset, ())
 @test_throws AssertionError SupportedLogiset(logiset, [Dict()])
-@test_throws AssertionError SupportedLogiset(logiset, [Dict{SyntaxTree,WorldSet{worldtype(logiset)}}()])
-@test_nowarn SupportedLogiset(logiset, [Dict{SyntaxTree,WorldSet{worldtype(logiset)}}() for i in 1:n_instances])
-@test_throws AssertionError SupportedLogiset(logiset, ([Dict{SyntaxTree,WorldSet{worldtype(logiset)}}() for i in 1:n_instances], [Dict{SyntaxTree,WorldSet{worldtype(logiset)}}() for i in 1:n_instances]))
+@test_throws AssertionError SupportedLogiset(logiset, [Dict{SyntaxTree,Vector{worldtype(logiset)}}()])
+@test_nowarn SupportedLogiset(logiset, [Dict{SyntaxTree,Vector{worldtype(logiset)}}() for i in 1:n_instances])
+@test_throws AssertionError SupportedLogiset(logiset, ([Dict{SyntaxTree,Vector{worldtype(logiset)}}() for i in 1:n_instances], [Dict{SyntaxTree,Vector{worldtype(logiset)}}() for i in 1:n_instances]))
 @test_throws AssertionError SupportedLogiset(logiset; use_full_memoization = false)
 @test_throws AssertionError SupportedLogiset(logiset; use_onestep_memoization = true)
 
 @test_logs min_level=Logging.Error SupportedLogiset(logiset; use_full_memoization = true, use_onestep_memoization = true, conditions = metaconditions, relations = [relations..., identityrel])
 
 supported_logiset = @test_logs min_level=Logging.Error SupportedLogiset(logiset; use_full_memoization = true, use_onestep_memoization = true, conditions = metaconditions, relations = relations)
-@test_throws AssertionError SupportedLogiset(logiset, (supported_logiset, [Dict{SyntaxTree,WorldSet{worldtype(logiset)}}() for i in 1:n_instances]))
+@test_throws AssertionError SupportedLogiset(logiset, (supported_logiset, [Dict{SyntaxTree,Vector{worldtype(logiset)}}() for i in 1:n_instances]))
 supported_logiset = @test_logs min_level=Logging.Error SupportedLogiset(logiset; use_full_memoization = false, use_onestep_memoization = true, conditions = metaconditions, relations = relations)
 
-@test_nowarn SupportedLogiset(logiset, (supported_logiset, [Dict{SyntaxTree,WorldSet{worldtype(logiset)}}() for i in 1:n_instances]))
-@test_nowarn SupportedLogiset(logiset, ([Dict{SyntaxTree,WorldSet{worldtype(logiset)}}() for i in 1:n_instances], supported_logiset))
+@test_nowarn SupportedLogiset(logiset, (supported_logiset, [Dict{SyntaxTree,Vector{worldtype(logiset)}}() for i in 1:n_instances]))
+@test_nowarn SupportedLogiset(logiset, ([Dict{SyntaxTree,Vector{worldtype(logiset)}}() for i in 1:n_instances], supported_logiset))
 
 supported_logiset = @test_logs min_level=Logging.Error SupportedLogiset(logiset; use_full_memoization = true, conditions = metaconditions, relations = relations)
 
 metaconditions = vcat([[ScalarMetaCondition(feature, >), ScalarMetaCondition(feature, <)] for feature in features]...)
 complete_supported_logiset = @test_logs min_level=Logging.Error SupportedLogiset(logiset; use_full_memoization = true, conditions = metaconditions, relations = relations)
 
-rng = Random.MersenneTwister(1)
-alph = ExplicitAlphabet([SoleModels.ScalarCondition(rand(rng, features), rand(rng, [>, <]), rand(rng)) for i in 1:n_instances]);
+rngcube = Random.MersenneTwister(1)
+alph = ExplicitAlphabet([SoleModels.ScalarCondition(rand(rngcube, features), rand(rngcube, [>, <]), rand(rngcube)) for i in 1:n_instances]);
 # syntaxstring.(alph)
-_formulas = [randformula(rng, 3, alph, [SoleLogics.BASE_PROPOSITIONAL_OPERATORS..., vcat([[DiamondRelationalOperator(r), BoxRelationalOperator(r)] for r in filter(r->r != globalrel, relations)]...)[1:16:end]...]) for i in 1:20];
+_formulas = [randformula(rngcube, 3, alph, [SoleLogics.BASE_PROPOSITIONAL_OPERATORS..., vcat([[DiamondRelationalOperator(r), BoxRelationalOperator(r)] for r in filter(r->r != globalrel, relations)]...)[1:16:end]...]) for i in 1:20];
 # syntaxstring.(_formulas) .|> println;
 
 i_instance = 1

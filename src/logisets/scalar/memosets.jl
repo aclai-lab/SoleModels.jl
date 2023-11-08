@@ -49,7 +49,7 @@ struct ScalarChainedMemoset{
         X::AbstractLogiset{W,U,FT,FR},
         # perform_initialization = false,
     ) where {W<:AbstractWorld,U,FT<:AbstractFeature,FR<:AbstractFrame{W}}
-        d = [ThreadSafeDict{SyntaxTree,WorldSet{W}}() for i_instance in 1:ninstances(X)]
+        d = [ThreadSafeDict{SyntaxTree,Worlds{W}}() for i_instance in 1:ninstances(X)]
         D = typeof(d)
         ScalarChainedMemoset{W,U,FR,D}(d)
     end

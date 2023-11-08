@@ -4,11 +4,12 @@
     i_instance::Integer,
     w::W,
     r::AbstractRelation,
-    f::VarFeature{U},
+    f::VarFeature,
     aggr::Aggregator,
     args...
-) where {W<:AbstractWorld,U}
+) where {W<:AbstractWorld}
     vs = [featvalue(X, i_instance, w2, f) for w2 in representatives(X, i_instance, w, r, f, aggr)]
+    U = featvaltype(X)
     return (length(vs) == 0 ? aggregator_bottom(aggr, U) : aggr(vs))
 end
 
@@ -50,11 +51,10 @@ function featchannel_onestep_aggregation(
     gamma = apply_aggregator(X, featchannel, accessible_worlds, f, aggregator)
 end
 
-# TODO add AbstractWorldSet type
 function apply_aggregator(
     X::AbstractLogiset{W,U},
     featchannel,
-    worlds::Any,
+    worlds, # ::AbstractWorlds but iterators are also accepted.
     f::AbstractFeature,
     aggregator::Aggregator
 ) where {W<:AbstractWorld,U}
@@ -195,7 +195,8 @@ struct ScalarOneStepMemoset{
         relmemoset::RM,
         globmemoset::GM,
         metaconditions::AbstractVector{<:ScalarMetaCondition},
-        relations::AbstractVector{<:AbstractRelation},
+        relations::AbstractVector{<:AbstractRelation};
+        silent = false
     ) where {
         U<:Number,
         W<:AbstractWorld,
@@ -208,11 +209,11 @@ struct ScalarOneStepMemoset{
         metaconditions = UniqueVector(metaconditions)
         relations = UniqueVector(relations)
 
-        if identityrel in relations
+        if identityrel in relations && !silent
             @warn "Using identity relation in a relational memoset. This is not optimal."
         end
 
-        if globalrel in relations && isnothing(globmemoset)
+        if globalrel in relations && isnothing(globmemoset) && !silent
             @warn "Using global relation in a relational memoset. This is not optimal."
         end
 
@@ -247,6 +248,8 @@ struct ScalarOneStepMemoset{
         features = nothing,
         precompute_globmemoset  :: Bool = true,
         precompute_relmemoset   :: Bool = false,
+        print_progress          :: Bool = false,
+        silent                  :: Bool = false,
     ) where {W<:AbstractWorld,U}
 
         # Only compute global memoset if the global relation is in the relation set.
@@ -289,7 +292,9 @@ struct ScalarOneStepMemoset{
 
             _grouped_metaconditions = grouped_metaconditions(metaconditions, features)
 
-            # p = Progress(n_instances, 1, "Computing EMD supports...")
+            if print_progress
+                p = Progress(n_instances, 1, "Computing supports...")
+            end
             Threads.@threads for i_instance in 1:n_instances
 
                 for (_feature, these_metaconditions) in _grouped_metaconditions
@@ -323,10 +328,12 @@ struct ScalarOneStepMemoset{
                         end
                     end
                 end
-                # next!(p)
+                if print_progress
+                    next!(p)
+                end
             end
         end
-        ScalarOneStepMemoset{U}(relmemoset, globmemoset, metaconditions, relations)
+        ScalarOneStepMemoset{U}(relmemoset, globmemoset, metaconditions, relations; silent = silent)
     end
 end
 
@@ -463,7 +470,8 @@ function instances(Xm::ScalarOneStepMemoset{U}, inds::AbstractVector{<:Integer},
         instances(relmemoset(Xm), inds, return_view),
         (isnothing(globmemoset(Xm)) ? nothing : instances(globmemoset(Xm), inds, return_view)),
         metaconditions(Xm),
-        relations(Xm),
+        relations(Xm);
+        silent = true
     )
 end
 
@@ -478,7 +486,8 @@ function concatdatasets(Xms::ScalarOneStepMemoset{U}...) where {U}
         concatdatasets(relmemoset.(Xms)...),
         (any(isnothing.(globmemoset.(Xms))) ? nothing : concatdatasets(globmemoset.(Xms)...)),
         metaconditions(first(Xms)),
-        relations(first(Xms)),
+        relations(first(Xms));
+        silent = true
     )
 end
 
@@ -624,8 +633,8 @@ function instances(Xm::ScalarOneStepRelationalMemoset{W,U,FR}, inds::AbstractVec
     ScalarOneStepRelationalMemoset{W,U,FR}(if return_view == Val(true) @view Xm.d[inds,:,:] else Xm.d[inds,:,:] end)
 end
 
-function concatdatasets(Xms::ScalarOneStepRelationalMemoset...)
-    ScalarOneStepRelationalMemoset(cat([Xm.d for Xm in Xms]...; dims=1))
+function concatdatasets(Xms::ScalarOneStepRelationalMemoset{W,U,FR}...) where {W,U,FR}
+    ScalarOneStepRelationalMemoset{W,U,FR}(cat([Xm.d for Xm in Xms]...; dims=1))
 end
 
 
@@ -736,7 +745,11 @@ function hasnans(Xm::ScalarOneStepGlobalMemoset)
     any(_isnan.(Xm.d))
 end
 
-function instances(Xm::ScalarOneStepGlobalMemoset{W,U}, inds::AbstractVector{<:Integer}, return_view::Union{Val{true},Val{false}} = Val(false)) where {W,U}
+function instances(
+    Xm::ScalarOneStepGlobalMemoset{W,U},
+    inds::AbstractVector{<:Integer},
+    return_view::Union{Val{true},Val{false}} = Val(false)
+) where {W,U}
     ScalarOneStepGlobalMemoset{W,U}(if return_view == Val(true) @view Xm.d[inds,:] else Xm.d[inds,:] end)
 end
 

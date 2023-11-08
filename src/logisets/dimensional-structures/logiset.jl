@@ -79,7 +79,8 @@ struct UniformFullDimensionalLogiset{
         _dimensionality(featstruct::AbstractArray{T,2}) where {T} = 0
         _dimensionality(featstruct::AbstractArray{T,4}) where {T} = 1
         _dimensionality(featstruct::AbstractArray{T,6}) where {T} = 2
-        U = Union{featvaltype.(features)...}
+        # U = Union{map(f->featvaltype(featstruct, f), features)...}
+        U = eltype(featstruct)
         W = _worldtype(featstruct)
         N = _dimensionality(featstruct)
         UniformFullDimensionalLogiset{U,W,N}(featstruct, features)

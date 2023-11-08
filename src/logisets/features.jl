@@ -13,7 +13,8 @@ abstract type AbstractFeature end
 
 function syntaxstring(f::AbstractFeature; kwargs...)
     return error("Please, provide method syntaxstring(::$(typeof(f)); kwargs...)."
-        * " Note that this value must be unique.")
+        # * " Note that this value must be unique."
+    )
 end
 
 function Base.show(io::IO, f::AbstractFeature)
@@ -23,7 +24,7 @@ function Base.show(io::IO, f::AbstractFeature)
 end
 
 # Note this is necessary when wrapping lambda functions or closures:
-# f = [UnivariateFeature{Float64}(1, x->[1.,2.,3.][i]) for i in 1:3] |> unique
+# f = [UnivariateFeature(1, x->[1.,2.,3.][i]) for i in 1:3] |> unique
 # map(x->SoleModels.computefeature(x, rand(1,2)), f)
 Base.isequal(a::AbstractFeature, b::AbstractFeature) = Base.isequal(map(x->getfield(a, x), fieldnames(typeof(a))), map(x->getfield(b, x), fieldnames(typeof(b))))
 Base.hash(a::AbstractFeature) = Base.hash(map(x->getfield(a, x), fieldnames(typeof(a))), Base.hash(typeof(a)))

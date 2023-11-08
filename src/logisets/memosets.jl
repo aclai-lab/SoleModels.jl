@@ -104,20 +104,20 @@ See also
 """
 struct FullMemoset{
     W<:AbstractWorld,
-    D<:AbstractVector{<:AbstractDict{<:Formula,<:WorldSet{W}}},
+    D<:AbstractVector{<:AbstractDict{<:Formula,<:Worlds{W}}},
 } <: AbstractFullMemoset{W,U where U,FT where FT<:AbstractFeature,FR where FR<:AbstractFrame{W}}
 
     d :: D
 
     function FullMemoset{W,D}(
         d::D
-    ) where {W,D<:AbstractVector{<:AbstractDict{<:Formula,<:Union{<:AbstractVector{W},Nothing}}}}
+    ) where {W,D<:AbstractVector{<:AbstractDict{<:Formula,<:Union{<:AbstractWorlds{W},Nothing}}}}
         new{W,D}(d)
     end
 
     function FullMemoset(
         d::D
-    ) where {W,D<:AbstractVector{<:AbstractDict{<:Formula,<:Union{<:AbstractVector{W},Nothing}}}}
+    ) where {W,D<:AbstractVector{<:AbstractDict{<:Formula,<:Union{<:AbstractWorlds{W},Nothing}}}}
         new{W,D}(d)
     end
 
@@ -125,7 +125,7 @@ struct FullMemoset{
         X::AbstractLogiset{W,U,FT,FR},
         perform_initialization = false,
     ) where {W,U,FT<:AbstractFeature,FR<:AbstractFrame{W}}
-        d = [ThreadSafeDict{SyntaxTree,WorldSet{W}}() for i_instance in 1:ninstances(X)]
+        d = [ThreadSafeDict{SyntaxTree,Worlds{W}}() for i_instance in 1:ninstances(X)]
         D = typeof(d)
         FullMemoset{W,D}(d)
     end
@@ -161,7 +161,7 @@ end
     Xm           :: FullMemoset{W},
     i_instance   :: Integer,
     f            :: Formula,
-    ws           :: WorldSet{W},
+    ws           :: Worlds{W},
 ) where {W}
     Xm.d[i_instance][f] = ws
 end

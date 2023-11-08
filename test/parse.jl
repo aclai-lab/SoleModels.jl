@@ -1,13 +1,14 @@
+using Test
 using Logging
+using SoleModels
 using SoleModels: parsecondition
 
-@test_nowarn SoleModels.parsefeature(SoleModels.VarFeature{Float64}, "min[V1]")
+@test_nowarn SoleModels.parsefeature(SoleModels.VarFeature, "min[V1]")
 @test_nowarn SoleModels.parsefeature(SoleModels.VarFeature, "min[V1]"; featvaltype = Float64)
-@test_nowarn SoleModels.parsefeature(SoleModels.VarFeature{Float64}, "min[V1]"; featvaltype = Float64)
-@test_throws AssertionError SoleModels.parsefeature(SoleModels.VarFeature{Float64}, "min[V1]"; featvaltype = Int64)
-@test_logs (:warn,) SoleModels.parsefeature(SoleModels.AbstractUnivariateFeature, "min[V1]")
-@test_logs (:warn,) SoleModels.parsefeature(UnivariateMin, "min[V1]")
-@test_nowarn SoleModels.parsefeature(UnivariateMin{Float64}, "min[V1]")
+@test_nowarn SoleModels.parsefeature(SoleModels.VarFeature, "min[V1]"; featvaltype = Int64)
+@test_nowarn SoleModels.parsefeature(SoleModels.AbstractUnivariateFeature, "min[V1]")
+# @test_logs (:warn,) SoleModels.parsefeature(UnivariateMin, "min[V1]")
+@test_nowarn SoleModels.parsefeature(UnivariateMin, "min[V1]")
 
 
 
@@ -33,8 +34,8 @@ C = SoleModels.ScalarCondition
 @test_nowarn SoleModels.parsecondition(C, "mean[V9] <= 1.0e100"; featvaltype = Float64, featuretype = SoleModels.AbstractUnivariateFeature)
 @test_nowarn SoleModels.parsecondition(C, "mean🌅V9🌄 <= 1.0e100"; featvaltype = Float64, opening_bracket="🌅", closing_bracket="🌄", featuretype = SoleModels.AbstractUnivariateFeature)
 
-@test_nowarn SoleModels.featvaltype(SoleModels.feature(SoleModels.parsecondition(C, "mean[V10]    > 462.2"; featvaltype = Float64, featuretype = SoleModels.AbstractUnivariateFeature))) == Float64
-@test_nowarn SoleModels.featvaltype(SoleModels.feature(SoleModels.parsecondition(C, "mean[V11] < 1.0e100"; featvaltype = Float64, featuretype = SoleModels.AbstractUnivariateFeature))) == Float64
+@test_nowarn SoleModels.feature(SoleModels.parsecondition(C, "mean[V10]    > 462.2"; featvaltype = Float64, featuretype = SoleModels.AbstractUnivariateFeature))
+@test_nowarn SoleModels.feature(SoleModels.parsecondition(C, "mean[V11] < 1.0e100"; featvaltype = Float64, featuretype = SoleModels.AbstractUnivariateFeature))
 
 
 @test_nowarn SoleModels.parsecondition(C, "max[V15] <= 723"; featvaltype = Float64, featuretype = SoleModels.AbstractUnivariateFeature)

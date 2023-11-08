@@ -12,7 +12,7 @@ const UVF_CLOSING_BRACKET = "]"
 const UVF_VARPREFIX = "V"
 
 """
-    abstract type VarFeature{U} <: AbstractFeature end
+    abstract type VarFeature <: AbstractFeature end
 
 Abstract type for feature functions that can be computed on (multi)variate data.
 Instances of multivariate datasets have values for a number of *variables*,
@@ -32,41 +32,39 @@ See also
 [`computefeature`](@ref),
 [`Interval`](@ref).
 """
-abstract type VarFeature{U} <: AbstractFeature end
+abstract type VarFeature <: AbstractFeature end
 
 DEFAULT_VARFEATVALTYPE = Real
 
-
 """
-    featvaltype(::Type{<:VarFeature{U}}) where {U} = U
-    featvaltype(::VarFeature{U}) where {U} = U
+    featvaltype(dataset, f::VarFeature)
 
-Return the output type of the feature function.
+Return the type of the values returned by feature `f` on logiseed `dataset`.
 
 See also [`AbstractWorld`](@ref).
 """
-featvaltype(::Type{<:VarFeature{U}}) where {U} = U
-featvaltype(::VarFeature{U}) where {U} = U
+function featvaltype(dataset, f::VarFeature)
+    return error("Please, provide method featvaltype(::$(typeof(dataset)), ::$(typeof(f))).")
+end
 
 """
-    computefeature(f::VarFeature{U}, featchannel; kwargs...)::U where {U}
+    computefeature(f::VarFeature, featchannel; kwargs...)
 
 Compute a feature on a featchannel (i.e., world reading) of an instance.
 
 See also [`VarFeature`](@ref).
 """
-function computefeature(f::VarFeature{U}, featchannel; kwargs...) where {U}
-    return error("Please, provide method computefeature(::$(typeof(f)), featchannel::$(typeof(featchannel)); kwargs...)::U.")
+function computefeature(f::VarFeature, featchannel; kwargs...)
+    return error("Please, provide method computefeature(::$(typeof(f)), featchannel::$(typeof(featchannel)); kwargs...).")
 end
 
-preserveseltype(::VarFeature) = false
 
 @inline (f::AbstractFeature)(args...) = computefeature(f, args...)
 
 ############################################################################################
 
 """
-    struct MultivariateFeature{U} <: VarFeature{U}
+    struct MultivariateFeature <: VarFeature
         f::Function
     end
 
@@ -81,15 +79,19 @@ See also [`Interval`](@ref),
 [`AbstractUnivariateFeature`](@ref),
 [`VarFeature`](@ref), [`AbstractFeature`](@ref).
 """
-struct MultivariateFeature{U} <: VarFeature{U}
+struct MultivariateFeature{U} <: VarFeature
     f::Function
 end
 syntaxstring(f::MultivariateFeature, args...; kwargs...) = "$(f.f)"
 
+function featvaltype(dataset, f::MultivariateFeature{U}) where {U}
+    return U
+end
+
 ############################################################################################
 
 """
-    abstract type AbstractUnivariateFeature{U} <: VarFeature{U} end
+    abstract type AbstractUnivariateFeature <: VarFeature end
 
 A dimensional feature represented by the application of a function to a single variable of a
 dimensional channel.
@@ -101,23 +103,23 @@ See also [`Interval`](@ref),
 [`UnivariateFeature`](@ref),
 [`VarFeature`](@ref), [`AbstractFeature`](@ref).
 """
-abstract type AbstractUnivariateFeature{U} <: VarFeature{U} end
+abstract type AbstractUnivariateFeature <: VarFeature end
 
 """
-    computeunivariatefeature(f::AbstractUnivariateFeature{U}, varchannel; kwargs...)::U where {U}
+    computeunivariatefeature(f::AbstractUnivariateFeature, varchannel; kwargs...)
 
 Compute a feature on a variable channel (i.e., world reading) of an instance.
 
 See also [`AbstractUnivariateFeature`](@ref).
 """
-function computeunivariatefeature(f::AbstractUnivariateFeature{U}, varchannel::Any; kwargs...) where {U}
-    return error("Please, provide method computeunivariatefeature(::$(typeof(f)), varchannel::$(typeof(varchannel)); kwargs...)::U.")
+function computeunivariatefeature(f::AbstractUnivariateFeature, varchannel::Any; kwargs...)
+    return error("Please, provide method computeunivariatefeature(::$(typeof(f)), varchannel::$(typeof(varchannel)); kwargs...).")
 end
 
 i_variable(f::AbstractUnivariateFeature) = f.i_variable
 
-function computefeature(f::AbstractUnivariateFeature{U}, featchannel::Any)::U where {U}
-    computeunivariatefeature(f, channelvariable(featchannel, i_variable(f)))::U
+function computefeature(f::AbstractUnivariateFeature, featchannel::Any)
+    computeunivariatefeature(f, channelvariable(featchannel, i_variable(f)))
 end
 
 """
@@ -174,7 +176,7 @@ end
 ############################################################################################
 
 """
-    struct UnivariateFeature{U} <: AbstractUnivariateFeature{U}
+    struct UnivariateFeature{U} <: AbstractUnivariateFeature
         i_variable::Integer
         f::Function
     end
@@ -189,7 +191,7 @@ See also [`Interval`](@ref),
 [`AbstractUnivariateFeature`](@ref),
 [`VarFeature`](@ref), [`AbstractFeature`](@ref).
 """
-struct UnivariateFeature{U} <: AbstractUnivariateFeature{U}
+struct UnivariateFeature{U} <: AbstractUnivariateFeature
     i_variable::Integer
     f::Function
     function UnivariateFeature{U}(feat::UnivariateFeature) where {U<:Real}
@@ -204,8 +206,12 @@ struct UnivariateFeature{U} <: AbstractUnivariateFeature{U}
 end
 featurename(f::UnivariateFeature) = string(f.f)
 
+function featvaltype(dataset, f::UnivariateFeature{U}) where {U}
+    return U
+end
+
 """
-    struct UnivariateNamedFeature{U} <: AbstractUnivariateFeature{U}
+    struct UnivariateNamedFeature{U} <: AbstractUnivariateFeature
         i_variable::Integer
         name::String
     end
@@ -217,16 +223,29 @@ See also [`Interval`](@ref),
 [`AbstractUnivariateFeature`](@ref),
 [`VarFeature`](@ref), [`AbstractFeature`](@ref).
 """
-struct UnivariateNamedFeature{U} <: AbstractUnivariateFeature{U}
+struct UnivariateNamedFeature{U} <: AbstractUnivariateFeature
     i_variable::Integer
     name::String
+    function UnivariateNamedFeature{U}(f::UnivariateNamedFeature) where {U<:Real}
+        return new{U}(i_variable(f), f.name)
+    end
+    function UnivariateNamedFeature{U}(i_variable::Integer, name::String) where {U<:Real}
+        return new{U}(i_variable, name)
+    end
+    function UnivariateNamedFeature(i_variable::Integer, name::String)
+        return UnivariateNamedFeature{DEFAULT_VARFEATVALTYPE}(i_variable, name)
+    end
 end
 featurename(f::UnivariateNamedFeature) = f.name
+
+function featvaltype(dataset, f::UnivariateNamedFeature{U}) where {U}
+    return U
+end
 
 ############################################################################################
 
 """
-    struct UnivariateValue{U} <: AbstractUnivariateFeature{U}
+    struct UnivariateValue <: AbstractUnivariateFeature
         i_variable::Integer
     end
 
@@ -239,16 +258,13 @@ See also [`Interval`](@ref),
 [`UnivariateMax`](@ref),
 [`VarFeature`](@ref), [`AbstractFeature`](@ref).
 """
-struct UnivariateValue{U} <: AbstractUnivariateFeature{U}
+struct UnivariateValue <: AbstractUnivariateFeature
     i_variable::Integer
-    function UnivariateValue{U}(f::UnivariateValue) where {U<:Real}
-        return new{U}(i_variable(f))
-    end
-    function UnivariateValue{U}(i_variable::Integer) where {U<:Real}
-        return new{U}(i_variable)
+    function UnivariateValue(f::UnivariateValue)
+        return new(i_variable(f))
     end
     function UnivariateValue(i_variable::Integer)
-        return UnivariateValue{DEFAULT_VARFEATVALTYPE}(i_variable)
+        return new(i_variable)
     end
 end
 featurename(f::UnivariateValue) = ""
@@ -260,10 +276,14 @@ function syntaxstring(
     variable_name(f; kwargs...)
 end
 
+function featvaltype(dataset, f::UnivariateValue)
+    return vareltype(dataset, f.i_variable)
+end
+
 ############################################################################################
 
 """
-    struct UnivariateMin{U} <: AbstractUnivariateFeature{U}
+    struct UnivariateMin <: AbstractUnivariateFeature
         i_variable::Integer
     end
 
@@ -275,24 +295,23 @@ See also [`Interval`](@ref),
 [`UnivariateMax`](@ref),
 [`VarFeature`](@ref), [`AbstractFeature`](@ref).
 """
-struct UnivariateMin{U} <: AbstractUnivariateFeature{U}
+struct UnivariateMin <: AbstractUnivariateFeature
     i_variable::Integer
-    function UnivariateMin{U}(f::UnivariateMin) where {U<:Real}
-        return new{U}(i_variable(f))
-    end
-    function UnivariateMin{U}(i_variable::Integer) where {U<:Real}
-        return new{U}(i_variable)
+    function UnivariateMin(f::UnivariateMin)
+        return new(i_variable(f))
     end
     function UnivariateMin(i_variable::Integer)
-        return UnivariateMin{DEFAULT_VARFEATVALTYPE}(i_variable)
+        return new(i_variable)
     end
 end
 featurename(f::UnivariateMin) = "min"
 
-preserveseltype(::UnivariateMin) = true
+function featvaltype(dataset, f::UnivariateMin)
+    return vareltype(dataset, f.i_variable)
+end
 
 """
-    struct UnivariateMax{U} <: AbstractUnivariateFeature{U}
+    struct UnivariateMax <: AbstractUnivariateFeature
         i_variable::Integer
     end
 
@@ -304,26 +323,25 @@ See also [`Interval`](@ref),
 [`UnivariateMin`](@ref),
 [`VarFeature`](@ref), [`AbstractFeature`](@ref).
 """
-struct UnivariateMax{U} <: AbstractUnivariateFeature{U}
+struct UnivariateMax <: AbstractUnivariateFeature
     i_variable::Integer
-    function UnivariateMax{U}(f::UnivariateMax) where {U<:Real}
-        return new{U}(i_variable(f))
-    end
-    function UnivariateMax{U}(i_variable::Integer) where {U<:Real}
-        return new{U}(i_variable)
+    function UnivariateMax(f::UnivariateMax)
+        return new(i_variable(f))
     end
     function UnivariateMax(i_variable::Integer)
-        return UnivariateMax{DEFAULT_VARFEATVALTYPE}(i_variable)
+        return new(i_variable)
     end
 end
 featurename(f::UnivariateMax) = "max"
 
-preserveseltype(::UnivariateMax) = true
+function featvaltype(dataset, f::UnivariateMax)
+    return vareltype(dataset, f.i_variable)
+end
 
 ############################################################################################
 
 """
-    struct UnivariateSoftMin{U,T<:AbstractFloat} <: AbstractUnivariateFeature{U}
+    struct UnivariateSoftMin{T<:AbstractFloat} <: AbstractUnivariateFeature
         i_variable::Integer
         alpha::T
     end
@@ -336,25 +354,27 @@ See also [`Interval`](@ref),
 [`UnivariateMin`](@ref),
 [`VarFeature`](@ref), [`AbstractFeature`](@ref).
 """
-struct UnivariateSoftMin{U,T<:AbstractFloat} <: AbstractUnivariateFeature{U}
+struct UnivariateSoftMin{T<:AbstractFloat} <: AbstractUnivariateFeature
     i_variable::Integer
     alpha::T
-    function UnivariateSoftMin{U}(f::UnivariateSoftMin) where {U<:Real}
-        return new{U,typeof(alpha(f))}(i_variable(f), alpha(f))
+    function UnivariateSoftMin(f::UnivariateSoftMin)
+        return new{typeof(alpha(f))}(i_variable(f), alpha(f))
     end
-    function UnivariateSoftMin{U}(i_variable::Integer, alpha::T) where {U<:Real,T}
+    function UnivariateSoftMin(i_variable::Integer, alpha::T) where {T}
         @assert !(alpha > 1.0 || alpha < 0.0) "Cannot instantiate UnivariateSoftMin with alpha = $(alpha)"
         @assert !isone(alpha) "Cannot instantiate UnivariateSoftMin with alpha = $(alpha). Use UnivariateMin instead!"
-        new{U,T}(i_variable, alpha)
+        new{T}(i_variable, alpha)
     end
 end
 alpha(f::UnivariateSoftMin) = f.alpha
 featurename(f::UnivariateSoftMin) = "min" * utils.subscriptnumber(rstrip(rstrip(string(alpha(f)*100), '0'), '.'))
 
-preserveseltype(::UnivariateSoftMin) = true
+function featvaltype(dataset, f::UnivariateSoftMin)
+    return vareltype(dataset, f.i_variable)
+end
 
 """
-    struct UnivariateSoftMax{U,T<:AbstractFloat} <: AbstractUnivariateFeature{U}
+    struct UnivariateSoftMax{T<:AbstractFloat} <: AbstractUnivariateFeature
         i_variable::Integer
         alpha::T
     end
@@ -367,22 +387,24 @@ See also [`Interval`](@ref),
 [`UnivariateMax`](@ref),
 [`VarFeature`](@ref), [`AbstractFeature`](@ref).
 """
-struct UnivariateSoftMax{U,T<:AbstractFloat} <: AbstractUnivariateFeature{U}
+struct UnivariateSoftMax{T<:AbstractFloat} <: AbstractUnivariateFeature
     i_variable::Integer
     alpha::T
-    function UnivariateSoftMax{U}(f::UnivariateSoftMax) where {U<:Real}
-        return new{U,typeof(alpha(f))}(i_variable(f), alpha(f))
+    function UnivariateSoftMax(f::UnivariateSoftMax)
+        return new{typeof(alpha(f))}(i_variable(f), alpha(f))
     end
-    function UnivariateSoftMax{U}(i_variable::Integer, alpha::T) where {U<:Real,T}
+    function UnivariateSoftMax(i_variable::Integer, alpha::T) where {T}
         @assert !(alpha > 1.0 || alpha < 0.0) "Cannot instantiate UnivariateSoftMax with alpha = $(alpha)"
         @assert !isone(alpha) "Cannot instantiate UnivariateSoftMax with alpha = $(alpha). Use UnivariateMax instead!"
-        new{U,T}(i_variable, alpha)
+        new{T}(i_variable, alpha)
     end
 end
 alpha(f::UnivariateSoftMax) = f.alpha
 featurename(f::UnivariateSoftMax) = "max" * utils.subscriptnumber(rstrip(rstrip(string(alpha(f)*100), '0'), '.'))
 
-preserveseltype(::UnivariateSoftMax) = true
+function featvaltype(dataset, f::UnivariateSoftMax)
+    return vareltype(dataset, f.i_variable)
+end
 
 ############################################################################################
 
@@ -430,43 +452,16 @@ function parsefeature(
     ::Type{FT},
     expression::String;
     featvaltype::Union{Nothing,Type} = nothing,
-    kwargs...
-) where {FT<:VarFeature}
-    if isnothing(featvaltype)
-        featvaltype = DEFAULT_VARFEATVALTYPE
-        @warn "Please, specify a type for the feature values (featvaltype = ...). " *
-            "$(featvaltype) will be used, but note that this may raise type errors. " *
-            "(expression = $(repr(expression)))"
-    end
-    _parsefeature(FT{featvaltype}, expression; kwargs...)
-end
-
-function parsefeature(
-    ::Type{FT},
-    expression::String;
-    featvaltype::Union{Nothing,Type} = nothing,
-    kwargs...
-) where {U,FT<:VarFeature{U}}
-    @assert isnothing(featvaltype) || featvaltype == U "Cannot parse feature of type $(FT) with " *
-        "featvaltype = $(featvaltype). (expression = $(repr(expression)))"
-    _parsefeature(FT, expression; kwargs...)
-end
-
-function _parsefeature(
-    ::Type{FT},
-    expression::String;
     opening_bracket::String = UVF_OPENING_BRACKET,
     closing_bracket::String = UVF_CLOSING_BRACKET,
     custom_feature_aliases = Dict{String,Union{Type,Function}}(),
     variable_names_map::Union{Nothing,AbstractDict,AbstractVector} = nothing,
     variable_name_prefix::Union{Nothing,String} = nothing,
     kwargs...
-) where {U,FT<:VarFeature{U}}
+) where {FT<:VarFeature}
     @assert isnothing(variable_names_map) || isnothing(variable_name_prefix) "" *
         "Cannot parse variable with both variable_names_map and variable_name_prefix. " *
         "(expression = $(repr(expression)))"
-
-    featvaltype = U
 
     @assert length(opening_bracket) == 1 || length(closing_bracket)
         "Brackets must be single-character strings! " *
@@ -508,14 +503,29 @@ function _parsefeature(
             # If it is a function, wrap it into a UnivariateFeature
             #  otherwise, it is a feature, and it is used as a constructor.
             if feat_or_fun isa Function
+                if isnothing(featvaltype)
+                    featvaltype = DEFAULT_VARFEATVALTYPE
+                    @warn "Please, specify a type for the feature values (featvaltype = ...). " *
+                        "$(featvaltype) will be used, but note that this may raise type errors. " *
+                        "(expression = $(repr(expression)))"
+                end
+
                 UnivariateFeature{featvaltype}(i_var, feat_or_fun)
             else
-                feat_or_fun{featvaltype}(i_var)
+                feat_or_fun(i_var) # TODO do this
+                # feat_or_fun{featvaltype}(i_var)
             end
         else
             # If it is not a known feature, interpret it as a Julia function,
             #  and wrap it into a UnivariateFeature.
             f = eval(Meta.parse(_feature))
+            if isnothing(featvaltype)
+                featvaltype = DEFAULT_VARFEATVALTYPE
+                @warn "Please, specify a type for the feature values (featvaltype = ...). " *
+                    "$(featvaltype) will be used, but note that this may raise type errors. " *
+                    "(expression = $(repr(expression)))"
+            end
+
             UnivariateFeature{featvaltype}(i_var, f)
         end
     end

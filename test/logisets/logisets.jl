@@ -129,7 +129,7 @@ nonscalar_supported_logiset = @test_nowarn SupportedLogiset(nonscalar_logiset)
 # Memoset's
 ############################################################################################
 
-memoset = [ThreadSafeDict{SyntaxTree,WorldSet{W}}() for i_instance in 1:ninstances(bool_supported_logiset)]
+memoset = [ThreadSafeDict{SyntaxTree,Worlds{W}}() for i_instance in 1:ninstances(bool_supported_logiset)]
 
 @test_nowarn check(φ, bool_logiset, 1, w)
 @test_nowarn check(φ, bool_logiset, 1, w; use_memo = nothing)
@@ -163,13 +163,14 @@ c2 = @test_nowarn [check(φ, bool_logiset, 1, w; use_memo = nothing) for φ in _
 c3 = @test_nowarn [check(φ, bool_logiset, 1, w; use_memo = memoset) for φ in _formulas]
 c4 = @test_nowarn [check(φ, SupportedLogiset(bool_logiset), 1, w) for φ in _formulas]
 c5 = @test_nowarn [check(φ, SupportedLogiset(bool_logiset), 1, w; use_memo = nothing) for φ in _formulas]
-# c6 = @test_logs (:warn,) [check(φ, bool_supported_logiset, 1, w; use_memo = memoset) for φ in _formulas]
+# @test (@test_logs (:warn,) [check(φ, bool_supported_logiset, 1, w; use_memo = memoset) for φ in _formulas])
+# c6 = [check(φ, bool_supported_logiset, 1, w; use_memo = memoset) for φ in _formulas]
 
 @test c1 == c2 == c3 == c4 == c5
 
 w = worlds[1]
 W = worldtype(scalar_logiset)
-memoset = [ThreadSafeDict{SyntaxTree,WorldSet{W}}() for i_instance in 1:ninstances(scalar_logiset)]
+memoset = [ThreadSafeDict{SyntaxTree,Worlds{W}}() for i_instance in 1:ninstances(scalar_logiset)]
 @test_throws AssertionError check(φ, scalar_logiset, 1; use_memo = nothing)
 @time check(φ, scalar_logiset, 1, w; use_memo = nothing)
 @time check(φ, scalar_logiset, 1, w; use_memo = memoset)

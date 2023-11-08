@@ -4,7 +4,7 @@ function check(
     φ::SoleLogics.SyntaxTree,
     i::SoleLogics.LogicalInstance{<:AbstractKripkeStructure,<:AbstractLogiset{W,<:U}},
     w::Union{Nothing,<:AbstractWorld} = nothing; # TODO remove defaulting
-    use_memo::Union{Nothing,AbstractMemoset{<:AbstractWorld},AbstractVector{<:AbstractDict{<:FT,<:WorldSet}}} = nothing,
+    use_memo::Union{Nothing,AbstractMemoset{<:AbstractWorld},AbstractVector{<:AbstractDict{<:FT,<:AbstractWorlds}}} = nothing,
     perform_normalization::Bool = true,
     memo_max_height::Union{Nothing,Int} = nothing,
     onestep_memoset_is_complete = false,
@@ -49,7 +49,7 @@ function check(
             end
             base(X), fullmemo(X)
         elseif isnothing(use_memo)
-            X, ThreadSafeDict{SyntaxTree,WorldSet{W}}()
+            X, ThreadSafeDict{SyntaxTree,Worlds{W}}()
         elseif use_memo isa AbstractMemoset
             X, use_memo[i_instance]
         else
@@ -104,7 +104,7 @@ function check(
                         error("Unexpected token encountered in check: $(typeof(tok))")
                     end
                 end
-                setformula(memo_structure, ψ, Vector{W}(worldset))
+                setformula(memo_structure, ψ, Worlds{W}(worldset))
             end
             # @show syntaxstring(ψ), readformula(memo_structure, ψ)
         end
