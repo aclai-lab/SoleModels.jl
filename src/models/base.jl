@@ -2,7 +2,7 @@ import Base: convert, length, getindex, isopen
 
 using SoleData: slicedataset
 
-import SoleLogics: check, syntaxstring
+import SoleLogics: check, syntaxstring, conjuncts, nconjuncts, disjuncts, ndisjuncts
 using SoleLogics: LeftmostLinearForm, LeftmostConjunctiveForm, LeftmostDisjunctiveForm
 
 import SoleLogics: nleaves, height
@@ -1229,10 +1229,11 @@ end
 function apply(
     f::DecisionForest,
     d::AbstractInterpretationSet;
+    suppress_parity_warning = false,
     kwargs...
 )
     pred = hcat([apply(t, d; kwargs...) for t in trees(f)]...)
-    return [bestguess(pred[i,:]) for i in 1:size(pred,1)]
+    return [bestguess(pred[i,:]; suppress_parity_warning = suppress_parity_warning) for i in 1:size(pred,1)]
 end
 
 function nnodes(f::DecisionForest)
