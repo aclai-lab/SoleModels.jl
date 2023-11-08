@@ -66,7 +66,7 @@ prop_100 = @test_nowarn Atom(100)
 st_1 = @test_nowarn SyntaxTree(prop_1)
 st_100 = @test_nowarn SyntaxTree(prop_100)
 
-@################################### Formulas ###############################################
+################################### Formulas ###############################################
 p = @test_nowarn SoleLogics.parsebaseformula("p")
 p_tree = @test_nowarn SoleLogics.parseformula("p")
 
@@ -222,7 +222,7 @@ branch_r0 = @test_nowarn Branch(formula_r, (branch_s, "yes"))
 branch_r = @test_nowarn Branch(formula_r, (branch_r0, "yes"))
 branch_r = @test_nowarn Branch(formula_r, (branch_r, "yes"))
 
-branch_true = @test_nowarn Branch(Top, (branch_r, "yes"))
+branch_true = @test_nowarn Branch(TOP, (branch_r, "yes"))
 
 @test typeof(branch_r0) == typeof(branch_r)
 

@@ -375,6 +375,9 @@ function naturalconditions(
 )
     if isnothing(featvaltype)
         featvaltype = DEFAULT_VARFEATVALTYPE
+        @warn "Please, specify a type for the feature values (featvaltype = ...). " *
+            "$(featvaltype) will be used, but note that this may raise type errors. " *
+            "(expression = $(repr(expression)))"
     end
 
     nvars = nvariables(dataset)
