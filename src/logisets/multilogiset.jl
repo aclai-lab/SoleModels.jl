@@ -180,8 +180,8 @@ end
 
 ############################################################################################
 
-using SoleLogics: Formula, AbstractSyntaxStructure, Operator
-import SoleLogics: syntaxstring, joinformulas
+using SoleLogics: Formula, AbstractSyntaxStructure, Connective
+import SoleLogics: syntaxstring, composeformulas
 
 import SoleLogics: tree
 import SoleLogics: normalize
@@ -235,23 +235,24 @@ function syntaxstring(
     end for i_modality in sort(collect(keys(modforms(f))))], " $(CONJUNCTION) ")
 end
 
-function joinformulas(op::typeof(∧), children::NTuple{N,MultiFormula}) where {N}
-    F = eval(nameof(SoleBase._typejoin(subformulatype.(children)...)))
+function composeformulas(c::typeof(∧), φs::NTuple{N,MultiFormula}) where {N}
+    F = eval(nameof(SoleBase._typejoin(subformulatype.(φs)...)))
+    F <: SyntaxTree && (F = SyntaxTree)
     new_formulas = Dict{Int,F}()
-    i_modalities = unique(vcat(collect.(keys.([modforms(ch) for ch in children]))...))
+    i_modalities = unique(vcat(collect.(keys.([modforms(ch) for ch in φs]))...))
     for i_modality in i_modalities
-        chs = filter(ch->haskey(modforms(ch), i_modality), children)
+        chs = filter(ch->haskey(modforms(ch), i_modality), φs)
         fs = map(ch->modforms(ch)[i_modality], chs)
-        new_formulas[i_modality] = (length(fs) == 1 ? first(fs) : joinformulas(op, fs))
+        new_formulas[i_modality] = (length(fs) == 1 ? first(fs) : composeformulas(c, fs))
     end
     return MultiFormula(new_formulas)
 end
 
-# function joinformulas(op::typeof(¬), children::NTuple{N,MultiFormula{F}}) where {N,F}
-#     if length(children) > 1
-#         error("Cannot negate $(length(children)) MultiFormula's.")
+# function composeformulas(c::typeof(¬), φs::NTuple{N,MultiFormula{F}}) where {N,F}
+#     if length(φs) > 1
+#         error("Cannot negate $(length(φs)) MultiFormula's.")
 #     end
-#     f = first(children)
+#     f = first(φs)
 #     ks = keys(modforms(f))
 #     if length(ks) != 1
 #         error("Cannot negate a $(length(ks))-MultiFormula.")
@@ -259,19 +260,19 @@ end
 #     i_modality = first(ks)
 #     MultiFormula(i_modality, ¬(modforms(f)[i_modality]))
 # end
-function joinformulas(op::Operator, children::NTuple{N,MultiFormula}) where {N}
-    if !all(c->length(modforms(c)) == 1, children)
-        error("Cannot join $(length(children)) MultiFormula's by means of $(op). " *
-            "$(children)\n" *
-            "$(map(c->length(modforms(c)), children)).")
+function composeformulas(c::Connective, φs::NTuple{N,MultiFormula}) where {N}
+    if !all(c->length(modforms(c)) == 1, φs)
+        error("Cannot join $(length(φs)) MultiFormula's by means of $(c). " *
+            "$(φs)\n" *
+            "$(map(c->length(modforms(c)), φs)).")
     end
-    ks = map(c->first(keys(modforms(c))), children)
+    ks = map(c->first(keys(modforms(c))), φs)
     if !allequal(ks)
-        error("Cannot join $(length(children)) MultiFormula's by means of $(op)." *
+        error("Cannot join $(length(φs)) MultiFormula's by means of $(c)." *
             "Found different modalities: $(unique(ks)).")
     end
     i_modality = first(ks)
-    MultiFormula(i_modality, joinformulas(op, map(c->modforms(c)[i_modality], children)))
+    MultiFormula(i_modality, composeformulas(c, map(c->modforms(c)[i_modality], φs)))
 end
 
 function SoleLogics.normalize(φ::MultiFormula{F}; kwargs...) where {F<:Formula}
@@ -290,6 +291,6 @@ function check(
         for (i_modality, f) in modforms(φ)])
 end
 
-# # TODO join MultiFormula leads to a SyntaxTree with MultiFormula children
-# function joinformulas(op::Operator, children::NTuple{N,MultiFormula{F}}) where {N,F}
+# # TODO join MultiFormula leads to a SyntaxTree with MultiFormula φs
+# function composeformulas(c::Connective, φs::NTuple{N,MultiFormula{F}}) where {N,F}
 # end
