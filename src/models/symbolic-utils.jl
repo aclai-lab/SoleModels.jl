@@ -139,6 +139,11 @@ subtreeheight(m::DecisionTree) = maximum(subtreeheight, immediatesubmodels(m))
 subtreeheight(m::DecisionForest) = maximum(subtreeheight, immediatesubmodels(m))
 subtreeheight(m::MixedSymbolicModel) = maximum(subtreeheight, immediatesubmodels(m))
 
+# AbstracTrees interface
+import AbstractTrees: children
+
+children(m::AbstractModel) = submodels(m)
+
 ############################################################################################
 ############################################################################################
 ############################################################################################
