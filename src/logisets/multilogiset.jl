@@ -36,6 +36,9 @@ struct MultiLogiset{L<:AbstractLogiset} <: AbstractInterpretationSet{AbstractKri
     function MultiLogiset(X::AbstractVector{L}) where {L<:AbstractLogiset}
         MultiLogiset{L}(X)
     end
+    function MultiLogiset(X::AbstractVector)
+        MultiLogiset{AbstractLogiset}(X)
+    end
     function MultiLogiset(X::L) where {L<:AbstractLogiset}
         MultiLogiset{L}(X)
     end

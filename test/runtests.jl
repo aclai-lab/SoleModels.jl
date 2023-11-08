@@ -25,6 +25,7 @@ test_suites = [
     ("Models", ["base.jl", ]),
     ("Miscellaneous", ["misc.jl", "minify.jl"]),
     ("Parse", ["parse.jl", ]),
+    ("Pluto Demo", ["$(dirname(dirname(pathof(SoleModels))))/pluto-demo.jl", ]),
 ]
 
 @testset "SoleModels.jl" begin
