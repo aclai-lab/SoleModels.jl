@@ -61,12 +61,8 @@ Tables.istable(X::MultiLogiset) = true
 Tables.rowaccess(X::AbstractLogiset) = true
 Tables.rowaccess(X::MultiLogiset) = true
 
-function Tables.rows(X::AbstractLogiset)
-    eachinstance(X)
-end
-function Tables.rows(X::MultiLogiset)
-    eachinstance(X)
-end
+Tables.rows(X::AbstractLogiset) = eachinstance(X)
+Tables.rows(X::MultiLogiset) = eachinstance(X)
 
 function Tables.subset(X::AbstractLogiset, inds; viewhint = nothing)
     slicedataset(X, inds; return_view = (isnothing(viewhint) || viewhint == true))

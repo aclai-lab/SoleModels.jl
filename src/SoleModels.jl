@@ -1,11 +1,13 @@
 module SoleModels
 
+using Reexport
+
 using SoleBase
 
-using SoleData
+@reexport using SoleData
 using SoleData: _isnan
 
-using SoleLogics
+@reexport using SoleLogics
 using SoleLogics: AbstractInterpretation, AbstractInterpretationSet
 using SoleLogics: SyntaxToken
 using SoleLogics: Formula, synstruct
