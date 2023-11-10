@@ -3,7 +3,6 @@ using SoleModels
 using SoleLogics
 using Test
 using Random
-using ThreadSafeDicts
 
 function run_tests(list)
     println("\n" * ("#"^50))
@@ -16,7 +15,6 @@ end
 println("Julia version: ", VERSION)
 
 test_suites = [
-    ("Pluto Demo", ["$(dirname(dirname(pathof(SoleModels))))/pluto-demo.jl", ]),
     ("Logisets", [ "logisets/logisets.jl", ]),
     ("Memosets", [ "logisets/memosets.jl", ]),
     ("Cube to Logiset", [ "logisets/cube2logiset.jl", ]),
@@ -26,7 +24,6 @@ test_suites = [
     ("Models", ["base.jl", ]),
     ("Miscellaneous", ["misc.jl", "minify.jl"]),
     ("Parse", ["parse.jl", ]),
-    ("Pluto Demo", ["$(dirname(dirname(pathof(SoleModels))))/pluto-demo.jl", ]),
 ]
 
 @testset "SoleModels.jl" begin
