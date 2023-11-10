@@ -26,7 +26,8 @@ struct MultiLogiset{L<:AbstractLogiset} <: AbstractInterpretationSet{AbstractKri
     end
     function MultiLogiset{L}(X::AbstractVector) where {L<:AbstractLogiset}
         X = collect(X)
-        @assert length(X) > 0 && length(unique(ninstances.(X))) == 1 "Cannot create an empty MultiLogiset or with mismatching number of instances (nmodalities: $(length(X)), modality_sizes: $(ninstances.(X)))."
+        @assert length(X) > 0 "Cannot instantiate an empty MultiLogiset."
+        @assert length(unique(ninstances.(X))) == 1 "Cannot instantiate a MultiLogiset with mismatching number of instances (nmodalities: $(length(X)), modality_sizes: $(ninstances.(X)))."
         new{L}(X)
     end
     function MultiLogiset{L}() where {L<:AbstractLogiset}
@@ -58,13 +59,13 @@ ninstances(X::MultiLogiset)                    = ninstances(modality(X, 1))
 worldtype(X::MultiLogiset,  i_modality::Integer) = worldtype(modality(X, i_modality))
 
 featvaltype(X::MultiLogiset,  i_modality::Integer) = featvaltype(modality(X, i_modality))
-featvaltypes(X::MultiLogiset) = Vector{Type{<:AbstractWorld}}(featvaltype.(eachmodality(X)))
+featvaltype(X::MultiLogiset) = Union{featvaltype.(eachmodality(X))...}
 
 featuretype(X::MultiLogiset,  i_modality::Integer) = featuretype(modality(X, i_modality))
-featuretypes(X::MultiLogiset) = Vector{Type{<:AbstractWorld}}(featuretype.(eachmodality(X)))
+featuretype(X::MultiLogiset) = Union{featuretype.(eachmodality(X))...}
 
 frametype(X::MultiLogiset,  i_modality::Integer) = frametype(modality(X, i_modality))
-frametypes(X::MultiLogiset) = Vector{Type{<:AbstractWorld}}(frametype.(eachmodality(X)))
+frametype(X::MultiLogiset) = Union{frametype.(eachmodality(X))...}
 
 function instances(
     X::MultiLogiset,
@@ -227,9 +228,10 @@ function syntaxstring(
 )
     map_is_multimodal = begin
         if !isnothing(variable_names_map) && all(e->!(e isa Union{AbstractDict,AbstractVector}), variable_names_map)
-            @warn "With multimodal formulas, variable_names_map should be a vector of vectors/maps of " *
-                "variable names. Got $(typeof(variable_names_map)) instead. This may fail, " *
-                "or lead to unexpected results."
+            (haskey(kwargs, :silent) && kwargs[:silent]) ||
+                @warn "With multimodal formulas, variable_names_map should be a vector of vectors/maps of " *
+                    "variable names. Got $(typeof(variable_names_map)) instead. This may fail, " *
+                    "or lead to unexpected results."
             false
         else
             !isnothing(variable_names_map)

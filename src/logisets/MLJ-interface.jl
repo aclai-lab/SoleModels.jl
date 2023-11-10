@@ -1,3 +1,4 @@
+using Tables
 
 function eachinstance(X::AbstractLogiset)
     map(i_instance->(X,i_instance), 1:ninstances(X))
@@ -83,16 +84,26 @@ function Tables.columnnames(row::Tuple{AbstractLogiset,Integer})
     1:nfeatures(row[1])
 end
 
+function _columntruenames(row::Tuple{MultiLogiset,Integer})
+    multilogiset, i_row = row
+    return [(i_mod, i_feature) for i_mod in 1:nmodalities(multilogiset) for i_feature in Tables.columnnames((modality(multilogiset, i_mod), i_row),)]
+end
+
 function Tables.getcolumn(row::Tuple{MultiLogiset,Integer}, i::Int)
-    m = modality(row[1], i)
-    (Tables.getcolumn((m, row[2]), i_feature) for i_feature in 1:nfeatures(m))
+    multilogiset, i_row = row
+    (i_mod, i_feature) = _columntruenames(row)[i] # Ugly and not optimal. Perhaps MultiLogiset should have an index attached to speed this up
+    m = modality(multilogiset, i_mod)
+    feats, featchs = Tables.getcolumn((m, i_row), i_feature)
+    featchs
 end
 
 function Tables.columnnames(row::Tuple{MultiLogiset,Integer})
-    1:nmodalities(row[1])
+    # [(i_mod, i_feature) for i_mod in 1:nmodalities(multilogiset) for i_feature in Tables.columnnames((modality(multilogiset, i_mod), i_row),)]
+    1:length(_columntruenames(row))
 end
 
-import MLJBase: selectrows
+using MLJBase: Table
+import MLJBase: selectrows, scitype
 
 function selectrows(X::Union{AbstractLogiset,MultiLogiset}, r)
     r = r isa Integer ? (r:r) : r
@@ -100,7 +111,20 @@ function selectrows(X::Union{AbstractLogiset,MultiLogiset}, r)
     return Tables.subset(X, r)
 end
 
-
+function scitype(X::Union{AbstractLogiset,MultiLogiset})
+    Table{
+        if featvaltype(X) <: AbstractFloat
+            scitype(1.0)
+        elseif featvaltype(X) <: Integer
+            scitype(1)
+        elseif featvaltype(X) <: Bool
+            scitype(true)
+        else
+            @warn "Unexpected featvaltype: $(featvaltype(X)). SoleModels may need adjustments."
+            typejoin(scitype(1.0), scitype(1), scitype(true))
+        end
+    }
+end
 
 import Base: vcat
 
