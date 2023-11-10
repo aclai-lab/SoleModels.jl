@@ -4,7 +4,7 @@ using Reexport
 
 using SoleBase
 
-@reexport using SoleData
+using SoleData
 using SoleData: _isnan
 
 @reexport using SoleLogics
