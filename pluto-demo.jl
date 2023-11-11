@@ -67,7 +67,7 @@ SoleModels = "4249d9c7-3290-4ddd-961c-e1d3ec2467f8"
 
 [compat]
 DataFrames = "~1.6.1"
-SoleModels = "~0.3.0"
+SoleModels = "~0.4.0"
 """
 
 # ╔═╡ 00000000-0000-0000-0000-000000000002
