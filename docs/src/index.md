@@ -11,6 +11,11 @@ Documentation for [SoleModels](https://github.com/aclai-lab/SoleModels.jl).
 
 ## Logical foundations
 
+[SoleLogics](https://github.com/aclai-lab/SoleLogics.jl) lays the logical foundations
+for this package.
+While the full reference for SoleLogics can be found [here](https://aclai-lab.github.io/SoleLogics.jl/),
+these are the basic logical concepts needed for *symbolic modelling*.
+
 ```@docs
 SoleLogics.Atom
 SoleLogics.CONJUNCTION
