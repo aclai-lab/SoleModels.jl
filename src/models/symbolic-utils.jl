@@ -455,7 +455,8 @@ julia> printmodel.(joinrules(listrules(branch)); tree_mode = true);
 
 ```
 
-See also [`listrules`](@ref), [`issymbolic`](@ref), [`DISJUNCTION`](@ref), [`LeafModel`](@ref),
+See also [`listrules`](@ref), [`issymbolic`](@ref),
+[`SoleLogics.DISJUNCTION`](@ref), [`LeafModel`](@ref),
 [`AbstractModel`](@ref).
 """
 function joinrules(

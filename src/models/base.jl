@@ -114,8 +114,8 @@ See also
 [`outcometype`](@ref),
 [`outputtype`](@ref),
 [`AbstractModel`](@ref),
-[`AbstractInterpretation`](@ref),
-[`AbstractInterpretationSet`](@ref).
+[`SoleLogics.AbstractInterpretation`](@ref),
+[`SoleLogics.AbstractInterpretationSet`](@ref).
 """
 function apply(
     m::AbstractModel,
@@ -504,7 +504,7 @@ Note that `FM` refers to the Feasible Models (`FM`) allowed in the model's sub-t
 See also
 [`antecedent`](@ref),
 [`consequent`](@ref),
-[`Formula`](@ref),
+[`SoleLogics.Formula`](@ref),
 [`ConstrainedModel`](@ref),
 [`AbstractModel`](@ref).
 """
@@ -690,8 +690,8 @@ See also
 [`antecedent`](@ref),
 [`posconsequent`](@ref),
 [`negconsequent`](@ref),
-[`istop`](@ref),
-[`Formula`](@ref),
+[`SoleLogics.istop`](@ref),
+[`SoleLogics.Formula`](@ref),
 [`Rule`](@ref),
 [`ConstrainedModel`](@ref), [`AbstractModel`](@ref).
 """

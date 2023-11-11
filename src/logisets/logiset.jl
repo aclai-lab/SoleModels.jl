@@ -22,8 +22,8 @@ with conditional letters can be checked on worlds of instances of the dataset.
 See also
 [`AbstractCondition`](@ref),
 [`AbstractFeature`](@ref),
-[`AbstractKripkeStructure`](@ref),
-[`AbstractInterpretationSet`](@ref).
+[`SoleLogics.AbstractKripkeStructure`](@ref),
+[`SoleLogics.AbstractInterpretationSet`](@ref).
 """
 abstract type AbstractLogiset{
     W<:AbstractWorld,

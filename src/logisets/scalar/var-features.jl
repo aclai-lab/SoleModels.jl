@@ -30,7 +30,7 @@ See also
 [`scalarlogiset`](@ref),
 [`featvaltype`](@ref),
 [`computefeature`](@ref),
-[`Interval`](@ref).
+[`SoleLogics.Interval`](@ref).
 """
 abstract type VarFeature <: AbstractFeature end
 
@@ -41,7 +41,7 @@ DEFAULT_VARFEATVALTYPE = Real
 
 Return the type of the values returned by feature `f` on logiseed `dataset`.
 
-See also [`AbstractWorld`](@ref).
+See also [`VarFeature`](@ref).
 """
 function featvaltype(dataset, f::VarFeature)
     return error("Please, provide method featvaltype(::$(typeof(dataset)), ::$(typeof(f))).")
@@ -74,8 +74,8 @@ how much a `Interval2D` world, when interpreted on an image, resembles a horse.
 Note that the image has a number of spatial variables (3, for the case of RGB),
 and "resembling a horse" may require a computation involving all variables.
 
-See also [`Interval`](@ref),
-[`Interval2D`](@ref),
+See also [`SoleLogics.Interval`](@ref),
+[`SoleLogics.Interval2D`](@ref),
 [`AbstractUnivariateFeature`](@ref),
 [`VarFeature`](@ref), [`AbstractFeature`](@ref).
 """
@@ -98,8 +98,8 @@ dimensional channel.
 For example, it can wrap a scalar function computing
 how much red a `Interval2D` world, when interpreted on an image, contains.
 
-See also [`Interval`](@ref),
-[`Interval2D`](@ref),
+See also [`SoleLogics.Interval`](@ref),
+[`SoleLogics.Interval2D`](@ref),
 [`UnivariateFeature`](@ref),
 [`VarFeature`](@ref), [`AbstractFeature`](@ref).
 """
@@ -186,8 +186,8 @@ to a single variable of a dimensional channel.
 For example, it can wrap a scalar function computing
 how much red a `Interval2D` world, when interpreted on an image, contains.
 
-See also [`Interval`](@ref),
-[`Interval2D`](@ref),
+See also [`SoleLogics.Interval`](@ref),
+[`SoleLogics.Interval2D`](@ref),
 [`AbstractUnivariateFeature`](@ref),
 [`VarFeature`](@ref), [`AbstractFeature`](@ref).
 """
@@ -218,8 +218,8 @@ end
 
 A univariate feature solely identified by its name and reference variable.
 
-See also [`Interval`](@ref),
-[`Interval2D`](@ref),
+See also [`SoleLogics.Interval`](@ref),
+[`SoleLogics.Interval2D`](@ref),
 [`AbstractUnivariateFeature`](@ref),
 [`VarFeature`](@ref), [`AbstractFeature`](@ref).
 """
@@ -252,8 +252,8 @@ end
 Simply the value of a scalar variable
 (propositional case, when the frame has a single world).
 
-See also [`Interval`](@ref),
-[`Interval2D`](@ref),
+See also [`SoleLogics.Interval`](@ref),
+[`SoleLogics.Interval2D`](@ref),
 [`AbstractUnivariateFeature`](@ref),
 [`UnivariateMax`](@ref),
 [`VarFeature`](@ref), [`AbstractFeature`](@ref).
@@ -289,8 +289,8 @@ end
 
 Notable univariate feature computing the minimum value for a given variable.
 
-See also [`Interval`](@ref),
-[`Interval2D`](@ref),
+See also [`SoleLogics.Interval`](@ref),
+[`SoleLogics.Interval2D`](@ref),
 [`AbstractUnivariateFeature`](@ref),
 [`UnivariateMax`](@ref),
 [`VarFeature`](@ref), [`AbstractFeature`](@ref).
@@ -317,8 +317,8 @@ end
 
 Notable univariate feature computing the maximum value for a given variable.
 
-See also [`Interval`](@ref),
-[`Interval2D`](@ref),
+See also [`SoleLogics.Interval`](@ref),
+[`SoleLogics.Interval2D`](@ref),
 [`AbstractUnivariateFeature`](@ref),
 [`UnivariateMin`](@ref),
 [`VarFeature`](@ref), [`AbstractFeature`](@ref).
@@ -348,8 +348,8 @@ end
 
 Univariate feature computing a "softened" version of the minimum value for a given variable.
 
-See also [`Interval`](@ref),
-[`Interval2D`](@ref),
+See also [`SoleLogics.Interval`](@ref),
+[`SoleLogics.Interval2D`](@ref),
 [`AbstractUnivariateFeature`](@ref),
 [`UnivariateMin`](@ref),
 [`VarFeature`](@ref), [`AbstractFeature`](@ref).
@@ -381,8 +381,8 @@ end
 
 Univariate feature computing a "softened" version of the maximum value for a given variable.
 
-See also [`Interval`](@ref),
-[`Interval2D`](@ref),
+See also [`SoleLogics.Interval`](@ref),
+[`SoleLogics.Interval2D`](@ref),
 [`AbstractUnivariateFeature`](@ref),
 [`UnivariateMax`](@ref),
 [`VarFeature`](@ref), [`AbstractFeature`](@ref).

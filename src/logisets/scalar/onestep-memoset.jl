@@ -83,7 +83,7 @@ end
 
 """
 Abstract type for one-step memoization structures for checking formulas of type `⟨R⟩ (f ⋈ t)`,
-for a generic relation `R` that is not [`globalrel`](@ref).
+for a generic relation `R` that is not the global relation ([`SoleLogics.globalrel`](@ref)).
 We refer to these structures as *relational memosets*.
 """
 abstract type AbstractScalarOneStepRelationalMemoset{W<:AbstractWorld,U,FR<:AbstractFrame{W}} <: AbstractMemoset{W,U,FT where FT<:AbstractFeature,FR}     end

@@ -63,7 +63,7 @@ Evaluate the rule on a labelled dataset, and return a `NamedTuple` consisting of
 
 See also
 [`Rule`](@ref),
-[`AbstractInterpretationSet`](@ref),
+[`SoleLogics.AbstractInterpretationSet`](@ref),
 [`Label`](@ref),
 [`checkantecedent`](@ref).
 """
@@ -115,7 +115,7 @@ end
 
 # See also
 # [`Rule`](@ref),
-# [`Formula`](@ref),
+# [`SoleLogics.Formula`](@ref),
 # [`antecedent`](@ref),
 # """
 # natoms(rule::Rule{O,<:Formula}) where {O} = natoms(antecedent(rule))
@@ -138,10 +138,9 @@ Calculate metrics for a rule with respect to a labelled dataset and returns a `N
 
 See also
 [`Rule`](@ref),
-[`AbstractInterpretationSet`](@ref),
+[`SoleLogics.AbstractInterpretationSet`](@ref),
 [`Label`](@ref),
 [`evaluaterule`](@ref),
-[`ninstances`](@ref),
 [`outcometype`](@ref),
 [`consequent`](@ref).
 """

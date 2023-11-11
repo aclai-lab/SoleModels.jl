@@ -20,8 +20,8 @@ it allows to further boost "one-step" optimizations (see [`AbstractOneStepMemose
 For example, consider a Kripke structure with a
 1-dimensional `FullDimensionalFrame` of length 100,
 and the problem of checking a formula "⟨L⟩(max[V1] ≥ 10)"
-on an [`Interval`](@ref) `$(repr(Interval(1,2)))`
-(with `L` being Allen's "Later" relation, see [`IA_L`](@ref)).
+on a [`SoleLogics.Interval`](@ref) `$(repr(Interval(1,2)))`
+(with `L` being Allen's "Later" relation, see [`SoleLogics.IA_L`](@ref)).
 Comparing 10 with the (maximum) "max[V1]" computed on all worlds
 is the naïve strategy to check the formula.
 However, in this case, comparing 10 to the "max[V1]" computed on the single `Interval`
@@ -32,9 +32,9 @@ operator (or, better, its *aggregator*).
 Note that this method fallsback to `accessibles`.
 
 See also
-[`accessibles`](@ref),
+[`SoleLogics.accessibles`](@ref),
 [`ScalarCondition`](@ref),
-[`AbstractFrame`](@ref).
+[`SoleLogics.AbstractFrame`](@ref).
 """
 function representatives( # Dispatch on feature/aggregator pairs
     fr::AbstractFrame{W},

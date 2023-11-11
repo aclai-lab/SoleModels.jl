@@ -19,7 +19,6 @@ for representing the infinite set of conditions that arise with a free threshold
 
 See also
 [`AbstractCondition`](@ref),
-[`dual`](@ref),
 [`ScalarCondition`](@ref).
 """
 struct ScalarMetaCondition{FT<:AbstractFeature,O<:TestOperator} <: AbstractCondition{FT}
@@ -112,7 +111,6 @@ In this case, the feature a [`UnivariateMin`](@ref) object.
 
 See also
 [`AbstractCondition`](@ref),
-[`dual`](@ref),
 [`ScalarMetaCondition`](@ref).
 """
 struct ScalarCondition{U,FT,M<:ScalarMetaCondition{FT}} <: AbstractCondition{FT}
@@ -268,7 +266,7 @@ Abstract type for alphabets of conditions.
 See also
 [`ScalarCondition`](@ref),
 [`ScalarMetaCondition`](@ref),
-[`AbstractAlphabet`](@ref).
+[`SoleLogics.AbstractAlphabet`](@ref).
 """
 abstract type AbstractConditionalAlphabet{C<:ScalarCondition} <: AbstractAlphabet{C} end
 
@@ -285,7 +283,7 @@ See also
 [`BoundedScalarConditions`](@ref),
 [`ScalarCondition`](@ref),
 [`ScalarMetaCondition`](@ref),
-[`AbstractAlphabet`](@ref).
+[`SoleLogics.AbstractAlphabet`](@ref).
 """
 struct UnboundedScalarConditions{C<:ScalarCondition} <: AbstractConditionalAlphabet{C}
     metaconditions::Vector{<:ScalarMetaCondition}
@@ -314,6 +312,7 @@ function Base.in(p::Atom{<:ScalarCondition}, a::UnboundedScalarConditions)
     return !isnothing(idx)
 end
 
+# Finite alphabet of conditions induced from a set of metaconditions
 """
     struct BoundedScalarConditions{C<:ScalarCondition} <: AbstractConditionalAlphabet{C}
         grouped_featconditions::Vector{Tuple{<:ScalarMetaCondition,Vector}}
@@ -325,9 +324,8 @@ See also
 [`UnboundedScalarConditions`](@ref),
 [`ScalarCondition`](@ref),
 [`ScalarMetaCondition`](@ref),
-[`AbstractAlphabet`](@ref).
+[`SoleLogics.AbstractAlphabet`](@ref).
 """
-# Finite alphabet of conditions induced from a set of metaconditions
 struct BoundedScalarConditions{C<:ScalarCondition} <: AbstractConditionalAlphabet{C}
     grouped_featconditions::Vector{<:Tuple{ScalarMetaCondition,Vector}}
 

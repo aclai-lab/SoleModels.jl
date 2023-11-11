@@ -12,3 +12,15 @@ Documentation for [SoleModels](https://github.com/aclai-lab/SoleModels.jl).
 ```@autodocs
 Modules = [SoleModels]
 ```
+
+```@docs
+SoleLogics.syntaxstring
+SoleLogics.Formula
+SoleLogics.Atom
+SoleLogics.AbstractWorld
+SoleLogics.AbstractKripkeStructure
+SoleLogics.Interval
+SoleLogics.Interval2D
+SoleLogics.accessibles
+SoleLogics.globalrel
+```

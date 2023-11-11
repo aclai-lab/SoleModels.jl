@@ -23,7 +23,7 @@ See also
 [`BoundedScalarConditions`](@ref),
 [`ScalarCondition`](@ref),
 [`ScalarMetaCondition`](@ref),
-[`AbstractAlphabet`](@ref).
+[`SoleLogics.AbstractAlphabet`](@ref).
 """
 function Base.rand(
     rng::AbstractRNG,

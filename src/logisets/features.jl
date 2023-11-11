@@ -7,7 +7,7 @@ import SoleLogics: syntaxstring
 Abstract type for features of worlds of
 [Kripke structures](https://en.wikipedia.org/wiki/Kripke_structure_(model_checking).
 
-See also [`VarFeature`](@ref), [`featvaltype`](@ref), [`AbstractWorld`](@ref).
+See also [`VarFeature`](@ref), [`featvaltype`](@ref), [`SoleLogics.AbstractWorld`](@ref).
 """
 abstract type AbstractFeature end
 
@@ -94,11 +94,10 @@ end
         featstruct
     end
 
-A feature encoded explicitly, for example as a slice of
-`UniformFullDimensionalLogiset`'s feature structure.
+A feature encoded explicitly, for example, as a slice of
+[`DimensionalDatasets.UniformFullDimensionalLogiset`](@ref)'s feature structure.
 
-See also
-[`UniformFullDimensionalLogiset`](@ref), [`AbstractFeature`](@ref).
+See also [`AbstractFeature`](@ref).
 """
 struct ExplicitFeature{T} <: AbstractFeature
     name::String
