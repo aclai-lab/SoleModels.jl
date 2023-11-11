@@ -272,7 +272,9 @@ julia> printmodel.(listrules(branch); tree_mode = true);
 
 ```
 
-See also [`listimmediaterules`](@ref), [`joinrules`](@ref), [`issymbolic`](@ref), [`LeafModel`](@ref),
+See also [`listimmediaterules`](@ref),
+[`SoleLogics.CONJUNCTION`](@ref),
+[`joinrules`](@ref), [`issymbolic`](@ref), [`LeafModel`](@ref),
 [`AbstractModel`](@ref).
 """
 function listrules(m::AbstractModel; kwargs...)

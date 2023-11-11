@@ -9,18 +9,35 @@ Documentation for [SoleModels](https://github.com/aclai-lab/SoleModels.jl).
 ```@index
 ```
 
-```@autodocs
-Modules = [SoleModels]
-```
+## Logical foundations
 
 ```@docs
-SoleLogics.syntaxstring
-SoleLogics.Formula
 SoleLogics.Atom
+SoleLogics.CONJUNCTION
+SoleLogics.DISJUNCTION
+SoleLogics.Formula
+SoleLogics.syntaxstring
+
+SoleLogics.AbstractAlphabet
+SoleLogics.AbstractInterpretation
+SoleLogics.AbstractInterpretationSet
+
+SoleLogics.check
+
 SoleLogics.AbstractWorld
-SoleLogics.AbstractKripkeStructure
+SoleLogics.GeometricalWorld
 SoleLogics.Interval
 SoleLogics.Interval2D
-SoleLogics.accessibles
+
+SoleLogics.AbstractRelation
 SoleLogics.globalrel
+SoleLogics.IA_L
+
+SoleLogics.AbstractFrame
+SoleLogics.AbstractKripkeStructure
+SoleLogics.accessibles
+```
+
+```@autodocs
+Modules = [SoleModels, SoleModels.DimensionalDatasets]
 ```

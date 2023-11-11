@@ -103,11 +103,11 @@ Return the output prediction of the model on an instance, or on each instance of
 The predictions can be `nothing` if the model is *open*.
 
 `check_args` and `check_kwargs` can influence check's behavior at the time
-of its computation (see [`check`](@ref))
+of its computation (see [`SoleLogics.check](@ref))
 
 `functional_args` and `functional_kwargs` can influence FunctionModel's
 behavior when the corresponding function is applied to AbstractInterpretation (see
-[`FunctionModel`](@ref), [`AbstractInterpretation`](@ref))
+[`FunctionModel`](@ref), [`SoleLogics.AbstractInterpretation](@ref))
 
 See also
 [`isopen`](@ref),
@@ -690,7 +690,7 @@ See also
 [`antecedent`](@ref),
 [`posconsequent`](@ref),
 [`negconsequent`](@ref),
-[`SoleLogics.istop`](@ref),
+[`SoleLogics.check`](@ref),
 [`SoleLogics.Formula`](@ref),
 [`Rule`](@ref),
 [`ConstrainedModel`](@ref), [`AbstractModel`](@ref).

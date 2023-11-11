@@ -259,14 +259,13 @@ end
 ############################################################################################
 
 """
-    abstract type AbstractConditionalAlphabet{C<:ScalarCondition} <: AbstractAlphabet{C} end
+    abstract type AbstractConditionalAlphabet{C<:ScalarCondition} <: SoleLogics.AbstractAlphabet{C} end
 
 Abstract type for alphabets of conditions.
 
 See also
 [`ScalarCondition`](@ref),
-[`ScalarMetaCondition`](@ref),
-[`SoleLogics.AbstractAlphabet`](@ref).
+[`ScalarMetaCondition`](@ref).
 """
 abstract type AbstractConditionalAlphabet{C<:ScalarCondition} <: AbstractAlphabet{C} end
 
@@ -282,8 +281,7 @@ the alphabet represents the (infinite) set: \${min[V1] ≥ a, a ∈ ℝ}\$.
 See also
 [`BoundedScalarConditions`](@ref),
 [`ScalarCondition`](@ref),
-[`ScalarMetaCondition`](@ref),
-[`SoleLogics.AbstractAlphabet`](@ref).
+[`ScalarMetaCondition`](@ref).
 """
 struct UnboundedScalarConditions{C<:ScalarCondition} <: AbstractConditionalAlphabet{C}
     metaconditions::Vector{<:ScalarMetaCondition}
@@ -323,8 +321,7 @@ A finite alphabet of conditions, grouped by (a finite set of) metaconditions.
 See also
 [`UnboundedScalarConditions`](@ref),
 [`ScalarCondition`](@ref),
-[`ScalarMetaCondition`](@ref),
-[`SoleLogics.AbstractAlphabet`](@ref).
+[`ScalarMetaCondition`](@ref).
 """
 struct BoundedScalarConditions{C<:ScalarCondition} <: AbstractConditionalAlphabet{C}
     grouped_featconditions::Vector{<:Tuple{ScalarMetaCondition,Vector}}

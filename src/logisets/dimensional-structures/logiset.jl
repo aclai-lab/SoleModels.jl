@@ -6,7 +6,7 @@ full dimensional frames.
 
 See also
 [`UniformFullDimensionalLogiset`](@ref),
-[`FullDimensionalFrame`](@ref),
+[`SoleLogics.FullDimensionalFrame](@ref),
 [`AbstractLogiset`](@ref).
 """
 abstract type AbstractUniformFullDimensionalLogiset{U,N,W<:AbstractWorld,FT<:AbstractFeature,FR<:FullDimensionalFrame{N,W}} <: AbstractLogiset{W,U,FT,FR} end
@@ -36,7 +36,7 @@ dimensions, ultimately resulting in a `(N*2+2)`-dimensional array.
 
 See also
 [`AbstractUniformFullDimensionalLogiset`](@ref),
-[`FullDimensionalFrame`](@ref),
+[`SoleLogics.FullDimensionalFrame](@ref),
 [`AbstractLogiset`](@ref).
 """
 struct UniformFullDimensionalLogiset{
