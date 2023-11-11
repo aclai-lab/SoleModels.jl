@@ -93,7 +93,7 @@ end
 
 function check(
     f::Formula,
-    i::SoleLogics.LogicalInstance{<:AbstractKripkeStructure,<:ScalarChainedMemoset{W}},
+    i::SoleLogics.LogicalInstance{<:ScalarChainedMemoset{W}},
     w::W;
     kwargs...
 ) where {W<:AbstractWorld}

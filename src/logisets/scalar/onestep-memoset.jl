@@ -471,7 +471,7 @@ end
 
 function check(
     f::ScalarExistentialFormula,
-    i::SoleLogics.LogicalInstance{<:AbstractKripkeStructure,<:ScalarOneStepMemoset{W}},
+    i::SoleLogics.LogicalInstance{<:ScalarOneStepMemoset{W}},
     w::W,
     rel,
     metacond,

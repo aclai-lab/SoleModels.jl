@@ -179,7 +179,7 @@ end
 
 function check(
     f::Formula,
-    i::SoleLogics.LogicalInstance{<:AbstractKripkeStructure,<:FullMemoset{W}},
+    i::SoleLogics.LogicalInstance{<:FullMemoset{W}},
     w::W;
     kwargs...
 ) where {W<:AbstractWorld}
