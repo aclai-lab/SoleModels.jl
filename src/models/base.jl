@@ -155,7 +155,7 @@ end
 Return whether a model is symbolic or not.
 A model is said to be `symbolic` when its application relies on checking formulas
 of a certain logical language
-(see [`SoleLogics.jl`](https://github.com/aclai-lab/SoleLogics.jl) package)
+(see [SoleLogics.jl](https://github.com/aclai-lab/SoleLogics.jl) package)
 on the instance.
 Symbolic models provide a form of transparent and interpretable modeling,
 as a symbolic model can be synthethised into a set of mutually exclusive logical rules
@@ -281,7 +281,7 @@ A `FunctionModel` is a `LeafModel` that applies a native Julia `Function`
 in order to compute the outcome. Over efficiency concerns, it is mandatory to make explicit
 the output type `O` by wrapping the `Function` into an object of type
 `FunctionWrapper{O}`
-(see [`FunctionWrappers`](https://github.com/yuyichao/FunctionWrappers.jl).
+(see [FunctionWrappers](https://github.com/yuyichao/FunctionWrappers.jl).
 
 See also [`ConstantModel`](@ref), [`LeafModel`](@ref).
 """
