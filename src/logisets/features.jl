@@ -33,13 +33,22 @@ Base.hash(a::AbstractFeature) = Base.hash(map(x->getfield(a, x), fieldnames(type
 # Base.hash(a::AbstractFeature) = Base.hash(syntaxstring(a))
 
 
+"""
+    parsefeature(FT::Type{<:AbstractFeature}, expr::String; kwargs...)
+
+Parse a feature of type `FT` from its [`syntaxstring`](@ref) representation.
+Depending on `FT`, specifying
+keyword arguments such as `featvaltype::Type` may be required or recommended.
+
+See also [`parsecondition`](@ref).
+"""
 function parsefeature(
     FT::Type{<:AbstractFeature},
-    expression::String;
+    expr::String;
     kwargs...
 )
     return error("Please, provide method parsefeature(::$(FT), " *
-        "expression::$(typeof(expression)); kwargs...).")
+        "expr::$(typeof(expr)); kwargs...).")
 end
 
 ############################################################################################
@@ -66,14 +75,14 @@ valuetype(::Feature{A}) where {A} = A
 syntaxstring(f::Feature; kwargs...) = string(f.atom)
 
 function parsefeature(
-    ::Type{F},
-    expression::String;
+    ::Type{FT},
+    expr::String;
     kwargs...
-) where {F<:Feature}
-    if F == Feature
-        F(expression)
+) where {FT<:Feature}
+    if FT == Feature
+        FT(expr)
     else
-        F(parse(valuetype(F), expression))
+        FT(parse(valuetype(FT), expr))
     end
 end
 
@@ -85,10 +94,11 @@ end
         featstruct
     end
 
-A feature encoded explicitly as a slice of feature structure (see `AbstractFeatureLookupSet`).
+A feature encoded explicitly, for example as a slice of
+`UniformFullDimensionalLogiset`'s feature structure.
 
 See also
-[`AbstractFeatureLookupSet`](@ref), [`AbstractFeature`](@ref).
+[`UniformFullDimensionalLogiset`](@ref), [`AbstractFeature`](@ref).
 """
 struct ExplicitFeature{T} <: AbstractFeature
     name::String

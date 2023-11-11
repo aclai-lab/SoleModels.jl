@@ -55,13 +55,22 @@ end
 Base.isequal(a::AbstractCondition, b::AbstractCondition) = Base.isequal(map(x->getfield(a, x), fieldnames(typeof(a))), map(x->getfield(b, x), fieldnames(typeof(b))))
 Base.hash(a::AbstractCondition) = Base.hash(map(x->getfield(a, x), fieldnames(typeof(a))), Base.hash(typeof(a)))
 
+"""
+    parsecondition(C::Type{<:AbstractCondition}, expr::String; kwargs...)
 
+Parse a condition of type `C` from its [`syntaxstring`](@ref) representation.
+Depending on `C`, specifying
+keyword arguments such as `featuretype::Type{<:AbstractFeature}`,
+and `featvaltype::Type` may be required or recommended.
+
+See also [`parsefeature`](@ref).
+"""
 function parsecondition(
     C::Type{<:AbstractCondition},
-    expression::String;
+    expr::String;
     kwargs...
 )
-    return error("Please, provide method parsecondition(::$(Type{C}), expression::$(typeof(expression)); kwargs...).")
+    return error("Please, provide method parsecondition(::$(Type{C}), expr::$(typeof(expr)); kwargs...).")
 end
 
 ############################################################################################
@@ -85,11 +94,11 @@ syntaxstring(c::ValueCondition; kwargs...) = syntaxstring(c.feature)
 
 function parsecondition(
     ::Type{ValueCondition},
-    expression::String;
+    expr::String;
     featuretype = Feature,
     kwargs...
 )
-    ValueCondition(featuretype(expression))
+    ValueCondition(featuretype(expr))
 end
 
 ############################################################################################
@@ -126,15 +135,15 @@ syntaxstring(c::FunctionalCondition; kwargs...) = string(c.f, "(", syntaxstring(
 
 function parsecondition(
     ::Type{FunctionalCondition},
-    expression::String;
+    expr::String;
     featuretype = Feature,
     kwargs...
 )
     r = Regex("^\\s*(\\w+)\\(\\s*(\\w+)\\s*\\)\\s*\$")
-    slices = match(r, expression)
+    slices = match(r, expr)
 
     @assert !isnothing(slices) && length(slices) == 2 "Could not parse FunctionalCondition from " *
-        "expression $(repr(expression))."
+        "expression $(repr(expr))."
 
     slices = string.(slices)
 

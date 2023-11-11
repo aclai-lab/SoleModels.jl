@@ -13,7 +13,7 @@ using SoleLogics: _IA_AorO, _IA_AiorOi, _IA_DorBorE, _IA_DiorBiorEi, _IA_I, IA72
 ############################################################################################
 # When defining `representatives` for minimum & maximum features, we find that we can
 #  categorize interval relations according to their behavior.
-# Consider the decision ⟨R⟩ (minimum[V1] ≥ 10) evaluated on a world w = (x,y):
+# Consider the decision ⟨R⟩(minimum[V1] ≥ 10) evaluated on a world w = (x,y):
 #  - With R = identityrel, it requires computing minimum[V1] on w;
 #  - With R = globalrel, it requires computing maximum[V1] on 1:(X(fr)+1) (the largest world);
 #  - With R = Begins inverse, it requires computing minimum[V1] on (x,y+1), if such interval exists;

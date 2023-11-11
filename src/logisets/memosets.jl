@@ -11,7 +11,7 @@ formulas on logisets.
 
 See also
 [`FullMemoset`](@ref),
-[`SuportedLogiset`](@ref),
+[`SupportedLogiset`](@ref),
 [`AbstractLogiset`](@ref).
 """
 abstract type AbstractMemoset{
@@ -77,12 +77,23 @@ end
 ############################################################################################
 
 """
-Abstract type for one-step memoization structures for checking formulas of type `⟨R⟩ p`.
+Abstract type for one-step memoization structures for checking formulas of type `⟨R⟩p`;
+with these formulas, so-called "one-step" optimizations can be performed.
+
+These structures can be stacked and coupled with *full* memoization structures
+(see [`SupportedLogiset`](@ref)).
+
+See [`ScalarOneStepMemoset`](@ref), [`AbstractFullMemoset`](@ref), [`representatives`](@ref).
 """
 abstract type AbstractOneStepMemoset{W<:AbstractWorld,U,FT<:AbstractFeature,FR<:AbstractFrame{W}} <: AbstractMemoset{W,U,FT,FR}     end
 
 """
 Abstract type for full memoization structures for checking generic formulas.
+
+These structures can be stacked and coupled with *one-step* memoization structures
+(see [`SupportedLogiset`](@ref)).
+
+See [`AbstractOneStepMemoset`](@ref), [`FullMemoset`](@ref).
 """
 abstract type AbstractFullMemoset{W<:AbstractWorld,U,FT<:AbstractFeature,FR<:AbstractFrame{W}} <: AbstractMemoset{W,U,FT,FR}     end
 
@@ -98,7 +109,7 @@ formula holds; it was introduced by Emerson-Clarke for the
 well-known model checking algorithm for CTL*.
 
 See also
-[`SuportedLogiset`](@ref),
+[`SupportedLogiset`](@ref),
 [`AbstractMemoset`](@ref),
 [`AbstractLogiset`](@ref).
 """

@@ -2,25 +2,6 @@ using SoleLogics: AbstractUniModalFrame, AbstractFrame, AbstractRelation, Global
 
 # TODO: AbstractFrame -> AbstractMultiModalFrame, and provide the same for AbstractUniModalFrame
 
-"""
-    representatives(
-        fr::AbstractFrame{W},
-        S::W,
-        ::AbstractRelation,
-        ::ScalarMetaCondition
-    ) where {W<:AbstractWorld}
-
-Return an iterator to the (few) *representative* accessible worlds that are
-really necessary, upon collation, for computing and propagating truth values
-through existential modal operators.
-
-This allows for some optimizations when model checking specific conditional
-formulas. For example, it turns out that when you need to test a formula "⟨L⟩
-(MyFeature ≥ 10)" on a world w, instead of computing "MyFeature" on all worlds
-and then maximizing, computing it on a single world is enough to decide the
-truth. A few cases arise depending on the relation, the feature and the test
-operator (or, better, its *aggregator*).
-"""
 function representatives( # Dispatch on feature/aggregator pairs
     fr::AbstractFrame{W},
     w::W,

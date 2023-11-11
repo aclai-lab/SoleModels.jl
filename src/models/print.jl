@@ -63,7 +63,7 @@ with a depth higher than `max_depth` are ellipsed with "...";
 - `syntaxstring_kwargs::NamedTuple = (;)`: kwargs to be passed to `syntaxstring` for
 formatting logical formulas.
 
-See also [`SoleLogics.syntaxstring`](@ref), [`AbstractModel`](@ref).
+See also [`syntaxstring`](@ref), [`AbstractModel`](@ref).
 """
 
 """$(doc_printdisplay_model)"""

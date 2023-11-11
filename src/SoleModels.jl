@@ -8,6 +8,7 @@ using SoleData
 using SoleData: _isnan
 
 @reexport using SoleLogics
+using SoleLogics
 using SoleLogics: AbstractInterpretation, AbstractInterpretationSet
 using SoleLogics: SyntaxToken
 using SoleLogics: Formula, synstruct

@@ -1,3 +1,4 @@
+using SoleLogics
 import SoleLogics: frame
 
 using SoleLogics: OneWorld, Interval, Interval2D

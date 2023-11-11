@@ -185,7 +185,7 @@ end
 
 function parsecondition(
     ::Type{ScalarCondition},
-    expression::String;
+    expr::String;
     featuretype::Union{Nothing,Type} = nothing,
     featvaltype::Union{Nothing,Type} = nothing,
     kwargs...
@@ -194,20 +194,20 @@ function parsecondition(
         featvaltype = DEFAULT_VARFEATVALTYPE
         @warn "Please, specify a type for the feature values (featvaltype = ...). " *
             "$(featvaltype) will be used, but note that this may raise type errors. " *
-            "(expression = $(repr(expression)))"
+            "(expr = $(repr(expr)))"
     end
     if isnothing(featuretype)
         featuretype = DEFAULT_SCALARCOND_FEATTYPE
         @warn "Please, specify a feature type (featuretype = ...). " *
             "$(featuretype) will be used. " *
-            "(expression = $(repr(expression)))"
+            "(expr = $(repr(expr)))"
     end
-    _parsecondition(ScalarCondition{featvaltype,featuretype}, expression; kwargs...)
+    _parsecondition(ScalarCondition{featvaltype,featuretype}, expr; kwargs...)
 end
 
 function parsecondition(
     ::Type{C},
-    expression::String;
+    expr::String;
     featuretype::Union{Nothing,Type} = nothing,
     kwargs...
 ) where {U,C<:ScalarCondition{U}}
@@ -215,32 +215,32 @@ function parsecondition(
         featuretype = DEFAULT_SCALARCOND_FEATTYPE
         @warn "Please, specify a feature type (featuretype = ...). " *
             "$(featuretype) will be used. " *
-            "(expression = $(repr(expression)))"
+            "(expr = $(repr(expr)))"
     end
-    _parsecondition(C{featuretype}, expression; kwargs...)
+    _parsecondition(C{featuretype}, expr; kwargs...)
 end
 
 function parsecondition(
     ::Type{C},
-    expression::String;
+    expr::String;
     featuretype::Union{Nothing,Type} = nothing,
     kwargs...
 ) where {U,FT,C<:ScalarCondition{U,FT}}
     @assert isnothing(featuretype) || featuretype == FT "Cannot parse condition of type $(C) with " *
-        "featuretype = $(featuretype). (expression = $(repr(expression)))"
-    _parsecondition(C, expression; kwargs...)
+        "featuretype = $(featuretype). (expr = $(repr(expr)))"
+    _parsecondition(C, expr; kwargs...)
 end
 
 function _parsecondition(
     ::Type{C},
-    expression::String;
+    expr::String;
     kwargs...
 ) where {U,FT,C<:ScalarCondition{U,FT}}
     r = Regex("^\\s*(\\S+)\\s+([^\\s\\d]+)\\s*(\\S+)\\s*\$")
-    slices = match(r, expression)
+    slices = match(r, expr)
 
     @assert !isnothing(slices) && length(slices) == 3 "Could not parse ScalarCondition from " *
-        "expression $(repr(expression))."
+        "expression $(repr(expr))."
 
     slices = string.(slices)
 
@@ -250,7 +250,7 @@ function _parsecondition(
 
     condition = ScalarCondition(feature, test_operator, threshold)
     # if !(condition isa C)
-    #     @warn "Could not parse expression $(repr(expression)) as condition of type $(C); " *
+    #     @warn "Could not parse expression $(repr(expr)) as condition of type $(C); " *
     #         " $(typeof(condition)) was used."
     # end
     condition

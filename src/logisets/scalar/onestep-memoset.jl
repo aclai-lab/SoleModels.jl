@@ -83,7 +83,7 @@ end
 
 """
 Abstract type for one-step memoization structures for checking formulas of type `⟨R⟩ (f ⋈ t)`,
-for a generic relation `R`.
+for a generic relation `R` that is not [`globalrel`](@ref).
 We refer to these structures as *relational memosets*.
 """
 abstract type AbstractScalarOneStepRelationalMemoset{W<:AbstractWorld,U,FR<:AbstractFrame{W}} <: AbstractMemoset{W,U,FT where FT<:AbstractFeature,FR}     end
@@ -173,6 +173,50 @@ usesfullmemo(::Union{AbstractScalarOneStepRelationalMemoset,AbstractScalarOneSte
 ############################################################################################
 
 # Compute modal dataset atoms and 1-modal decisions
+"""
+One-step memoization structures for optimized check of formulas of type `⟨R⟩p`,
+where `p` wraps a scalar condition, such as `MyFeature ≥ 10`. With such formulas,
+scalar one-step optimization can be performed.
+
+For example, checking `⟨R⟩(MyFeature ≥ 10)` on a world `w` of a Kripke structure
+involves comparing the *maximum* MyFeature across `w`'s accessible worlds with 10;
+but the same *maximum* value can be reused to check *sibling formulas*
+such as `⟨R⟩(MyFeature ≥ 100)`. This sparks the idea of storing and reusing
+scalar aggregations (e.g., minimum/maximum) over the feature values.
+Each value refers to a specific world, and an object of type `⟨R⟩(f ⋈ ?)`,
+called a "scalar *metacondition*".
+
+Similar cases arise depending on the relation and the test operator (or, better, its *aggregator*),
+and further optimizations can be applied for specific feature types (see [`representatives`](@ref)).
+
+An immediate special case, however, arises when `R` is the global relation `G` since,
+in such case,
+a single aggregate value is enough for all worlds within the Kripke structure.
+Therefore, we differentiate between generic, *relational* memosets
+(see [`AbstractScalarOneStepRelationalMemoset`](@ref)), and *global* memosets
+(see [`AbstractScalarOneStepGlobalMemoset`](@ref)),
+which are usually much smaller.
+
+Given a logiset `X`, a `ScalarOneStepMemoset` covers a set of `relations` and `metaconditions`,
+and it holds both a *relational* and a *global* memoset. It can be instantiated via:
+
+```julia
+ScalarOneStepMemoset(
+    X                       :: AbstractLogiset{W,U},
+    metaconditions          :: AbstractVector{<:ScalarMetaCondition},
+    relations               :: AbstractVector{<:AbstractRelation};
+    precompute_globmemoset  :: Bool = true,
+    precompute_relmemoset   :: Bool = false,
+    print_progress          :: Bool = false,
+)
+```
+
+If `precompute_relmemoset` is `false`, then the relational memoset is simply initialized as an
+empty structure, and memoization is performed on it upon checking formulas.
+`precompute_globmemoset` works similarly.
+
+See [`SupportedLogiset`](@ref), [`ScalarMetaCondition`](@ref), [`AbstractOneStepMemoset`](@ref).
+"""
 struct ScalarOneStepMemoset{
     U<:Number,
     W<:AbstractWorld,
@@ -555,9 +599,9 @@ of scalar conditions on
 datasets with scalar features. The formulas are of type ⟨R⟩ (f ⋈ t)
 
 See also
+[`AbstractScalarOneStepRelationalMemoset`](@ref),
 [`FullMemoset`](@ref),
-[`SuportedLogiset`](@ref),
-[`AbstractLogiset`](@ref).
+[`SupportedLogiset`](@ref).
 """
 struct ScalarOneStepRelationalMemoset{
     W<:AbstractWorld,

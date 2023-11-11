@@ -27,7 +27,7 @@ but with scalar features some important optimizations can be done.
 
 See also
 [`FullMemoset`](@ref),
-[`SuportedLogiset`](@ref),
+[`SupportedLogiset`](@ref),
 [`AbstractLogiset`](@ref).
 """
 struct ScalarChainedMemoset{

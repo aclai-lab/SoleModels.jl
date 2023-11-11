@@ -173,7 +173,7 @@ end
 # to speed up model checking times.
 
 # See also
-# [`SuportedLogiset`](@ref),
+# [`SupportedLogiset`](@ref),
 # [`AbstractLogiset`](@ref).
 # """
 # abstract type AbstractBaseLogiset{

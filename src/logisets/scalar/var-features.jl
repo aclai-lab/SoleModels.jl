@@ -435,9 +435,9 @@ import SoleModels: parsefeature
 using StatsBase
 
 """
-Syntaxstring aliases for specific features
+Syntaxstring aliases for standard features, such as "min", "max", "avg".
 """
-const BASE_FEATURE_ALIASES = Dict{String,Union{Type,Function}}(
+const BASE_FEATURE_ALIASES = Dict{String,Base.Callable}(
     #
     "minimum" => UnivariateMin,
     "min"     => UnivariateMin,
@@ -448,37 +448,72 @@ const BASE_FEATURE_ALIASES = Dict{String,Union{Type,Function}}(
     "mean"    => StatsBase.mean,
 )
 
+"""
+    parsefeature(FT::Type{<:VarFeature}, expr::String; kwargs...)
+
+Parse a [`VarFeature`](@ref) of type `FT` from its [`syntaxstring`](@ref) representation.
+
+# Keyword Arguments
+- `featvaltype::Union{Nothing,Type} = nothing`: the feature's featvaltype
+    (recommended for some features, e.g., [`UnivariateFeature`](@ref));
+- `opening_parenthesis::String = $(repr(UVF_OPENING_PARENTHESIS))`:
+    the string signaling the opening of an expression block (e.g., `"min[V2]"`);
+- `closing_parenthesis::String = $(repr(UVF_CLOSING_PARENTHESIS))`:
+    the string signaling the closing of an expression block (e.g., `"min[V2]"`);
+- `additional_feature_aliases = Dict{String,Base.Callable}()`: A dictionary mapping strings to
+    callables, useful when parsing custom-made, non-standard features.
+    By default, features such as "avg" or "min" are provided for
+    (see `SoleModels.BASE_FEATURE_ALIASES`);
+    note that, in case of clashing `string`'s,
+    the provided additional aliases will override the standard ones;
+- `variable_names_map::Union{Nothing,AbstractDict,AbstractVector} = nothing`:
+    mapping from variable name to variable index, useful when parsing from
+    `syntaxstring`'s with variable names (e.g., `"min[Heart rate]"`);
+- `variable_name_prefix::String = $(repr(UVF_VARPREFIX))`:
+    prefix used with variable indices (e.g., "$(UVF_VARPREFIX)10").
+
+Note that at most one argument in `variable_names_map` and `variable_name_prefix`
+should be provided.
+
+!!! note
+    The default parentheses, here, differ from those of [`parseformula`](@ref),
+    since features are typically wrapped into `Atom`'s, and `parseformula` does not
+    allow parenthesis characters in atoms' `syntaxstring`'s.
+
+See also [`VarFeature`](@ref), [`featvaltype`](@ref), [`parsecondition`](@ref).
+"""
+
 function parsefeature(
     ::Type{FT},
-    expression::String;
+    expr::String;
     featvaltype::Union{Nothing,Type} = nothing,
     opening_parenthesis::String = UVF_OPENING_PARENTHESIS,
     closing_parenthesis::String = UVF_CLOSING_PARENTHESIS,
-    custom_feature_aliases = Dict{String,Union{Type,Function}}(),
+    additional_feature_aliases = Dict{String,Base.Callable}(),
     variable_names_map::Union{Nothing,AbstractDict,AbstractVector} = nothing,
     variable_name_prefix::Union{Nothing,String} = nothing,
     kwargs...
 ) where {FT<:VarFeature}
     @assert isnothing(variable_names_map) || isnothing(variable_name_prefix) "" *
         "Cannot parse variable with both variable_names_map and variable_name_prefix. " *
-        "(expression = $(repr(expression)))"
+        "(expr = $(repr(expr)))"
 
     @assert length(opening_parenthesis) == 1 || length(closing_parenthesis)
         "Parentheses must be single-character strings! " *
         "$(repr(opening_parenthesis)) and $(repr(closing_parenthesis)) encountered."
 
-    featdict = merge(BASE_FEATURE_ALIASES, custom_feature_aliases)
+    featdict = merge(BASE_FEATURE_ALIASES, additional_feature_aliases)
 
     variable_name_prefix = isnothing(variable_name_prefix) &&
         isnothing(variable_names_map) ? UVF_VARPREFIX : variable_name_prefix
     variable_name_prefix = isnothing(variable_name_prefix) ? "" : variable_name_prefix
 
     r = Regex("^\\s*(\\w+)\\s*\\$(opening_parenthesis)\\s*$(variable_name_prefix)(\\S+)\\s*\\$(closing_parenthesis)\\s*\$")
-    slices = match(r, expression)
+    slices = match(r, expr)
 
     # Assert for malformed strings (e.g. "123.4<avg[V189]>250.2")
     @assert !isnothing(slices) && length(slices) == 2 "Could not parse variable " *
-        "feature from expression $(repr(expression))."
+        "feature from expression $(repr(expr))."
 
     slices = string.(slices)
     (_feature, _variable) = (slices[1], slices[2])
@@ -507,7 +542,7 @@ function parsefeature(
                     featvaltype = DEFAULT_VARFEATVALTYPE
                     @warn "Please, specify a type for the feature values (featvaltype = ...). " *
                         "$(featvaltype) will be used, but note that this may raise type errors. " *
-                        "(expression = $(repr(expression)))"
+                        "(expression = $(repr(expr)))"
                 end
 
                 UnivariateFeature{featvaltype}(i_var, feat_or_fun)
@@ -523,7 +558,7 @@ function parsefeature(
                 featvaltype = DEFAULT_VARFEATVALTYPE
                 @warn "Please, specify a type for the feature values (featvaltype = ...). " *
                     "$(featvaltype) will be used, but note that this may raise type errors. " *
-                    "(expression = $(repr(expression)))"
+                    "(expression = $(repr(expr)))"
             end
 
             UnivariateFeature{featvaltype}(i_var, f)
@@ -531,7 +566,7 @@ function parsefeature(
     end
 
     # if !(feature isa FT)
-    #     @warn "Could not parse expression $(repr(expression)) as feature of type $(FT); " *
+    #     @warn "Could not parse expression $(repr(expr)) as feature of type $(FT); " *
     #         " $(typeof(feature)) was used."
     # end
 
