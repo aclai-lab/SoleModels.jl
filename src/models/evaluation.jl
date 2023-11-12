@@ -4,13 +4,15 @@ using SoleModels: LeafModel
 import SoleLogics: natoms
 
 """
-    readmetrics(m::AbstractModel; kwargs...)
+    readmetrics(m::AbstractModel; digits = 2)
 
-Return a NamedTuple with some performance metrics for the given symbolic model.
-Performance metrics can be computed when the `info` structure of the model:
+Return a `NamedTuple` with some performance metrics for the given symbolic model.
+Performance metrics can be computed when the `info` structure of the model has the
+    following keys:
     - :supporting_labels
     - :supporting_predictions
 
+The `digits` keyword argument is used to `round` accuracy/confidence metrics.
 """
 function readmetrics(m::LeafModel{L}; digits = 2) where {L<:Label}
     merge(if haskey(info(m), :supporting_labels) && haskey(info(m), :supporting_predictions)
@@ -127,7 +129,7 @@ end
         Y::AbstractVector{<:Label}
     )
 
-Calculate metrics for a rule with respect to a labelled dataset and returns a `NamedTuple` consisting of:
+Compute metrics for a rule with respect to a labelled dataset and returns a `NamedTuple` consisting of:
 - `support`: number of instances satisfying the antecedent of the rule divided by
     the total number of instances;
 - `error`:

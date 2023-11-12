@@ -20,6 +20,10 @@ makedocs(;
     ),
     pages=[
         "Home" => "index.md",
+        "Logical foundations" => "logic.md",
+        "Logisets" => "logisets.md",
+        "Symbolic models" => "models.md",
+        "Full reference" => "autodocs.md",
     ],
     warnonly = true, # TODO remove?
 )
