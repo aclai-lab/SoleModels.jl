@@ -2,6 +2,10 @@
 CurrentModule = SoleModels
 ```
 
+```@contents
+Pages = ["logisets.md"]
+```
+
 # Logisets
 
 ```@autodocs
