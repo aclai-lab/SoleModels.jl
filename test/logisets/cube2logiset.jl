@@ -51,7 +51,7 @@ complete_supported_logiset = @test_logs min_level=Logging.Error SupportedLogiset
 rngcube = Random.MersenneTwister(1)
 alph = ExplicitAlphabet([SoleModels.ScalarCondition(rand(rngcube, features), rand(rngcube, [>, <]), rand(rngcube)) for i in 1:n_instances]);
 # syntaxstring.(alph)
-_formulas = [randformula(rngcube, 3, alph, [SoleLogics.BASE_PROPOSITIONAL_OPERATORS..., vcat([[DiamondRelationalOperator(r), BoxRelationalOperator(r)] for r in filter(r->r != globalrel, relations)]...)[1:16:end]...]) for i in 1:20];
+_formulas = [randformula(rngcube, 3, alph, [SoleLogics.BASE_PROPOSITIONAL_CONNECTIVES..., vcat([[DiamondRelationalConnective(r), BoxRelationalConnective(r)] for r in filter(r->r != globalrel, relations)]...)[1:16:end]...]) for i in 1:20];
 # syntaxstring.(_formulas) .|> println;
 
 i_instance = 1

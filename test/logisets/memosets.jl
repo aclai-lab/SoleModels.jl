@@ -76,7 +76,7 @@ bool_logiset_3layer = SupportedLogiset(bool_logiset, [bool_onestepmemoset_empty,
 rng = Random.MersenneTwister(1)
 alph = ExplicitAlphabet([SoleModels.ScalarCondition(rand(rng, features), rand(rng, [>, <]), rand(rng)) for i in 1:10])
 syntaxstring.(alph)
-_formulas = [randformula(rng, 10, alph, SoleLogics.BASE_MULTIMODAL_OPERATORS) for i in 1:20];
+_formulas = [randformula(rng, 10, alph, SoleLogics.BASE_MULTIMODAL_CONNECTIVES) for i in 1:20];
 
 w = worlds[1]
 # Below are the times with a testset of 1000 formulas

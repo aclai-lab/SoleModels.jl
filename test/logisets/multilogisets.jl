@@ -41,14 +41,14 @@ i_instance = 1
 multiformulas = [begin
     _formulas_dict = Dict{Int,SoleLogics.Formula}()
     for (i_modality, relations) in enumerate(multirelations)
-        f = randformula(rng, 3, alph, [SoleLogics.BASE_PROPOSITIONAL_OPERATORS..., vcat([[DiamondRelationalOperator(r), BoxRelationalOperator(r)] for r in relations]...)[1:32:end]...])
+        f = randformula(rng, 3, alph, [SoleLogics.BASE_PROPOSITIONAL_CONNECTIVES..., vcat([[DiamondRelationalConnective(r), BoxRelationalConnective(r)] for r in relations]...)[1:32:end]...])
         if rand(Bool)
             coin = rand(1:2)
             f = begin
                 if coin == 1
-                    BoxRelationalOperator(globalrel)(f)
+                    BoxRelationalConnective(globalrel)(f)
                 else
-                    BoxRelationalOperator(SoleLogics.tocenterrel)(f)
+                    BoxRelationalConnective(SoleLogics.tocenterrel)(f)
                 # else
                     # TODO operator for going to a world. Note that this cannot be done with singletons...
                     # AnchoredToWorldFormula(f, SoleModels.WorldCheck(rand(collect(allworlds(modality(multilogiset, i_modality), i_instance)))))

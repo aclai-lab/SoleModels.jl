@@ -40,7 +40,7 @@ complete_logiset = @test_nowarn scalarlogiset(dataset; use_full_memoization = fa
 rng = Random.MersenneTwister(1)
 alph = ExplicitAlphabet([SoleModels.ScalarCondition(rand(rng, features), rand(rng, [>, <]), rand(rng)) for i in 1:n_instances]);
 syntaxstring.(alph)
-_formulas = [randformula(rng, 3, alph, [SoleLogics.BASE_PROPOSITIONAL_OPERATORS..., vcat([[DiamondRelationalOperator(r), BoxRelationalOperator(r)] for r in relations]...)[1:16:end]...]) for i in 1:20];
+_formulas = [randformula(rng, 3, alph, [SoleLogics.BASE_PROPOSITIONAL_CONNECTIVES..., vcat([[DiamondRelationalConnective(r), BoxRelationalConnective(r)] for r in relations]...)[1:16:end]...]) for i in 1:20];
 syntaxstring.(_formulas) .|> println;
 
 i_instance = 1

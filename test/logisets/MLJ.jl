@@ -22,7 +22,7 @@ X = @test_nowarn modality(multilogiset, 2)
 mod2 = modality(multilogiset, 2)
 mod2_part = modality(MLJBase.partition(multilogiset, 0.8)[1], 2)
 check(SyntaxTree(Atom(ScalarCondition(UnivariateMin(2), >, 301))), mod2_part, 1, SoleModels.Interval(1,2))
-check((DiamondRelationalOperator(IA_L)(Atom(ScalarCondition(UnivariateMin(2), >, 0)))), mod2_part, 1, SoleModels.Interval(1,2))
+check((DiamondRelationalConnective(IA_L)(Atom(ScalarCondition(UnivariateMin(2), >, 0)))), mod2_part, 1, SoleModels.Interval(1,2))
 
 @test mod2_part != MLJBase.partition(mod2, 0.8)[1]
 @test nmemoizedvalues(mod2_part) == nmemoizedvalues(MLJBase.partition(mod2, 0.8)[1])

@@ -179,7 +179,7 @@ where `p` wraps a scalar condition, such as `MyFeature ≥ 10`. With such formul
 scalar one-step optimization can be performed.
 
 For example, checking `⟨R⟩(MyFeature ≥ 10)` on a world `w` of a Kripke structure
-involves comparing the *maximum* MyFeature across `w`'s accessible worlds with 10;
+involves comparing the *maximum* MyFeature across `w`s accessible worlds with 10;
 but the same *maximum* value can be reused to check *sibling formulas*
 such as `⟨R⟩(MyFeature ≥ 100)`. This sparks the idea of storing and reusing
 scalar aggregations (e.g., minimum/maximum) over the feature values.

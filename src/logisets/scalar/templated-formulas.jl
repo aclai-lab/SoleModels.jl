@@ -42,7 +42,7 @@ Templated formula for ⟨R⟩ f ⋈ t.
 """
 struct ScalarExistentialFormula{U} <: ScalarOneStepFormula{U}
 
-    # Relation, interpreted as an existential modal operator
+    # Relation, interpreted as an existential modal connective
     relation  :: AbstractRelation
 
     p         :: ScalarCondition{U}
@@ -93,7 +93,7 @@ struct ScalarExistentialFormula{U} <: ScalarOneStepFormula{U}
     end
 end
 
-tree(f::ScalarExistentialFormula) = DiamondRelationalOperator(f.relation)(Atom(f.p))
+tree(f::ScalarExistentialFormula) = DiamondRelationalConnective(f.relation)(Atom(f.p))
 
 """
 Templated formula for [R] f ⋈ t.
@@ -103,7 +103,7 @@ struct ScalarUniversalFormula{U} <: ScalarOneStepFormula{U}
     p         :: ScalarCondition{U}
 end
 
-tree(f::ScalarUniversalFormula) = BoxRelationalOperator(f.relation)(Atom(f.p))
+tree(f::ScalarUniversalFormula) = BoxRelationalConnective(f.relation)(Atom(f.p))
 
 hasdual(f::ScalarExistentialFormula) = true
 function dual(formula::ScalarExistentialFormula{U}) where {U}

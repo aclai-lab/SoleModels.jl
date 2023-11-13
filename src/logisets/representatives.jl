@@ -12,7 +12,7 @@ using SoleLogics: AbstractFrame, AbstractMultiModalFrame, AbstractRelation, acce
 
 Return an iterator to the (few) *representative* accessible worlds that are
 necessary for computing and propagating truth values
-through existential modal operators.
+through existential modal connectives.
 When this optimization is possible
 (e.g., when checking specific formulas on scalar conditions),
 it allows to further boost "one-step" optimizations (see [`AbstractOneStepMemoset`](@ref)).

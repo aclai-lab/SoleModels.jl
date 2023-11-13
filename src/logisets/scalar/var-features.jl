@@ -464,11 +464,11 @@ Parse a [`VarFeature`](@ref) of type `FT` from its [`syntaxstring`](@ref) repres
     callables, useful when parsing custom-made, non-standard features.
     By default, features such as "avg" or "min" are provided for
     (see `SoleModels.BASE_FEATURE_ALIASES`);
-    note that, in case of clashing `string`'s,
+    note that, in case of clashing `string`s,
     the provided additional aliases will override the standard ones;
 - `variable_names_map::Union{Nothing,AbstractDict,AbstractVector} = nothing`:
     mapping from variable name to variable index, useful when parsing from
-    `syntaxstring`'s with variable names (e.g., `"min[Heart rate]"`);
+    `syntaxstring`s with variable names (e.g., `"min[Heart rate]"`);
 - `variable_name_prefix::String = $(repr(UVF_VARPREFIX))`:
     prefix used with variable indices (e.g., "$(UVF_VARPREFIX)10").
 
@@ -477,8 +477,8 @@ should be provided.
 
 !!! note
     The default parentheses, here, differ from those of [`SoleLogics.parseformula](@ref),
-    since features are typically wrapped into `Atom`'s, and `parseformula` does not
-    allow parenthesis characters in atoms' `syntaxstring`'s.
+    since features are typically wrapped into `Atom`s, and `parseformula` does not
+    allow parenthesis characters in atoms' `syntaxstring`s.
 
 See also [`VarFeature`](@ref), [`featvaltype`](@ref), [`parsecondition`](@ref).
 """
