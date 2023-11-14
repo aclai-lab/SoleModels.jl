@@ -213,6 +213,7 @@ end
 
 modforms(f::MultiFormula) = f.modforms
 
+# TODO remove?
 # Base.isequal(a::MultiFormula, b::MultiFormula) = syntaxstring(a) == syntaxstring(b)
 
 function MultiFormula(i_modality::Integer, modant::Formula)
