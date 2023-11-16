@@ -64,7 +64,7 @@ end
 ############################################################################################
 
 """
-    struct MultivariateFeature <: VarFeature
+    struct MultivariateFeature{U} <: VarFeature
         f::Function
     end
 
