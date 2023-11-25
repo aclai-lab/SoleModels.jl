@@ -194,17 +194,18 @@ See also [`SoleLogics.Interval`](@ref),
 struct UnivariateFeature{U} <: AbstractUnivariateFeature
     i_variable::Integer
     f::Function
+    fname::Union{Nothing,String}
     function UnivariateFeature{U}(feat::UnivariateFeature) where {U<:Real}
-        return new{U}(i_variable(f), feat.f)
+        return new{U}(i_variable(f), feat.f, feat.fname)
     end
-    function UnivariateFeature{U}(i_variable::Integer, f::Function) where {U<:Real}
-        return new{U}(i_variable, f)
+    function UnivariateFeature{U}(i_variable::Integer, f::Function, fname::Union{Nothing,String} = nothing) where {U<:Real}
+        return new{U}(i_variable, f, fname)
     end
-    function UnivariateFeature(i_variable::Integer, f::Function)
-        return UnivariateFeature{DEFAULT_VARFEATVALTYPE}(i_variable, f)
+    function UnivariateFeature(i_variable::Integer, f::Function, fname::Union{Nothing,String} = nothing)
+        return UnivariateFeature{DEFAULT_VARFEATVALTYPE}(i_variable, f, fname)
     end
 end
-featurename(f::UnivariateFeature) = string(f.f)
+featurename(f::UnivariateFeature) = (!isnothing(f.fname) ? f.fname : string(f.f))
 
 function featvaltype(dataset, f::UnivariateFeature{U}) where {U}
     return U
