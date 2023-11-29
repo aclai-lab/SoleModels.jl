@@ -1,7 +1,6 @@
 using SoleModels: AbstractUnivariateFeature
 
-using SoleData: AbstractDimensionalDataset,
-                UniformDimensionalDataset
+using SoleData: AbstractDimensionalDataset
 
 import SoleData: ninstances, nvariables
 
@@ -9,37 +8,39 @@ import SoleModels:
     islogiseed, initlogiset, frame,
     featchannel, readfeature, featvalue, vareltype, featvaltype
 
-function islogiseed(
-    dataset::AbstractDimensionalDataset,
-)
-    true
+function islogiseed(dataset::AbstractDimensionalDataset)
+    ndims(eltype(dataset)) >= 1
 end
 
 function initlogiset(
     dataset::AbstractDimensionalDataset,
-    features::AbstractVector{<:VarFeature},
+    features::AbstractVector,
 )
     _ninstances = ninstances(dataset)
     _maxchannelsize = maxchannelsize(dataset)
 
-    _worldtype(dataset::AbstractDimensionalDataset{T,2}) where {T} = OneWorld
-    _worldtype(dataset::AbstractDimensionalDataset{T,3}) where {T} = Interval{Int}
-    _worldtype(dataset::AbstractDimensionalDataset{T,4}) where {T} = Interval2D{Int}
+    _worldtype(instancetype::Type{<:AbstractArray{T,1}}) where {T} = OneWorld
+    _worldtype(instancetype::Type{<:AbstractArray{T,2}}) where {T} = Interval{Int}
+    _worldtype(instancetype::Type{<:AbstractArray{T,3}}) where {T} = Interval2D{Int}
 
-    function _worldtype(dataset::AbstractDimensionalDataset)
-        error("Cannot initialize logiset with dimensional dataset " *
-            "with ndims = $(ndims(dataset)). Please, provide a " *
-            "dataset structure of size X × Y × ... × nvariables × ninstances." *
-            "Note that, currently, only ndims ≤ 4 (dimensionality = 2) is supported."
+    function _worldtype(instancetype::Type{<:AbstractArray})
+        error("Cannot initialize logiset with dimensional instances of type " *
+            "`$(instancetype)`. Please, provide " *
+            "instances of size X × Y × ... × nvariables." *
+            "Note that, currently, only ndims ≤ 4 (dimensionality ≤ 2) is supported."
         )
     end
 
-    W = _worldtype(dataset)
+    W = _worldtype(eltype(dataset))
     N = dimensionality(dataset)
 
+    @assert all(f->f isa VarFeature, features)
     features = UniqueVector(features)
     nfeatures = length(features)
 
+    # @show dataset
+    # @show features
+    # @show typeof(dataset)
     U = Union{map(f->featvaltype(dataset, f), features)...}
     featstruct = Array{U,length(_maxchannelsize)*2+2}(
             undef,
@@ -55,10 +56,10 @@ function initlogiset(
 end
 
 function frame(
-    dataset::Union{UniformDimensionalDataset,AbstractArray},
+    dataset::AbstractDimensionalDataset,
     i_instance::Integer
 )
-    FullDimensionalFrame(channelsize(dataset))
+    FullDimensionalFrame(channelsize(dataset, i_instance))
 end
 
 function featchannel(
@@ -114,27 +115,38 @@ function initlogiset(
 )
     _ninstances = nrow(dataset)
 
-    cube, varnames = SoleData.dataframe2cube(dataset; dry_run = true)
+    dimensional, varnames = SoleData.dataframe2dimensional(dataset; dry_run = true)
 
-    initlogiset(cube, features)
+    initlogiset(dimensional, features)
 end
 
 function frame(
     dataset::AbstractDataFrame,
     i_instance::Integer
 )
-    # dataset_cube, varnames = SoleData.dataframe2cube(dataset; dry_run = true)
-    # FullDimensionalFrame(channelsize(dataset_cube))
+    # dataset_dimensional, varnames = SoleData.dataframe2dimensional(dataset; dry_run = true)
+    # FullDimensionalFrame(channelsize(dataset_dimensional, i_instance))
     column = dataset[:,1]
-    frame(column, i_instance)
+    # frame(column, i_instance)
+    FullDimensionalFrame(size(column[i_instance]))
 end
 
+# Note: used in naturalgrouping.
 function frame(
+    dataset::AbstractDataFrame,
     column::Vector,
     i_instance::Integer
 )
     FullDimensionalFrame(size(column[i_instance]))
 end
+
+# # Remove!! dangerous
+# function frame(
+#     column::Vector,
+#     i_instance::Integer
+# )
+#     FullDimensionalFrame(size(column[i_instance]))
+# end
 
 function featchannel(
     dataset::AbstractDataFrame,

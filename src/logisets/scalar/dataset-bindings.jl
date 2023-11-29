@@ -53,7 +53,7 @@ function ismultilogiseed(dataset::AbstractMultiModalDataset)
 end
 
 function ismultilogiseed(dataset::Union{AbstractVector,Tuple})
-    all(islogiseed, dataset) # && allequal(ninstances, eachmodality(dataset))
+    length(dataset) > 0 && all(islogiseed, dataset) # && allequal(ninstances, eachmodality(dataset))
 end
 function nmodalities(dataset::Union{AbstractVector,Tuple})
     @assert ismultilogiseed(dataset) "$(typeof(dataset))"
@@ -82,9 +82,11 @@ function concatdatasets(datasets::Union{AbstractVector,Tuple}...)
     @assert all(ismultilogiseed.(datasets)) "$(typeof.(datasets))"
     @assert allequal(nmodalities.(datasets)) "Cannot concatenate multilogiseed's of type ($(typeof.(datasets))) with mismatching " *
         "number of modalities: $(nmodalities.(datasets))"
-    MultiLogiset([
-        concatdatasets([modality(dataset, i_mod) for dataset in datasets]...) for i_mod in 1:nmodalities(first(datasets))
-    ])
+    out = [concatdatasets([modality(dataset, i_mod) for dataset in datasets]...) for i_mod in 1:nmodalities(first(datasets))]
+    if eltype(datasets) <: Tuple
+        out = Tuple(out)
+    end
+    out
 end
 
 function displaystructure(dataset; indent_str = "", include_ninstances = true, kwargs...)
@@ -166,6 +168,13 @@ function scalarlogiset(
     is_nofeatures(_features) = isnothing(_features)
     is_unifeatures(_features) = (_features isa AbstractVector && all(f->is_feature(f), _features))
     is_multifeatures(_features) = (_features isa AbstractVector && all(fs->(is_nofeatures(fs) || is_unifeatures(fs)), _features))
+
+    # @show conditions
+    # @show typeof(conditions)
+    # @show features
+    # @show typeof(features)
+    # @show typeof(dataset)
+    # @show ismultilogiseed(dataset)
 
     @assert (is_nofeatures(features) ||
             is_unifeatures(features) ||
@@ -257,8 +266,7 @@ function scalarlogiset(
         end
     else
         if isnothing(conditions)
-            featvaltype = eltype(dataset)
-            conditions = naturalconditions(dataset, features, featvaltype)
+            conditions = naturalconditions(dataset, features)
             features = unique(feature.(conditions))
             if use_onestep_memoization == false
                 conditions = nothing
@@ -313,6 +321,8 @@ function scalarlogiset(
     #     end
     # end
     features = UniqueVector(features)
+
+    @assert length(features) > 0 "Unexpected error."
 
     # Too bad this breaks the code
     # if !isnothing(conditions)
@@ -377,13 +387,6 @@ function naturalconditions(
     mixed_conditions   :: AbstractVector,
     featvaltype        :: Union{Nothing,Type} = nothing
 )
-    if isnothing(featvaltype)
-        featvaltype = DEFAULT_VARFEATVALTYPE
-        @warn "Please, specify a type for the feature values (featvaltype = ...). " *
-            "$(featvaltype) will be used, but note that this may raise type errors. " *
-            "(expression = $(repr(expression)))"
-    end
-
     nvars = nvariables(dataset)
 
     @assert all(isa.(mixed_conditions, MixedCondition)) "" *
@@ -411,6 +414,9 @@ function naturalconditions(
         return (test_ops,UnivariateMax(i_var))
     end
     function univar_condition(i_var,(test_ops,cond)::Tuple{<:AbstractVector{<:TestOperator},Base.Callable})
+        if isnothing(featvaltype)
+            featvaltype = SoleModels.vareltype(dataset, i_var)
+        end
         V = featvaltype
         if !isconcretetype(V)
             @warn "Building UnivariateFeature with non-concrete feature type: $(V)."
@@ -496,8 +502,8 @@ function naturalgrouping(
     coltypes = eltype.(eachcol(X))
 
     function _frame(datacolumn, i_instance)
-        if hasmethod(frame, (typeof(datacolumn), Integer))
-            frame(datacolumn, i_instance)
+        if hasmethod(frame, (typeof(X), typeof(datacolumn), Integer))
+            frame(X, datacolumn, i_instance)
         else
             missing
         end

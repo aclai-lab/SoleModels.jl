@@ -5,6 +5,9 @@ using SoleLogics
 using SoleModels
 using SoleModels.DimensionalDatasets
 
+@test !SoleModels.ismultilogiseed([rand(1,2,3)])
+@test !SoleModels.ismultilogiseed([])
+@test !SoleModels.ismultilogiseed(Vector{Array{Float32, 3}}())
 
 n_instances = 2
 _nvars = 2
@@ -15,6 +18,7 @@ multidataset, multirelations = collect.(zip([
     (Array(reshape(1.0:36.0, 3,3,_nvars,n_instances)), [IA2DRelations..., globalrel]),
 ]...))
 
+multidataset = map(d->eachslice(d; dims = ndims(d)), multidataset)
 multilogiset = @test_nowarn scalarlogiset(multidataset)
 
 generic_features = collect(Iterators.flatten([[UnivariateMax(i_var), UnivariateMin(i_var)] for i_var in 1:_nvars]))

@@ -2,7 +2,7 @@ name = "SoleModels"
 uuid = "4249d9c7-3290-4ddd-961c-e1d3ec2467f8"
 license = "MIT"
 authors = ["Michele GHIOTTI", "Giovanni PAGLIARINI", "Eduard I. STAN"]
-version = "0.4.4"
+version = "0.5"
 
 [deps]
 AbstractTrees = "1520ce14-60c1-5f80-bbc7-55ef81b5835c"
@@ -52,7 +52,7 @@ ProgressMeter = "1"
 Reexport = "1"
 Revise = "3"
 SoleBase = "0.11"
-SoleData = "0.11"
+SoleData = "0.12"
 SoleLogics = "0.6"
 StatsBase = "0.30 - 0.34"
 Suppressor = "0.2"

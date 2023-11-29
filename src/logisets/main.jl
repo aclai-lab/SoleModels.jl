@@ -64,11 +64,16 @@ export nvariables
 include("dimensional-structures/main.jl")
 
 function default_relmemoset_type(X::AbstractLogiset)
-    # TODO?
-    # frames = [frame(X, i_instance) for i_instance in 1:ninstances(X)]
-    # if allequal(frames) && first(unique(frames)) isa FullDimensionalFrame
-    if X isa DimensionalDatasets.UniformFullDimensionalLogiset
-        DimensionalDatasets.UniformFullDimensionalOneStepRelationalMemoset
+    # if X isa DimensionalDatasets.UniformFullDimensionalLogiset
+    frames = [SoleLogics.frame(X, i_instance) for i_instance in 1:ninstances(X)]
+    if allequal(frames) # Uniform logiset
+        _frame = first(unique(frames))
+        if _frame isa DimensionalDatasets.FullDimensionalFrame
+            DimensionalDatasets.UniformFullDimensionalOneStepRelationalMemoset
+        else
+            # error("Unknown frame of type $(typeof(_frame)).")
+            ScalarOneStepRelationalMemoset
+        end
     else
         ScalarOneStepRelationalMemoset
     end

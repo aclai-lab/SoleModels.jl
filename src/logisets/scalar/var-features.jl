@@ -1,6 +1,6 @@
 import SoleModels: AbstractFeature
 
-using SoleData: channelvariable
+using SoleData: instance_channel
 
 import Base: show
 import SoleLogics: syntaxstring
@@ -119,7 +119,7 @@ end
 i_variable(f::AbstractUnivariateFeature) = f.i_variable
 
 function computefeature(f::AbstractUnivariateFeature, featchannel::Any)
-    computeunivariatefeature(f, channelvariable(featchannel, i_variable(f)))
+    computeunivariatefeature(f, instance_channel(featchannel, i_variable(f)))
 end
 
 """

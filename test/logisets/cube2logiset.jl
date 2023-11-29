@@ -19,6 +19,7 @@ for (dataset, relations, features) in [
     (Array(reshape(1.0:36.0, 3,3,nvars,n_instances)), [IA2DRelations..., globalrel], generic_features),
 ]
 
+dataset = eachslice(dataset; dims = ndims(dataset))
 @test nvars == nvariables(dataset)
 
 logiset = @test_nowarn scalarlogiset(dataset, features; use_full_memoization = false, use_onestep_memoization = false)

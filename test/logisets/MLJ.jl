@@ -9,6 +9,7 @@ multidataset, multirelations = collect.(zip([
            (Array(reshape(1.0:360.0, 3,3,_nvars,n_instances)), [IA2DRelations..., globalrel]),
        ]...))
 
+multidataset = map(d->eachslice(d; dims = ndims(d)), multidataset)
 multilogiset = @test_nowarn scalarlogiset(multidataset)
 multilogiset = scalarlogiset(multidataset; relations = multirelations, conditions = vcat([[SoleModels.ScalarMetaCondition(UnivariateMin(i), >), SoleModels.ScalarMetaCondition(UnivariateMax(i), <)] for i in 1:_nvars]...))
 

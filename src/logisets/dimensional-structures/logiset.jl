@@ -2,7 +2,9 @@ import Base: size, ndims, getindex, setindex!
 
 """
 Abstract type for optimized, uniform logisets with
-full dimensional frames.
+full dimensional frames. Here, "uniform" refers to the fact that
+all instances have the same frame, and "full" refers to the fact that
+*all* worlds of a given kind are considered (e.g., *all* points/intervals/rectangles)
 
 See also
 [`UniformFullDimensionalLogiset`](@ref),
@@ -15,8 +17,8 @@ function maxchannelsize(X::AbstractUniformFullDimensionalLogiset)
     return error("Please, provide method maxchannelsize(::$(typeof(X))).")
 end
 
-function channelsize(X::AbstractUniformFullDimensionalLogiset)
-    return error("Please, provide method channelsize(::$(typeof(X))).")
+function channelsize(X::AbstractUniformFullDimensionalLogiset, i_instance::Integer)
+    return error("Please, provide method channelsize(::$(typeof(X)), i_instance::Integer).")
 end
 
 function dimensionality(X::AbstractUniformFullDimensionalLogiset{U,N}) where {U,N}
@@ -98,10 +100,10 @@ features(X::UniformFullDimensionalLogiset) = X.features
 
 ############################################################################################
 
-maxchannelsize(X::UniformFullDimensionalLogiset) = channelsize(X, 0)
-channelsize(X::UniformFullDimensionalLogiset{U,OneWorld}, i_instance::Integer) where {U} = ()
-channelsize(X::UniformFullDimensionalLogiset{U,<:Interval}, i_instance::Integer) where {U} = (size(X, 1),)
-channelsize(X::UniformFullDimensionalLogiset{U,<:Interval2D}, i_instance::Integer) where {U} = (size(X, 1),size(X, 3))
+maxchannelsize(X::UniformFullDimensionalLogiset{U,OneWorld}) where {U} = ()
+maxchannelsize(X::UniformFullDimensionalLogiset{U,<:Interval}) where {U} = (size(X, 1),)
+maxchannelsize(X::UniformFullDimensionalLogiset{U,<:Interval2D}) where {U} = (size(X, 1),size(X, 3))
+channelsize(X::UniformFullDimensionalLogiset, i_instance::Integer) = maxchannelsize(X)
 
 ############################################################################################
 
