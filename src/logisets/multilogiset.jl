@@ -213,8 +213,8 @@ end
 
 modforms(f::MultiFormula) = f.modforms
 
-# TODO remove?
-# Base.isequal(a::MultiFormula, b::MultiFormula) = syntaxstring(a) == syntaxstring(b)
+Base.isequal(a::MultiFormula, b::MultiFormula) = allequal(Set.(keys.([modforms(a), modforms(b)]))) && all(k->Base.isequal(modforms(a)[k], modforms(b)[k]), keys(modforms(a)))
+Base.hash(a::MultiFormula) = Base.hash(typeof(a), Base.hash(modforms(a)))
 
 function MultiFormula(i_modality::Integer, modant::Formula)
     F = eval(nameof(typeof(modant)))
@@ -286,7 +286,8 @@ function composeformulas(c::Connective, φs::NTuple{N,MultiFormula}) where {N}
 end
 
 function SoleLogics.normalize(φ::MultiFormula{F}; kwargs...) where {F<:Formula}
-    MultiFormula(Dict{Int,F}([i_modality => SoleLogics.normalize(f; kwargs...) for (i_modality,f) in pairs(modforms(φ))]))
+    # MultiFormula(Dict{Int,F}([i_modality => SoleLogics.normalize(f; kwargs...) for (i_modality,f) in pairs(modforms(φ))]))
+    MultiFormula(Dict([i_modality => SoleLogics.normalize(f; kwargs...) for (i_modality,f) in pairs(modforms(φ))]))
 end
 
 natoms(φ::LeftmostConjunctiveForm{<:MultiFormula}) = natoms((children(φ)...,))

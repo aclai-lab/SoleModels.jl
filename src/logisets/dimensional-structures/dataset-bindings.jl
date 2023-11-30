@@ -16,8 +16,8 @@ function initlogiset(
     dataset::AbstractDimensionalDataset,
     features::AbstractVector,
 )
+
     _ninstances = ninstances(dataset)
-    _maxchannelsize = maxchannelsize(dataset)
 
     _worldtype(instancetype::Type{<:AbstractArray{T,1}}) where {T} = OneWorld
     _worldtype(instancetype::Type{<:AbstractArray{T,2}}) where {T} = Interval{Int}
@@ -37,22 +37,36 @@ function initlogiset(
     @assert all(f->f isa VarFeature, features)
     features = UniqueVector(features)
     nfeatures = length(features)
+    FT = eltype(features)
 
     # @show dataset
     # @show features
     # @show typeof(dataset)
     U = Union{map(f->featvaltype(dataset, f), features)...}
-    featstruct = Array{U,length(_maxchannelsize)*2+2}(
-            undef,
-            vcat([[s, s] for s in _maxchannelsize]...)...,
-            _ninstances,
-            length(features)
-        )
-    # if !isconcretetype(U) # TODO only in this case but this breaks code
-        # @warn "Abstract featvaltype detected upon initializing UniformFullDimensionalLogiset logiset: $(U)."
-        fill!(featstruct, 0)
-    # end
-    return UniformFullDimensionalLogiset{U,W,N}(featstruct, features)
+
+    if allequal(map(i_instance->channelsize(dataset, i_instance), 1:ninstances(dataset)))
+        _maxchannelsize = maxchannelsize(dataset)
+        featstruct = Array{U,length(_maxchannelsize)*2+2}(
+                undef,
+                vcat([[s, s] for s in _maxchannelsize]...)...,
+                _ninstances,
+                length(features)
+            )
+        # if !isconcretetype(U) # TODO only in this case but this breaks code
+            # @warn "Abstract featvaltype detected upon initializing UniformFullDimensionalLogiset logiset: $(U)."
+            fill!(featstruct, 0)
+        # end
+        return UniformFullDimensionalLogiset{U,W,N}(featstruct, features)
+    else
+        error("Different frames encountered for different dataset instances.")
+        # @warn "Different frames encountered for different dataset instances." *
+        #     "A generic logiset structure will be used, but be advised that it may be very slow."
+        # # SoleModels.frame(dataset, i_instance)
+        # return ExplicitLogiset([begin
+        #     fr = SoleModels.frame(dataset, i_instance)
+        #     (Dict{W,Dict{FT,U}}([w => Dict{FT,U}() for w in allworlds(fr)]), fr)
+        #     end for i_instance in 1:ninstances(dataset)])
+    end
 end
 
 function frame(

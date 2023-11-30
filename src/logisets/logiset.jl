@@ -122,10 +122,10 @@ isminifiable(::AbstractLogiset) = false
 usesfullmemo(::AbstractLogiset) = false
 
 function allfeatvalues(X::AbstractLogiset)
-    unique([allfeatvalues(X, i_instance) for i_instance in 1:ninstances(X)])
+    unique(collect(Iterators.flatten([allfeatvalues(X, i_instance) for i_instance in 1:ninstances(X)])))
 end
 
-hasnans(::AbstractLogiset) = any.(isnan, allfeatvalues(X))
+hasnans(X::AbstractLogiset) = any(isnan, allfeatvalues(X))
 
 ############################################################################################
 
@@ -237,6 +237,7 @@ function featvalue!(
     i_instance::Integer,
     w::W,
     feature::AbstractFeature,
+    i_feature   :: Union{Nothing,Integer} = nothing,
 ) where {W<:AbstractWorld}
     cur_featval = featvalue(X, featval, i_instance, w, feature)
     if featval && !cur_featval
@@ -352,6 +353,10 @@ end
 
 ninstances(X::ExplicitLogiset) = length(X.d)
 
+# TODO what to do here? save an index?
+# nfeatures(X::ExplicitLogiset) = length(features(X))
+# features(X::ExplicitLogiset) = unique(collect(Iterators.flatten(map(i->Iterators.flatten(map(d->collect(keys(d)), values(first(i)))), X.d))))
+
 function featchannel(
     X::ExplicitLogiset{W},
     i_instance::Integer,
@@ -375,6 +380,7 @@ function featvalue!(
     i_instance::Integer,
     w::W,
     feature::AbstractFeature,
+    i_feature   :: Union{Nothing,Integer} = nothing,
 ) where {W<:AbstractWorld}
     X.d[i_instance][1][w][feature] = featval
 end
@@ -396,7 +402,7 @@ function instances(
 end
 
 function concatdatasets(Xs::ExplicitLogiset...)
-    ExplicitBooleanLogiset(vcat([X.d for X in Xs]...))
+    ExplicitLogiset(vcat([X.d for X in Xs]...))
 end
 
 function displaystructure(
@@ -409,7 +415,7 @@ function displaystructure(
     include_frametype = missing,
 )
     padattribute(l,r) = string(l) * lpad(r,32+length(string(r))-(length(indent_str)+2+length(l)))
-    out = "ExplicitBooleanLogiset ($(humansize(X)))\n"
+    out = "ExplicitLogiset ($(humansize(X)))\n"
     if ismissing(include_worldtype) || include_worldtype != worldtype(X)
         out *= indent_str * "├ " * padattribute("worldtype:", worldtype(X)) * "\n"
     end
@@ -437,7 +443,7 @@ function allfeatvalues(
     X::ExplicitLogiset{W},
     i_instance,
 ) where {W<:AbstractWorld}
-    unique(collect(Iterators.flatten(values.(values(d[i_instance][1])))))
+    unique(collect(Iterators.flatten(values.(values(X.d[i_instance][1])))))
 end
 
 function allfeatvalues(
@@ -445,5 +451,5 @@ function allfeatvalues(
     i_instance,
     feature,
 ) where {W<:AbstractWorld}
-    unique([ch[feature] for ch in values(d[i_instance][1])])
+    unique([ch[feature] for ch in values(X.d[i_instance][1])])
 end

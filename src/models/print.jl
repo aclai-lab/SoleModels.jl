@@ -85,6 +85,7 @@ macro _display_submodel(
     max_depth,
     show_subtree_info,
     show_metrics,
+    show_shortforms,
     show_intermediate_finals,
     tree_mode,
     show_symbols,
@@ -100,6 +101,7 @@ macro _display_submodel(
             header = $(esc(show_subtree_info)),
             show_subtree_info = $(esc(show_subtree_info)),
             show_metrics = $(esc(show_metrics)),
+            show_shortforms = $(esc(show_shortforms)),
             show_intermediate_finals = $(esc(show_intermediate_finals)),
             tree_mode = $(esc(tree_mode)),
             show_symbols = $(esc(show_symbols)),
@@ -142,6 +144,7 @@ function _displaymodel(
     indentation_str = "",
     show_subtree_info = false,
     show_metrics = false,
+    show_shortforms = false,
     show_intermediate_finals = false,
     tree_mode = false,
     show_symbols = true,
@@ -160,6 +163,7 @@ function _displaymodel(
     depth == 0 && show_symbols && print(io, "▣")
     print(io, " $(outcome(m))")
     show_metrics != false && print(io, " : $(get_metrics_string(m; (show_metrics isa NamedTuple ? show_metrics : [])...))")
+    show_shortforms != false && haskey(info(m), :shortform) && print(io, "\t\t\t\t\t\t\tSHORTFORM: $(syntaxstring(info(m)[:shortform]))")
     println(io, "")
     String(take!(io))
 end
@@ -170,6 +174,7 @@ function _displaymodel(
     indentation_str = "",
     show_subtree_info = false,
     show_metrics = false,
+    show_shortforms = false,
     show_intermediate_finals = false,
     tree_mode = false,
     show_symbols = true,
@@ -187,6 +192,7 @@ function _displaymodel(
     depth == 0 && show_symbols && print(io, "▣")
     print(io, "$(f(m))")
     show_metrics != false && print(io, " : $(get_metrics_string(m; (show_metrics isa NamedTuple ? show_metrics : [])...))")
+    show_shortforms != false && haskey(info(m), :shortform) && print(io, "\t\t\t\t\t\t\tSHORTFORM: $(syntaxstring(info(m)[:shortform]))")
     println(io, "")
     String(take!(io))
 end
@@ -200,6 +206,7 @@ function _displaymodel(
     max_depth = nothing,
     show_subtree_info = false,
     show_metrics = false,
+    show_shortforms = false,
     show_intermediate_finals = false,
     tree_mode = (subtreeheight(m) != 1),
     show_symbols = true,
@@ -236,17 +243,18 @@ function _displaymodel(
         ant_str = syntaxstring(antecedent(m); (haskey(info(m), :syntaxstring_kwargs) ? info(m).syntaxstring_kwargs : (;))..., syntaxstring_kwargs..., kwargs...)
         if tree_mode
             show_metrics != false && print(io, "$(pipe)$(get_metrics_string(m; (show_metrics isa NamedTuple ? show_metrics : [])...))")
+            show_shortforms != false && haskey(info(m), :shortform) && print(io, "\t\t\t\t\t\t\tSHORTFORM: $(syntaxstring(info(m)[:shortform]))")
             print(io, "$(pipe)$(ant_str)")
             println(io, "")
             pad_str = indentation_str*repeat(indentation_hspace, length(pipe)-length(indentation_last_space)+2)
             print(io, "$(pad_str*indentation_last_first)$(TICK)")
             ind_str = pad_str*indentation_last_space*repeat(indentation_hspace, length(TICK)-length(indentation_last_space)+2)
-            subm_str = @_display_submodel consequent(m) ind_str indentation depth max_depth show_subtree_info show_metrics show_intermediate_finals tree_mode show_symbols syntaxstring_kwargs kwargs
+            subm_str = @_display_submodel consequent(m) ind_str indentation depth max_depth show_subtree_info show_metrics show_shortforms show_intermediate_finals tree_mode show_symbols syntaxstring_kwargs kwargs
             print(io, subm_str)
         else
             line = "$(pipe)$(ant_str)" * "  $(arrow) "
             ind_str = indentation_str * repeat(" ", length(line) + length("▣") + 1)
-            subm_str = @_display_submodel consequent(m) ind_str indentation depth max_depth show_subtree_info false show_intermediate_finals tree_mode show_symbols syntaxstring_kwargs kwargs
+            subm_str = @_display_submodel consequent(m) ind_str indentation depth max_depth show_subtree_info false show_shortforms show_intermediate_finals tree_mode show_symbols syntaxstring_kwargs kwargs
             show_metrics != false && (subm_str = rstrip(subm_str, '\n') * " : $(get_metrics_string(m; (show_metrics isa NamedTuple ? show_metrics : [])...))")
             print(io, line)
             print(io, subm_str)
@@ -267,6 +275,7 @@ function _displaymodel(
     max_depth = nothing,
     show_subtree_info = false,
     show_metrics = false,
+    show_shortforms = false,
     show_intermediate_finals = false,
     tree_mode = true, # subtreeheight(m) != 1
     show_symbols = true,
@@ -297,11 +306,15 @@ function _displaymodel(
         line_str = "$(pipe)$(syntaxstring(antecedent(m); (haskey(info(m), :syntaxstring_kwargs) ? info(m).syntaxstring_kwargs : (;))..., syntaxstring_kwargs..., kwargs...))"
         if show_intermediate_finals != false && haskey(info(m), :this)
             ind_str = ""
-            subm_str = @_display_submodel info(m).this ind_str indentation (depth-1) max_depth show_subtree_info show_metrics show_intermediate_finals tree_mode false syntaxstring_kwargs kwargs
+            show_shortforms != false && haskey(info(m), :shortform) && (line_str = rpad(line_str, "\t\t\t\t\t\t\tSHORTFORM: $(syntaxstring(info(m)[:shortform]))"))
+            subm_str = @_display_submodel info(m).this ind_str indentation (depth-1) max_depth show_subtree_info show_metrics show_shortforms show_intermediate_finals tree_mode false syntaxstring_kwargs kwargs
             line_str = rpad(line_str, show_intermediate_finals isa Integer ? show_intermediate_finals : default_intermediate_finals_rpad) * subm_str
+            # show_shortforms != false && haskey(info(m), :shortform) && print(io, "\t\t\t\t\t\t\tSHORTFORM: $(syntaxstring(info(m)[:shortform]))")
             print(io, line_str)
         else
-            println(io, line_str)
+            print(io, line_str)
+            show_shortforms != false && haskey(info(m), :shortform) && print(io, "\t\t\t\t\t\t\tSHORTFORM: $(syntaxstring(info(m)[:shortform]))")
+            println(io)
         end
         for (consequent, indentation_flag_space, indentation_flag_first, f) in [
             (posconsequent(m), indentation_any_space, indentation_any_first, TICK),
@@ -311,7 +324,7 @@ function _displaymodel(
             pad_str = "$(indentation_str*indentation_flag_first)$(f)"
             print(io, "$(pad_str)")
             ind_str = indentation_str*indentation_flag_space*repeat(indentation_hspace, length(f))
-            subm_str = @_display_submodel consequent ind_str indentation depth max_depth show_subtree_info show_metrics show_intermediate_finals tree_mode show_symbols syntaxstring_kwargs kwargs
+            subm_str = @_display_submodel consequent ind_str indentation depth max_depth show_subtree_info show_metrics show_shortforms show_intermediate_finals tree_mode show_symbols syntaxstring_kwargs kwargs
             print(io, subm_str)
         end
     else
@@ -331,6 +344,7 @@ function _displaymodel(
     max_depth = nothing,
     show_subtree_info = false,
     show_metrics = false,
+    show_shortforms = false,
     show_intermediate_finals = false,
     tree_mode = true,
     show_symbols = true,
@@ -365,7 +379,7 @@ function _displaymodel(
             pad_str = indentation_str*indentation_any_space*repeat(indentation_hspace, length(pipe)-length(indentation_any_space)-1)
             print(io, "$(pad_str*indentation_last_first)")
             ind_str = pad_str*indentation_last_space
-            subm_str = @_display_submodel consequent(rule) ind_str indentation depth max_depth show_subtree_info show_metrics show_intermediate_finals tree_mode show_symbols syntaxstring_kwargs kwargs
+            subm_str = @_display_submodel consequent(rule) ind_str indentation depth max_depth show_subtree_info show_metrics show_shortforms show_intermediate_finals tree_mode show_symbols syntaxstring_kwargs kwargs
             print(io, subm_str)
         end
         pipe = indentation_last_first*"$(CROSS)"
@@ -373,7 +387,7 @@ function _displaymodel(
         # print(io, "$(indentation_str*indentation_last_space*repeat(indentation_hspace, length(pipe)-length(indentation_last_space)-1)*indentation_last_space)")
         ind_str = indentation_str*indentation_last_space*repeat(indentation_hspace, length(pipe)-length(indentation_last_space)-1)*indentation_last_space
         # ind_str = indentation_str*indentation_last_space,
-        subm_str = @_display_submodel defaultconsequent(m) ind_str indentation depth max_depth show_subtree_info show_metrics show_intermediate_finals tree_mode show_symbols syntaxstring_kwargs kwargs
+        subm_str = @_display_submodel defaultconsequent(m) ind_str indentation depth max_depth show_subtree_info show_metrics show_shortforms show_intermediate_finals tree_mode show_symbols syntaxstring_kwargs kwargs
         print(io, subm_str)
     else
         depth != 0 && print(io, " ")
@@ -391,6 +405,7 @@ function _displaymodel(
     max_depth = nothing,
     show_subtree_info = false,
     show_metrics = false,
+    show_shortforms = false,
     show_intermediate_finals = false,
     tree_mode = true,
     show_symbols = true,
@@ -416,7 +431,7 @@ function _displaymodel(
     end
 
     ########################################################################################
-    subm_str = @_display_submodel root(m) indentation_str indentation (depth-1) max_depth show_subtree_info show_metrics show_intermediate_finals tree_mode show_symbols syntaxstring_kwargs kwargs
+    subm_str = @_display_submodel root(m) indentation_str indentation (depth-1) max_depth show_subtree_info show_metrics show_shortforms show_intermediate_finals tree_mode show_symbols syntaxstring_kwargs kwargs
     print(io, subm_str)
     String(take!(io))
 end
@@ -430,6 +445,7 @@ function _displaymodel(
     max_depth = nothing,
     show_subtree_info = false,
     show_metrics = false,
+    show_shortforms = false,
     show_intermediate_finals = false,
     tree_mode = true,
     show_symbols = true,
@@ -456,7 +472,7 @@ function _displaymodel(
 
     ########################################################################################
     for tree in trees(m)
-        subm_str = @_display_submodel tree indentation_str indentation (depth-1) max_depth show_subtree_info show_metrics show_intermediate_finals tree_mode show_symbols syntaxstring_kwargs kwargs
+        subm_str = @_display_submodel tree indentation_str indentation (depth-1) max_depth show_subtree_info show_metrics show_shortforms show_intermediate_finals tree_mode show_symbols syntaxstring_kwargs kwargs
         print(io, subm_str)
     end
     String(take!(io))
@@ -471,6 +487,7 @@ function _displaymodel(
     max_depth = nothing,
     show_subtree_info = false,
     show_metrics = false,
+    show_shortforms = false,
     show_intermediate_finals = false,
     tree_mode = true,
     show_symbols = true,
@@ -496,7 +513,7 @@ function _displaymodel(
     end
 
     ########################################################################################
-    subm_str = @_display_submodel root(m) indentation_str indentation (depth-1) max_depth show_subtree_info show_metrics show_intermediate_finals tree_mode show_symbols syntaxstring_kwargs kwargs
+    subm_str = @_display_submodel root(m) indentation_str indentation (depth-1) max_depth show_subtree_info show_metrics show_shortforms show_intermediate_finals tree_mode show_symbols syntaxstring_kwargs kwargs
     print(io, subm_str)
     String(take!(io))
 end
