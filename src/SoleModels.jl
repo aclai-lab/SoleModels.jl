@@ -124,6 +124,8 @@ export rulemetrics, readmetrics
 
 include("models/evaluation.jl")
 
+include("experimentals.jl")
+
 include("deprecate.jl")
 
 end
