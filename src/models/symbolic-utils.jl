@@ -329,6 +329,7 @@ function listrules(
     use_shortforms::Bool = true,
     use_leftmostlinearform::Bool = false,
     normalize::Bool = false,
+    normalize_kwargs::NamedTuple = (; allow_atom_flipping = true, ),
     force_syntaxtree::Bool = false,
     kwargs...,
 ) where {O}
@@ -372,7 +373,7 @@ function listrules(
 
             if subrule isa LeafModel
                 ant = antformula
-                normalize && (ant = SoleLogics.normalize(ant; allow_atom_flipping = true))
+                normalize && (ant = SoleLogics.normalize(ant; normalize_kwargs...))
                 subi = (;)
                 # if use_shortforms
                 #     subi = merge((;), (;
@@ -396,7 +397,7 @@ function listrules(
                         end
                     end
                 end
-                normalize && (ant = SoleLogics.normalize(ant; allow_atom_flipping = true))
+                normalize && (ant = SoleLogics.normalize(ant; normalize_kwargs...))
                 Rule(ant, consequent(subrule), merge(info(subrule), i))
             else
                 error("Unexpected rule type: $(typeof(subrule)).")
