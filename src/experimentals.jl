@@ -30,3 +30,5 @@ function formula2natlang(
         hidemodality ? "$φ" : "On modality $(i_modality): $φ"
     end for i_modality in sort(collect(keys(modforms(f))))], "\n\tAND\n")
 end
+
+end
