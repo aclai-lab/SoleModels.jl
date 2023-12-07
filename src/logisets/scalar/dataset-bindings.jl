@@ -251,7 +251,6 @@ function scalarlogiset(
         "$(features)" *
         "Suspects: $(filter(f->(!is_feature(f) && !is_nofeatures(f) && !is_unifeatures(f)), features))"
 
-    @show isnothing(features) isnothing(conditions)
     if isnothing(features)
         features = begin
             if isnothing(conditions)
