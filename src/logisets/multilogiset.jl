@@ -225,6 +225,7 @@ function syntaxstring(
     f::MultiFormula;
     hidemodality = false,
     variable_names_map::Union{Nothing,AbstractDict,AbstractVector,AbstractVector{<:Union{AbstractDict,AbstractVector}}} = nothing,
+    parenthesize_modforms = true,
     kwargs...
 )
     map_is_multimodal = begin
@@ -240,8 +241,13 @@ function syntaxstring(
     end
     join([begin
         _variable_names_map = map_is_multimodal ? variable_names_map[i_modality] : variable_names_map
-        φ = syntaxstring(modforms(f)[i_modality]; variable_names_map = _variable_names_map, kwargs...)
-        hidemodality ? "$φ" : "{$(i_modality)}($φ)"
+        φ = modforms(f)[i_modality]
+        str = syntaxstring(φ; variable_names_map = _variable_names_map, kwargs...)
+        parenthesize = !(φ isa SyntaxBranch) || (φ isa SyntaxBranch && SoleLogics.isunary(token(φ)))
+        if parenthesize && parenthesize_modforms
+            str = "($str)"
+        end
+        hidemodality ? "$str" : "{$(i_modality)}$str"
     end for i_modality in sort(collect(keys(modforms(f))))], " $(CONJUNCTION) ")
 end
 

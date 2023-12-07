@@ -123,6 +123,7 @@ _submodels(m::DecisionForest) = [Iterators.flatten(_submodels.(immediatesubmodel
 _submodels(m::MixedSymbolicModel) = [Iterators.flatten(_submodels.(immediatesubmodels(m)))...]
 
 nsubmodels(m::AbstractModel) = 1 + sum(nsubmodels, immediatesubmodels(m))
+nsubmodels(m::LeafModel) = 1
 nsubmodels(m::DecisionList) = sum(nsubmodels, immediatesubmodels(m))
 nsubmodels(m::DecisionTree) = sum(nsubmodels, immediatesubmodels(m))
 nsubmodels(m::DecisionForest) = sum(nsubmodels, immediatesubmodels(m))

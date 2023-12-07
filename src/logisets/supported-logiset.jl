@@ -287,7 +287,7 @@ function displaystructure(
 )
     padattribute(l,r) = string(l) * lpad(r,32+length(string(r))-(length(indent_str)+2+length(l))-1)
     pieces = []
-    push!(pieces, "SupportedLogiset with $(nsupports(X)) supports ($(humansize(X)))")
+    push!(pieces, "SupportedLogiset with $(nsupports(X)) $(nsupports(X) == 1 ? "support" : "supports") ($(humansize(X)))")
     if ismissing(include_worldtype) || include_worldtype != worldtype(X)
         push!(pieces, " " * padattribute("worldtype:", worldtype(X)))
     end
