@@ -1,10 +1,10 @@
 module utils
 
+using SoleBase
 using SoleLogics: syntaxstring
+using SoleLogics: displaysyntaxvector
 
 export displaysyntaxvector
-
-using SoleBase
 
 @inline function softminimum(vals, alpha)
     _vals = SoleBase.vectorize(vals);
@@ -57,16 +57,5 @@ end
 
 subscriptnumber(i::AbstractFloat) = subscriptnumber(string(i))
 subscriptnumber(i::Any) = i
-
-function displaysyntaxvector(a, maxnum = 8)
-    els = begin
-        if length(a) > maxnum
-            [(syntaxstring.(a)[1:div(maxnum, 2)])..., "...", syntaxstring.(a)[end-div(maxnum, 2):end]...]
-        else
-            syntaxstring.(a)
-        end
-    end
-    "$(eltype(a))[$(join(map(e->"\"$(e)\"", els), ", "))]"
-end
 
 end

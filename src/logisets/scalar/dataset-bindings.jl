@@ -387,6 +387,21 @@ function naturalconditions(
     mixed_conditions   :: AbstractVector,
     featvaltype        :: Union{Nothing,Type} = nothing
 )
+    # TODO maybe? Should work
+    # if ismultilogiseed(dataset)
+    #     mixed_conditions = begin
+    #         if mixed_conditions isa AbstractVector{<:AbstractVector}
+    #             mixed_conditions
+    #         else
+    #             fill(mixed_conditions, nmodalities(dataset))
+    #         end
+    #     end
+
+    #     return [naturalconditions(mod, mixed_conditions, featvaltype) for mod in eachmodality(dataset)]
+    # end
+
+    @assert !any(isa.(mixed_conditions, AbstractVector{<:AbstractVector})) "Unexpected mixed_conditions: $(mixed_conditions)."
+
     nvars = nvariables(dataset)
 
     @assert all(isa.(mixed_conditions, MixedCondition)) "" *
