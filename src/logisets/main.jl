@@ -29,6 +29,7 @@ export accessibles, allworlds, representatives
 # Interface for representative accessibles, for optimized model checking on specific frames
 include("representatives.jl")
 
+export PropositionalLogiset
 export ninstances, featvalue, displaystructure, isminifiable, minify
 
 # Logical datasets, where the instances are Kripke structures with conditional alphabets

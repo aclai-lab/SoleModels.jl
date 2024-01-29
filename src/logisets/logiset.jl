@@ -8,8 +8,7 @@ import SoleLogics: worldtype, frametype
 abstract type AbstractLogiset{M} <: AbstractInterpretationSet{M} end
 abstract type AbstractPropositionalLogiset <: AbstractLogiset{AbstractAssignment} end
 
-
-struct PropositionalLogiset {
+struct PropositionalLogiset{
     ADF <: AbstractDataFrame
 } <: AbstractPropositionalLogiset
     
