@@ -289,6 +289,7 @@ end
 
 listrules(m::LeafModel; kwargs...) = [m]
 
+# TODO remove:
 # function listrules(
 #     m::Rule{O,Top};
 #     kwargs...,
@@ -304,6 +305,7 @@ function listrules(
     [(force_syntaxtree ? Rule{O}(ant, consequent(m), info(m)) : m)]
 end
 
+# TODO remove:
 # function listrules(
 #     m::Branch{O,Top};
 #     kwargs...,
