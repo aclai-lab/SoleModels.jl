@@ -30,8 +30,8 @@ using SoleModels.utils
 
 using SoleModels: Aggregator, AbstractCondition
 using SoleModels: BoundedScalarConditions
-using SoleModels: AbstractLogiset, AbstractMultiModalFrame
-using SoleModels: MultiLogiset, AbstractLogiset
+using SoleModels: AbstractModalLogiset, AbstractMultiModalFrame
+using SoleModels: MultiLogiset, AbstractModalLogiset
 using SoleModels: apply_test_operator, existential_aggregator, aggregator_bottom, aggregator_to_binary
 
 import SoleModels: features, nfeatures

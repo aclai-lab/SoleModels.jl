@@ -1,16 +1,30 @@
-using SoleLogics: AbstractKripkeStructure, AbstractInterpretationSet, AbstractFrame
+using SoleLogics: AbstractKripkeStructure, AbstractInterpretationSet, AbstractFrame, AbstractAssignment
 using SoleLogics: Truth
 import SoleLogics: alphabet, frame, check
 import SoleLogics: accessibles, allworlds, nworlds
 import SoleLogics: worldtype, frametype
 
+
+abstract type AbstractLogiset{M} <: AbstractInterpretationSet{M} end
+abstract type AbstractPropositionalLogiset <: AbstractLogiset{AbstractAssignment} end
+
+
+struct PropositionalLogiset {
+    ADF <: AbstractDataFrame
+} <: AbstractPropositionalLogiset
+    
+    dataset :: ADF
+end
+
+############################################################################################
+
 """
-    abstract type AbstractLogiset{
+    abstract type AbstractModalLogiset{
         W<:AbstractWorld,
         U,
         FT<:AbstractFeature,
         FR<:AbstractFrame{W},
-    } <: AbstractInterpretationSet{AbstractKripkeStructure} end
+    } <: AbstractLogiset{AbstractKripkeStructure} end
 
 Abstract type for logisets, that is, logical datasets for
 symbolic learning where each instance is a
@@ -25,15 +39,15 @@ See also
 [`SoleLogics.AbstractKripkeStructure`](@ref),
 [`SoleLogics.AbstractInterpretationSet`](@ref).
 """
-abstract type AbstractLogiset{
+abstract type AbstractModalLogiset{
     W<:AbstractWorld,
     U,
     FT<:AbstractFeature,
     FR<:AbstractFrame{W},
-} <: AbstractInterpretationSet{AbstractKripkeStructure} end
+} <: AbstractLogiset{AbstractKripkeStructure} end
 
 function featchannel(
-    X::AbstractLogiset{W},
+    X::AbstractModalLogiset{W},
     i_instance::Integer,
     feature::AbstractFeature,
 ) where {W<:AbstractWorld}
@@ -41,7 +55,7 @@ function featchannel(
 end
 
 function readfeature(
-    X::AbstractLogiset{W},
+    X::AbstractModalLogiset{W},
     featchannel::Any,
     w::W,
     feature::AbstractFeature,
@@ -51,7 +65,7 @@ end
 
 # TODO docstring
 function featvalue(
-    X::AbstractLogiset{W},
+    X::AbstractModalLogiset{W},
     i_instance::Integer,
     w::W,
     feature::AbstractFeature,
@@ -60,7 +74,7 @@ function featvalue(
 end
 
 function featvalue!(
-    X::AbstractLogiset{W},
+    X::AbstractModalLogiset{W},
     featval,
     i_instance::Integer,
     w::W,
@@ -70,30 +84,30 @@ function featvalue!(
 end
 
 function featvalues!(
-    X::AbstractLogiset{W},
+    X::AbstractModalLogiset{W},
     featslice,
     feature::AbstractFeature,
 ) where {W<:AbstractWorld}
     return error("Please, provide method featvalues!(::$(typeof(X)), featslice::$(typeof(featslice)), feature::$(typeof(feature))).")
 end
 
-function frame(X::AbstractLogiset, i_instance::Integer)
+function frame(X::AbstractModalLogiset, i_instance::Integer)
     return error("Please, provide method frame(::$(typeof(X)), i_instance::$(typeof(i_instance))).")
 end
 
-function ninstances(X::AbstractLogiset)
+function ninstances(X::AbstractModalLogiset)
     return error("Please, provide method ninstances(::$(typeof(X))).")
 end
 
 function allfeatvalues(
-    X::AbstractLogiset,
+    X::AbstractModalLogiset,
     i_instance,
 )
     return error("Please, provide method allfeatvalues(::$(typeof(X)), i_instance::$(typeof(i_instance))).")
 end
 
 function allfeatvalues(
-    X::AbstractLogiset,
+    X::AbstractModalLogiset,
     i_instance,
     feature,
 )
@@ -101,7 +115,7 @@ function allfeatvalues(
 end
 
 function instances(
-    X::AbstractLogiset,
+    X::AbstractModalLogiset,
     inds::AbstractVector{<:Integer},
     return_view::Union{Val{true},Val{false}} = Val(false);
     kwargs...
@@ -109,52 +123,52 @@ function instances(
     return error("Please, provide method instances(::$(typeof(X)), ::$(typeof(inds)), ::$(typeof(return_view))).")
 end
 
-function concatdatasets(Xs::AbstractLogiset...)
+function concatdatasets(Xs::AbstractModalLogiset...)
     return error("Please, provide method concatdatasets(X...::$(typeof(Xs))).")
 end
 
-function displaystructure(X::AbstractLogiset; kwargs...)::String
+function displaystructure(X::AbstractModalLogiset; kwargs...)::String
     return error("Please, provide method displaystructure(X::$(typeof(X)); kwargs...)::String.")
 end
 
-isminifiable(::AbstractLogiset) = false
+isminifiable(::AbstractModalLogiset) = false
 
-usesfullmemo(::AbstractLogiset) = false
+usesfullmemo(::AbstractModalLogiset) = false
 
-function allfeatvalues(X::AbstractLogiset)
+function allfeatvalues(X::AbstractModalLogiset)
     unique(collect(Iterators.flatten([allfeatvalues(X, i_instance) for i_instance in 1:ninstances(X)])))
 end
 
-hasnans(X::AbstractLogiset) = any(isnan, allfeatvalues(X))
+hasnans(X::AbstractModalLogiset) = any(isnan, allfeatvalues(X))
 
 ############################################################################################
 
-function Base.show(io::IO, X::AbstractLogiset; kwargs...)
+function Base.show(io::IO, X::AbstractModalLogiset; kwargs...)
     println(io, displaystructure(X; kwargs...))
 end
 
-worldtype(::Type{<:AbstractLogiset{W}}) where {W<:AbstractWorld} = W
-worldtype(X::AbstractLogiset) = worldtype(typeof(X))
+worldtype(::Type{<:AbstractModalLogiset{W}}) where {W<:AbstractWorld} = W
+worldtype(X::AbstractModalLogiset) = worldtype(typeof(X))
 
-featvaltype(::Type{<:AbstractLogiset{W,U}}) where {W<:AbstractWorld,U} = U
-featvaltype(X::AbstractLogiset) = featvaltype(typeof(X))
+featvaltype(::Type{<:AbstractModalLogiset{W,U}}) where {W<:AbstractWorld,U} = U
+featvaltype(X::AbstractModalLogiset) = featvaltype(typeof(X))
 
-featuretype(::Type{<:AbstractLogiset{W,U,FT}}) where {W<:AbstractWorld,U,FT<:AbstractFeature} = FT
-featuretype(X::AbstractLogiset) = featuretype(typeof(X))
+featuretype(::Type{<:AbstractModalLogiset{W,U,FT}}) where {W<:AbstractWorld,U,FT<:AbstractFeature} = FT
+featuretype(X::AbstractModalLogiset) = featuretype(typeof(X))
 
-frametype(::Type{<:AbstractLogiset{W,U,FT,FR}}) where {W<:AbstractWorld,U,FT<:AbstractFeature,FR<:AbstractFrame} = FR
-frametype(X::AbstractLogiset) = frametype(typeof(X))
+frametype(::Type{<:AbstractModalLogiset{W,U,FT,FR}}) where {W<:AbstractWorld,U,FT<:AbstractFeature,FR<:AbstractFrame} = FR
+frametype(X::AbstractModalLogiset) = frametype(typeof(X))
 
-representatives(X::AbstractLogiset, i_instance::Integer, args...) = representatives(frame(X, i_instance), args...)
+representatives(X::AbstractModalLogiset, i_instance::Integer, args...) = representatives(frame(X, i_instance), args...)
 
 ############################################################################################
 # Non mandatory
 
-function features(X::AbstractLogiset)
+function features(X::AbstractModalLogiset)
     return error("Please, provide method features(::$(typeof(X))).")
 end
 
-function nfeatures(X::AbstractLogiset)
+function nfeatures(X::AbstractModalLogiset)
     return error("Please, provide method nfeatures(::$(typeof(X))).")
 end
 
@@ -167,21 +181,21 @@ end
 #         U,
 #         FT<:AbstractFeature,
 #         FR<:AbstractFrame{W},
-#     } <: AbstractLogiset{W,U,FT,FR} end
+#     } <: AbstractModalLogiset{W,U,FT,FR} end
 
 # (Base) logisets can be associated to support logisets that perform memoization in order
 # to speed up model checking times.
 
 # See also
 # [`SupportedLogiset`](@ref),
-# [`AbstractLogiset`](@ref).
+# [`AbstractModalLogiset`](@ref).
 # """
 # abstract type AbstractBaseLogiset{
 #     W<:AbstractWorld,
 #     U,
 #     FT<:AbstractFeature,
 #     FR<:AbstractFrame{W},
-# } <: AbstractLogiset{W,U,FT,FR} end
+# } <: AbstractModalLogiset{W,U,FT,FR} end
 
 
 """
@@ -189,7 +203,7 @@ end
         W<:AbstractWorld,
         FT<:AbstractFeature,
         FR<:AbstractFrame{W},
-    } <: AbstractLogiset{W,Bool,FT,FR}
+    } <: AbstractModalLogiset{W,Bool,FT,FR}
 
         d :: Vector{Tuple{Dict{W,Vector{FT}},FR}}
 
@@ -199,14 +213,14 @@ A logiset where the features are boolean, and where each instance associates to 
 the set of features with `true`.
 
 See also
-[`AbstractLogiset`](@ref).
+[`AbstractModalLogiset`](@ref).
 """
 struct ExplicitBooleanLogiset{
     W<:AbstractWorld,
     FT<:AbstractFeature,
     FR<:AbstractFrame{W},
     D<:AbstractVector{<:Tuple{<:Dict{<:W,<:Vector{<:FT}},<:FR}}
-} <: AbstractLogiset{W,Bool,FT,FR}
+} <: AbstractModalLogiset{W,Bool,FT,FR}
 
     d :: D
 
@@ -327,7 +341,7 @@ hasnans(X::ExplicitBooleanLogiset) = false
         U,
         FT<:AbstractFeature,
         FR<:AbstractFrame{W},
-    } <: AbstractLogiset{W,U,FT,FR}
+    } <: AbstractModalLogiset{W,U,FT,FR}
 
         d :: Vector{Tuple{Dict{W,Dict{FT,U}},FR}}
 
@@ -337,7 +351,7 @@ A logiset where the features are boolean, and where each instance associates to 
 the set of features with `true`.
 
 See also
-[`AbstractLogiset`](@ref).
+[`AbstractModalLogiset`](@ref).
 """
 struct ExplicitLogiset{
     W<:AbstractWorld,
@@ -345,7 +359,7 @@ struct ExplicitLogiset{
     FT<:AbstractFeature,
     FR<:AbstractFrame{W},
     D<:AbstractVector{<:Tuple{<:Dict{<:W,<:Dict{<:FT,<:U}},<:FR}}
-} <: AbstractLogiset{W,U,FT,FR}
+} <: AbstractModalLogiset{W,U,FT,FR}
 
     d :: D
 
