@@ -1132,6 +1132,17 @@ struct DecisionTree{
         check_model_constraints(DecisionTree{O}, typeof(root), FM, O)
         new{O,A,FFM}(root, info)
     end
+
+    function DecisionTree(
+        antecedent::Formula,
+        posconsequent::Any,
+        negconsequent::Any,
+        info::NamedTuple = (;),
+    )
+        posconsequent isa DecisionTree && (posconsequent = root(posconsequent))
+        negconsequent isa DecisionTree && (negconsequent = root(negconsequent))
+        return DecisionTree(Branch(antecedent, posconsequent, negconsequent, info))
+    end
 end
 
 root(m::DecisionTree) = m.root

@@ -27,8 +27,6 @@ function readmetrics(m::LeafModel{L}; digits = 2) where {L<:Label}
         end
     elseif haskey(info(m), :supporting_labels)
         return (; ninstances = length(info(m).supporting_labels))
-    elseif haskey(info(consequent(m)), :supporting_labels)
-        return (; ninstances = length(info(m).supporting_labels))
     else
         return (;)
     end, (; coverage = 1.0))
@@ -70,11 +68,11 @@ See also
 [`checkantecedent`](@ref).
 """
 function evaluaterule(
-    rule::Rule{O,A,FM},
+    rule::Rule,
     X::AbstractInterpretationSet,
     Y::AbstractVector{<:Label};
     kwargs...,
-) where {O,A,FM<:AbstractModel}
+)
     #println("Evaluation rule in time...")
     ys = apply(rule,X)
     #if X isa SupportedLogiset
@@ -147,11 +145,11 @@ See also
 [`consequent`](@ref).
 """
 function rulemetrics(
-    rule::Rule{O,A,FM},
+    rule::Rule,
     X::AbstractInterpretationSet,
     Y::AbstractVector{<:Label};
     kwargs...,
-) where {O,A,FM<:AbstractModel}
+)
     eval_result = evaluaterule(rule, X, Y; kwargs...)
     ys = eval_result[:ys]
     antsat = eval_result[:antsat]
