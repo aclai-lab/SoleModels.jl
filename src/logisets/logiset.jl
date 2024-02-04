@@ -1,20 +1,66 @@
 using SoleLogics: AbstractKripkeStructure, AbstractInterpretationSet, AbstractFrame, AbstractAssignment
-using SoleLogics: Truth
+using SoleLogics: Truth, LogicalInstance
 import SoleLogics: alphabet, frame, check
 import SoleLogics: accessibles, allworlds, nworlds
 import SoleLogics: worldtype, frametype
+import SoleLogics: interpret
 
 
 abstract type AbstractLogiset{M} <: AbstractInterpretationSet{M} end
 abstract type AbstractPropositionalLogiset <: AbstractLogiset{AbstractAssignment} end
 
-
-struct PropositionalLogiset {
+# TODO change from DataFrame to Table
+struct PropositionalLogiset{
     ADF <: AbstractDataFrame
 } <: AbstractPropositionalLogiset
     
     dataset :: ADF
 end
+
+ninstances(X::PropositionalLogiset) = nrow(X.dataset)
+gettable(M::PropositionalLogiset) = M.dataset
+
+function getfeatures(M::PropositionalLogiset)
+    columnnames = names(gettable(M))
+    return UnivariateSymbolFeature.(Symbol.(columnnames))
+end
+
+function Base.getindex(X::PropositionalLogiset{DataFrame}, row::Int64, col::Symbol)
+    return X.dataset[row, col]
+end
+
+function Base.getindex(X::PropositionalLogiset{DataFrame}, row::Colon, col::Symbol)
+    return X.dataset[row, col]
+end
+
+# TODO ok ? 
+function alphabetlogiset(P::PropositionalLogiset)
+    conditions = getconditionset(P, [≤, ≥])
+    return atoms.(conditions)
+end
+  
+
+
+function interpret(
+
+    φ::Atom,
+    i::LogicalInstance{<:PropositionalLogiset},
+    args...;
+    kwargs...
+
+    )::Formula
+
+    cond = value(φ)
+
+    cond_threshold = threshold(cond)
+    cond_operator = test_operator(cond)
+    cond_feature = feature(cond)
+
+    colname = varname(cond_feature)
+    return cond_operator(i.s[i.i_instance,colname], cond_threshold) ? ⊤ : ⊥   
+     
+end
+
 
 ############################################################################################
 
