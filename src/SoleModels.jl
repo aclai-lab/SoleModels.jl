@@ -4,13 +4,9 @@ using Reexport
 
 using SoleBase
 
-using MultiData
-using MultiData: _isnan
-
 @reexport using SoleData
 
 using SoleData: AbstractLogiset, ismultilogiseed
-using MultiData: dataframe2dimensional
 
 @reexport using SoleLogics
 using SoleLogics
