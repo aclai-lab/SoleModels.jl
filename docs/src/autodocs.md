@@ -8,5 +8,5 @@ CurrentModule = SoleModels
 ```
 
 ```@autodocs
-Modules = [SoleModels, SoleModels.DimensionalDatasets]
+Modules = [SoleModels]
 ```

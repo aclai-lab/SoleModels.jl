@@ -224,7 +224,7 @@ julia> SoleModels.LeafModel(2) isa SoleModels.ConstantModel
 
 julia> SoleModels.LeafModel(sum) isa SoleModels.FunctionModel
 ┌ Warning: Over efficiency concerns, please consider wrappingJulia Function's into FunctionWrapper{O,Tuple{SoleModels.AbstractInterpretation}} structures,where O is their return type.
-└ @ SoleModels ~/.julia/dev/SoleModels/src/models/base.jl:337
+└ @ SoleModels ~/.julia/dev/SoleModels/src/base.jl:337
 true
 
 ```
