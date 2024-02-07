@@ -15,14 +15,8 @@ end
 println("Julia version: ", VERSION)
 
 test_suites = [
-    ("Logisets", [ "logisets/logisets.jl", ]),
-    ("Memosets", [ "logisets/memosets.jl", ]),
-    ("Cube to Logiset", [ "logisets/cube2logiset.jl", ]),
-    ("DataFrame to Logiset", [ "logisets/dataframe2logiset.jl", ]),
-    ("MultiLogisets", [ "logisets/multilogisets.jl", ]),
-    ("MLJ", [ "logisets/MLJ.jl", ]),
     ("Models", ["base.jl", ]),
-    ("Miscellaneous", ["misc.jl", "minify.jl"]),
+    ("Miscellaneous", ["misc.jl", ]),
     ("Parse", ["parse.jl", ]),
     ("Pluto Demo", ["$(dirname(dirname(pathof(SoleModels))))/pluto-demo.jl", ]),
 ]

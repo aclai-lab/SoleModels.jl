@@ -290,12 +290,13 @@ end
 
 listrules(m::LeafModel; kwargs...) = [m]
 
-function listrules(
-    m::Rule{O,Top};
-    kwargs...,
-) where {O}
-    [m]
-end
+# TODO remove:
+# function listrules(
+#     m::Rule{O,Top};
+#     kwargs...,
+# ) where {O}
+#     [m]
+# end
 
 function listrules(
     m::Rule{O};
@@ -305,25 +306,26 @@ function listrules(
     [(force_syntaxtree ? Rule{O}(ant, consequent(m), info(m)) : m)]
 end
 
-function listrules(
-    m::Branch{O,Top};
-    kwargs...,
-) where {O}
-    pos_rules = begin
-        submodels = listrules(posconsequent(m); kwargs...)
-        submodels isa Vector{<:LeafModel} ? [Rule{O,Top}(fm) for fm in submodels] : submodels
-    end
+# TODO remove:
+# function listrules(
+#     m::Branch{O,Top};
+#     kwargs...,
+# ) where {O}
+#     pos_rules = begin
+#         submodels = listrules(posconsequent(m); kwargs...)
+#         submodels isa Vector{<:LeafModel} ? [Rule{O,Top}(fm) for fm in submodels] : submodels
+#     end
 
-    neg_rules = begin
-        submodels = listrules(negconsequent(m); kwargs...)
-        submodels isa Vector{<:LeafModel} ? [Rule{O,Top}(fm) for fm in submodels] : submodels
-    end
+#     neg_rules = begin
+#         submodels = listrules(negconsequent(m); kwargs...)
+#         submodels isa Vector{<:LeafModel} ? [Rule{O,Top}(fm) for fm in submodels] : submodels
+#     end
 
-    return [
-        pos_rules...,
-        neg_rules...,
-    ]
-end
+#     return [
+#         pos_rules...,
+#         neg_rules...,
+#     ]
+# end
 
 function listrules(
     m::Branch{O};

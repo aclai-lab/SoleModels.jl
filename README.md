@@ -15,7 +15,6 @@
 *SoleModels.jl* defines the building blocks of *symbolic* modeling and learning.
 It features:
 - Definitions for symbolic models (decision trees/forests, rules, branches, etc.);
-- Optimized data structures, useful when learning models from machine learning datasets;
 - Support for mixed, neuro-symbolic computation.
 
 These definitions provide a unified base for implementing symbolic algorithms, such as:

@@ -63,6 +63,8 @@ end
 
 ############################################################################################
 
+
+
 """
     struct MultivariateFeature{U} <: VarFeature
         f::Function
@@ -244,6 +246,21 @@ function featvaltype(dataset, f::UnivariateNamedFeature{U}) where {U}
 end
 
 ############################################################################################
+
+# TODO docstring
+struct UnivariateSymbolFeature <: AbstractUnivariateFeature
+    varname::Symbol
+end
+
+varname(f::UnivariateSymbolFeature) = f.varname
+
+function syntaxstring(f::UnivariateSymbolFeature; kwargs...)
+    repr(f.varname)
+end
+
+############################################################################################
+
+
 
 """
     struct UnivariateValue <: AbstractUnivariateFeature

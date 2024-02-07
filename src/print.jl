@@ -211,7 +211,7 @@ function _displaymodel(
     tree_mode = (subtreeheight(m) != 1),
     show_symbols = true,
     syntaxstring_kwargs = (; parenthesize_atoms = true),
-    arrow = "🠮", # ⮞, 🡆, 🠮, 🠲, =>
+    arrow = "↣", # "🠮", # ⮞, 🡆, 🠮, 🠲, =>
     kwargs...,
 )
     io = IOBuffer()

@@ -1,20 +1,77 @@
 using SoleLogics: AbstractKripkeStructure, AbstractInterpretationSet, AbstractFrame, AbstractAssignment
-using SoleLogics: Truth
+using SoleLogics: Truth, LogicalInstance
 import SoleLogics: alphabet, frame, check
 import SoleLogics: accessibles, allworlds, nworlds
 import SoleLogics: worldtype, frametype
+import SoleLogics: interpret
+import Tables: columnnames, rows, getcolumn, columns
 
 
-abstract type AbstractLogiset{M} <: AbstractInterpretationSet{M} end
-abstract type AbstractPropositionalLogiset <: AbstractLogiset{AbstractAssignment} end
+abstract type AbstractModalLogiset{M} <: AbstractInterpretationSet{M} end
+abstract type AbstractPropositionalLogiset <: AbstractModalLogiset{AbstractAssignment} end
 
+# TODO change from DataFrame to Table
+struct PropositionalLogiset <: AbstractPropositionalLogiset
+    dataset
 
-struct PropositionalLogiset {
-    ADF <: AbstractDataFrame
-} <: AbstractPropositionalLogiset
-    
-    dataset :: ADF
+    function PropositionalLogiset(dataset)
+        if istable(dataset)
+            new(dataset)
+        else
+            error("Table interface not implemented for $(typeof(dataset)) type")
+        end
+    end
 end
+
+ninstances(X::PropositionalLogiset) = nrow(X.dataset)
+gettable(M::PropositionalLogiset) = M.dataset
+
+function getfeatures(M::PropositionalLogiset)
+    colnames = columnnames(gettable(M))
+    return UnivariateSymbolFeature.(Symbol.(colnames))
+end
+
+
+# A retrieved column is a 1-based indexable object that has a known
+# length, i.e. supports length(col) and col[i].
+# Note that if x is an object in which columns are stored as vectors, the 
+# check that these vectors use 1-based indexing is not performed (it 
+# should be ensured when x is constructed).
+function Base.getindex(X::PropositionalLogiset, ::Colon, col::Symbol)
+    return columns(X.dataset)[col]
+end
+function Base.getindex(X::PropositionalLogiset, row::Int64, col::Symbol)
+    return X.dataset[row,col]
+end
+
+
+
+# TODO ok ? 
+function alphabetlogiset(P::PropositionalLogiset)
+    conditions = getconditionset(P, [≤, ≥])
+    return atoms.(conditions)
+end
+  
+function interpret(
+
+    φ::Atom,
+    i::LogicalInstance{<:PropositionalLogiset},
+    args...;
+    kwargs...
+
+    )::Formula
+
+    cond = value(φ)
+
+    cond_threshold = threshold(cond)
+    cond_operator = test_operator(cond)
+    cond_feature = feature(cond)
+
+    colname = varname(cond_feature)
+    return cond_operator(i.s[i.i_instance,colname], cond_threshold) ? ⊤ : ⊥   
+     
+end
+
 
 ############################################################################################
 
@@ -24,7 +81,7 @@ end
         U,
         FT<:AbstractFeature,
         FR<:AbstractFrame{W},
-    } <: AbstractLogiset{AbstractKripkeStructure} end
+    } <: AbstractModalLogiset{AbstractKripkeStructure} end
 
 Abstract type for logisets, that is, logical datasets for
 symbolic learning where each instance is a
@@ -44,7 +101,7 @@ abstract type AbstractModalLogiset{
     U,
     FT<:AbstractFeature,
     FR<:AbstractFrame{W},
-} <: AbstractLogiset{AbstractKripkeStructure} end
+} <: AbstractModalLogiset{AbstractKripkeStructure} end
 
 function featchannel(
     X::AbstractModalLogiset{W},
