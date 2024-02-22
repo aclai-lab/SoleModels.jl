@@ -1,7 +1,48 @@
 using SoleModels
-using MLJBase: accuracy, mae
 using SoleModels: LeafModel
 import SoleLogics: natoms
+
+####################### Utils Functions #####################
+
+function accuracy(
+    y_true::AbstractArray,
+    y_pred::AbstractArray,
+)
+    @assert length(y_true) == length(y_pred) "True labels and Predicted labels don't have the same length"
+    @assert length(y_pred) > 0 "Don't pass the labels, the two vectors are empty"
+
+    return sum(y_pred .== y_true)/length(y_pred)
+end
+
+function error(
+    y_true::AbstractArray,
+    y_pred::AbstractArray,
+)
+
+    return 1.0 - accuracy(y_true, y_pred)
+end
+
+function mae(
+    y_true::AbstractArray,
+    y_pred::AbstractArray,
+)
+    @assert length(y_true) == length(y_pred) "True labels and Predicted labels don't have the same length"
+    @assert length(y_pred) > 0 "Don't pass the labels, the two vectors are empty"
+
+    return sum(abs.(y_pred.-y_true)) / length(y_pred)
+end
+
+function mse(
+    y_true::AbstractArray,
+    y_pred::AbstractArray,
+)
+    @assert length(y_true) == length(y_pred) "True labels and Predicted labels don't have the same length"
+    @assert length(y_pred) > 0 "Don't pass the labels, the two vectors are empty"
+
+    return sum((y_pred.-y_true).^2) / length(y_pred)
+end
+
+#############################################################
 
 """
     readmetrics(m::AbstractModel; digits = 2)
@@ -162,13 +203,10 @@ function rulemetrics(
         if outcometype(consequent(rule)) <: CLabel
             # Number of incorrectly classified instances divided by number of instances
             # satisfying the rule condition.
-            # TODO: failure
-            misclassified_instances = length(findall(ys[antsat] .!= Y[antsat]))
-            # n_satisfy == 0 ? 1.0 : (misclassified_instances / n_satisfy)
-            (misclassified_instances / n_satisfy)
+            error(ys[antsat],Y[antsat])
         elseif outcometype(consequent(rule)) <: RLabel
             # Mean Squared Error (mse)
-            mse(ys[antsat], Y[antsat])
+            mse(ys[antsat],Y[antsat])
         else
             error("The outcome type of the consequent of the input rule $(outcometype(consequent(rule))) is not among those accepted")
         end
