@@ -1,6 +1,7 @@
 using SoleBase
 using SoleLogics
 using SoleData
+using SoleData: DimensionalDatasets
 using SoleModels
 using Documenter
 
