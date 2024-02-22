@@ -58,6 +58,7 @@ Tables = "1"
 ThreadSafeDicts = "0.1"
 ZipFile = "0.10"
 julia = "1"
+MultiData = "8cc5100c-b3d1-4f82-90cb-0ea93d317aba"
 
 [extras]
 InteractiveUtils = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
@@ -66,4 +67,4 @@ PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["Test", "Markdown", "InteractiveUtils", "PlutoUI"]
+test = ["Test", "Markdown", "InteractiveUtils", "PlutoUI", "MultiData"]
