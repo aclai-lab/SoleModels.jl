@@ -1,8 +1,9 @@
+using StatsBase
 using SoleModels
 using SoleModels: LeafModel
 import SoleLogics: natoms
 
-####################### Utils Functions #####################
+####################### Util Functions #####################
 
 function accuracy(
     y_true::AbstractArray,
@@ -29,7 +30,8 @@ function mae(
     @assert length(y_true) == length(y_pred) "True labels and Predicted labels don't have the same length"
     @assert length(y_pred) > 0 "Don't pass the labels, the two vectors are empty"
 
-    return sum(abs.(y_pred.-y_true)) / length(y_pred)
+    # return sum(abs.(y_pred.-y_true)) / length(y_pred)
+    return StatsBase.mean(abs, y_true - y_pred)
 end
 
 function mse(
@@ -39,7 +41,8 @@ function mse(
     @assert length(y_true) == length(y_pred) "True labels and Predicted labels don't have the same length"
     @assert length(y_pred) > 0 "Don't pass the labels, the two vectors are empty"
 
-    return sum((y_pred.-y_true).^2) / length(y_pred)
+    # return sum((y_pred.-y_true).^2) / length(y_pred)
+    return StatsBase.mean(abs2, y_true - y_pred)
 end
 
 #############################################################
@@ -62,7 +65,7 @@ function readmetrics(m::LeafModel{L}; digits = 2) where {L<:Label}
         if L <: CLabel
             (; ninstances = length(_gts), confidence = round(accuracy(_gts, _preds); digits = digits))
         elseif L <: RLabel
-            (; ninstances = length(_gts), mae = round(mae(_gts, _preds); digits = digits))
+            (; ninstances = length(_gts), mse = round(mse(_gts, _preds); digits = digits))
         else
             error("Could not compute readmetrics with unknown label type: $(L).")
         end
