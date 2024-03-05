@@ -5,8 +5,8 @@ CurrentModule = SoleModels
 # Symbolic models
 
 ```@autodocs
-Modules = [SoleModels, SoleModels.DimensionalDatasets]
-Pages   = ["models/base.jl"]
+Modules = [SoleModels]
+Pages   = ["base.jl"]
 ```
 
 ```@docs
@@ -16,20 +16,20 @@ printmodel
 ## Evaluating symbolic models
 
 ```@autodocs
-Modules = [SoleModels, SoleModels.DimensionalDatasets]
-Pages   = ["models/evaluation.jl"]
+Modules = [SoleModels]
+Pages   = ["evaluation.jl"]
 ```
 
 ## Manipulating symbolic knowledge
 
 ```@autodocs
-Modules = [SoleModels, SoleModels.DimensionalDatasets]
-Pages   = ["models/symbolic-utils.jl"]
+Modules = [SoleModels]
+Pages   = ["symbolic-utils.jl"]
 ```
 
 <!-- 
 ```@autodocs
-Modules = [SoleModels, SoleModels.DimensionalDatasets]
+Modules = [SoleModels]
 Pages   = ["machine-learning.jl"]
 ```
  -->

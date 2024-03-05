@@ -55,7 +55,7 @@ end
         Y::AbstractVector{L}
     ) where {O,L<:Label}
 
-Evaluate the rule on a labelled dataset, and return a `NamedTuple` consisting of:
+Evaluate the rule on a labeled dataset, and return a `NamedTuple` consisting of:
 - `antsat::Vector{Bool}`: satsfaction of the antecedent for each instance in the dataset;
 - `ys::Vector{Union{Nothing,O}}`: rule prediction. For each instance in X:
     - `consequent(rule)` if the antecedent is satisfied,
@@ -127,7 +127,7 @@ end
         Y::AbstractVector{<:Label}
     )
 
-Compute metrics for a rule with respect to a labelled dataset and returns a `NamedTuple` consisting of:
+Compute metrics for a rule with respect to a labeled dataset and returns a `NamedTuple` consisting of:
 - `support`: number of instances satisfying the antecedent of the rule divided by
     the total number of instances;
 - `error`:

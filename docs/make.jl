@@ -1,14 +1,16 @@
 using SoleBase
 using SoleLogics
+using SoleData
 using SoleModels
 using Documenter
 
 DocMeta.setdocmeta!(SoleBase, :DocTestSetup, :(using SoleBase); recursive=true)
 DocMeta.setdocmeta!(SoleLogics, :DocTestSetup, :(using SoleLogics); recursive=true)
+DocMeta.setdocmeta!(SoleData, :DocTestSetup, :(using SoleData); recursive=true)
 DocMeta.setdocmeta!(SoleModels, :DocTestSetup, :(using SoleModels); recursive=true)
 
 makedocs(;
-    modules=[SoleBase, SoleLogics, SoleModels, SoleModels.DimensionalDatasets],
+    modules=[SoleBase, SoleLogics, SoleData, SoleData.DimensionalDatasets, SoleModels],
     authors="Michele Ghiotti, Giovanni Pagliarini, Eduard I. Stan",
     repo=Documenter.Remotes.GitHub("aclai-lab", "SoleModels.jl"),
     sitename="SoleModels.jl",
@@ -21,7 +23,6 @@ makedocs(;
     pages=[
         "Home" => "index.md",
         "Logical foundations" => "logic.md",
-        "Logisets" => "logisets.md",
         "Symbolic models" => "models.md",
         "Full reference" => "autodocs.md",
     ],
