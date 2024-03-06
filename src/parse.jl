@@ -1,13 +1,19 @@
 using SoleData
 using SoleLogics
-import SoleData: BoundedScalarCondition
+using SoleModels
+import SoleData: feature, varname
 
 const SPACE = " "
 const UNDERCORE = "_"
 
 # This file contains utility functions for porting symbolic models from string and custom representations.
 
-
+function feature(
+    φ::LeftmostConjunctiveForm{Atom{ScalarCondition}}
+)::AbstractVector{UnivariateSymbolValue}
+    conditions = value.(atoms(φ))
+    return SoleData.feature.(conditions)
+end
 """
 Parser for [orange](https://orange3.readthedocs.io/)-style decision lists.
     Reference: https://orange3.readthedocs.io/projects/orange-visual-programming/en/latest/widgets/model/cn2ruleinduction.html
@@ -44,53 +50,64 @@ function orange_decision_list(
     decision_list = strip(decision_list)
 
     rulebase = SoleModels.Rule[]
-    for line in eachline(IOBuffer(decision_list))
+    for orangerule_str in eachline(IOBuffer(decision_list))
         #   Capture with a regex:
         #   - the class distribution of the instances (e.g., [number, number, number, ...])
-        res = match(r"\s*\[([\d\s,]+)\]\s*IF\s*(.*)\s*THEN\s*(.*)\s*([-+]?(?:[0-9]+(?:\\.[0-9]*)?|\\.[0-9]+))\s*", "[49, 0, 0] IF petal length<=3.0 AND sepal width>=2.9 THEN iris=Iris-setosa  -0.0")
-        if isnothing(res) || length(res.captures) != 4
-            error("Malformed decision list line: $(line)")
+
+        res = match(r"\s*\[([\d\s,]+)\]\s*IF\s*(.*)\s*THEN\s*(.*)=(.*)\s+([+-]?\d+\.\d*)", orangerule_str)
+        if isnothing(res) || length(res.captures) != 5
+            error("Malformed decision list line: $(orangerule_str)")
         end
-        distribution_str, antecedents_str, class_str, num_TODORENAMEWHATISTHIS_str = res.captures
+        # evaluation = entropy/gain
+        # target_str is the target attribute (iris)
+        distribution_str, antecedents_str, target_str, consequent_str, evaluation_str = res.captures
+
+        consequent_str = strip(consequent_str)
+        if consequent_str == "TRUE"
+            defaultrule = SoleModels.ConstantModel("...")
+            break
+        end
+
         distribution_list = parse.(Int, strip.(split(distribution_str, ",")))
         # println(distribution_list)
-
         #   - the antecedent string (between IF and THEN)
-        # antecedents_str = match(r"IF\s(.*?)\sTHEN", line).captures[1]
-        # spezzo l'antecedente in tutte le condizioni
         antecedent_conditions = String.(strip.(split(antecedents_str, "AND")))
         antecedent_conditions = replace.(antecedent_conditions, SPACE=>UNDERCORE)
         antecedent_conditions = match.(r"(.+?)([<>]=?|==)(.*)", antecedent_conditions)
+        @bp
         antecedent = LeftmostConjunctiveForm([begin
             (varname, test_operator, treshold) = condition.captures[:]
             varname = strip(varname)
             test_operator = strip(test_operator)
-            treshold_str = strip(treshold)
-            threshold = tryparse(Float64, treshold_str)
+            threshold = tryparse(Float64, strip(treshold))
             if isnothing(threshold)
                 threshold = treshold_str
             end
-            Atom(SoleData.ScalarCondition(
+            Atom{ScalarCondition}(SoleData.ScalarCondition(
                     featuretype(Symbol(varname)),
                     eval(Meta.parse(test_operator)),
                     threshold
             ))
         end for condition in antecedent_conditions])
-        consequent = "TODO$(class_str)"
-        num_TODORENAMEWHATISTHIS = parse(Float64, num_TODORENAMEWHATISTHIS_str)
+        evaluation = parse(Float64, evaluation_str)
+        @bp
         info = (;
-            num_TODORENAMEWHATISTHIS = num_TODORENAMEWHATISTHIS,
+            evaluation = evaluation,
+            supporting_lables = varname.(feature(antecedent))
         )
-        push!(rulebase, Rule(antecedent, consequent, info))
+        push!(rulebase, Rule(antecedent, defaultrule))
 
-        #   - the consequent string (after THEN, but before a sequence of 2 or more whitespaces)
-        #   - The last (floating-point) number (see https://www.oreilly.com/library/view/regular-expressions-cookbook/9781449327453/ch06s10.html ) (by the way, what is it..? The entropy gain...?)
+        #   - The last (floating-point) number (see https://www.oreilly.com/library/view/regular-expressions-cookbook/9781449327453/ch06s10.html )
+        #                                      (by the way, what is it..? The entropy gain...? yes)
         #   antecedent = parse(Formula, antecedent_string)
-        #   consequent = prendi la parte dopo il segno di uguaglianza da consequent_string, e wrappalo in un ConstantModel mettendogli un campo `supporting_labels` nelle `info`
+        #   consequent = prendi la parte dopo il segno di uguaglianza da consequent_str, e
+        #   wrappalo in un ConstantModel mettendogli un campo `supporting_labels` nelle `info`
+
         #   avoid producing a rule for the last row, but remember its consequent.
-        #   Maybe: And disregard the class distribution of the last rule (it's imprecise...) Actually it can be computed if one provides the original class distribution as a kwarg parameter
+        #   Maybe: And disregard the class distribution of the last rule (it's imprecise...)
+        #   Actually it can be computed if one provides the original class distribution as a kwarg parameter
     end
-    
+
     # return SoleModels.DecisionList(rulebase, SoleModels.ConstantModel(consequent of the last row))
     return SoleModels.DecisionList(rulebase, SoleModels.ConstantModel("TODO"))
 end
