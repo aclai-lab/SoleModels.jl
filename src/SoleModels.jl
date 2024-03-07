@@ -74,4 +74,5 @@ include("evaluation.jl")
 
 include("experimentals.jl")
 
+include("parse.jl")
 end
