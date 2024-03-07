@@ -48,38 +48,40 @@ function orange_decision_list(
 )
     # Strip whitespaces
     decision_list = strip(decision_list)
+    defaultrule = nothing
 
     rulebase = SoleModels.Rule[]
     for orangerule_str in eachline(IOBuffer(decision_list))
-        #   Capture with a regex:
-        #   - the class distribution of the instances (e.g., [number, number, number, ...])
 
         res = match(r"\s*\[([\d\s,]+)\]\s*IF\s*(.*)\s*THEN\s*(.*)=(.*)\s+([+-]?\d+\.\d*)", orangerule_str)
         if isnothing(res) || length(res.captures) != 5
             error("Malformed decision list line: $(orangerule_str)")
         end
-        # evaluation = entropy/gain
-        # target_str is the target attribute (iris)
-        distribution_str, antecedents_str, target_str, consequent_str, evaluation_str = res.captures
 
-        consequent_str = strip(consequent_str)
-        if consequent_str == "TRUE"
-            defaultrule = SoleModels.ConstantModel("...")
+        _ , antecedents_str, _ , consequent_str, evaluation_str = res.captures
+        antecedents_str = String(strip(antecedents_str))
+        consequent_str  = String(strip(consequent_str))
+
+        if antecedents_str == "TRUE"
+            info = (;
+                evaluation = parse(Float64, evaluation_str),
+            )
+            defaultrule = SoleModels.ConstantModel(consequent_str, info)
             break
         end
 
-        distribution_list = parse.(Int, strip.(split(distribution_str, ",")))
-        # println(distribution_list)
-        #   - the antecedent string (between IF and THEN)
+        # distribution_list = parse.(Int, strip.(split(distribution_str, ",")))
         antecedent_conditions = String.(strip.(split(antecedents_str, "AND")))
         antecedent_conditions = replace.(antecedent_conditions, SPACE=>UNDERCORE)
         antecedent_conditions = match.(r"(.+?)([<>]=?|==)(.*)", antecedent_conditions)
-        @bp
+
         antecedent = LeftmostConjunctiveForm([begin
-            (varname, test_operator, treshold) = condition.captures[:]
+            varname, test_operator, treshold = condition.captures[:]
+
             varname = strip(varname)
             test_operator = strip(test_operator)
             threshold = tryparse(Float64, strip(treshold))
+
             if isnothing(threshold)
                 threshold = treshold_str
             end
@@ -89,25 +91,27 @@ function orange_decision_list(
                     threshold
             ))
         end for condition in antecedent_conditions])
-        evaluation = parse(Float64, evaluation_str)
-        @bp
+
         info = (;
-            evaluation = evaluation,
+            evaluation = parse(Float64, evaluation_str),
             supporting_lables = varname.(feature(antecedent))
         )
-        push!(rulebase, Rule(antecedent, defaultrule))
-
-        #   - The last (floating-point) number (see https://www.oreilly.com/library/view/regular-expressions-cookbook/9781449327453/ch06s10.html )
-        #                                      (by the way, what is it..? The entropy gain...? yes)
-        #   antecedent = parse(Formula, antecedent_string)
-        #   consequent = prendi la parte dopo il segno di uguaglianza da consequent_str, e
-        #   wrappalo in un ConstantModel mettendogli un campo `supporting_labels` nelle `info`
-
-        #   avoid producing a rule for the last row, but remember its consequent.
-        #   Maybe: And disregard the class distribution of the last rule (it's imprecise...)
-        #   Actually it can be computed if one provides the original class distribution as a kwarg parameter
+        push!(rulebase, Rule(antecedent, consequent_str, info))
     end
 
-    # return SoleModels.DecisionList(rulebase, SoleModels.ConstantModel(consequent of the last row))
-    return SoleModels.DecisionList(rulebase, SoleModels.ConstantModel("TODO"))
+    if isnothing(defaultrule)
+        error("Malformed decision list: No default rule prvided")
+    end
+
+    return SoleModels.DecisionList(rulebase, defaultrule)
 end
+
+    #   - The last (floating-point) number (see https://www.oreilly.com/library/view/regular-expressions-cookbook/9781449327453/ch06s10.html )
+    #                                      (by the way, what is it..? The entropy gain...? yes)
+    #   antecedent = parse(Formula, antecedent_string)
+    #   consequent = prendi la parte dopo il segno di uguaglianza da consequent_str, e
+    #   wrappalo in un ConstantModel mettendogli un campo `supporting_labels` nelle `info`
+
+    #   avoid producing a rule for the last row, but remember its consequent.
+    #   Maybe: And disregard the class distribution of the last rule (it's imprecise...)
+    #   Actually it can be computed if one provides the original class distribution as a kwarg parameter
