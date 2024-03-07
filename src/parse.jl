@@ -40,8 +40,36 @@ julia> "
     ```
     See also
     [`DecisionList`](@ref).
-
 """
+
+#=
+C’è! Per ora è il campo info::NamedTuple, che ciascun modello simbolico ha.
+Nel fare la traduzione a modelli di sole,
+
+- nella info di una Rule metti supp_labels che è un vettore delle labels delle istanze su
+cui la regola è costruita (ovvero, quelle che non sono coperte dalle regole precedenti),
+
+- nella info del ConstantModel ci metti un campo supp_labels con le labels delle istanze che,
+tra queste, sono coperte dalla regola.
+
+Valuteremo se bisogna aggiungere anche un campo predicted_labels con le labels predette
+dal modello, ma in principio le support_labels sono sufficienti per calcolare diverse metriche
+=#
+
+
+function getdistributions(
+    decision_list::AbstractString
+)
+    distributions_list = []
+
+    for orangerule_str in eachline(IOBuffer(decision_list))
+        res = match(r"\[([\d\s,]+)\]", orangerule_str)
+        distribution_str = res.captures[1]
+        push!(distributions_list, parse.(Int, split(distribution_str, ',')))
+    end
+    return distributions_list
+end
+
 function orange_decision_list(
     decision_list::AbstractString;
     featuretype = SoleData.UnivariateSymbolValue
@@ -49,6 +77,12 @@ function orange_decision_list(
     # Strip whitespaces
     decision_list = strip(decision_list)
     defaultrule = nothing
+
+    # Get last line of the decision_list string (the line with the total distribution [50, 50, 50])
+    lastline = foldl((x,y)->y, eachline(IOBuffer(decision_list)))
+    res = match(r"\[([\d\s,]+)\]", lastline)
+    uncovered_distribution_str = res.captures[1]
+    uncovered_distribution = parse.(Int, split(uncovered_distribution_str, ','))
 
     rulebase = SoleModels.Rule[]
     for orangerule_str in eachline(IOBuffer(decision_list))
@@ -58,10 +92,7 @@ function orange_decision_list(
             error("Malformed decision list line: $(orangerule_str)")
         end
 
-        _ , antecedents_str, _ , consequent_str, evaluation_str = res.captures
-        antecedents_str = String(strip(antecedents_str))
-        consequent_str  = String(strip(consequent_str))
-
+        distribution_str, antecedents_str, _ ,consequent_str, evaluation_str = String.(strip.(res.captures))
         if antecedents_str == "TRUE"
             info = (;
                 evaluation = parse(Float64, evaluation_str),
@@ -70,7 +101,7 @@ function orange_decision_list(
             break
         end
 
-        # distribution_list = parse.(Int, strip.(split(distribution_str, ",")))
+        currentrule_distribution = parse.(Int, split(distribution_str, ','))
         antecedent_conditions = String.(strip.(split(antecedents_str, "AND")))
         antecedent_conditions = replace.(antecedent_conditions, SPACE=>UNDERCORE)
         antecedent_conditions = match.(r"(.+?)([<>]=?|==)(.*)", antecedent_conditions)
@@ -92,20 +123,28 @@ function orange_decision_list(
             ))
         end for condition in antecedent_conditions])
 
-        info = (;
-            evaluation = parse(Float64, evaluation_str),
-            supporting_lables = varname.(feature(antecedent))
-        )
-        push!(rulebase, Rule(antecedent, consequent_str, info))
-    end
 
+        # Info ConstantModel
+        info_cm = (;
+            evaluation = parse(Float64, evaluation_str),
+            supp_labels = currentrule_distribution
+        )
+        consequent_cm = SoleModels.ConstantModel(consequent_str, info_cm)
+
+        # Info Rule
+        info_r = (;
+            supp_lables = uncovered_distribution
+        )
+        push!(rulebase, Rule(antecedent, consequent_cm, info_r))
+        uncovered_distribution = uncovered_distribution.-currentrule_distribution
+    end
     if isnothing(defaultrule)
         error("Malformed decision list: No default rule prvided")
     end
-
     return SoleModels.DecisionList(rulebase, defaultrule)
 end
 
+    # Gio:
     #   - The last (floating-point) number (see https://www.oreilly.com/library/view/regular-expressions-cookbook/9781449327453/ch06s10.html )
     #                                      (by the way, what is it..? The entropy gain...? yes)
     #   antecedent = parse(Formula, antecedent_string)
