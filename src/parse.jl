@@ -2,18 +2,11 @@ using SoleData
 using SoleLogics
 using SoleModels
 import SoleData: feature, varname
-
 const SPACE = " "
 const UNDERCORE = "_"
 
 # This file contains utility functions for porting symbolic models from string and custom representations.
 
-function feature(
-    φ::LeftmostConjunctiveForm{Atom{ScalarCondition}}
-)::AbstractVector{UnivariateSymbolValue}
-    conditions = value.(atoms(φ))
-    return SoleData.feature.(conditions)
-end
 """
 Parser for [orange](https://orange3.readthedocs.io/)-style decision lists.
     Reference: https://orange3.readthedocs.io/projects/orange-visual-programming/en/latest/widgets/model/cn2ruleinduction.html
@@ -57,33 +50,25 @@ dal modello, ma in principio le support_labels sono sufficienti per calcolare di
 =#
 
 
-function getdistributions(
-    decision_list::AbstractString
-)
-    distributions_list = []
-
-    for orangerule_str in eachline(IOBuffer(decision_list))
-        res = match(r"\[([\d\s,]+)\]", orangerule_str)
-        distribution_str = res.captures[1]
-        push!(distributions_list, parse.(Int, split(distribution_str, ',')))
-    end
-    return distributions_list
-end
-
 function orange_decision_list(
     decision_list::AbstractString;
     featuretype = SoleData.UnivariateSymbolValue
 )
-    # Strip whitespaces
     decision_list = strip(decision_list)
-    defaultrule = nothing
+    length(decision_list) == 0 && error("Empty decision list")
 
-    # Get last line of the decision_list string (the line with the total distribution [50, 50, 50])
+    defaultrule = nothing
     lastline = foldl((x,y)->y, eachline(IOBuffer(decision_list)))
-    res = match(r"\[([\d\s,]+)\]", lastline)
+    res = match(r"\[([\d\s,]+)\].*(TRUE)", lastline)
+
+    # Mi assicuro che esista la regola di default
+    if isnothing(res) || length(res.captures) != 2
+        error("Malformed decision list, no default rule provided")
+    end
     uncovered_distribution_str = res.captures[1]
     uncovered_distribution = parse.(Int, split(uncovered_distribution_str, ','))
 
+    # Start For over rules
     rulebase = SoleModels.Rule[]
     for orangerule_str in eachline(IOBuffer(decision_list))
 
@@ -93,6 +78,7 @@ function orange_decision_list(
         end
 
         distribution_str, antecedents_str, _ ,consequent_str, evaluation_str = String.(strip.(res.captures))
+        # è un controllo accettabile ?
         if antecedents_str == "TRUE"
             info = (;
                 evaluation = parse(Float64, evaluation_str),
@@ -123,6 +109,87 @@ function orange_decision_list(
             ))
         end for condition in antecedent_conditions])
 
+        # Info ConstantModel
+        info_cm = (;
+            evaluation = parse(Float64, evaluation_str),
+            supp_labels = currentrule_distribution
+        )
+        consequent_cm = SoleModels.ConstantModel(consequent_str, info_cm)
+
+        # Info Rule
+        info_r = (;
+            supp_lables = uncovered_distribution
+        )
+        push!(rulebase, Rule(antecedent, consequent_cm, info_r))
+        uncovered_distribution = uncovered_distribution.-currentrule_distribution
+    end
+
+    return SoleModels.DecisionList(rulebase, defaultrule)
+end
+
+    # Gio:
+    #   - The last (floating-point) number (see https://www.oreilly.com/library/view/regular-expressions-cookbook/9781449327453/ch06s10.html )
+    #                                      (by the way, what is it..? The entropy gain...? yes)
+    #   antecedent = parse(Formula, antecedent_string)
+    #   consequent = prendi la parte dopo il segno di uguaglianza da consequent_str, e
+    #   wrappalo in un ConstantModel mettendogli un campo `supporting_labels` nelle `info`
+
+    #   avoid producing a rule for the last row, but remember its consequent.
+    #   Maybe: And disregard the class distribution of the last rule (it's imprecise...)
+    #   Actually it can be computed if one provides the original class distribution as a kwarg parameter
+
+
+
+
+function orange_decision_list2(
+    decision_list::AbstractString,
+    originaldistribution::Vector{<:Integer},
+    featuretype = SoleData.UnivariateSymbolValue,
+)
+    # Strip whitespaces
+    decision_list = strip(decision_list)
+    length(decision_list) == 0 && error("Empty decision list")
+
+    defaultrule_consequent = nothing
+    uncovered_distribution = originaldistribution
+
+    # Start For over rules
+    rulebase = SoleModels.Rule[]
+    for orangerule_str in eachline(IOBuffer(decision_list))
+
+        res = match(r"\s*\[([\d\s,]+)\]\s*IF\s*(.*)\s*THEN\s*(.*)=(.*)\s+([+-]?\d+\.\d*)", orangerule_str)
+        if isnothing(res) || length(res.captures) != 5
+            error("Malformed decision list line: $(orangerule_str)")
+        end
+
+        distribution_str, antecedents_str, _ ,consequent_str, evaluation_str = String.(strip.(res.captures))
+        # è un controllo accettabile ?
+        if antecedents_str == "TRUE"
+            defaultrule_consequent = consequent_str
+            break
+        end
+
+        currentrule_distribution = parse.(Int, split(distribution_str, ','))
+        antecedent_conditions = String.(strip.(split(antecedents_str, "AND")))
+        antecedent_conditions = replace.(antecedent_conditions, SPACE=>UNDERCORE)
+        antecedent_conditions = match.(r"(.+?)([<>]=?|==)(.*)", antecedent_conditions)
+
+        antecedent = LeftmostConjunctiveForm([begin
+            varname, test_operator, treshold = condition.captures[:]
+
+            varname = strip(varname)
+            test_operator = strip(test_operator)
+            threshold = tryparse(Float64, strip(treshold))
+
+            if isnothing(threshold)
+                threshold = treshold_str
+            end
+            Atom{ScalarCondition}(SoleData.ScalarCondition(
+                    featuretype(Symbol(varname)),
+                    eval(Meta.parse(test_operator)),
+                    threshold
+            ))
+        end for condition in antecedent_conditions])
 
         # Info ConstantModel
         info_cm = (;
@@ -138,19 +205,9 @@ function orange_decision_list(
         push!(rulebase, Rule(antecedent, consequent_cm, info_r))
         uncovered_distribution = uncovered_distribution.-currentrule_distribution
     end
-    if isnothing(defaultrule)
-        error("Malformed decision list: No default rule prvided")
+    if isnothing(defaultrule_consequent)
+        error("Malformed decision list, no default rule provided")
     end
-    return SoleModels.DecisionList(rulebase, defaultrule)
+
+    return (SoleModels.DecisionList(rulebase, ⊤), defaultrule_consequent)
 end
-
-    # Gio:
-    #   - The last (floating-point) number (see https://www.oreilly.com/library/view/regular-expressions-cookbook/9781449327453/ch06s10.html )
-    #                                      (by the way, what is it..? The entropy gain...? yes)
-    #   antecedent = parse(Formula, antecedent_string)
-    #   consequent = prendi la parte dopo il segno di uguaglianza da consequent_str, e
-    #   wrappalo in un ConstantModel mettendogli un campo `supporting_labels` nelle `info`
-
-    #   avoid producing a rule for the last row, but remember its consequent.
-    #   Maybe: And disregard the class distribution of the last rule (it's imprecise...)
-    #   Actually it can be computed if one provides the original class distribution as a kwarg parameter
