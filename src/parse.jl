@@ -28,68 +28,79 @@ julia> "
 [0, 0, 1] IF sepal length>=6.0 THEN iris=Iris-virginica  -0.0
 [1, 0, 0] IF sepal length<=4.5 THEN iris=Iris-setosa  -0.0
 [50, 50, 50] IF TRUE THEN iris=Iris-setosa  -1.584962500721156
-" |> orange_decision_list
-    TODO finish example with output...
-    ```
-    See also
-    [`DecisionList`](@ref).
+" |> parse_orange_decision_list
+▣
+├[1/14]┐(:petal_length ≤ 3.0) ∧ (:sepal_width ≥ 2.9)
+│└ Iris-setosa
+├[2/14]┐(:petal_width ≥ 1.8) ∧ (:sepal_length ≥ 6.0)
+│└ Iris-virginica
+├[3/14]┐(:sepal_length ≥ 4.9) ∧ (:sepal_width ≥ 3.1)
+│└ Iris-versicolor
+├[4/14]┐(:petal_length ≤ 4.9) ∧ (:petal_width ≥ 1.7)
+│└ Iris-virginica
+├[5/14]┐(:petal_width ≥ 1.8)
+│└ Iris-virginica
+├[6/14]┐(:petal_length ≤ 5.0) ∧ (:sepal_width ≥ 2.4)
+│└ Iris-versicolor
+├[7/14]┐(:sepal_width ≥ 2.8)
+│└ Iris-virginica
+├[8/14]┐(:petal_width ≤ 1.0) ∧ (:sepal_length ≥ 5.0)
+│└ Iris-versicolor
+├[9/14]┐(:sepal_width ≥ 2.7)
+│└ Iris-versicolor
+├[10/14]┐(:sepal_width ≥ 2.6)
+│└ Iris-virginica
+├[11/14]┐(:sepal_length ≥ 5.5) ∧ (:sepal_length ≥ 6.2)
+│└ Iris-versicolor
+├[12/14]┐(:sepal_length ≤ 5.5) ∧ (:petal_length ≥ 4.0)
+│└ Iris-versicolor
+├[13/14]┐(:sepal_length ≥ 6.0)
+│└ Iris-virginica
+├[14/14]┐(:sepal_length ≤ 4.5)
+│└ Iris-setosa
+└✘ Iris-setosa
+```
+
+See also
+[`DecisionList`](@ref).
 """
-
-#=
-C’è! Per ora è il campo info::NamedTuple, che ciascun modello simbolico ha.
-Nel fare la traduzione a modelli di sole,
-
-- nella info di una Rule metti supp_labels che è un vettore delle labels delle istanze su
-cui la regola è costruita (ovvero, quelle che non sono coperte dalle regole precedenti),
-
-- nella info del ConstantModel ci metti un campo supp_labels con le labels delle istanze che,
-tra queste, sono coperte dalla regola.
-
-Valuteremo se bisogna aggiungere anche un campo predicted_labels con le labels predette
-dal modello, ma in principio le support_labels sono sufficienti per calcolare diverse metriche
-=#
-
-
-function orange_decision_list(
-    decision_list::AbstractString;
+function parse_orange_decision_list(
+    decision_list_str::AbstractString;
     featuretype = SoleData.UnivariateSymbolValue
 )
-    decision_list = strip(decision_list)
-    length(decision_list) == 0 && error("Empty decision list")
+    # Strip whitespaces
+    decision_list_str = strip(decision_list_str)
 
-    defaultrule = nothing
-    lastline = foldl((x,y)->y, eachline(IOBuffer(decision_list)))
-    res = match(r"\[([\d\s,]+)\].*(TRUE)", lastline)
-
-    # Mi assicuro che esista la regola di default
-    if isnothing(res) || length(res.captures) != 2
-        error("Malformed decision list, no default rule provided")
-    end
+    # Get last line of the decision_list_str string (the line with the total distribution [50, 50, 50])
+    lastline = foldl((x,y)->y, eachline(IOBuffer(decision_list_str)))
+    res = match(r"\[([\d\s,]+)\]", lastline)
     uncovered_distribution_str = res.captures[1]
     uncovered_distribution = parse.(Int, split(uncovered_distribution_str, ','))
 
     # Start For over rules
     rulebase = SoleModels.Rule[]
-    for orangerule_str in eachline(IOBuffer(decision_list))
+    default_consequent = nothing
+
+    for orangerule_str in eachline(IOBuffer(decision_list_str))
 
         res = match(r"\s*\[([\d\s,]+)\]\s*IF\s*(.*)\s*THEN\s*(.*)=(.*)\s+([+-]?\d+\.\d*)", orangerule_str)
         if isnothing(res) || length(res.captures) != 5
             error("Malformed decision list line: $(orangerule_str)")
         end
 
-        distribution_str, antecedents_str, _ ,consequent_str, evaluation_str = String.(strip.(res.captures))
-        # è un controllo accettabile ?
+        distribution_str, antecedents_str, consequent_class_name_str, consequent_str, evaluation_str = String.(strip.(res.captures))
+
         if antecedents_str == "TRUE"
             info = (;
-                evaluation = parse(Float64, evaluation_str),
+                orange_evaluation = parse(Float64, evaluation_str),
             )
-            defaultrule = SoleModels.ConstantModel(consequent_str, info)
+            default_consequent = SoleModels.ConstantModel(consequent_str, info)
             break
         end
 
         currentrule_distribution = parse.(Int, split(distribution_str, ','))
         antecedent_conditions = String.(strip.(split(antecedents_str, "AND")))
-        antecedent_conditions = replace.(antecedent_conditions, SPACE=>UNDERCORE)
+        antecedent_conditions = replace.(antecedent_conditions, SPACE => UNDERCORE)
         antecedent_conditions = match.(r"(.+?)([<>]=?|==)(.*)", antecedent_conditions)
 
         antecedent = LeftmostConjunctiveForm([begin
@@ -111,8 +122,8 @@ function orange_decision_list(
 
         # Info ConstantModel
         info_cm = (;
-            evaluation = parse(Float64, evaluation_str),
-            supp_labels = currentrule_distribution
+            orange_evaluation = parse(Float64, evaluation_str),
+            supporting_labels = currentrule_distribution
         )
         consequent_cm = SoleModels.ConstantModel(consequent_str, info_cm)
 
@@ -123,8 +134,11 @@ function orange_decision_list(
         push!(rulebase, Rule(antecedent, consequent_cm, info_r))
         uncovered_distribution = uncovered_distribution.-currentrule_distribution
     end
+    if isnothing(default_consequent)
+        error("Malformed decision list: default rule was not found.")
+    end
 
-    return SoleModels.DecisionList(rulebase, defaultrule)
+    return SoleModels.DecisionList(rulebase, default_consequent)
 end
 
     # Gio:
