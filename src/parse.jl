@@ -12,7 +12,7 @@ Parser for [orange](https://orange3.readthedocs.io/)-style decision lists.
     Reference: https://orange3.readthedocs.io/projects/orange-visual-programming/en/latest/widgets/model/cn2ruleinduction.html
     # Examples
 ```julia-repl
-julia> "
+julia> dl = "
 [49, 0, 0] IF petal length<=3.0 AND sepal width>=2.9 THEN iris=Iris-setosa  -0.0
 [0, 0, 39] IF petal width>=1.8 AND sepal length>=6.0 THEN iris=Iris-virginica  -0.0
 [0, 8, 0] IF sepal length>=4.9 AND sepal width>=3.1 THEN iris=Iris-versicolor  -0.0
@@ -28,9 +28,41 @@ julia> "
 [0, 0, 1] IF sepal length>=6.0 THEN iris=Iris-virginica  -0.0
 [1, 0, 0] IF sepal length<=4.5 THEN iris=Iris-setosa  -0.0
 [50, 50, 50] IF TRUE THEN iris=Iris-setosa  -1.584962500721156
-" |> orange_decision_list
-    TODO finish example with output...
-    ```
+" |> SoleModels.orange_decision_list
+
+julia> listrules(dl; normalize = true)
+15-element Vector{ClassificationRule{String, A, SoleModels.ConstantModel{String}} where A<:Formula}:
+ ▣ ((:petal_length ≤ 3.0) ∧ (:sepal_width ≥ 2.9))  ↣  Iris-setosa
+
+ ▣ ((:petal_length > 3.0) ∨ (:sepal_width < 2.9)) ∧ ((:petal_width ≥ 1.8) ∧ (:sepal_length ≥ 6.0))  ↣  Iris-virginica
+
+ ▣ ((:petal_length > 3.0) ∨ (:sepal_width < 2.9)) ∧ ((:petal_width < 1.8) ∨ (:sepal_length < 6.0)) ∧ ((:sepal_length ≥ 4.9) ∧ (:sepal_width ≥ 3.1))  ↣  Iris-versicolor
+
+ ▣ ((:petal_length > 3.0) ∨ (:sepal_width < 2.9)) ∧ ((:petal_width < 1.8) ∨ (:sepal_length < 6.0)) ∧ ((:sepal_length < 4.9) ∨ (:sepal_width < 3.1)) ∧ ((:petal_length ≤ 4.9) ∧ (:petal_width ≥ 1.7))  ↣  Iris-virginica
+
+ ▣ ((:petal_length > 3.0) ∨ (:sepal_width < 2.9)) ∧ ((:petal_width < 1.8) ∨ (:sepal_length < 6.0)) ∧ ((:sepal_length < 4.9) ∨ (:sepal_width < 3.1)) ∧ ((:petal_length > 4.9) ∨ (:petal_width < 1.7)) ∧ (:petal_width ≥ 1.8)  ↣  Iris-virginica
+
+ ▣ ((:petal_length > 3.0) ∨ (:sepal_width < 2.9)) ∧ ((:petal_width < 1.8) ∨ (:sepal_length < 6.0)) ∧ ((:sepal_length < 4.9) ∨ (:sepal_width < 3.1)) ∧ ((:petal_length > 4.9) ∨ (:petal_width < 1.7)) ∧ (:petal_width < 1.8) ∧ ((:petal_length ≤ 5.0) ∧ (:sepal_width ≥ 2.4))  ↣  Iris-versicolor
+
+ ▣ ((:petal_length > 3.0) ∨ (:sepal_width < 2.9)) ∧ ((:petal_width < 1.8) ∨ (:sepal_length < 6.0)) ∧ ((:sepal_length < 4.9) ∨ (:sepal_width < 3.1)) ∧ ((:petal_length > 4.9) ∨ (:petal_width < 1.7)) ∧ (:petal_width < 1.8) ∧ ((:petal_length > 5.0) ∨ (:sepal_width < 2.4)) ∧ (:sepal_width ≥ 2.8)  ↣  Iris-virginica
+
+ ▣ ((:petal_length > 3.0) ∨ (:sepal_width < 2.9)) ∧ ((:petal_width < 1.8) ∨ (:sepal_length < 6.0)) ∧ ((:sepal_length < 4.9) ∨ (:sepal_width < 3.1)) ∧ ((:petal_length > 4.9) ∨ (:petal_width < 1.7)) ∧ (:petal_width < 1.8) ∧ ((:petal_length > 5.0) ∨ (:sepal_width < 2.4)) ∧ (:sepal_width < 2.8) ∧ ((:petal_width ≤ 1.0) ∧ (:sepal_length ≥ 5.0))  ↣  Iris-versicolor
+
+ ▣ ((:petal_length > 3.0) ∨ (:sepal_width < 2.9)) ∧ ((:petal_width < 1.8) ∨ (:sepal_length < 6.0)) ∧ ((:sepal_length < 4.9) ∨ (:sepal_width < 3.1)) ∧ ((:petal_length > 4.9) ∨ (:petal_width < 1.7)) ∧ (:petal_width < 1.8) ∧ ((:petal_length > 5.0) ∨ (:sepal_width < 2.4)) ∧ (:sepal_width < 2.8) ∧ ((:petal_width > 1.0) ∨ (:sepal_length < 5.0)) ∧ (:sepal_width ≥ 2.7)  ↣  Iris-versicolor
+
+ ▣ ((:petal_length > 3.0) ∨ (:sepal_width < 2.9)) ∧ ((:petal_width < 1.8) ∨ (:sepal_length < 6.0)) ∧ ((:sepal_length < 4.9) ∨ (:sepal_width < 3.1)) ∧ ((:petal_length > 4.9) ∨ (:petal_width < 1.7)) ∧ (:petal_width < 1.8) ∧ ((:petal_length > 5.0) ∨ (:sepal_width < 2.4)) ∧ (:sepal_width < 2.8) ∧ ((:petal_width > 1.0) ∨ (:sepal_length < 5.0)) ∧ (:sepal_width < 2.7) ∧ (:sepal_width ≥ 2.6)  ↣  Iris-virginica
+
+ ▣ ((:petal_length > 3.0) ∨ (:sepal_width < 2.9)) ∧ ((:petal_width < 1.8) ∨ (:sepal_length < 6.0)) ∧ ((:sepal_length < 4.9) ∨ (:sepal_width < 3.1)) ∧ ((:petal_length > 4.9) ∨ (:petal_width < 1.7)) ∧ (:petal_width < 1.8) ∧ ((:petal_length > 5.0) ∨ (:sepal_width < 2.4)) ∧ (:sepal_width < 2.8) ∧ ((:petal_width > 1.0) ∨ (:sepal_length < 5.0)) ∧ (:sepal_width < 2.7) ∧ (:sepal_width < 2.6) ∧ ((:sepal_length ≥ 5.5) ∧ (:sepal_length ≥ 6.2))  ↣  Iris-versicolor
+
+ ▣ ((:petal_length > 3.0) ∨ (:sepal_width < 2.9)) ∧ ((:petal_width < 1.8) ∨ (:sepal_length < 6.0)) ∧ ((:sepal_length < 4.9) ∨ (:sepal_width < 3.1)) ∧ ((:petal_length > 4.9) ∨ (:petal_width < 1.7)) ∧ (:petal_width < 1.8) ∧ ((:petal_length > 5.0) ∨ (:sepal_width < 2.4)) ∧ (:sepal_width < 2.8) ∧ ((:petal_width > 1.0) ∨ (:sepal_length < 5.0)) ∧ (:sepal_width < 2.7) ∧ (:sepal_width < 2.6) ∧ ((:sepal_length < 5.5) ∨ (:sepal_length < 6.2)) ∧ ((:sepal_length ≤ 5.5) ∧ (:petal_length ≥ 4.0))  ↣  Iris-versicolor
+
+ ▣ ((:petal_length > 3.0) ∨ (:sepal_width < 2.9)) ∧ ((:petal_width < 1.8) ∨ (:sepal_length < 6.0)) ∧ ((:sepal_length < 4.9) ∨ (:sepal_width < 3.1)) ∧ ((:petal_length > 4.9) ∨ (:petal_width < 1.7)) ∧ (:petal_width < 1.8) ∧ ((:petal_length > 5.0) ∨ (:sepal_width < 2.4)) ∧ (:sepal_width < 2.8) ∧ ((:petal_width > 1.0) ∨ (:sepal_length < 5.0)) ∧ (:sepal_width < 2.7) ∧ (:sepal_width < 2.6) ∧ ((:sepal_length < 5.5) ∨ (:sepal_length < 6.2)) ∧ ((:sepal_length > 5.5) ∨ (:petal_length < 4.0)) ∧ (:sepal_length ≥ 6.0)  ↣  Iris-virginica
+
+ ▣ ((:petal_length > 3.0) ∨ (:sepal_width < 2.9)) ∧ ((:petal_width < 1.8) ∨ (:sepal_length < 6.0)) ∧ ((:sepal_length < 4.9) ∨ (:sepal_width < 3.1)) ∧ ((:petal_length > 4.9) ∨ (:petal_width < 1.7)) ∧ (:petal_width < 1.8) ∧ ((:petal_length > 5.0) ∨ (:sepal_width < 2.4)) ∧ (:sepal_width < 2.8) ∧ ((:petal_width > 1.0) ∨ (:sepal_length < 5.0)) ∧ (:sepal_width < 2.7) ∧ (:sepal_width < 2.6) ∧ ((:sepal_length < 5.5) ∨ (:sepal_length < 6.2)) ∧ ((:sepal_length > 5.5) ∨ (:petal_length < 4.0)) ∧ (:sepal_length < 6.0) ∧ (:sepal_length ≤ 4.5)  ↣  Iris-setosa
+
+ ▣ ((:petal_length > 3.0) ∨ (:sepal_width < 2.9)) ∧ ((:petal_width < 1.8) ∨ (:sepal_length < 6.0)) ∧ ((:sepal_length < 4.9) ∨ (:sepal_width < 3.1)) ∧ ((:petal_length > 4.9) ∨ (:petal_width < 1.7)) ∧ (:petal_width < 1.8) ∧ ((:petal_length > 5.0) ∨ (:sepal_width < 2.4)) ∧ (:sepal_width < 2.8) ∧ ((:petal_width > 1.0) ∨ (:sepal_length < 5.0)) ∧ (:sepal_width < 2.7) ∧ (:sepal_width < 2.6) ∧ ((:sepal_length < 5.5) ∨ (:sepal_length < 6.2)) ∧ ((:sepal_length > 5.5) ∨ (:petal_length < 4.0)) ∧ (:sepal_length < 6.0) ∧ (:sepal_length > 4.5)  ↣  Iris-setosa
+
+```
     See also
     [`DecisionList`](@ref).
 """
@@ -39,10 +71,10 @@ julia> "
 C’è! Per ora è il campo info::NamedTuple, che ciascun modello simbolico ha.
 Nel fare la traduzione a modelli di sole,
 
-- nella info di una Rule metti supp_labels che è un vettore delle labels delle istanze su
+- nella info di una Rule metti supporting_labels che è un vettore delle labels delle istanze su
 cui la regola è costruita (ovvero, quelle che non sono coperte dalle regole precedenti),
 
-- nella info del ConstantModel ci metti un campo supp_labels con le labels delle istanze che,
+- nella info del ConstantModel ci metti un campo supporting_labels con le labels delle istanze che,
 tra queste, sono coperte dalla regola.
 
 Valuteremo se bisogna aggiungere anche un campo predicted_labels con le labels predette
@@ -112,13 +144,13 @@ function orange_decision_list(
         # Info ConstantModel
         info_cm = (;
             evaluation = parse(Float64, evaluation_str),
-            supp_labels = currentrule_distribution
+            supporting_labels = currentrule_distribution
         )
         consequent_cm = SoleModels.ConstantModel(consequent_str, info_cm)
 
         # Info Rule
         info_r = (;
-            supp_lables = uncovered_distribution
+            supporting_labels = uncovered_distribution
         )
         push!(rulebase, Rule(antecedent, consequent_cm, info_r))
         uncovered_distribution = uncovered_distribution.-currentrule_distribution
@@ -194,13 +226,13 @@ function orange_decision_list2(
         # Info ConstantModel
         info_cm = (;
             evaluation = parse(Float64, evaluation_str),
-            supp_labels = currentrule_distribution
+            supporting_labels = currentrule_distribution
         )
         consequent_cm = SoleModels.ConstantModel(consequent_str, info_cm)
 
         # Info Rule
         info_r = (;
-            supp_lables = uncovered_distribution
+            supporting_labels = uncovered_distribution
         )
         push!(rulebase, Rule(antecedent, consequent_cm, info_r))
         uncovered_distribution = uncovered_distribution.-currentrule_distribution
