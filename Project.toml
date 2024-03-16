@@ -51,7 +51,7 @@ Reexport = "1"
 Revise = "3"
 SoleBase = "0.12"
 SoleData = "0.13"
-SoleLogics = "0.7"
+SoleLogics = "0.7, 0.8"
 StatsBase = "0.30 - 0.34"
 Suppressor = "0.2"
 Tables = "1"
@@ -62,9 +62,9 @@ julia = "1"
 [extras]
 InteractiveUtils = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
 Markdown = "d6f4376e-aef5-505a-96c1-9c027394607a"
+MultiData = "8cc5100c-b3d1-4f82-90cb-0ea93d317aba"
 PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
-MultiData = "8cc5100c-b3d1-4f82-90cb-0ea93d317aba"
 
 [targets]
 test = ["Test", "Markdown", "InteractiveUtils", "PlutoUI", "MultiData"]
