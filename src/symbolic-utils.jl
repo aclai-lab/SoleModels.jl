@@ -149,12 +149,13 @@ children(m::AbstractModel) = submodels(m)
 ############################################################################################
 ############################################################################################
 
-# When `assumed_formula` is assumed, and `f` is known to be true, their conjuction holds.
-advanceformula(f::Formula, assumed_formula::Union{Nothing,Formula}) =
-    isnothing(assumed_formula) ? f : ∧(assumed_formula, f)
+# # When `assumed_formulas` is assumed, and `f` is known to be true, their conjuction holds.
+# advanceformula(f::Formula, assumed_formulas::Union{Nothing,Formula}) =
+#     isnothing(assumed_formulas) ? f : ∧(assumed_formulas, f)
 
-advanceformula(r::Rule, assumed_formula::Union{Nothing,Formula}) =
-    Rule(advanceformula(antecedent(r), assumed_formula), consequent(r), info(r))
+function join_antecedents(assumed_formulas::Vector{<:SoleLogics.AbstractSyntaxStructure})
+    return length(assumed_formulas) == 0 ? ⊤ : LeftmostConjunctiveForm(assumed_formulas)
+end
 
 ############################################################################################
 ############################################################################################
@@ -209,15 +210,28 @@ listimmediaterules(m::Branch{O}) where {O} = [
     Rule{O}(SoleLogics.NEGATION(antecedent(m)), negconsequent(m)),
 ]
 
-function listimmediaterules(m::DecisionList{O}) where {O}
-    assumed_formula = nothing
-    normalized_rules = []
+function listimmediaterules(
+    m::DecisionList{O};
+    # use_shortforms::Bool = true,
+    # use_leftmostlinearform::Bool = false,
+    normalize::Bool = false,
+    normalize_kwargs::NamedTuple = (; allow_atom_flipping = true, rotate_commutatives = false),
+    force_syntaxtree::Bool = false,
+) where {O}
+    assumed_formulas = AbstractSyntaxStructure[]
+    normalized_rules = Rule{O}[]
     for rule in rulebase(m)
-        rule = advanceformula(rule, assumed_formula)
-        push!(normalized_rules, rule)
-        assumed_formula = advanceformula(SoleLogics.NEGATION(antecedent(rule)), assumed_formula)
+        # @show assumed_formulas
+        newrule = Rule(join_antecedents([assumed_formulas..., antecedent(rule)]), consequent(rule), info(rule))
+        push!(normalized_rules, newrule)
+        ant = antecedent(rule)
+        force_syntaxtree && (ant = tree(ant))
+        # @show ant
+        nant = SoleLogics.NEGATION(ant)
+        normalize && (nant = SoleLogics.normalize(nant; normalize_kwargs...))
+        assumed_formulas = push!(assumed_formulas, nant)
     end
-    default_antecedent = isnothing(assumed_formula) ? ⊤ : assumed_formula
+    default_antecedent = join_antecedents(assumed_formulas)
     push!(normalized_rules, Rule{O}(default_antecedent, defaultconsequent(m)))
     normalized_rules
 end
@@ -410,8 +424,17 @@ function listrules(
     return rules
 end
 
-function listrules(m::DecisionList; kwargs...)
-    reduce(vcat,[listrules(rule; kwargs...) for rule in listimmediaterules(m)])
+function listrules(
+    m::DecisionList;
+    # use_shortforms::Bool = true,
+    # use_leftmostlinearform::Bool = false,
+    # normalize::Bool = false,
+    # normalize_kwargs::NamedTuple = (; allow_atom_flipping = true, ),
+    # force_syntaxtree::Bool = false,
+    kwargs...
+)
+    rules = reduce(vcat, listimmediaterules(m; kwargs...))
+    return rules
 end
 
 listrules(m::DecisionTree; kwargs...) = listrules(root(m); kwargs...)
