@@ -76,6 +76,7 @@ function parse_orange_decision_list(
     res = match(r"\[([\d\s,]+)\]", lastline)
     uncovered_distribution_str = res.captures[1]
     uncovered_distribution = parse.(Int, split(uncovered_distribution_str, ','))
+    # -------------------  Va un contriollo (su res) anche qui ? ---------------
 
     # Start For over rules
     rulebase = SoleModels.Rule[]
@@ -87,13 +88,14 @@ function parse_orange_decision_list(
         if isnothing(res) || length(res.captures) != 5
             error("Malformed decision list line: $(orangerule_str)")
         end
-
         distribution_str, antecedents_str, consequent_class_name_str, consequent_str, evaluation_str = String.(strip.(res.captures))
 
+        # Trigger for the last rule (default rule)
         if antecedents_str == "TRUE"
             info = (;
                 orange_evaluation = parse(Float64, evaluation_str),
             )
+
             default_consequent = SoleModels.ConstantModel(consequent_str, info)
             break
         end
@@ -103,16 +105,13 @@ function parse_orange_decision_list(
         antecedent_conditions = replace.(antecedent_conditions, SPACE => UNDERCORE)
         antecedent_conditions = match.(r"(.+?)([<>]=?|==)(.*)", antecedent_conditions)
 
+        # Antecedent construction
         antecedent = LeftmostConjunctiveForm([begin
-            varname, test_operator, treshold = condition.captures[:]
+            varname, test_operator, treshold = strip.(condition.captures[:])
 
-            varname = strip(varname)
-            test_operator = strip(test_operator)
-            threshold = tryparse(Float64, strip(treshold))
+            threshold = tryparse(Float64, treshold)
+            isnothing(threshold) && (threshold = treshold_str)
 
-            if isnothing(threshold)
-                threshold = treshold_str
-            end
             Atom{ScalarCondition}(SoleData.ScalarCondition(
                     featuretype(Symbol(varname)),
                     eval(Meta.parse(test_operator)),
@@ -120,7 +119,7 @@ function parse_orange_decision_list(
             ))
         end for condition in antecedent_conditions])
 
-        # Info ConstantModel
+        # Info ConstantModel ( Consequent )
         info_cm = (;
             orange_evaluation = parse(Float64, evaluation_str),
             supporting_labels = currentrule_distribution
@@ -129,7 +128,7 @@ function parse_orange_decision_list(
 
         # Info Rule
         info_r = (;
-            supp_lables = uncovered_distribution
+            supporting_labels = uncovered_distribution
         )
         push!(rulebase, Rule(antecedent, consequent_cm, info_r))
         uncovered_distribution = uncovered_distribution.-currentrule_distribution
@@ -140,14 +139,3 @@ function parse_orange_decision_list(
 
     return SoleModels.DecisionList(rulebase, default_consequent)
 end
-
-    # Gio:
-    #   - The last (floating-point) number (see https://www.oreilly.com/library/view/regular-expressions-cookbook/9781449327453/ch06s10.html )
-    #                                      (by the way, what is it..? The entropy gain...? yes)
-    #   antecedent = parse(Formula, antecedent_string)
-    #   consequent = prendi la parte dopo il segno di uguaglianza da consequent_str, e
-    #   wrappalo in un ConstantModel mettendogli un campo `supporting_labels` nelle `info`
-
-    #   avoid producing a rule for the last row, but remember its consequent.
-    #   Maybe: And disregard the class distribution of the last rule (it's imprecise...)
-    #   Actually it can be computed if one provides the original class distribution as a kwarg parameter
