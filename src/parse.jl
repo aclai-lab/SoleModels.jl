@@ -83,11 +83,12 @@ dal modello, ma in principio le support_labels sono sufficienti per calcolare di
 
 
 function orange_decision_list(
-    decision_list::AbstractString;
+    decision_list::AbstractString,
+    ignoredefaultrule = false;
     featuretype = SoleData.UnivariateSymbolValue
 )
     # Strip whitespaces
-    decision_list_str = strip(decision_list_str)
+    decision_list_str = strip(decision_list)
 
     # Get last line of the decision_list_str string (the line with the total distribution [50, 50, 50])
     lastline = foldl((x,y)->y, eachline(IOBuffer(decision_list_str)))
@@ -98,7 +99,7 @@ function orange_decision_list(
 
     # Start For over rules
     rulebase = SoleModels.Rule[]
-    default_consequent = nothing
+    defaultconsequent = nothing
 
     for orangerule_str in eachline(IOBuffer(decision_list_str))
 
@@ -110,10 +111,15 @@ function orange_decision_list(
 
         # Trigger for the last rule (default rule)
         if antecedents_str == "TRUE"
-            info = (;
-                evaluation = parse(Float64, evaluation_str),
-            )
-            defaultrule = SoleModels.ConstantModel(consequent_str, info)
+            if ignoredefaultrule
+                defaultconsequent = rulebase[end].consequent
+                rulebase = rulebase[1:(end-1)]
+            else
+                info = (;
+                    evaluation = parse(Float64, evaluation_str),
+                )
+                defaultconsequent = SoleModels.ConstantModel(consequent_str, info)
+            end
             break
         end
 
@@ -153,6 +159,5 @@ function orange_decision_list(
         push!(rulebase, Rule(antecedent, consequent_cm, info_r))
         uncovered_distribution = uncovered_distribution.-currentrule_distribution
     end
-
-    return SoleModels.DecisionList(rulebase, defaultrule)
+    return SoleModels.DecisionList(rulebase, defaultconsequent)
 end
