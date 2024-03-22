@@ -72,8 +72,6 @@ export rulemetrics, readmetrics
 
 include("evaluation.jl")
 
-include("parse.jl")
-
 include("experimentals.jl")
 
 include("parse.jl")

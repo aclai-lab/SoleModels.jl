@@ -18,7 +18,8 @@ The `digits` keyword argument is used to `round` accuracy/confidence metrics.
 # Case Rule consequent
 function readmetrics(m::LeafModel{L}; digits = 2) where {L<:Label}
     println("readmetrics(Leaf)")
-    merge(if haskey(info(m), :supporting_labels) && haskey(info(m), :supporting_predictions)
+    merge(
+    if haskey(info(m), :supporting_labels) && haskey(info(m), :supporting_predictions)
         _gts = info(m).supporting_labels
         _preds = info(m).supporting_predictions
         if L <: CLabel

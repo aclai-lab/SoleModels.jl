@@ -6,27 +6,9 @@ using SoleData: AbstractUnivariateFeature, Feature
 using SoleData: ScalarCondition
 using SoleData: feature
 
-<<<<<<< HEAD
-
-#===========================================================================================
-
-I test devono dimostrare che il parser funzioni, e poi ci vuole qualche test che verifichi
-che le supporting_labels sono corrette; le supporting_labels sono lette da readmetrics per
-calcolare confidenza e supporto di ciascuna regola. Per concludere, questo è il primo parser
-il cui obbiettivo è importare in Sole modelli allenati da altri pacchetti, per cui segnati
-che vogliamo fare una sezione nuova alla documentazione
-(questa:  https://aclai-lab.github.io/SoleModels.jl/).
-
-=2==========================================================================================#
-
-# Orange parser
-
-# Attenzione, ai fini del confronto ho dovuto cambiare le classi di orange_decisionlis.
-=======
 # Orange parser
 
 # Attenzione, ai fini del confronto ho dovuto cambiare le classi di orange_decisionlist.
->>>>>>> 720ffc72a5c7d0956a245123d6f1a6afc3f5fadc
 # "Iris-setosa"     -> "setosa"
 # "Iris-versicolor" -> "versicolor"
 # "Iris-virginica"  -> "virginica"
@@ -41,12 +23,8 @@ orange_decisionlist = """
     [0, 0, 2] IF sepal width>=2.8 THEN iris=virginica  -0.0
     [50, 50, 50] IF TRUE THEN iris=setosa  -1.584962500721156 """ |> SoleModels.parse_orange_decision_list
 @test orange_decisionlist isa DecisionList
-<<<<<<< HEAD
-@test apply(orange_decisionlist, X_test) isa Vector{CLabel}
-=======
 @test_nowarn readmetrics.(listrules(a))
 # @test apply(orange_decisionlist, X_test) isa Vector{CLabel}
->>>>>>> 720ffc72a5c7d0956a245123d6f1a6afc3f5fadc
 
 orange_decisionlist = """
     [50, 50, 50] IF TRUE THEN iris=setosa  -1.584962500721156 """ |>  SoleModels.parse_orange_decision_list
@@ -63,10 +41,6 @@ orange_decisionlist = """
     [0, 0, 2] IF sepal width>=2.8 THEN iris=virginica  -0.0
     [0, 0, 1] IF sepal length>=6.0 THEN iris=virginica  -0.0 """ |>  SoleModels.parse_orange_decision_list
 
-<<<<<<< HEAD
-@test_throws ErrorException """ This is not a decision list """ |>  SoleModels.parse_orange_decision_list
-# @test_throws ErrorException """ """ |>  SoleModels.parse_orange_decision_list
-=======
 @test_throws ErrorException """ This is not a decision list """ |>  SoleModels.orange_decision_list
 @test_throws ErrorException """ """ |>  SoleModels.orange_decision_list
 
@@ -97,4 +71,3 @@ dl = "
 @test_nowarn listrules(dl; normalize=true, normalize_kwargs=(; profile=:nnf, allow_atom_flipping=true))
 
 # TODO add (theory-basedL) formula simplifier: sepal length>=5.5 ∧ sepal length>=10 ≡ sepal length>=5.5
->>>>>>> 720ffc72a5c7d0956a245123d6f1a6afc3f5fadc
