@@ -306,11 +306,15 @@ struct FunctionModel{O} <: LeafModel{O}
 
     function FunctionModel{O}(
         f::Function,
-        info::NamedTuple = (;),
+        info::NamedTuple = (;);
+        silent = false
     ) where {O}
-        @warn "Over efficiency concerns, please consider wrapping"*
-        "Julia Function's into FunctionWrapper{O,Tuple{SoleModels.AbstractInterpretation}}"*
-        " structures,where O is their return type."
+        # TODO fix warning
+        if !silent
+            @warn "Over efficiency concerns, please consider wrapping"*
+            "Julia Function's into FunctionWrapper{O,Tuple{T}}"*
+            " structures, where T<:SoleModels.AbstractInterpretation is the interpretation type."
+        end
         f = FunctionWrapper{O,Tuple{AbstractInterpretation}}(f)
         FunctionModel{O}(f, info)
     end
