@@ -63,25 +63,9 @@ julia> listrules(dl; normalize = true)
  ▣ ((:petal_length > 3.0) ∨ (:sepal_width < 2.9)) ∧ ((:petal_width < 1.8) ∨ (:sepal_length < 6.0)) ∧ ((:sepal_length < 4.9) ∨ (:sepal_width < 3.1)) ∧ ((:petal_length > 4.9) ∨ (:petal_width < 1.7)) ∧ (:petal_width < 1.8) ∧ ((:petal_length > 5.0) ∨ (:sepal_width < 2.4)) ∧ (:sepal_width < 2.8) ∧ ((:petal_width > 1.0) ∨ (:sepal_length < 5.0)) ∧ (:sepal_width < 2.7) ∧ (:sepal_width < 2.6) ∧ ((:sepal_length < 5.5) ∨ (:sepal_length < 6.2)) ∧ ((:sepal_length > 5.5) ∨ (:petal_length < 4.0)) ∧ (:sepal_length < 6.0) ∧ (:sepal_length > 4.5)  ↣  Iris-setosa
 
 ```
-    See also
-    [`DecisionList`](@ref).
+
+See also [`DecisionList`](@ref).
 """
-
-#=
-C’è! Per ora è il campo info::NamedTuple, che ciascun modello simbolico ha.
-Nel fare la traduzione a modelli di sole,
-
-- nella info di una Rule metti supporting_labels che è un vettore delle labels delle istanze su
-cui la regola è costruita (ovvero, quelle che non sono coperte dalle regole precedenti),
-
-- nella info del ConstantModel ci metti un campo supporting_labels con le labels delle istanze che,
-tra queste, sono coperte dalla regola.
-
-Valuteremo se bisogna aggiungere anche un campo predicted_labels con le labels predette
-dal modello, ma in principio le support_labels sono sufficienti per calcolare diverse metriche
-=#
-
-
 function orange_decision_list(
     decision_list::AbstractString,
     ignoredefaultrule = false;
