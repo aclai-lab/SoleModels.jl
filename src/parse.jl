@@ -11,14 +11,15 @@ const UNDERCORE = "_"
     orange_decision_list(decision_list, ignoredefaultrule = false; featuretype = SoleData.UnivariateSymbolValue)
 
 Parser for [orange](https://orange3.readthedocs.io/)-style decision lists.
-    Reference: https://orange3.readthedocs.io/projects/orange-visual-programming/en/latest/widgets/model/cn2ruleinduction.html
+Reference: https://orange3.readthedocs.io/projects/orange-visual-programming/en/latest/widgets/model/cn2ruleinduction.html
 
 # Arguments
 
-* `decision_list` is a `AbstractString` rapresenting the orange-style decision list;
-* `ignoredefaultrule` is a optional, boolean parameter. Indicates whether to import or not the default rule in the parsed decision list;
-* `featuretype` specifies a different one feature type to include in the `ScalarConditions`.
-
+* `decision_list` is an `AbstractString` containing the orange-style representation of a decision list;
+* `ignoredefaultrule` is an optional, Boolean parameter indicating whether to use the default rule
+    as the default rule for the resulting decision list.
+    When `false`, the last rule is ignored, and the second last is used as the default rule;
+* `featuretype` specifies the feature type used in the parsed `ScalarCondition`s.
 
 # Examples
 ```julia-repl
@@ -78,8 +79,8 @@ See also [`DecisionList`](@ref).
 """
 function orange_decision_list(
     decision_list::AbstractString,
-    ignoredefaultrule = false;
-    featuretype = SoleData.UnivariateSymbolValue
+    ignoredefaultrule::Bool = false;
+    featuretype::Type{<:SoleData.AbstractFeature} = SoleData.UnivariateSymbolValue
 )
     # Strip whitespaces
     decision_list_str = strip(decision_list)
@@ -137,12 +138,14 @@ function orange_decision_list(
                     threshold
             ))
         end for condition in antecedent_conditions])
+        
         # Info ConstantModel
         info_cm = (;
             evaluation = parse(Float64, evaluation_str),
             supporting_labels = currentrule_distribution
         )
         consequent_cm = SoleModels.ConstantModel(consequent_str, info_cm)
+
         # Info Rule
         info_r = (;
             supporting_labels = uncovered_distribution
