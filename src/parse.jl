@@ -8,17 +8,16 @@ const UNDERCORE = "_"
 # This file contains utility functions for porting symbolic models from string and custom representations.
 
 """
-    function orange_decision_list(decision_list, ignoredefaultrule = false; featuretype = SoleData.UnivariateSymbolValue)
+    orange_decision_list(decision_list, ignoredefaultrule = false; featuretype = SoleData.UnivariateSymbolValue)
 
 Parser for [orange](https://orange3.readthedocs.io/)-style decision lists.
     Reference: https://orange3.readthedocs.io/projects/orange-visual-programming/en/latest/widgets/model/cn2ruleinduction.html
 
 # Arguments
 
-* `decision_list` is a `AbstractString` rapresenting the orange-style decision list.
-* `ignoredefaultrule` is a optional, boolean parameter. Indicates whether to import or not the default rule in the parsed decision list.
-* `featuretype` specifies a different one feature type to include in the
-`ScalarConditions`
+* `decision_list` is a `AbstractString` rapresenting the orange-style decision list;
+* `ignoredefaultrule` is a optional, boolean parameter. Indicates whether to import or not the default rule in the parsed decision list;
+* `featuretype` specifies a different one feature type to include in the `ScalarConditions`.
 
 
 # Examples
@@ -153,14 +152,3 @@ function orange_decision_list(
     end
     return SoleModels.DecisionList(rulebase, defaultconsequent)
 end
-
-
-#=
-
-Aabbiamo completato un bel parse.jl. che fa quel che deve fare e si legge
-che è una meraviglia! Pulisci le ultime cose rimuovendo/traducendo le parti in italiano, e
-completando la docstring spiegando i parametri decision_list (argomento posizionale),
-ignoredefaultrule (argomento posizionale non obbligato) e featuretype (keyword argument non obbligato).
-Leggi qui le linee guida: https://docs.julialang.org/en/v1/manual/documentation/#Writing-Documentation
-
-=#
