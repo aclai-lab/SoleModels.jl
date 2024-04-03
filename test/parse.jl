@@ -1,5 +1,4 @@
 using Test
-using Logging
 using SoleModels
 using SoleData
 using SoleData: AbstractUnivariateFeature, Feature
