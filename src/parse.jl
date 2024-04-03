@@ -8,9 +8,20 @@ const UNDERCORE = "_"
 # This file contains utility functions for porting symbolic models from string and custom representations.
 
 """
+    function orange_decision_list(decision_list, ignoredefaultrule = false; featuretype = SoleData.UnivariateSymbolValue)
+
 Parser for [orange](https://orange3.readthedocs.io/)-style decision lists.
     Reference: https://orange3.readthedocs.io/projects/orange-visual-programming/en/latest/widgets/model/cn2ruleinduction.html
-    # Examples
+
+# Arguments
+
+* `decision_list` is a `AbstractString` rapresenting the orange-style decision list.
+* `ignoredefaultrule` is a optional, boolean parameter. Indicates whether to import or not the default rule in the parsed decision list.
+* `featuretype` specifies a different one feature type to include in the
+`ScalarConditions`
+
+
+# Examples
 ```julia-repl
 julia> dl = "
 [49, 0, 0] IF petal length<=3.0 AND sepal width>=2.9 THEN iris=Iris-setosa  -0.0
@@ -66,22 +77,6 @@ julia> listrules(dl; normalize = true)
     See also
     [`DecisionList`](@ref).
 """
-
-#=
-C’è! Per ora è il campo info::NamedTuple, che ciascun modello simbolico ha.
-Nel fare la traduzione a modelli di sole,
-
-- nella info di una Rule metti supporting_labels che è un vettore delle labels delle istanze su
-cui la regola è costruita (ovvero, quelle che non sono coperte dalle regole precedenti),
-
-- nella info del ConstantModel ci metti un campo supporting_labels con le labels delle istanze che,
-tra queste, sono coperte dalla regola.
-
-Valuteremo se bisogna aggiungere anche un campo predicted_labels con le labels predette
-dal modello, ma in principio le support_labels sono sufficienti per calcolare diverse metriche
-=#
-
-
 function orange_decision_list(
     decision_list::AbstractString,
     ignoredefaultrule = false;
@@ -90,17 +85,16 @@ function orange_decision_list(
     # Strip whitespaces
     decision_list_str = strip(decision_list)
 
-    # Get last line of the decision_list_str string (the line with the total distribution [50, 50, 50])
+    # read last line of the input string (decision_list_str) to capture the total<distribution of examples.
     lastline = foldl((x,y)->y, eachline(IOBuffer(decision_list_str)))
     res = match(r"\[([\d\s,]+)\]", lastline)
     uncovered_distribution_str = res.captures[1]
     uncovered_distribution = parse.(Int, split(uncovered_distribution_str, ','))
-    # -------------------  Va un contriollo (su res) anche qui ? ---------------
 
-    # Start For over rules
     rulebase = SoleModels.Rule[]
     defaultconsequent = nothing
 
+    # iterate over lines(rules)
     for orangerule_str in eachline(IOBuffer(decision_list_str))
 
         res = match(r"\s*\[([\d\s,]+)\]\s*IF\s*(.*)\s*THEN\s*(.*)=(.*)\s+([+-]?\d+\.\d*)", orangerule_str)
@@ -144,14 +138,12 @@ function orange_decision_list(
                     threshold
             ))
         end for condition in antecedent_conditions])
-
         # Info ConstantModel
         info_cm = (;
             evaluation = parse(Float64, evaluation_str),
             supporting_labels = currentrule_distribution
         )
         consequent_cm = SoleModels.ConstantModel(consequent_str, info_cm)
-
         # Info Rule
         info_r = (;
             supporting_labels = uncovered_distribution
@@ -161,3 +153,14 @@ function orange_decision_list(
     end
     return SoleModels.DecisionList(rulebase, defaultconsequent)
 end
+
+
+#=
+
+Aabbiamo completato un bel parse.jl. che fa quel che deve fare e si legge
+che è una meraviglia! Pulisci le ultime cose rimuovendo/traducendo le parti in italiano, e
+completando la docstring spiegando i parametri decision_list (argomento posizionale),
+ignoredefaultrule (argomento posizionale non obbligato) e featuretype (keyword argument non obbligato).
+Leggi qui le linee guida: https://docs.julialang.org/en/v1/manual/documentation/#Writing-Documentation
+
+=#
