@@ -74,8 +74,8 @@ julia> listrules(dl; normalize = true)
  ▣ ((:petal_length > 3.0) ∨ (:sepal_width < 2.9)) ∧ ((:petal_width < 1.8) ∨ (:sepal_length < 6.0)) ∧ ((:sepal_length < 4.9) ∨ (:sepal_width < 3.1)) ∧ ((:petal_length > 4.9) ∨ (:petal_width < 1.7)) ∧ (:petal_width < 1.8) ∧ ((:petal_length > 5.0) ∨ (:sepal_width < 2.4)) ∧ (:sepal_width < 2.8) ∧ ((:petal_width > 1.0) ∨ (:sepal_length < 5.0)) ∧ (:sepal_width < 2.7) ∧ (:sepal_width < 2.6) ∧ ((:sepal_length < 5.5) ∨ (:sepal_length < 6.2)) ∧ ((:sepal_length > 5.5) ∨ (:petal_length < 4.0)) ∧ (:sepal_length < 6.0) ∧ (:sepal_length > 4.5)  ↣  Iris-setosa
 
 ```
-    See also
-    [`DecisionList`](@ref).
+
+See also [`DecisionList`](@ref).
 """
 function orange_decision_list(
     decision_list::AbstractString,
