@@ -120,17 +120,17 @@ function orange_decision_list(
         currentrule_distribution = parse.(Int, split(distribution_str, ','))
         antecedent_conditions = String.(strip.(split(antecedents_str, "AND")))
         antecedent_conditions = replace.(antecedent_conditions, SPACE=>UNDERCORE)
-        antecedent_conditions = match.(r"(.+?)([<>]=?|==)(.*)", antecedent_conditions)
+        antecedent_conditions = match.(r"(.+?)([<>]=?|==|!=)(.*)", antecedent_conditions)
 
         antecedent = LeftmostConjunctiveForm([begin
-            varname, test_operator, treshold = condition.captures[:]
+            varname, test_operator, threshold_str = condition.captures[:]
 
             varname = strip(varname)
             test_operator = strip(test_operator)
-            threshold = tryparse(Float64, strip(treshold))
+            threshold = tryparse(Float64, strip(threshold_str))
 
             if isnothing(threshold)
-                threshold = treshold_str
+                threshold = threshold_str
             end
             Atom{ScalarCondition}(SoleData.ScalarCondition(
                     featuretype(Symbol(varname)),
@@ -138,12 +138,13 @@ function orange_decision_list(
                     threshold
             ))
         end for condition in antecedent_conditions])
-        
+
         # Info ConstantModel
         info_cm = (;
             evaluation = parse(Float64, evaluation_str),
             supporting_labels = currentrule_distribution
         )
+
         consequent_cm = SoleModels.ConstantModel(consequent_str, info_cm)
 
         # Info Rule
