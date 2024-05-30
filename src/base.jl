@@ -1061,29 +1061,29 @@ function meandelaydl(m::DecisionList)
     end
 end
 
+# TODO remove
+# function equaldecisionlist(
+#     m::DecisionList{O},
+#     n::DecisionList{O}
+# ) where {O}
 
-function equaldecisionlist(
-    m::DecisionList{O},
-    n::DecisionList{O}
-) where {O}
+#     rulbase_m = rulebase(m)
+#     rulbase_n = rulebase(n)
 
-    rulbase_m = rulebase(m)
-    rulbase_n = rulebase(n)
-
-    if length(rulbase_m) != length(rulbase_n)
-        @warn("Decisionlist length mismatch")
-        return false
-    end
-    for (r_m, r_n) in zip(rulbase_m, rulbase_n)
-        φm, φn = antecedent.(r_m, r_n)
-        om, on = outcome.(consequent.(r_m, r_n))
-        println("here")
-        if checkconditionsequivalence(φ1, φ2) == false
-            return false
-        end
-    end
-    return true
-end
+#     if length(rulbase_m) != length(rulbase_n)
+#         @warn("Decisionlist length mismatch")
+#         return false
+#     end
+#     for (r_m, r_n) in zip(rulbase_m, rulbase_n)
+#         φm, φn = antecedent.(r_m, r_n)
+#         om, on = outcome.(consequent.(r_m, r_n))
+#         println("here")
+#         if checkconditionsequivalence(φ1, φ2) == false
+#             return false
+#         end
+#     end
+#     return true
+# end
 
 
 
