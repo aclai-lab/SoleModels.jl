@@ -37,7 +37,7 @@ dl = """
     [0, 0, 5] IF petal width>=1.8 THEN iris=virginica  -0.0
     [0, 35, 0] IF petal length<=5.0 AND sepal width>=2.4 THEN iris=versicolor  -0.0
     [0, 0, 2] IF sepal width>=2.8 THEN iris=virginica  -0.0
-    [0, 0, 1] IF sepal length>=6.0 THEN iris=virginica  -0.0 """ |>  SoleModels.orange_decision_list
+    [0, 0, 1] IF sepal length>=6.0 THEN iris=virginica  -0.0 """ |>  SoleModels.parse_orange_decision_list
 
 @test_throws ErrorException """ This is not a decision list """ |>  SoleModels.parse_orange_decision_list
 @test_throws ErrorException """ """ |>  SoleModels.parse_orange_decision_list
