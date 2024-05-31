@@ -157,6 +157,12 @@ function join_antecedents(assumed_formulas::Vector{<:SoleLogics.AbstractSyntaxSt
     return length(assumed_formulas) == 0 ? ⊤ : LeftmostConjunctiveForm(assumed_formulas)
 end
 
+function join_antecedents(assumed_formulas::Vector{<:SoleLogics.Formula})
+    return length(assumed_formulas) == 0 ? ⊤ : (
+        length(assumed_formulas) == 1 ? assumed_formulas : ∧(assumed_formulas...)
+    )
+end
+
 ############################################################################################
 ############################################################################################
 ############################################################################################
