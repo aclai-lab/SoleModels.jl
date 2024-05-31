@@ -85,7 +85,7 @@ function orange_decision_list(
     # Strip whitespaces
     decision_list_str = strip(decision_list)
 
-    # read last line of the input string (decision_list_str) to capture the total<distribution of examples.
+    # read last line of the input string (decision_list_str) to capture the total distribution of examples.
     lastline = foldl((x,y)->y, eachline(IOBuffer(decision_list_str)))
     res = match(r"\[([\d\s,]+)\]", lastline)
     uncovered_distribution_str = res.captures[1]
@@ -94,7 +94,7 @@ function orange_decision_list(
     rulebase = SoleModels.Rule[]
     defaultconsequent = nothing
 
-    # iterate over lines(rules)
+    # iterate over lines (rules)
     for orangerule_str in eachline(IOBuffer(decision_list_str))
 
         res = match(r"\s*\[([\d\s,]+)\]\s*IF\s*(.*)\s*THEN\s*(.*)=(.*)\s+([+-]?\d+\.\d*)", orangerule_str)
