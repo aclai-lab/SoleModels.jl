@@ -77,33 +77,38 @@ julia> listrules(dl; normalize = true)
 
 See also [`DecisionList`](@ref).
 """
-function orange_decision_list(
+function parse_orange_decision_list(
     decision_list::AbstractString,
     ignoredefaultrule::Bool = false;
     featuretype::Type{<:SoleData.AbstractFeature} = SoleData.UnivariateSymbolValue
 )
     # Strip whitespaces
     decision_list_str = strip(decision_list)
+        isempty(decision_list_str) && Base.error("Empty decision list")
 
     # read last line of the input string (decision_list_str) to capture the total distribution of examples.
     lastline = foldl((x,y)->y, eachline(IOBuffer(decision_list_str)))
-    res = match(r"\[([\d\s,]+)\]", lastline)
+    res = match(r"\s*\[([\d\s,]+)\]\s*IF\s*(.*)\s*THEN\s*(.*)=(.*)\s+([+-]?\d+\.\d*)", lastline)
+
+    # Checks on default rule
+    if isnothing(res) || (strip(res.captures[2]) != "TRUE")
+        Base.error("Malformed decision list, `$(lastline)` is not an acceptable defaultrule")
+    end
     uncovered_distribution_str = res.captures[1]
     uncovered_distribution = parse.(Int, split(uncovered_distribution_str, ','))
 
     rulebase = SoleModels.Rule[]
     defaultconsequent = nothing
 
-    # iterate over lines (rules)
+    # Iterate over lines (rules)
     for orangerule_str in eachline(IOBuffer(decision_list_str))
 
         res = match(r"\s*\[([\d\s,]+)\]\s*IF\s*(.*)\s*THEN\s*(.*)=(.*)\s+([+-]?\d+\.\d*)", orangerule_str)
         if isnothing(res) || length(res.captures) != 5
-            error("Malformed decision list line: $(orangerule_str)")
+            Base.error("Malformed decision list line: $(orangerule_str)")
         end
         distribution_str, antecedents_str, consequent_class_name_str, consequent_str, evaluation_str = String.(strip.(res.captures))
-
-        # Trigger for the last rule (default rule)
+        # Trigger for the default rule
         if antecedents_str == "TRUE"
             if ignoredefaultrule
                 defaultconsequent = rulebase[end].consequent
@@ -116,7 +121,6 @@ function orange_decision_list(
             end
             break
         end
-
         currentrule_distribution = parse.(Int, split(distribution_str, ','))
         antecedent_conditions = String.(strip.(split(antecedents_str, "AND")))
         antecedent_conditions = replace.(antecedent_conditions, SPACE=>UNDERCORE)
@@ -144,7 +148,6 @@ function orange_decision_list(
             evaluation = parse(Float64, evaluation_str),
             supporting_labels = currentrule_distribution
         )
-
         consequent_cm = SoleModels.ConstantModel(consequent_str, info_cm)
 
         # Info Rule
