@@ -1,4 +1,6 @@
 Features:
+    ☐ struct EnsembleModel (with parametrized aggregation) and DecisionForest
+    ☐ PatchModel, a closed model providing a default consequent to an open model
     ✔ Add supporting_labels field (vector) @done(24-05-31 11:12)
     # Vector of labels of instances on which the rule is built (i.e., those not covered by previous rules), and in
     # the constant model info, include a supp_labels field with the labels of the instances that, among these, are covered by the rule.

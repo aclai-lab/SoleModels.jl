@@ -25,6 +25,7 @@ makedocs(;
         "Home" => "index.md",
         "Logical foundations" => "logic.md",
         "Symbolic models" => "models.md",
+        "Parsing models from other frameworks" => "parse.md",
         "Full reference" => "autodocs.md",
     ],
     warnonly = true, # TODO remove?
