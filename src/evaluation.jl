@@ -9,13 +9,13 @@ function accuracy(
     y_true::AbstractArray,
     y_pred::AbstractArray,
 )
-    @assert length(y_true) == length(y_pred) "True labels and Predicted labels don't have the same length"
-    @assert length(y_pred) > 0 "Don't pass the labels, the two vectors are empty"
+    @assert length(y_true) == length(y_pred) "Ground truth and predicted labels should have the same length, but $(length(y_true)) ≠ $(length(y_pred))."
+    @assert length(y_pred) > 0 "Cannot compute metric on non-empty label vectors."
 
     return sum(y_pred .== y_true)/length(y_pred)
 end
 
-function error(
+function _error(
     y_true::AbstractArray,
     y_pred::AbstractArray,
 )
@@ -27,8 +27,8 @@ function mae(
     y_true::AbstractArray,
     y_pred::AbstractArray,
 )
-    @assert length(y_true) == length(y_pred) "True labels and Predicted labels don't have the same length"
-    @assert length(y_pred) > 0 "Don't pass the labels, the two vectors are empty"
+    @assert length(y_true) == length(y_pred) "Ground truth and predicted labels should have the same length, but $(length(y_true)) ≠ $(length(y_pred))."
+    @assert length(y_pred) > 0 "Cannot compute metric on non-empty label vectors."
 
     # return sum(abs.(y_pred.-y_true)) / length(y_pred)
     return StatsBase.mean(abs, y_true - y_pred)
@@ -38,8 +38,8 @@ function mse(
     y_true::AbstractArray,
     y_pred::AbstractArray,
 )
-    @assert length(y_true) == length(y_pred) "True labels and Predicted labels don't have the same length"
-    @assert length(y_pred) > 0 "Don't pass the labels, the two vectors are empty"
+    @assert length(y_true) == length(y_pred) "Ground truth and predicted labels should have the same length, but $(length(y_true)) ≠ $(length(y_pred))."
+    @assert length(y_pred) > 0 "Cannot compute metric on non-empty label vectors."
 
     # return sum((y_pred.-y_true).^2) / length(y_pred)
     return StatsBase.mean(abs2, y_true - y_pred)
@@ -58,6 +58,7 @@ Performance metrics can be computed when the `info` structure of the model has t
 
 The `digits` keyword argument is used to `round` accuracy/confidence metrics.
 """
+
 function readmetrics(m::LeafModel{L}; digits = 2) where {L<:Label}
     merge(if haskey(info(m), :supporting_labels) && haskey(info(m), :supporting_predictions)
         _gts = info(m).supporting_labels
@@ -206,7 +207,7 @@ function rulemetrics(
         if outcometype(consequent(rule)) <: CLabel
             # Number of incorrectly classified instances divided by number of instances
             # satisfying the rule condition.
-            error(ys[antsat],Y[antsat])
+            _error(ys[antsat],Y[antsat])
         elseif outcometype(consequent(rule)) <: RLabel
             # Mean Squared Error (mse)
             mse(ys[antsat],Y[antsat])

@@ -137,7 +137,7 @@ rmodel3 = @test_nowarn Rule{Number}(phi,1)
 # @test_nowarn [rmodel3, rmodel4]
 
 # rmodel3 = @test_nowarn Rule{Number,ConstantModel{Number}}(phi,1)
-@test rmodel3 isa Rule{Number,<:Any,Union{ConstantModel{Number}}}
+@test rmodel3 isa Rule{Number,<:Any}
 # @test Rule{Number,ConstantModel{Int}}(phi, 1) isa Rule{Number, Union{ConstantModel{Number}}}
 # @test Rule{Int,ConstantModel{Number}}(phi, 1) isa Rule{Int, Union{ConstantModel{Int}}}
 # @test_throws MethodError Rule{Int,<:Any,ConstantModel{Number}}(phi, 1.0)
@@ -236,33 +236,32 @@ dt2 = @test_nowarn DecisionTree(b_fdx)
 
 dtmodel0 = @test_nowarn DecisionTree("1")
 dtmodel = @test_nowarn DecisionTree(branch_r)
-#@test_throws AssertionError DecisionTree(branch_r_mixed)
 
 ############################## DecisionForest ##############################################
 df = @test_nowarn DecisionForest([dt1,dt2])
 
-############################### MixedSymbolicModel #########################################
+############################### MixedModel #########################################
 b_msm = @test_nowarn Branch(st_q,outcome_int,outcome_float)
 dt_msm = @test_nowarn DecisionTree(b_msm)
-msm = @test_nowarn MixedSymbolicModel(dt_msm)
+msm = @test_nowarn MixedModel(dt_msm)
 
-msmodel = @test_nowarn MixedSymbolicModel(dtmodel)
+msmodel = @test_nowarn MixedModel(dtmodel)
 
 complex_mixed_model = @test_nowarn Branch(formula_r, (dtmodel, dlmodel))
 
-@test_nowarn MixedSymbolicModel("1")
-@test_nowarn MixedSymbolicModel(const_funwrap)
-@test_nowarn MixedSymbolicModel(dtmodel)
-@test_nowarn MixedSymbolicModel(dlmodel)
-ms_model0 = MixedSymbolicModel(complex_mixed_model)
+@test_nowarn MixedModel("1")
+@test_nowarn MixedModel(const_funwrap)
+@test_nowarn MixedModel(dtmodel)
+@test_nowarn MixedModel(dlmodel)
+ms_model0 = MixedModel(complex_mixed_model)
 
-MixedSymbolicModel(MixedSymbolicModel("1"))
-MixedSymbolicModel(MixedSymbolicModel(complex_mixed_model))
-MixedSymbolicModel(MixedSymbolicModel(MixedSymbolicModel(complex_mixed_model)))
-ms_model1 = MixedSymbolicModel(ms_model0)
-ms_model = MixedSymbolicModel(ms_model1)
-ms_model = MixedSymbolicModel(ms_model)
-ms_model = MixedSymbolicModel(ms_model)
+MixedModel(MixedModel("1"))
+MixedModel(MixedModel(complex_mixed_model))
+MixedModel(MixedModel(MixedModel(complex_mixed_model)))
+ms_model1 = MixedModel(ms_model0)
+ms_model = MixedModel(ms_model1)
+ms_model = MixedModel(ms_model)
+ms_model = MixedModel(ms_model)
 
 @test typeof(ms_model1) == typeof(ms_model)
 

@@ -10,6 +10,13 @@ Pages   = ["base.jl"]
 ```
 
 ```@docs
+ConstantModel
+FunctionModel
+Rule
+Branch
+DecisionList
+DecisionTree
+DecisionForest
 printmodel
 ```
 
@@ -26,10 +33,3 @@ Pages   = ["evaluation.jl"]
 Modules = [SoleModels]
 Pages   = ["symbolic-utils.jl"]
 ```
-
-<!-- 
-```@autodocs
-Modules = [SoleModels]
-Pages   = ["machine-learning.jl"]
-```
- -->

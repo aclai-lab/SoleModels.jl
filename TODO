@@ -1,2 +1,18 @@
-☐ struct EnsambleModel (with parametrized aggregation) and DecisionForest
-☐	PatchModel, a closed model providing a default consequent to an open model
+Features:
+    ✔ Add supporting_labels field (vector) @done(24-05-31 11:12)
+    # Vector of labels of instances on which the rule is built (i.e., those not covered by previous rules), and in
+    # the constant model info, include a supp_labels field with the labels of the instances that, among these, are covered by the rule.
+    ☐ Add predicted_labels field (perhaps)
+    # Labels predicted by the model, but initially the supporting_labels are sufficient
+    # to calculate various metrics
+
+Test:
+    ✔ Testing parser outcome @done(24-05-31 11:12)
+    ✔ Correct supporting_labels @done(24-05-31 11:12)
+    ✔ Correct info (consequent/rule) @done(24-05-31 11:12)
+    # Distribution of covered examples for consequent
+    # Distribution of examples on which the rule was built
+    ✔ Testing parser error @done(24-05-31 11:12)
+
+Questions:
+    ✔ Readmetrics for CN2 statistics @done(24-05-31 11:12)

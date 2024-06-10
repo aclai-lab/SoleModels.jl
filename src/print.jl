@@ -53,16 +53,11 @@ doc_printdisplay_model = """
 prints or returns a string representation of model `m`.
 
 # Arguments
-- `header::Bool = true`: when set to `true`, a header is printed, displaying
- the `info` structure for `m`;
-- `show_subtree_info::Bool = false`: when set to `true`, the header is printed for
-models in the sub-tree of `m`;
-- `show_metrics::Bool = false`: when set to `true`, performance metrics at each point of the
-subtree are shown, whenever they are available in the `info` structure;
-- `max_depth::Union{Nothing,Int} = nothing`: when it is an `Int`, models in the sub-tree
-with a depth higher than `max_depth` are ellipsed with "...";
-- `syntaxstring_kwargs::NamedTuple = (;)`: kwargs to be passed to `syntaxstring` for
-formatting logical formulas.
+- `header::Bool = true`: when set to `true`, a header is printed, displaying the `info` structure for `m`;
+- `show_subtree_info::Bool = false`: when set to `true`, the header is printed for models in the sub-tree of `m`;
+- `show_metrics::Bool = false`: when set to `true`, performance metrics at each point of the subtree are shown, whenever they are available in the `info` structure;
+- `max_depth::Union{Nothing,Int} = nothing`: when it is an `Int`, models in the sub-tree with a depth higher than `max_depth` are ellipsed with "...";
+- `syntaxstring_kwargs::NamedTuple = (;)`: kwargs to be passed to `syntaxstring` for formatting logical formulas.
 
 See also [`syntaxstring`](@ref), [`AbstractModel`](@ref).
 """
@@ -172,6 +167,7 @@ function _displaymodel(
     m::FunctionModel;
     header = DEFAULT_HEADER,
     indentation_str = "",
+    depth = 0,
     show_subtree_info = false,
     show_metrics = false,
     show_shortforms = false,
@@ -190,7 +186,7 @@ function _displaymodel(
         "" : "\n$(indentation_str)Info: $(info(m))")")
     end
     depth == 0 && show_symbols && print(io, "▣")
-    print(io, "$(f(m))")
+    print(io, " $(f(m))")
     show_metrics != false && print(io, " : $(get_metrics_string(m; (show_metrics isa NamedTuple ? show_metrics : [])...))")
     show_shortforms != false && haskey(info(m), :shortform) && print(io, "\t\t\t\t\t\t\tSHORTFORM: $(syntaxstring(info(m)[:shortform]))")
     println(io, "")
@@ -479,7 +475,7 @@ function _displaymodel(
 end
 
 function _displaymodel(
-    m::MixedSymbolicModel;
+    m::MixedModel;
     header = DEFAULT_HEADER,
     indentation_str = "",
     indentation = default_indentation,
