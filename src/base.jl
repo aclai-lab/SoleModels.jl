@@ -187,7 +187,7 @@ function info!(m::AbstractModel, info; replace = false)
         foreach(((key, value),)->info!(m, key, value), pairs(info))
     end
 end
-info!(m::AbstractModel, key, value) = (m.info[key] = value; m)
+info!(m::AbstractModel, key, value) = (m.info = merge((; key = value), m.info); m)
 
 
 ############################################################################################
