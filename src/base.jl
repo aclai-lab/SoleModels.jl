@@ -184,7 +184,7 @@ function info!(m::AbstractModel, info; replace = false)
     if replace
         m.info = info
     else
-        foreach(((key, value),)->info!(m, key, value), info!)
+        foreach(((key, value),)->info!(m, key, value), pairs(info))
     end
 end
 info!(m::AbstractModel, key, value) = (m.info[key] = value; m)

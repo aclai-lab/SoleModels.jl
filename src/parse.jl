@@ -7,7 +7,7 @@ const UNDERCORE = "_"
 # This file contains utility functions for porting symbolic models from string and custom representations.
 
 """
-    orange_decision_list(decision_list, ignoredefaultrule = false; featuretype = SoleData.VariableValue)
+    parse_orange_decision_list(decision_list, ignoredefaultrule = false; featuretype = SoleData.VariableValue)
 
 Parser for [orange](https://orange3.readthedocs.io/)-style decision lists.
 Reference: https://orange3.readthedocs.io/projects/orange-visual-programming/en/latest/widgets/model/cn2ruleinduction.html
@@ -38,7 +38,7 @@ julia> dl = "
 [0, 0, 1] IF sepal length>=6.0 THEN iris=Iris-virginica  -0.0
 [1, 0, 0] IF sepal length<=4.5 THEN iris=Iris-setosa  -0.0
 [50, 50, 50] IF TRUE THEN iris=Iris-setosa  -1.584962500721156
-" |> SoleModels.orange_decision_list
+" |> SoleModels.parse_orange_decision_list
 
 julia> listrules(dl; normalize = true)
 15-element Vector{ClassificationRule{String, A, SoleModels.ConstantModel{String}} where A<:Formula}:
