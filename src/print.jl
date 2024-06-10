@@ -167,6 +167,7 @@ function _displaymodel(
     m::FunctionModel;
     header = DEFAULT_HEADER,
     indentation_str = "",
+    depth = 0,
     show_subtree_info = false,
     show_metrics = false,
     show_shortforms = false,
@@ -185,7 +186,7 @@ function _displaymodel(
         "" : "\n$(indentation_str)Info: $(info(m))")")
     end
     depth == 0 && show_symbols && print(io, "▣")
-    print(io, "$(f(m))")
+    print(io, " $(f(m))")
     show_metrics != false && print(io, " : $(get_metrics_string(m; (show_metrics isa NamedTuple ? show_metrics : [])...))")
     show_shortforms != false && haskey(info(m), :shortform) && print(io, "\t\t\t\t\t\t\tSHORTFORM: $(syntaxstring(info(m)[:shortform]))")
     println(io, "")
@@ -474,7 +475,7 @@ function _displaymodel(
 end
 
 function _displaymodel(
-    m::MixedSymbolicModel;
+    m::MixedModel;
     header = DEFAULT_HEADER,
     indentation_str = "",
     indentation = default_indentation,

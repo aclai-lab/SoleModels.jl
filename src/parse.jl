@@ -1,14 +1,13 @@
 using SoleData
 using SoleLogics
 using SoleModels
-import SoleData: feature, varname
 const SPACE = " "
 const UNDERCORE = "_"
 
 # This file contains utility functions for porting symbolic models from string and custom representations.
 
 """
-    orange_decision_list(decision_list, ignoredefaultrule = false; featuretype = SoleData.UnivariateSymbolValue)
+    orange_decision_list(decision_list, ignoredefaultrule = false; featuretype = SoleData.VariableValue)
 
 Parser for [orange](https://orange3.readthedocs.io/)-style decision lists.
 Reference: https://orange3.readthedocs.io/projects/orange-visual-programming/en/latest/widgets/model/cn2ruleinduction.html
@@ -80,7 +79,7 @@ See also [`DecisionList`](@ref).
 function parse_orange_decision_list(
     decision_list::AbstractString,
     ignoredefaultrule::Bool = false;
-    featuretype::Type{<:SoleData.AbstractFeature} = SoleData.UnivariateSymbolValue
+    featuretype::Type{<:SoleData.AbstractFeature} = SoleData.VariableValue
 )
     # Strip whitespaces
     decision_list_str = strip(decision_list)

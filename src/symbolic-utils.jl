@@ -53,7 +53,7 @@ immediatesubmodels(m::Branch) = [posconsequent(m), negconsequent(m)]
 immediatesubmodels(m::DecisionList) = [rulebase(m)..., defaultconsequent(m)]
 immediatesubmodels(m::DecisionTree) = immediatesubmodels(root(m))
 immediatesubmodels(m::DecisionForest) = trees(m)
-immediatesubmodels(m::MixedSymbolicModel) = immediatesubmodels(root(m))
+immediatesubmodels(m::MixedModel) = immediatesubmodels(root(m))
 
 nimmediatesubmodels(m::LeafModel) = 0
 nimmediatesubmodels(m::Rule) = 1
@@ -61,7 +61,7 @@ nimmediatesubmodels(m::Branch) = 2
 nimmediatesubmodels(m::DecisionList) = length(rulebase(m)) + 1
 nimmediatesubmodels(m::DecisionTree) = nimmediatesubmodels(root(m))
 nimmediatesubmodels(m::DecisionForest) = length(trees(m))
-nimmediatesubmodels(m::MixedSymbolicModel) = nimmediatesubmodels(root(m))
+nimmediatesubmodels(m::MixedModel) = nimmediatesubmodels(root(m))
 
 """
     submodels(m::AbstractModel)
@@ -120,14 +120,14 @@ _submodels(m::AbstractModel) = [m, Iterators.flatten(_submodels.(immediatesubmod
 _submodels(m::DecisionList) = [Iterators.flatten(_submodels.(immediatesubmodels(m)))...]
 _submodels(m::DecisionTree) = [Iterators.flatten(_submodels.(immediatesubmodels(m)))...]
 _submodels(m::DecisionForest) = [Iterators.flatten(_submodels.(immediatesubmodels(m)))...]
-_submodels(m::MixedSymbolicModel) = [Iterators.flatten(_submodels.(immediatesubmodels(m)))...]
+_submodels(m::MixedModel) = [Iterators.flatten(_submodels.(immediatesubmodels(m)))...]
 
 nsubmodels(m::AbstractModel) = 1 + sum(nsubmodels, immediatesubmodels(m))
 nsubmodels(m::LeafModel) = 1
 nsubmodels(m::DecisionList) = sum(nsubmodels, immediatesubmodels(m))
 nsubmodels(m::DecisionTree) = sum(nsubmodels, immediatesubmodels(m))
 nsubmodels(m::DecisionForest) = sum(nsubmodels, immediatesubmodels(m))
-nsubmodels(m::MixedSymbolicModel) = sum(nsubmodels, immediatesubmodels(m))
+nsubmodels(m::MixedModel) = sum(nsubmodels, immediatesubmodels(m))
 
 leafmodels(m::AbstractModel) = [Iterators.flatten(leafmodels.(immediatesubmodels(m)))...]
 
@@ -138,7 +138,7 @@ subtreeheight(m::LeafModel) = 0
 subtreeheight(m::DecisionList) = maximum(subtreeheight, immediatesubmodels(m))
 subtreeheight(m::DecisionTree) = maximum(subtreeheight, immediatesubmodels(m))
 subtreeheight(m::DecisionForest) = maximum(subtreeheight, immediatesubmodels(m))
-subtreeheight(m::MixedSymbolicModel) = maximum(subtreeheight, immediatesubmodels(m))
+subtreeheight(m::MixedModel) = maximum(subtreeheight, immediatesubmodels(m))
 
 # AbstracTrees interface
 import AbstractTrees: children
@@ -159,7 +159,7 @@ end
 
 function join_antecedents(assumed_formulas::Vector{<:SoleLogics.Formula})
     return length(assumed_formulas) == 0 ? ⊤ : (
-        length(assumed_formulas) == 1 ? assumed_formulas : ∧(assumed_formulas...)
+        length(assumed_formulas) == 1 ? first(assumed_formulas) : ∧(assumed_formulas...)
     )
 end
 
@@ -196,16 +196,10 @@ julia> printmodel.(listimmediaterules(branch); tree_mode = true);
 
 ```
 
-See also [`listrules`](@ref), [`issymbolic`](@ref), [`AbstractModel`](@ref).
+See also [`listrules`](@ref), [`AbstractModel`](@ref).
 """
 listimmediaterules(m::AbstractModel{O} where {O})::Rule{<:O} =
-    error(begin
-        if issymbolic(m)
-            "Please, provide method listimmediaterules(::$(typeof(m))) ($(typeof(m)) is a symbolic model)."
-        else
-            "Models of type $(typeof(m)) are not symbolic, and thus have no rules associated."
-        end
-    end)
+    error("Please, provide method listimmediaterules(::$(typeof(m))) ($(typeof(m)) is a symbolic model).")
 
 listimmediaterules(m::LeafModel) = [Rule(⊤, m)]
 
@@ -224,8 +218,8 @@ function listimmediaterules(
     normalize_kwargs::NamedTuple = (; allow_atom_flipping = true, rotate_commutatives = false),
     force_syntaxtree::Bool = false,
 ) where {O}
-    assumed_formulas = AbstractSyntaxStructure[]
-    normalized_rules = Rule{O}[]
+    assumed_formulas = Formula[]
+    normalized_rules = Rule{<:O}[]
     for rule in rulebase(m)
         # @show assumed_formulas
         newrule = Rule(join_antecedents([assumed_formulas..., antecedent(rule)]), consequent(rule), info(rule))
@@ -244,7 +238,9 @@ end
 
 listimmediaterules(m::DecisionTree) = listimmediaterules(root(m))
 
-listimmediaterules(m::MixedSymbolicModel) = listimmediaterules(root(m))
+listimmediaterules(m::DecisionForest; kwargs...) = error("TODO implement")
+
+listimmediaterules(m::MixedModel) = listimmediaterules(root(m))
 
 ############################################################################################
 ############################################################################################
@@ -295,17 +291,11 @@ julia> printmodel.(listrules(branch); tree_mode = true);
 
 See also [`listimmediaterules`](@ref),
 [`SoleLogics.CONJUNCTION`](@ref),
-[`joinrules`](@ref), [`issymbolic`](@ref), [`LeafModel`](@ref),
+[`joinrules`](@ref), [`LeafModel`](@ref),
 [`AbstractModel`](@ref).
 """
 function listrules(m::AbstractModel; kwargs...)
-    error(begin
-        if issymbolic(m)
-            "Please, provide method listrules(::$(typeof(m))) ($(typeof(m)) is a symbolic model)."
-        else
-            "Models of type $(typeof(m)) are not symbolic, and thus have no rules associated."
-        end
-    end)
+    error("Please, provide method listrules(::$(typeof(m))) ($(typeof(m)) is a symbolic model).")
 end
 
 listrules(m::LeafModel; kwargs...) = [m]
@@ -445,7 +435,9 @@ end
 
 listrules(m::DecisionTree; kwargs...) = listrules(root(m); kwargs...)
 
-listrules(m::MixedSymbolicModel; kwargs...) = listrules(root(m); kwargs...)
+listrules(m::DecisionForest; kwargs...) = error("TODO implement")
+
+listrules(m::MixedModel; kwargs...) = listrules(root(m); kwargs...)
 
 ############################################################################################
 ############################################################################################
@@ -490,21 +482,19 @@ julia> printmodel.(joinrules(listrules(branch)); tree_mode = true);
 
 ```
 
-See also [`listrules`](@ref), [`issymbolic`](@ref),
+See also [`listrules`](@ref),
 [`SoleLogics.DISJUNCTION`](@ref), [`LeafModel`](@ref),
 [`AbstractModel`](@ref).
 """
 function joinrules(
-    rules::AbstractVector{
-        <:Rule{<:Any,<:SoleModels.Formula,<:SoleModels.ConstantModel}
-    },
+    rules::AbstractVector{<:Rule},
     silent = false
 )
-    alloutcomes = unique(outcome.(consequent.(rules)))
+    allconsequents = unique(consequent.(rules))
     # @show info.(rules)
     # @show info.(consequent.(rules))
     return [begin
-        these_rules = filter(r->outcome(consequent(r)) == _outcome, rules)
+        these_rules = filter(r->consequent(r) == _consequent, rules)
         leafinfo, ruleinfo = begin
             if !silent
                 known_infokeys = [:supporting_labels, :supporting_predictions, :shortform, :this, :multipathformula]
@@ -552,7 +542,8 @@ function joinrules(
         end
         ants = antecedent.(these_rules)
         newant = LeftmostDisjunctiveForm(ants)
-        newcons = ConstantModel(_outcome, leafinfo)
+        newcons = deepcopy(_consequent)
+        info!(newcons, leafinfo)
         Rule(newant, newcons, ruleinfo)
-    end for _outcome in alloutcomes]
+    end for _consequent in allconsequents]
 end

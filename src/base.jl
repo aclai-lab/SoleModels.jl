@@ -15,16 +15,33 @@ typename(::Type{T}) where T = eval(nameof(T))
 """
     abstract type AbstractModel{O} end
 
-Abstract type for mathematical models that,
+Abstract type for symbolic models that,
 given an instance object (i.e., a piece of data), output an
 outcome of type `O`.
 
+A model is said to be *symbolic* when its application relies on checking formulas
+of a certain logical language
+(see [SoleLogics.jl](https://github.com/aclai-lab/SoleLogics.jl) package)
+on the instance.
+Symbolic models provide a form of transparent and *interpretable modeling*,
+as a symbolic model can be synthethised into a set of mutually exclusive logical rules
+that can often be translated into natural language.
+
+Examples of symbolic models are [`Rule`](@ref)s, [`Branch`](@ref)es,
+[`DecisionList`](@ref)s and [`DecisionTree`](@ref)s.
+Examples of non-symbolic (or *sub-symbolic*) models include those encoding algebraic mathematical
+functions (e.g., neural networks).
+
+Symbolic models can wrap other `AbstractModel`s, and use them to compute the outcome.
+As such, an `AbstractModel` can actually be the result of a composition of many models,
+and enclose a *tree* of `AbstractModel`s (with `LeafModel`s at the leaves).
+
 See also
+[`LeafModel`](@ref),
 [`Rule`](@ref),
 [`Branch`](@ref),
 [`isopen`](@ref),
 [`apply`](@ref),
-[`issymbolic`](@ref),
 [`info`](@ref),
 [`outcometype`](@ref).
 """
@@ -147,37 +164,12 @@ function apply(
     map(i_instance->apply(m, d, i_instance; kwargs...), 1:ninstances(d))
 end
 
-# Symbolic models encode a *rule-based thought process*,
-# and provide a form of transparent and interpretable computation.
-"""
-    issymbolic(::AbstractModel)::Bool
-
-Return whether a model is symbolic or not.
-A model is said to be `symbolic` when its application relies on checking formulas
-of a certain logical language
-(see [SoleLogics.jl](https://github.com/aclai-lab/SoleLogics.jl) package)
-on the instance.
-Symbolic models provide a form of transparent and interpretable modeling,
-as a symbolic model can be synthethised into a set of mutually exclusive logical rules
-that can often be translated into natural language.
-
-Examples of purely symbolic models are [`Rule`](@ref)s, [`Branch`](@ref),
-[`DecisionList`](@ref)s and [`DecisionTree`](@ref)s.
-Examples of non-symbolic models are those encoding algebraic mathematical
-functions (e.g., neural networks). Note that [`DecisionForest`](@ref)s are
-not purely symbolic, as they rely on an algebraic aggregation step.
-
-See also
-[`apply`](@ref),
-[`listrules`](@ref),
-[`AbstractModel`](@ref).
-"""
-issymbolic(::AbstractModel) = false
-
 """
     info(m::AbstractModel)::NamedTuple = m.info
     info(m::AbstractModel, key) = m.info[key]
     info(m::AbstractModel, key, defaultval)
+
+    info!(m::AbstractModel, info::NamedTuple)
     info!(m::AbstractModel, key, val)
 
 Return the `info` structure for model `m`; this structure is used
@@ -188,6 +180,13 @@ about the model's statistical performance during the learning phase.
 info(m::AbstractModel)::NamedTuple = m.info
 info(m::AbstractModel, key) = m.info[key]
 info(m::AbstractModel, key, defaultval) = Base.get(m.info, key, defaultval)
+function info!(m::AbstractModel, info; replace = false)
+    if replace
+        m.info = info
+    else
+        foreach(((key, value),)->info!(m, key, value), info!)
+    end
+end
 info!(m::AbstractModel, key, value) = (m.info[key] = value; m)
 
 
@@ -378,8 +377,7 @@ simply returned (no wrapping is performed);
 - every other object is wrapped into a `ConstantModel`.
 
 See also
-[`ConstantModel`](@ref), [`FunctionModel`](@ref),
-[`ConstrainedModel`](@ref), [`LeafModel`](@ref).
+[`ConstantModel`](@ref), [`FunctionModel`](@ref), [`LeafModel`](@ref).
 """
 wrap(o::Any, FM::Type{<:AbstractModel}) = convert(FM, wrap(o))
 wrap(m::AbstractModel) = m
@@ -389,86 +387,6 @@ wrap(o::O) where {O} = convert(ConstantModel{O}, o)
 
 # Helper
 LeafModel(o) = wrap(o)
-
-############################################################################################
-############################################################################################
-############################################################################################
-
-"""
-An `AbstractModel` can wrap another `AbstractModel`, and use it to compute the outcome.
-As such, an `AbstractModel` can actually be the result of a composition of many models,
-and enclose a *tree* of `AbstractModel`s (with `LeafModel`s at the leaves).
-In order to typebound the Feasible Models (`FM`) allowed in the sub-tree,
-the `ConstrainedModel` type is introduced:
-
-    abstract type ConstrainedModel{O,FM<:AbstractModel} <: AbstractModel{O} end
-
-For example, `ConstrainedModel{String,Union{Branch{String},ConstantModel{String}}}`
-supertypes models that with `String` outcomes that make use of `Branch{String}` and
-`ConstantModel{String}` (essentially, a decision trees with `String`s at the leaves).
-
-See also [`LeafModel`](@ref), [`AbstractModel`](@ref).
-"""
-abstract type ConstrainedModel{O,FM<:AbstractModel} <: AbstractModel{O} end
-
-"""
-    feasiblemodelstype(m::AbstractModel)
-
-Return a `Union` of the Feasible Models (`FM`) allowed in the sub-tree of any
-AbstractModel. Note that for a `ConstrainedModel{O,FM<:AbstractModel}`, it
-simply returns `FM`.
-
-See also [`ConstrainedModel`](@ref).
-"""
-feasiblemodelstype(::Type{M}) where {O,M<:AbstractModel{O}} = AbstractModel{<:O}
-feasiblemodelstype(::Type{M}) where {M<:AbstractModel} = AbstractModel
-feasiblemodelstype(::Type{M}) where {O,M<:LeafModel{O}} = Union{}
-feasiblemodelstype(::Type{M}) where {M<:LeafModel} = Union{}
-feasiblemodelstype(::Type{<:ConstrainedModel{O,FM}}) where {O,FM} = FM
-feasiblemodelstype(m::ConstrainedModel) = outcometype(typeof(m))
-
-"""
-    propagate_feasiblemodels(M::Type{<:AbstractModel}) = Union{typename(M){outcometype(M)}, feasiblemodelstype(M)}
-    propagate_feasiblemodels(m::AbstractModel) = propagate_feasiblemodels(typeof(m))
-
-This function is used upon construction of a `ConstrainedModel`,
-to compute its Feasible Models (`FM`).
-In general, its `FM` are a `Union` of the `FM` of its immediate child models, but
-a trick is used in order to avoid unneccessary propagation of types throughout the model tree.
-Note that this trick assumes that the first type parameter of any `ConstrainedModel` is
-its `outcometype` `O`.
-
-See also [`feasiblemodelstype`](@ref), [`ConstrainedModel`](@ref).
-"""
-propagate_feasiblemodels(M::Type{<:AbstractModel}) = Union{typename(M){outcometype(M)}, feasiblemodelstype(M)}
-propagate_feasiblemodels(m::AbstractModel) = propagate_feasiblemodels(typeof(m))
-
-"""
-This function is used when constructing `ConstrainedModel`s to check that the inner
-models satisfy the desired type constraints.
-
-See also [`ConstrainedModel`](@ref), [`Rule`](@ref), [`Branch`](@ref).
-"""
-function check_model_constraints(
-    M::Type{<:AbstractModel},
-    I_M::Type{<:AbstractModel},
-    FM::Type{<:AbstractModel},
-    FM_O::Type = outcometype(FM)
-)
-    I_O = outcometype(I_M)
-    # FM_O = outcometype(FM)
-    @assert I_O <: FM_O "Cannot instantiate $(M) with inner model outcometype " *
-        "$(I_O)! $(I_O) <: $(FM_O) should hold."
-    # @assert I_M <: FM || typename(I_M) <: typename(FM) "Cannot instantiate $(M) with inner model $(I_M))! $(I_M) <: $(FM) || $(typename(I_M)) <: $(typename(FM)) should hold."
-    @assert I_M <: FM "Cannot instantiate $(M) with inner model $(I_M))! " *
-        "$(I_M) <: $(FM) should hold."
-    if ! (I_M<:LeafModel{<:FM_O})
-        # @assert I_M<:ConstrainedModel{FM_O,<:FM} "ConstrainedModels require I_M<:ConstrainedModel{O,<:FM}, but $(I_M) does not subtype $(ConstrainedModel{FM_O,<:FM})."
-        @assert I_M<:ConstrainedModel{<:FM_O,<:FM} "ConstrainedModels require " *
-            "I_M<:ConstrainedModel{<:O,<:FM}, but $(I_M) does not " *
-            "subtype $(ConstrainedModel{<:FM_O,<:FM})."
-    end
-end
 
 ############################################################################################
 ############################################################################################
@@ -485,13 +403,9 @@ in order to obtain an outcome.
 """
 
 """
-    struct Rule{
-        O,
-        A<:Formula,
-        FM<:AbstractModel
-    } <: ConstrainedModel{O,FM}
+    struct Rule{O,A<:Formula} <: AbstractModel{O}
         antecedent::A
-        consequent::FM
+        consequent::M where {M<:AbstractModel{<:O}}
         info::NamedTuple
     end
 
@@ -503,22 +417,15 @@ the semantics:
 where the antecedent is a formula to be checked,
 and the consequent is the local outcome of the block.
 
-Note that `FM` refers to the Feasible Models (`FM`) allowed in the model's sub-tree.
-
 See also
 [`antecedent`](@ref),
 [`consequent`](@ref),
 [`SoleLogics.Formula`](@ref),
-[`ConstrainedModel`](@ref),
 [`AbstractModel`](@ref).
 """
-struct Rule{
-    O,
-    A<:Formula,
-    FM<:AbstractModel
-} <: ConstrainedModel{O,FM}
+struct Rule{O,A<:Formula} <: AbstractModel{O}
     antecedent::A
-    consequent::FM
+    consequent::M where {M<:AbstractModel{<:O}}
     info::NamedTuple
 
     function Rule{O}(
@@ -528,9 +435,7 @@ struct Rule{
     ) where {O}
         A = typeof(antecedent)
         consequent = wrap(consequent, AbstractModel{O})
-        FM = typeintersect(propagate_feasiblemodels(consequent), AbstractModel{<:O})
-        check_model_constraints(Rule{O}, typeof(consequent), FM, O)
-        new{O,A,FM}(antecedent, consequent, info)
+        new{O,A}(antecedent, consequent, info)
     end
 
     function Rule(
@@ -582,8 +487,6 @@ consequent(m::Rule) = m.consequent
 
 antecedenttype(::Type{M}) where {M<:Rule{O,A}} where {O,A} = A
 antecedenttype(m::Rule) = antecedenttype(typeof(m))
-
-issymbolic(::Rule) = true
 
 """
     checkantecedent(
@@ -667,14 +570,10 @@ end
 ############################################################################################
 
 """
-    struct Branch{
-        O,
-        A<:Formula,
-        FM<:AbstractModel
-    } <: ConstrainedModel{O,FM}
+    struct Branch{O,A<:Formula} <: AbstractModel{O}
         antecedent::A
-        posconsequent::FM
-        negconsequent::FM
+        posconsequent::M where {M<:AbstractModel{<:O}}
+        negconsequent::M where {M<:AbstractModel{<:O}}
         info::NamedTuple
     end
 
@@ -688,25 +587,18 @@ local outcomes of the block. If checking the antecedent evaluates to the top of 
 then the positive consequent is applied; otherwise, the negative consequenti is applied.
 
 
-Note that `FM` refers to the Feasible Models (`FM`) allowed in the model's sub-tree.
-
 See also
 [`antecedent`](@ref),
 [`posconsequent`](@ref),
 [`negconsequent`](@ref),
 [`SoleLogics.check`](@ref),
 [`SoleLogics.Formula`](@ref),
-[`Rule`](@ref),
-[`ConstrainedModel`](@ref), [`AbstractModel`](@ref).
+[`Rule`](@ref), [`AbstractModel`](@ref).
 """
-struct Branch{
-    O,
-    A<:Formula,
-    FM<:AbstractModel
-} <: ConstrainedModel{O,FM}
+struct Branch{O,A<:Formula} <: AbstractModel{O}
     antecedent::A
-    posconsequent::FM
-    negconsequent::FM
+    posconsequent::M where {M<:AbstractModel{<:O}}
+    negconsequent::M where {M<:AbstractModel{<:O}}
     info::NamedTuple
 
     function Branch(
@@ -719,10 +611,7 @@ struct Branch{
         posconsequent = wrap(posconsequent)
         negconsequent = wrap(negconsequent)
         O = Union{outcometype(posconsequent),outcometype(negconsequent)}
-        FM = typeintersect(Union{propagate_feasiblemodels(posconsequent),propagate_feasiblemodels(negconsequent)}, AbstractModel{<:O})
-        check_model_constraints(Branch{O}, typeof(posconsequent), FM, O)
-        check_model_constraints(Branch{O}, typeof(negconsequent), FM, O)
-        new{O,A,FM}(antecedent, posconsequent, negconsequent, info)
+        new{O,A}(antecedent, posconsequent, negconsequent, info)
     end
 
     function Branch(
@@ -763,8 +652,6 @@ negconsequent(m::Branch) = m.negconsequent
 
 antecedenttype(::Type{M}) where {M<:Branch{O,A}} where {O,A} = A
 antecedenttype(m::Branch) = antecedenttype(typeof(m))
-
-issymbolic(::Branch) = true
 
 isopen(m::Branch) = isopen(posconsequent(m)) || isopen(negconsequent(m))
 
@@ -870,13 +757,9 @@ checkantecedent(m::Union{Rule,Branch}, d::AbstractInterpretationSet, args...; kw
 ############################################################################################
 
 """
-    struct DecisionList{
-        O,
-        A<:Formula,
-        FM<:AbstractModel
-    } <: ConstrainedModel{O,FM}
-        rulebase::Vector{Rule{_O,_C,_FM} where {_O<:O,_C<:A,_FM<:FM}}
-        defaultconsequent::FM
+    struct DecisionList{O,A<:Formula} <: AbstractModel{O}
+        rulebase::Vector{Rule{_O,_C} where {_O<:O,_C<:A}}
+        defaultconsequent::M where {M<:AbstractModel{<:O}}
         info::NamedTuple
     end
 
@@ -895,21 +778,14 @@ Using the classical semantics, the antecedents are evaluated in order,
 and a consequent is returned as soon as a valid antecedent is found,
 or when the computation reaches the ELSE clause.
 
-Note that `FM` refers to the Feasible Models (`FM`) allowed in the model's sub-tree.
-
 See also
 [`Rule`](@ref),
-[`ConstrainedModel`](@ref),
 [`DecisionTree`](@ref),
 [`AbstractModel`](@ref).
 """
-struct DecisionList{
-    O,
-    A<:Formula,
-    FM<:AbstractModel
-} <: ConstrainedModel{O,FM}
-    rulebase::Vector{Rule{_O,_C,_FM} where {_O<:O,_C<:A,_FM<:FM}}
-    defaultconsequent::FM
+struct DecisionList{O,A<:Formula} <: AbstractModel{O}
+    rulebase::Vector{Rule{_O,_C} where {_O<:O,_C<:A}}
+    defaultconsequent::M where {M<:AbstractModel{<:O}}
     info::NamedTuple
 
     function DecisionList(
@@ -920,12 +796,7 @@ struct DecisionList{
         defaultconsequent = wrap(defaultconsequent)
         O = Union{outcometype(defaultconsequent),outcometype.(rulebase)...}
         A = Union{antecedenttype.(rulebase)...}
-        FM = typeintersect(Union{propagate_feasiblemodels(defaultconsequent),propagate_feasiblemodels.(rulebase)...}, AbstractModel{<:O})
-        # FM = typeintersect(Union{propagate_feasiblemodels(defaultconsequent),propagate_feasiblemodels.(rulebase)...}, AbstractModel{O})
-        # FM = Union{propagate_feasiblemodels(defaultconsequent),propagate_feasiblemodels.(rulebase)...}
-        check_model_constraints.(DecisionList{O}, typeof.(rulebase), FM, O)
-        check_model_constraints(DecisionList{O}, typeof(defaultconsequent), FM, O)
-        new{O,A,FM}(rulebase, defaultconsequent, info)
+        new{O,A}(rulebase, defaultconsequent, info)
     end
 end
 
@@ -934,8 +805,6 @@ defaultconsequent(m::DecisionList) = m.defaultconsequent
 
 antecedenttype(::Type{M}) where {M<:DecisionList{O,A}} where {O,A} = A
 antecedenttype(m::DecisionList) = antecedenttype(typeof(m))
-
-issymbolic(::DecisionList) = true
 
 isopen(m::DecisionList) = isopen(defaultconsequent(m))
 
@@ -1061,31 +930,6 @@ function meandelaydl(m::DecisionList)
     end
 end
 
-# TODO remove
-# function equaldecisionlist(
-#     m::DecisionList{O},
-#     n::DecisionList{O}
-# ) where {O}
-
-#     rulbase_m = rulebase(m)
-#     rulbase_n = rulebase(n)
-
-#     if length(rulbase_m) != length(rulbase_n)
-#         @warn("Decisionlist length mismatch")
-#         return false
-#     end
-#     for (r_m, r_n) in zip(rulbase_m, rulbase_n)
-#         φm, φn = antecedent.(r_m, r_n)
-#         om, on = outcome.(consequent.(r_m, r_n))
-#         println("here")
-#         if checkconditionsequivalence(φ1, φ2) == false
-#             return false
-#         end
-#     end
-#     return true
-# end
-
-
 
 ############################################################################################
 
@@ -1113,34 +957,25 @@ local outcomes of the block.
 In practice, a `DecisionTree` simply wraps a constrained
 sub-tree of `Branch` and `LeafModel`:
 
-    struct DecisionTree{
-    O,
-        A<:Formula,
-        FFM<:LeafModel
-    } <: ConstrainedModel{O,Union{<:Branch{<:O,<:A},<:FFM}}
-        root::M where {M<:Union{FFM,Branch}}
+    struct DecisionTree{O,A<:Formula} <: AbstractModel{O}
+        root::M where {M<:AbstractModel}
         info::NamedTuple
     end
 
-Note that `FM` refers to the Feasible Models (`FM`) allowed in the model's sub-tree.
-Also note that this structure also includes an `info::NamedTuple` for storing additional
+Note that this structure also includes an `info::NamedTuple` for storing additional
 information.
 
-See also [`ConstrainedModel`](@ref), [`MixedSymbolicModel`](@ref), [`DecisionList`](@ref).
+See also [`MixedModel`](@ref), [`DecisionList`](@ref).
 """
-struct DecisionTree{
-    O,
-    A<:Formula,
-    FFM<:LeafModel
-} <: ConstrainedModel{O,Union{<:Branch{<:O,<:A},<:FFM}}
-    root::M where {M<:Union{FFM,Branch}}
+struct DecisionTree{O,A<:Formula} <: AbstractModel{O}
+    root::M where {M<:Union{LeafModel{O},Branch{O,A}}}
     info::NamedTuple
 
     function DecisionTree(
-        root::Union{FFM,Branch{O,A,Union{Branch{<:O,A2},FFM}}},
+        root::Union{LeafModel{O},Branch{O,A}},
         info::NamedTuple = (;),
-    ) where {O,A<:Formula,A2<:A,FFM<:LeafModel{<:O}}
-        new{O,root isa LeafModel ? Formula : A,FFM}(root, info)
+    ) where {O,A<:Formula}
+        new{O,root isa LeafModel ? Formula : A}(root, info)
     end
 
     function DecisionTree(
@@ -1151,16 +986,12 @@ struct DecisionTree{
         M = typeof(root)
         O = outcometype(root)
         A = (root isa LeafModel ? Formula : antecedenttype(M))
-        # FM = typeintersect(Union{M,feasiblemodelstype(M)}, AbstractModel{<:O})
-        FM = typeintersect(Union{propagate_feasiblemodels(M)}, AbstractModel{<:O})
-        FFM = typeintersect(FM, LeafModel{<:O})
-        @assert M <: Union{<:FFM,<:Branch{<:O,<:A,<:Union{Branch,FFM}}} "" *
-            "Cannot instantiate DecisionTree{$(O),$(A),$(FFM)}(...) with root of " *
+        @assert M <: Union{LeafModel{O},Branch{O,A}} "" *
+            "Cannot instantiate DecisionTree{$(O),$(A)}(...) with root of " *
             "type $(typeof(root)). Note that the should be either a LeafModel or a " *
-            "bounded Branch. " *
-            "$(M) <: $(Union{LeafModel,Branch{<:O,<:A,<:Union{Branch,FFM}}}) should hold."
-        check_model_constraints(DecisionTree{O}, typeof(root), FM, O)
-        new{O,A,FFM}(root, info)
+            "Branch. " *
+            "$(M) <: $(Union{LeafModel,Branch{<:O,<:A}}) should hold."
+        new{O,A}(root, info)
     end
 
     function DecisionTree(
@@ -1178,10 +1009,7 @@ end
 root(m::DecisionTree) = m.root
 
 antecedenttype(::Type{M}) where {M<:DecisionTree{O,A}} where {O,A} = A
-antecedenttype(::Type{M}) where {M<:DecisionTree{O,A,FFM}} where {O,A,FFM} = A
 antecedenttype(m::DecisionTree) = antecedenttype(typeof(m))
-
-issymbolic(::DecisionTree) = true
 
 isopen(::DecisionTree) = false
 
@@ -1220,24 +1048,16 @@ end
 """
 A `Decision Forest` is a symbolic model that wraps an ensemble of models
 
-    struct DecisionForest{
-        O,
-        A<:Formula,
-        FFM<:LeafModel
-    } <: ConstrainedModel{O,Union{<:Branch{<:O,<:A},<:FFM}}
+    struct DecisionForest{O,A<:Formula} <: AbstractModel{O}
         trees::Vector{<:DecisionTree}
         info::NamedTuple
     end
 
 
-See also [`ConstrainedModel`](@ref), [`MixedSymbolicModel`](@ref), [`DecisionList`](@ref),
+See also [`MixedModel`](@ref), [`DecisionList`](@ref),
 [`DecisionTree`](@ref).
 """
-struct DecisionForest{
-    O,
-    A<:Formula,
-    FFM<:LeafModel
-} <: ConstrainedModel{O,Union{<:Branch{<:O,<:A},<:FFM}}
+struct DecisionForest{O,A<:Formula} <: AbstractModel{O}
     trees::Vector{<:DecisionTree}
     info::NamedTuple
 
@@ -1248,10 +1068,7 @@ struct DecisionForest{
         @assert length(trees) > 0 "Cannot instantiate forest with no trees!"
         O = Union{outcometype.(trees)...}
         A = Union{antecedenttype.(trees)...}
-        FM = typeintersect(Union{propagate_feasiblemodels.(trees)...}, AbstractModel{<:O})
-        FFM = typeintersect(FM, LeafModel{<:O})
-        check_model_constraints.(DecisionForest{O}, typeof.(trees), FM, O)
-        new{O,A,FFM}(trees, info)
+        new{O,A}(trees, info)
     end
 end
 
@@ -1259,8 +1076,6 @@ trees(forest::DecisionForest) = forest.trees
 
 antecedenttype(::Type{M}) where {M<:DecisionForest{O,A}} where {O,A} = A
 antecedenttype(m::DecisionForest) = antecedenttype(typeof(m))
-
-issymbolic(::DecisionForest) = false
 
 # TODO check these two.
 function apply(
@@ -1294,9 +1109,11 @@ function height(f::DecisionForest)
 end
 
 ############################################################################################
+############################################################################################
+############################################################################################
 
 """
-A `MixedSymbolicModel` is a symbolic model that operaters as a free nested structure of IF-THEN-ELSE
+A `MixedModel` is a symbolic model that operaters as a free nested structure of IF-THEN-ELSE
 and IF-ELSEIF-ELSE blocks:
 
     IF (antecedent_1) THEN
@@ -1314,48 +1131,57 @@ and IF-ELSEIF-ELSE blocks:
 where the antecedents are formulas to be checked, and the consequents are the feasible
 local outcomes of the block.
 
-In Sole.jl, this logic can implemented using `ConstrainedModel`s such as
+In Sole.jl, this logic can implemented using `AbstractModel`s such as
 `Rule`s, `Branch`s, `DecisionList`s, `DecisionTree`s, and the be wrapped into
-a `MixedSymbolicModel`:
+a `MixedModel`:
 
-    struct MixedSymbolicModel{O,FM<:AbstractModel} <: ConstrainedModel{O,FM}
-        root::M where {M<:Union{LeafModel{<:O},ConstrainedModel{<:O,<:FM}}}
+    struct MixedModel{O,FM<:AbstractModel} <: AbstractModel{O}
+        root::M where {M<:AbstractModel{<:O}}
         info::NamedTuple
     end
 
 Note that `FM` refers to the Feasible Models (`FM`) allowed in the model's sub-tree.
 
-See also [`ConstrainedModel`](@ref), [`DecisionTree`](@ref), [`DecisionList`](@ref).
+See also [`DecisionTree`](@ref), [`DecisionList`](@ref).
 """
-struct MixedSymbolicModel{O,FM<:AbstractModel} <: ConstrainedModel{O,FM}
-    root::M where {M<:Union{LeafModel{<:O},ConstrainedModel{<:O,<:FM}}}
+struct MixedModel{O,FM<:AbstractModel} <: AbstractModel{O}
+    root::M where {M<:AbstractModel{<:O}}
     info::NamedTuple
 
-    function MixedSymbolicModel(
+    function MixedModel{O,FM}(
+        root::AbstractModel{<:O},
+        info::NamedTuple = (;)
+    ) where {O,FM<:AbstractModel}
+        root = wrap(root)
+        subm = submodels(root)
+        wrong_subm = filter(m->!(m isa FM), subm)
+        @assert length(wrong_subm) == 0 "$(length(wrong_subm))/$(length(subm)) " *
+            "submodels break the type " *
+            "constraint on the model sub-tree! All models should be of type $(FM)," *
+            "but models were found of types: $(unique(typeof.(subm)))."
+        new{O,FM}(root, info)
+    end
+
+    function MixedModel(
         root::Any,
-        info::NamedTuple = (;),
+        info::NamedTuple = (;)
     )
         root = wrap(root)
-        M = typeof(root)
+        subm = submodels(root)
         O = outcometype(root)
-        FM = typeintersect(Union{propagate_feasiblemodels(M)}, AbstractModel{<:O})
-        check_model_constraints(MixedSymbolicModel{O}, typeof(root), FM, O)
+        FM = Union{typeof.(subm)...}
         new{O,FM}(root, info)
     end
 end
 
-root(m::MixedSymbolicModel) = m.root
+root(m::MixedModel) = m.root
 
-issymbolic(m::MixedSymbolicModel) = issymbolic(root(m))
-
-isopen(::MixedSymbolicModel) = isopen(root)
+isopen(::MixedModel) = isopen(root)
 
 function apply(
-    m::MixedSymbolicModel,
+    m::MixedModel,
     id::Union{AbstractInterpretation,AbstractInterpretationSet};
     kwargs...
 )
     apply(root(m), id; kwargs...)
 end
-
-############################################################################################

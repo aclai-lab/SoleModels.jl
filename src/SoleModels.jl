@@ -51,7 +51,7 @@ export apply, apply!
 export DecisionTree
 export root
 
-export MixedSymbolicModel, DecisionForest
+export MixedModel, DecisionForest
 
 include("base.jl")
 
@@ -75,4 +75,7 @@ include("evaluation.jl")
 include("experimentals.jl")
 
 include("parse.jl")
+
+include("deprecate.jl")
+
 end
