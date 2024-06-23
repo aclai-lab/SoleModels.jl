@@ -300,14 +300,6 @@ end
 
 listrules(m::LeafModel; kwargs...) = [m]
 
-# TODO remove:
-# function listrules(
-#     m::Rule{O,Top};
-#     kwargs...,
-# ) where {O}
-#     [m]
-# end
-
 function listrules(
     m::Rule{O};
     force_syntaxtree::Bool = false
@@ -315,27 +307,6 @@ function listrules(
     ant = force_syntaxtree ? tree(antecedent(m)) : antecedent(m)
     [(force_syntaxtree ? Rule{O}(ant, consequent(m), info(m)) : m)]
 end
-
-# TODO remove:
-# function listrules(
-#     m::Branch{O,Top};
-#     kwargs...,
-# ) where {O}
-#     pos_rules = begin
-#         submodels = listrules(posconsequent(m); kwargs...)
-#         submodels isa Vector{<:LeafModel} ? [Rule{O,Top}(fm) for fm in submodels] : submodels
-#     end
-
-#     neg_rules = begin
-#         submodels = listrules(negconsequent(m); kwargs...)
-#         submodels isa Vector{<:LeafModel} ? [Rule{O,Top}(fm) for fm in submodels] : submodels
-#     end
-
-#     return [
-#         pos_rules...,
-#         neg_rules...,
-#     ]
-# end
 
 function listrules(
     m::Branch{O};

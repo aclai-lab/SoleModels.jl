@@ -38,6 +38,8 @@ using SoleData.DimensionalDatasets: globalrel
 
 export outcometype, outputtype
 
+export ConstantModel
+
 export Rule, Branch
 export checkantecedent
 export antecedent, consequent
@@ -54,6 +56,8 @@ export root
 export MixedModel, DecisionForest
 
 include("base.jl")
+
+include("apply!.jl")
 
 export printmodel, displaymodel
 

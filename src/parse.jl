@@ -41,7 +41,7 @@ julia> dl = "
 " |> SoleModels.parse_orange_decision_list
 
 julia> listrules(dl; normalize = true)
-15-element Vector{ClassificationRule{String, A, SoleModels.ConstantModel{String}} where A<:Formula}:
+15-element Vector{ClassificationRule{String}}:
  ▣ ((:petal_length ≤ 3.0) ∧ (:sepal_width ≥ 2.9))  ↣  Iris-setosa
 
  ▣ ((:petal_length > 3.0) ∨ (:sepal_width < 2.9)) ∧ ((:petal_width ≥ 1.8) ∧ (:sepal_length ≥ 6.0))  ↣  Iris-virginica

@@ -96,28 +96,20 @@ function outputtype(m::AbstractModel)
 end
 
 """
-    apply(
-        m::AbstractModel,
-        i::AbstractInterpretation;
-        check_args::Tuple = (),
-        check_kwargs::NamedTuple = (;),
-        functional_args::Tuple = (),
-        functional_kwargs::NamedTuple = (;),
-        kwargs...
-    )::outputtype(m)
+    apply(m, i; kwargs...)::outputtype(m)
+    apply(m, d; kwargs...)::AbstractVector{<:outputtype(m)}
+    apply(m, d, i_instance; kwargs...)::outputtype(m)
 
-    apply(
-        m::AbstractModel,
-        d::AbstractInterpretationSet;
-        check_args::Tuple = (),
-        check_kwargs::NamedTuple = (;),
-        functional_args::Tuple = (),
-        functional_kwargs::NamedTuple = (;),
-        kwargs...
-    )::AbstractVector{<:outputtype(m)}
+Return the output prediction of a model `m` on a logical interpretation `i`,
+on the `i_instance` of a dataset `d`, or on all instances of a dataset `d`.
+Note that predictions can be `nothing` if the model is *open* (e.g., if the model is a `Rule`).
 
-Return the output prediction of the model on an instance, or on each instance of a dataset.
-The predictions can be `nothing` if the model is *open*.
+# Keyword Arguments
+- `check_args::Tuple = ()`;
+- `check_kwargs::NamedTuple = (;)`;
+- `functional_args::Tuple = ()`;
+- `functional_kwargs::NamedTuple = (;)`;
+- Any additional keyword argument is passed down to the model subtree's leaves
 
 `check_args` and `check_kwargs` can influence check's behavior at the time
 of its computation (see [`SoleLogics.check](@ref))
@@ -126,10 +118,14 @@ of its computation (see [`SoleLogics.check](@ref))
 behavior when the corresponding function is applied to AbstractInterpretation (see
 [`FunctionModel`](@ref), [`SoleLogics.AbstractInterpretation](@ref))
 
+A model state-changing version of the function, [`apply!`], exist.
+While producing the output, this function affects the info keys `:supporting_labels` and
+`:supporting_predictions`, which are useful for inspecting the statistical performance of
+parts of the model.
+
 See also
 [`isopen`](@ref),
-[`outcometype`](@ref),
-[`outputtype`](@ref),
+[`readmetrics`](@ref).
 [`AbstractModel`](@ref),
 [`SoleLogics.AbstractInterpretation`](@ref),
 [`SoleLogics.AbstractInterpretationSet`](@ref).
@@ -164,6 +160,7 @@ function apply(
     map(i_instance->apply(m, d, i_instance; kwargs...), 1:ninstances(d))
 end
 
+
 """
     info(m::AbstractModel)::NamedTuple = m.info
     info(m::AbstractModel, key) = m.info[key]
@@ -189,6 +186,7 @@ function info!(m::AbstractModel, info; replace = false)
 end
 info!(m::AbstractModel, key, value) = (m.info = merge((; key = value), m.info); m)
 
+hasinfo(m::AbstractModel, key) = haskey(info(m), key)
 
 ############################################################################################
 ############################################################################################
@@ -209,7 +207,7 @@ See also [`ConstantModel`](@ref), [`FunctionModel`](@ref), [`AbstractModel`](@re
 abstract type LeafModel{O} <: AbstractModel{O} end
 
 """
-    struct ConstantModel{O} <: LeafModel{O}
+    mutable struct ConstantModel{O} <: LeafModel{O}
         outcome::O
         info::NamedTuple
     end
@@ -233,7 +231,7 @@ See also
 [`FunctionModel`](@ref),
 [`LeafModel`](@ref).
 """
-struct ConstantModel{O} <: LeafModel{O}
+mutable struct ConstantModel{O} <: LeafModel{O}
     outcome::O
     info::NamedTuple
 
@@ -271,7 +269,7 @@ convert(::Type{<:AbstractModel{F}}, m::ConstantModel) where {F} = ConstantModel{
 
 # TODO @Michele explain functional_args/functional_kwargs
 """
-    struct FunctionModel{O} <: LeafModel{O}
+    mutable struct FunctionModel{O} <: LeafModel{O}
         f::FunctionWrapper{O}
         info::NamedTuple
     end
@@ -284,7 +282,7 @@ the output type `O` by wrapping the `Function` into an object of type
 
 See also [`ConstantModel`](@ref), [`LeafModel`](@ref).
 """
-struct FunctionModel{O} <: LeafModel{O}
+mutable struct FunctionModel{O} <: LeafModel{O}
     f::FunctionWrapper{O}
     # isopen::Bool TODO
     info::NamedTuple
@@ -403,8 +401,8 @@ in order to obtain an outcome.
 """
 
 """
-    struct Rule{O,A<:Formula} <: AbstractModel{O}
-        antecedent::A
+    mutable struct Rule{O} <: AbstractModel{O}
+        antecedent::Formula
         consequent::M where {M<:AbstractModel{<:O}}
         info::NamedTuple
     end
@@ -423,8 +421,8 @@ See also
 [`SoleLogics.Formula`](@ref),
 [`AbstractModel`](@ref).
 """
-struct Rule{O,A<:Formula} <: AbstractModel{O}
-    antecedent::A
+mutable struct Rule{O} <: AbstractModel{O}
+    antecedent::Formula
     consequent::M where {M<:AbstractModel{<:O}}
     info::NamedTuple
 
@@ -433,9 +431,8 @@ struct Rule{O,A<:Formula} <: AbstractModel{O}
         consequent::Any,
         info::NamedTuple = (;),
     ) where {O}
-        A = typeof(antecedent)
         consequent = wrap(consequent, AbstractModel{O})
-        new{O,A}(antecedent, consequent, info)
+        new{O}(antecedent, consequent, info)
     end
 
     function Rule(
@@ -484,9 +481,6 @@ See also
 [`Rule`](@ref).
 """
 consequent(m::Rule) = m.consequent
-
-antecedenttype(::Type{M}) where {M<:Rule{O,A}} where {O,A} = A
-antecedenttype(m::Rule) = antecedenttype(typeof(m))
 
 """
     checkantecedent(
@@ -543,35 +537,43 @@ function apply(
     end
 end
 
+
 # Helpers
-function conjuncts(m::Rule{O,<:LeftmostConjunctiveForm}) where {O}
+# TODO remove probably
+function conjuncts(m::Rule)
+    @assert antecedent(m) isa LeftmostConjunctiveForm
     conjuncts(antecedent(m))
 end
-function nconjuncts(m::Rule{O,<:LeftmostConjunctiveForm}) where {O}
+function nconjuncts(m::Rule)
+    @assert antecedent(m) isa LeftmostConjunctiveForm
     nconjuncts(antecedent(m))
 end
-function disjuncts(m::Rule{O,<:LeftmostDisjunctiveForm}) where {O}
+function disjuncts(m::Rule)
+    @assert antecedent(m) isa LeftmostDisjunctiveForm
     disjuncts(antecedent(m))
 end
-function ndisjuncts(m::Rule{O,<:LeftmostDisjunctiveForm}) where {O}
+function ndisjuncts(m::Rule)
+    @assert antecedent(m) isa LeftmostDisjunctiveForm
     ndisjuncts(antecedent(m))
 end
 
 # Helper: slice a Rule's antecedent
+# TODO remove?
 function Base.getindex(
-    m::Rule{O,A},
-    idxs::AbstractVector{<:Integer},
-) where {O,A<:LeftmostLinearForm}
+    m::Rule{O},
+    idxs::AbstractVector,
+) where {O}
     a = antecedent(m)
-    Rule{O}(A(children(a)[idxs]), consequent(m))
+    @assert a isa LeftmostLinearForm "Cannot slice Rule with antecedent of type $(a)"
+    Rule{O}(typeof(a)(children(a)[idxs]), consequent(m))
 end
 
 
 ############################################################################################
 
 """
-    struct Branch{O,A<:Formula} <: AbstractModel{O}
-        antecedent::A
+    mutable struct Branch{O} <: AbstractModel{O}
+        antecedent::Formula
         posconsequent::M where {M<:AbstractModel{<:O}}
         negconsequent::M where {M<:AbstractModel{<:O}}
         info::NamedTuple
@@ -595,8 +597,8 @@ See also
 [`SoleLogics.Formula`](@ref),
 [`Rule`](@ref), [`AbstractModel`](@ref).
 """
-struct Branch{O,A<:Formula} <: AbstractModel{O}
-    antecedent::A
+mutable struct Branch{O} <: AbstractModel{O}
+    antecedent::Formula
     posconsequent::M where {M<:AbstractModel{<:O}}
     negconsequent::M where {M<:AbstractModel{<:O}}
     info::NamedTuple
@@ -611,7 +613,7 @@ struct Branch{O,A<:Formula} <: AbstractModel{O}
         posconsequent = wrap(posconsequent)
         negconsequent = wrap(negconsequent)
         O = Union{outcometype(posconsequent),outcometype(negconsequent)}
-        new{O,A}(antecedent, posconsequent, negconsequent, info)
+        new{O}(antecedent, posconsequent, negconsequent, info)
     end
 
     function Branch(
@@ -649,9 +651,6 @@ See also
 [`Branch`](@ref).
 """
 negconsequent(m::Branch) = m.negconsequent
-
-antecedenttype(::Type{M}) where {M<:Branch{O,A}} where {O,A} = A
-antecedenttype(m::Branch) = antecedenttype(typeof(m))
 
 isopen(m::Branch) = isopen(posconsequent(m)) || isopen(negconsequent(m))
 
@@ -707,38 +706,34 @@ function apply(
     check_kwargs::NamedTuple = (;),
     kwargs...
 )
-    cs = checkantecedent(m, d, check_args...; check_kwargs...)
-    cpos = findall((c)->c==true, cs)
-    cneg = findall((c)->c==false, cs)
-    out = Array{outputtype(m)}(undef,length(cs))
-    if !isempty(cpos)
-        out[cpos] .= apply(
-            posconsequent(m),
-            slicedataset(d, cpos; return_view = true);
-            check_args = check_args,
-            check_kwargs = check_kwargs,
-            kwargs...
-        )
-    end
-    if !isempty(cneg)
-        out[cneg] .= apply(
-            negconsequent(m),
-            slicedataset(d, cneg; return_view = true);
-            check_args = check_args,
-            check_kwargs = check_kwargs,
-            kwargs...
-        )
-    end
-    out
+    checkmask = checkantecedent(m, d, check_args...; check_kwargs...)
+    preds = Vector{outputtype(m)}(undef,length(checkmask))
+    preds[checkmask] .= apply(
+        posconsequent(m),
+        slicedataset(d, checkmask; return_view = true, allow_no_instances = true);
+        check_args = check_args,
+        check_kwargs = check_kwargs,
+        kwargs...
+    )
+    preds[!checkmask] .= apply(
+        negconsequent(m),
+        slicedataset(d, !checkmask; return_view = true, allow_no_instances = true);
+        check_args = check_args,
+        check_kwargs = check_kwargs,
+        kwargs...
+    )
+    preds
 end
 
 # Helper: slice a Branch's antecedent
+# TODO remove?
 function Base.getindex(
-    m::Branch{O,A},
-    idxs::AbstractVector{<:Integer},
-) where {O,A<:LeftmostLinearForm}
+    m::Branch{O},
+    idxs::AbstractVector,
+) where {O}
     a = antecedent(m)
-    Branch{O}(A(children(a)[idxs]), posconsequent(m), negconsequent(m))
+    @assert a isa LeftmostLinearForm "Cannot slice Branch with antecedent of type $(a)"
+    Branch{O}(typeof(a)(children(a)[idxs]), posconsequent(m), negconsequent(m))
 end
 
 ############################################################################################
@@ -757,8 +752,8 @@ checkantecedent(m::Union{Rule,Branch}, d::AbstractInterpretationSet, args...; kw
 ############################################################################################
 
 """
-    struct DecisionList{O,A<:Formula} <: AbstractModel{O}
-        rulebase::Vector{Rule{_O,_C} where {_O<:O,_C<:A}}
+    mutable struct DecisionList{O} <: AbstractModel{O}
+        rulebase::Vector{Rule{_O} where {_O<:O}}
         defaultconsequent::M where {M<:AbstractModel{<:O}}
         info::NamedTuple
     end
@@ -783,8 +778,8 @@ See also
 [`DecisionTree`](@ref),
 [`AbstractModel`](@ref).
 """
-struct DecisionList{O,A<:Formula} <: AbstractModel{O}
-    rulebase::Vector{Rule{_O,_C} where {_O<:O,_C<:A}}
+mutable struct DecisionList{O} <: AbstractModel{O}
+    rulebase::Vector{Rule{_O} where {_O<:O}}
     defaultconsequent::M where {M<:AbstractModel{<:O}}
     info::NamedTuple
 
@@ -795,16 +790,12 @@ struct DecisionList{O,A<:Formula} <: AbstractModel{O}
     )
         defaultconsequent = wrap(defaultconsequent)
         O = Union{outcometype(defaultconsequent),outcometype.(rulebase)...}
-        A = Union{antecedenttype.(rulebase)...}
-        new{O,A}(rulebase, defaultconsequent, info)
+        new{O}(rulebase, defaultconsequent, info)
     end
 end
 
 rulebase(m::DecisionList) = m.rulebase
 defaultconsequent(m::DecisionList) = m.defaultconsequent
-
-antecedenttype(::Type{M}) where {M<:DecisionList{O,A}} where {O,A} = A
-antecedenttype(m::DecisionList) = antecedenttype(typeof(m))
 
 isopen(m::DecisionList) = isopen(defaultconsequent(m))
 
@@ -852,84 +843,6 @@ function apply(
     return pred
 end
 
-#TODO: write apply! for the other models
-#TODO write in docstring that possible values for compute_metrics are: :append, true, false
-function apply!(
-    m::DecisionList{O},
-    d::AbstractInterpretationSet;
-    check_args::Tuple = (),
-    check_kwargs::NamedTuple = (;),
-    compute_metrics::Union{Symbol,Bool} = false,
-) where {O}
-    nsamp = ninstances(d)
-    pred = Vector{O}(undef, nsamp)
-    delays = Vector{Integer}(undef, nsamp)
-    uncovered_idxs = 1:nsamp
-    rules = rulebase(m)
-
-    for (n, rule) in enumerate(rules)
-        length(uncovered_idxs) == 0 && break
-
-        uncovered_d = slicedataset(d, uncovered_idxs; return_view = true)
-
-        idxs_sat = findall(
-            checkantecedent(rule, uncovered_d, check_args...; check_kwargs...)
-        )
-        idxs_sat = uncovered_idxs[idxs_sat]
-        uncovered_idxs = setdiff(uncovered_idxs, idxs_sat)
-
-        delays[idxs_sat] .= (n-1)
-        map((i)->(pred[i] = outcome(consequent(rule))), idxs_sat)
-    end
-
-    if length(uncovered_idxs) != 0
-        map((i)->(pred[i] = outcome(defaultconsequent(m))), uncovered_idxs)
-        length(rules) == 0 ? (delays .= 0) : (delays[uncovered_idxs] .= length(rules))
-    end
-
-    (length(rules) != 0) && (delays = delays ./ length(rules))
-
-    iprev = info(m)
-    inew = compute_metrics == false ? iprev : begin
-        if :delays ∉ keys(iprev)
-            merge(iprev, (; delays = delays))
-        else
-            prev = iprev[:delays]
-            ntwithout = (; [p for p in pairs(nt) if p[1] != :delays]...)
-            if compute_metrics == :append
-                merge(ntwithout,(; delays = [prev..., delays...]))
-            elseif compute_metrics == true
-                merge(ntwithout,(; delays = delays))
-            end
-        end
-    end
-
-    inewnew = begin
-        if :pred ∉ keys(inew)
-            merge(inew, (; pred = pred))
-        else
-            prev = inew[:pred]
-            ntwithout = (; [p for p in pairs(nt) if p[1] != :pred]...)
-            if compute_metrics == :append
-                merge(ntwithout,(; pred = [prev..., pred...]))
-            elseif compute_metrics == true
-                merge(ntwithout,(; pred = pred))
-            end
-        end
-    end
-
-    return DecisionList(rules, defaultconsequent(m), inewnew)
-end
-
-# TODO: if delays not in info(m) ?
-function meandelaydl(m::DecisionList)
-    i = info(m)
-
-    if :delays in keys(i)
-        return mean(i[:delays])
-    end
-end
-
 
 ############################################################################################
 
@@ -957,7 +870,7 @@ local outcomes of the block.
 In practice, a `DecisionTree` simply wraps a constrained
 sub-tree of `Branch` and `LeafModel`:
 
-    struct DecisionTree{O,A<:Formula} <: AbstractModel{O}
+    mutable struct DecisionTree{O} <: AbstractModel{O}
         root::M where {M<:AbstractModel}
         info::NamedTuple
     end
@@ -967,15 +880,15 @@ information.
 
 See also [`MixedModel`](@ref), [`DecisionList`](@ref).
 """
-struct DecisionTree{O,A<:Formula} <: AbstractModel{O}
-    root::M where {M<:Union{LeafModel{O},Branch{O,A}}}
+mutable struct DecisionTree{O} <: AbstractModel{O}
+    root::M where {M<:Union{LeafModel{O},Branch{O}}}
     info::NamedTuple
 
     function DecisionTree(
-        root::Union{LeafModel{O},Branch{O,A}},
+        root::Union{LeafModel{O},Branch{O}},
         info::NamedTuple = (;),
-    ) where {O,A<:Formula}
-        new{O,root isa LeafModel ? Formula : A}(root, info)
+    ) where {O}
+        new{O}(root, info)
     end
 
     function DecisionTree(
@@ -985,13 +898,12 @@ struct DecisionTree{O,A<:Formula} <: AbstractModel{O}
         root = wrap(root)
         M = typeof(root)
         O = outcometype(root)
-        A = (root isa LeafModel ? Formula : antecedenttype(M))
-        @assert M <: Union{LeafModel{O},Branch{O,A}} "" *
-            "Cannot instantiate DecisionTree{$(O),$(A)}(...) with root of " *
+        @assert M <: Union{LeafModel{O},Branch{O}} "" *
+            "Cannot instantiate DecisionTree{$(O)}(...) with root of " *
             "type $(typeof(root)). Note that the should be either a LeafModel or a " *
             "Branch. " *
-            "$(M) <: $(Union{LeafModel,Branch{<:O,<:A}}) should hold."
-        new{O,A}(root, info)
+            "$(M) <: $(Union{LeafModel,Branch{<:O}}) should hold."
+        new{O}(root, info)
     end
 
     function DecisionTree(
@@ -1007,9 +919,6 @@ struct DecisionTree{O,A<:Formula} <: AbstractModel{O}
 end
 
 root(m::DecisionTree) = m.root
-
-antecedenttype(::Type{M}) where {M<:DecisionTree{O,A}} where {O,A} = A
-antecedenttype(m::DecisionTree) = antecedenttype(typeof(m))
 
 isopen(::DecisionTree) = false
 
@@ -1031,6 +940,14 @@ function apply(
     apply(root(m), d; kwargs...)
 end
 
+function apply!(m::DecisionTree, d::AbstractInterpretationSet, y::AbstractVector;
+    mode = :replace,
+    kwargs...)
+    @assert length(y) == ninstances(d) "$(length(y)) == $(ninstances(d))"
+    preds = apply!(root(m), d; kwargs...), preds, y)
+    return _apply!(m, mode, preds, y)
+end
+
 function nnodes(t::DecisionTree)
     nsubmodels(t)
 end
@@ -1048,7 +965,7 @@ end
 """
 A `Decision Forest` is a symbolic model that wraps an ensemble of models
 
-    struct DecisionForest{O,A<:Formula} <: AbstractModel{O}
+    mutable struct DecisionForest{O} <: AbstractModel{O}
         trees::Vector{<:DecisionTree}
         info::NamedTuple
     end
@@ -1057,7 +974,7 @@ A `Decision Forest` is a symbolic model that wraps an ensemble of models
 See also [`MixedModel`](@ref), [`DecisionList`](@ref),
 [`DecisionTree`](@ref).
 """
-struct DecisionForest{O,A<:Formula} <: AbstractModel{O}
+mutable struct DecisionForest{O} <: AbstractModel{O}
     trees::Vector{<:DecisionTree}
     info::NamedTuple
 
@@ -1067,15 +984,11 @@ struct DecisionForest{O,A<:Formula} <: AbstractModel{O}
     )
         @assert length(trees) > 0 "Cannot instantiate forest with no trees!"
         O = Union{outcometype.(trees)...}
-        A = Union{antecedenttype.(trees)...}
-        new{O,A}(trees, info)
+        new{O}(trees, info)
     end
 end
 
 trees(forest::DecisionForest) = forest.trees
-
-antecedenttype(::Type{M}) where {M<:DecisionForest{O,A}} where {O,A} = A
-antecedenttype(m::DecisionForest) = antecedenttype(typeof(m))
 
 # TODO check these two.
 function apply(
@@ -1135,7 +1048,7 @@ In Sole.jl, this logic can implemented using `AbstractModel`s such as
 `Rule`s, `Branch`s, `DecisionList`s, `DecisionTree`s, and the be wrapped into
 a `MixedModel`:
 
-    struct MixedModel{O,FM<:AbstractModel} <: AbstractModel{O}
+    mutable struct MixedModel{O,FM<:AbstractModel} <: AbstractModel{O}
         root::M where {M<:AbstractModel{<:O}}
         info::NamedTuple
     end
@@ -1144,7 +1057,7 @@ Note that `FM` refers to the Feasible Models (`FM`) allowed in the model's sub-t
 
 See also [`DecisionTree`](@ref), [`DecisionList`](@ref).
 """
-struct MixedModel{O,FM<:AbstractModel} <: AbstractModel{O}
+mutable struct MixedModel{O,FM<:AbstractModel} <: AbstractModel{O}
     root::M where {M<:AbstractModel{<:O}}
     info::NamedTuple
 
