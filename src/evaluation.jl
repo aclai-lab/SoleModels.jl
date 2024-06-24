@@ -156,14 +156,14 @@ function evaluaterule(
 end
 
 # """
-#     natoms(rule::Rule{O,<:Formula}) where {O}
+#     natoms(rule::Rule{O}) where {O}
 
 # See also
 # [`Rule`](@ref),
 # [`SoleLogics.Formula`](@ref),
 # [`antecedent`](@ref),
 # """
-# natoms(rule::Rule{O,<:Formula}) where {O} = natoms(antecedent(rule))
+# natoms(rule::Rule{O}) where {O} = natoms(antecedent(rule))
 
 """
     rulemetrics(
