@@ -55,8 +55,8 @@ function __apply!(m, mode, preds, y, leavesonly)
             append!(m.info.supporting_labels, y)
             preds
         elseif mode == :append
-            append!(preds)
-            append!(y)
+            append!(m.info.supporting_predictions, preds)
+            append!(m.info.supporting_labels, y)
             preds
         else
             error("Unexpected apply mode: $mode.")

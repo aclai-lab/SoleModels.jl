@@ -130,8 +130,10 @@ nsubmodels(m::DecisionForest) = sum(nsubmodels, immediatesubmodels(m))
 nsubmodels(m::MixedModel) = sum(nsubmodels, immediatesubmodels(m))
 
 leafmodels(m::AbstractModel) = [Iterators.flatten(leafmodels.(immediatesubmodels(m)))...]
+leafmodels(m::LeafModel) = [m]
 
 nleafmodels(m::AbstractModel) = sum(nleafmodels, immediatesubmodels(m))
+nleafmodels(m::LeafModel) = 1
 
 subtreeheight(m::AbstractModel) = 1 + maximum(subtreeheight, immediatesubmodels(m))
 subtreeheight(m::LeafModel) = 0
@@ -302,7 +304,7 @@ listrules(m::LeafModel; kwargs...) = [m]
 
 function listrules(
     m::Rule{O};
-    force_syntaxtree::Bool = false
+    force_syntaxtree::Bool = false,
 ) where {O}
     ant = force_syntaxtree ? tree(antecedent(m)) : antecedent(m)
     [(force_syntaxtree ? Rule{O}(ant, consequent(m), info(m)) : m)]
@@ -315,13 +317,36 @@ function listrules(
     normalize::Bool = false,
     normalize_kwargs::NamedTuple = (; allow_atom_flipping = true, ),
     force_syntaxtree::Bool = false,
+    compute_metrics::Union{Nothing,Bool} = nothing,
+    min_confidence::Union{Nothing,Number} = nothing,
+    min_coverage::Union{Nothing,Number} = nothing,
+    min_ninstances::Union{Nothing,Number} = nothing,
+    # ntotinstances::Union{Nothing,Int} = nothing,
     kwargs...,
 ) where {O}
 
-    _subrules = [
-        [(true, r) for r in listrules(posconsequent(m); use_shortforms = use_shortforms, use_leftmostlinearform = use_leftmostlinearform, normalize = normalize, force_syntaxtree = force_syntaxtree, kwargs...)]...,
-        [(false, r) for r in listrules(negconsequent(m); use_shortforms = use_shortforms, use_leftmostlinearform = use_leftmostlinearform, normalize = normalize, force_syntaxtree = force_syntaxtree, kwargs...)]...
-    ]
+    if isnothing(compute_metrics)
+        compute_metrics = (!isnothing(min_confidence) || !isnothing(min_coverage) || !isnothing(min_ninstances) || !isnothing(ntotinstances))
+    end
+
+    subkwargs = (;
+        use_shortforms = use_shortforms,
+        use_leftmostlinearform = use_leftmostlinearform,
+        normalize = normalize,
+        force_syntaxtree = force_syntaxtree,
+        compute_metrics = false, # I'm computing them here, afterall
+        min_confidence = min_confidence,
+        min_coverage = min_coverage,
+        min_ninstances = min_ninstances,
+        kwargs...)
+
+    _subrules = []
+    if (haskey(info(m), :supporting_predictions) && length(info(m, :supporting_predictions)) >= min_ninstances)
+    # if (haskey(info(m), :supporting_predictions) && length(info(m, :supporting_predictions)) >= min_ninstances) &&
+    #     (haskey(info(m), :supporting_predictions) && length(info(m, :supporting_predictions))/ntotinstances >= min_coverage)
+        append!(_subrules, [(true,  r) for r in listrules(posconsequent(m); subkwargs...)])
+        append!(_subrules, [(false, r) for r in listrules(negconsequent(m); subkwargs...)])
+    end
 
     rules = map(((flag, subrule),)->begin
             # @show info(subrule)
@@ -387,6 +412,11 @@ function listrules(
                 error("Unexpected rule type: $(typeof(subrule)).")
             end
         end, _subrules)
+
+    if compute_metrics
+        ms = readmetrics.(rules)
+        info!(rules, ms)
+    end
 
     return rules
 end
