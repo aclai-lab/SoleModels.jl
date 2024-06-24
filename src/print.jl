@@ -274,6 +274,7 @@ function printmodel(
                 @_print_submodel io consequent(m) ind_str indentation depth max_depth show_subtree_info false show_shortforms show_intermediate_finals tree_mode show_symbols syntaxstring_kwargs kwargs
             end
         end
+        println(io, "")
     else
         depth != 0 && print(io, " ")
         println(io, "[...]")
