@@ -51,20 +51,20 @@ function __apply!(m, mode, preds, y)
     end
 end
 
-function __apply!(m, mode, preds, y)
+# function __apply!(m, mode, preds, y)
 
-    if mode == :replace
-        m.info.supporting_predictions = preds
-        m.info.supporting_labels = y
-        preds
-    elseif mode == :replace
-        m.info.supporting_predictions = [info(m, :supporting_predictions)..., preds...]
-        m.info.supporting_labels = [info(m, :supporting_labels)..., y...]
-        preds
-    else
-        error("Unexpected apply mode: $mode.")
-    end
-end
+#     if mode == :replace
+#         m.info.supporting_predictions = preds
+#         m.info.supporting_labels = y
+#         preds
+#     elseif mode == :replace
+#         m.info.supporting_predictions = [info(m, :supporting_predictions)..., preds...]
+#         m.info.supporting_labels = [info(m, :supporting_labels)..., y...]
+#         preds
+#     else
+#         error("Unexpected apply mode: $mode.")
+#     end
+# end
 
 
 function apply!(m::ConstantModel, d::AbstractInterpretationSet, y::AbstractVector; mode = :replace, kwargs...)
@@ -118,7 +118,8 @@ function apply!(m::Branch, d::AbstractInterpretationSet, y::AbstractVector;
     return __apply!(m, mode, preds, y)
 end
 
-function apply!(m::SoleModels.DecisionTree, d::AbstractInterpretationSet, y::AbstractVector;
+
+function apply!(m::DecisionTree, d::AbstractInterpretationSet, y::AbstractVector;
     mode = :replace,
     kwargs...)
     @assert length(y) == ninstances(d) "$(length(y)) == $(ninstances(d))"

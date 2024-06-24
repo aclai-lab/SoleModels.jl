@@ -940,14 +940,6 @@ function apply(
     apply(root(m), d; kwargs...)
 end
 
-function apply!(m::DecisionTree, d::AbstractInterpretationSet, y::AbstractVector;
-    mode = :replace,
-    kwargs...)
-    @assert length(y) == ninstances(d) "$(length(y)) == $(ninstances(d))"
-    preds = apply!(root(m), d; kwargs...)
-    return _apply!(m, mode, preds, y)
-end
-
 function nnodes(t::DecisionTree)
     nsubmodels(t)
 end
