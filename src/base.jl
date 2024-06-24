@@ -715,9 +715,9 @@ function apply(
         check_kwargs = check_kwargs,
         kwargs...
     )
-    preds[!checkmask] .= apply(
+    preds[(!).(checkmask)] .= apply(
         negconsequent(m),
-        slicedataset(d, !checkmask; return_view = true, allow_no_instances = true);
+        slicedataset(d, (!).(checkmask); return_view = true, allow_no_instances = true);
         check_args = check_args,
         check_kwargs = check_kwargs,
         kwargs...
