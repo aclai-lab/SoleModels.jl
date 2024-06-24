@@ -944,7 +944,7 @@ function apply!(m::DecisionTree, d::AbstractInterpretationSet, y::AbstractVector
     mode = :replace,
     kwargs...)
     @assert length(y) == ninstances(d) "$(length(y)) == $(ninstances(d))"
-    preds = apply!(root(m), d; kwargs...), preds, y)
+    preds = apply!(root(m), d; kwargs...)
     return _apply!(m, mode, preds, y)
 end
 
