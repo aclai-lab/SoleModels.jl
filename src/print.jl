@@ -266,7 +266,7 @@ function printmodel(
                 print(io, line)
                 _io = IOBuffer()
                 @_print_submodel _io consequent(m) ind_str indentation depth max_depth show_subtree_info false show_shortforms show_intermediate_finals tree_mode show_symbols syntaxstring_kwargs kwargs
-                subm_str = String(take!(io))
+                subm_str = String(take!(_io))
                 (subm_str = rstrip(subm_str, '\n') * " : $(get_metrics_string(m; (show_metrics isa NamedTuple ? show_metrics : [])...))")
                 print(io, subm_str)
             else
