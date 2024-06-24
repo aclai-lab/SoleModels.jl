@@ -34,6 +34,18 @@
 #     return apply(m, d, i_instance; mode = mode, y = y, kwargs...)
 # end
 
+function emptysupports!(m)
+    empty!(m.info.supporting_predictions)
+    empty!(m.info.supporting_labels)
+    nothing
+end
+
+function recursivelyemptysupports!(m)
+    emptysupports!(m)
+    recursivelyemptysupports!.(immediatesubmodels(m))
+    nothing
+end
+
 function __apply!(m, mode, preds, y, leavesonly)
     if !leavesonly || m isa LeafModel
         if mode == :replace
@@ -69,7 +81,11 @@ end
 
 
 function apply!(m::ConstantModel, d::AbstractInterpretationSet, y::AbstractVector; mode = :replace, leavesonly = false, kwargs...)
-    @assert length(y) == ninstances(d) "$(length(y)) == $(ninstances(d))"
+    # @assert length(y) == ninstances(d) "$(length(y)) == $(ninstances(d))"
+    if mode == :replace
+        recursivelyemptysupports!(m)
+        mode = :append
+    end
     preds = fill(outcome(m), ninstances(d))
     return __apply!(m, mode, preds, y, leavesonly)
 end
@@ -81,7 +97,11 @@ function apply!(m::Rule, d::AbstractInterpretationSet, y::AbstractVector;
     mode = :replace,
     leavesonly = false,
     kwargs...)
-    @assert length(y) == ninstances(d) "$(length(y)) == $(ninstances(d))"
+    # @assert length(y) == ninstances(d) "$(length(y)) == $(ninstances(d))"
+    if mode == :replace
+        recursivelyemptysupports!(m)
+        mode = :append
+    end
     checkmask = checkantecedent(m, d, check_args...; check_kwargs...)
     preds = Vector{outcometype(m)}(fill(nothing, length(d)))
     if any(checkmask)
@@ -103,7 +123,11 @@ function apply!(m::Branch, d::AbstractInterpretationSet, y::AbstractVector;
     mode = :replace,
     leavesonly = false,
     kwargs...)
-    @assert length(y) == ninstances(d) "$(length(y)) == $(ninstances(d))"
+    # @assert length(y) == ninstances(d) "$(length(y)) == $(ninstances(d))"
+    if mode == :replace
+        recursivelyemptysupports!(m)
+        mode = :append
+    end
     checkmask = checkantecedent(m, d, check_args...; check_kwargs...)
     preds = Vector{outputtype(m)}(undef,length(checkmask))
     if any(checkmask)
@@ -140,6 +164,7 @@ function apply!(m::DecisionTree, d::AbstractInterpretationSet, y::AbstractVector
     leavesonly = false,
     kwargs...)
     @assert length(y) == ninstances(d) "$(length(y)) == $(ninstances(d))"
+    # _d = SupportedLogiset(d) TODO
     preds = apply!(root(m), d, y;
         mode = mode,
         leavesonly = leavesonly,
