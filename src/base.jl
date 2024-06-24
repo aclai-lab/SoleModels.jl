@@ -207,7 +207,7 @@ See also [`ConstantModel`](@ref), [`FunctionModel`](@ref), [`AbstractModel`](@re
 abstract type LeafModel{O} <: AbstractModel{O} end
 
 """
-    mutable struct ConstantModel{O} <: LeafModel{O}
+    struct ConstantModel{O} <: LeafModel{O}
         outcome::O
         info::NamedTuple
     end
@@ -231,7 +231,7 @@ See also
 [`FunctionModel`](@ref),
 [`LeafModel`](@ref).
 """
-mutable struct ConstantModel{O} <: LeafModel{O}
+struct ConstantModel{O} <: LeafModel{O}
     outcome::O
     info::NamedTuple
 
@@ -269,7 +269,7 @@ convert(::Type{<:AbstractModel{F}}, m::ConstantModel) where {F} = ConstantModel{
 
 # TODO @Michele explain functional_args/functional_kwargs
 """
-    mutable struct FunctionModel{O} <: LeafModel{O}
+    struct FunctionModel{O} <: LeafModel{O}
         f::FunctionWrapper{O}
         info::NamedTuple
     end
@@ -282,7 +282,7 @@ the output type `O` by wrapping the `Function` into an object of type
 
 See also [`ConstantModel`](@ref), [`LeafModel`](@ref).
 """
-mutable struct FunctionModel{O} <: LeafModel{O}
+struct FunctionModel{O} <: LeafModel{O}
     f::FunctionWrapper{O}
     # isopen::Bool TODO
     info::NamedTuple
@@ -401,7 +401,7 @@ in order to obtain an outcome.
 """
 
 """
-    mutable struct Rule{O} <: AbstractModel{O}
+    struct Rule{O} <: AbstractModel{O}
         antecedent::Formula
         consequent::M where {M<:AbstractModel{<:O}}
         info::NamedTuple
@@ -421,7 +421,7 @@ See also
 [`SoleLogics.Formula`](@ref),
 [`AbstractModel`](@ref).
 """
-mutable struct Rule{O} <: AbstractModel{O}
+struct Rule{O} <: AbstractModel{O}
     antecedent::Formula
     consequent::M where {M<:AbstractModel{<:O}}
     info::NamedTuple
@@ -572,7 +572,7 @@ end
 ############################################################################################
 
 """
-    mutable struct Branch{O} <: AbstractModel{O}
+    struct Branch{O} <: AbstractModel{O}
         antecedent::Formula
         posconsequent::M where {M<:AbstractModel{<:O}}
         negconsequent::M where {M<:AbstractModel{<:O}}
@@ -597,7 +597,7 @@ See also
 [`SoleLogics.Formula`](@ref),
 [`Rule`](@ref), [`AbstractModel`](@ref).
 """
-mutable struct Branch{O} <: AbstractModel{O}
+struct Branch{O} <: AbstractModel{O}
     antecedent::Formula
     posconsequent::M where {M<:AbstractModel{<:O}}
     negconsequent::M where {M<:AbstractModel{<:O}}
@@ -752,7 +752,7 @@ checkantecedent(m::Union{Rule,Branch}, d::AbstractInterpretationSet, args...; kw
 ############################################################################################
 
 """
-    mutable struct DecisionList{O} <: AbstractModel{O}
+    struct DecisionList{O} <: AbstractModel{O}
         rulebase::Vector{Rule{_O} where {_O<:O}}
         defaultconsequent::M where {M<:AbstractModel{<:O}}
         info::NamedTuple
@@ -778,7 +778,7 @@ See also
 [`DecisionTree`](@ref),
 [`AbstractModel`](@ref).
 """
-mutable struct DecisionList{O} <: AbstractModel{O}
+struct DecisionList{O} <: AbstractModel{O}
     rulebase::Vector{Rule{_O} where {_O<:O}}
     defaultconsequent::M where {M<:AbstractModel{<:O}}
     info::NamedTuple
@@ -870,7 +870,7 @@ local outcomes of the block.
 In practice, a `DecisionTree` simply wraps a constrained
 sub-tree of `Branch` and `LeafModel`:
 
-    mutable struct DecisionTree{O} <: AbstractModel{O}
+    struct DecisionTree{O} <: AbstractModel{O}
         root::M where {M<:AbstractModel}
         info::NamedTuple
     end
@@ -880,7 +880,7 @@ information.
 
 See also [`MixedModel`](@ref), [`DecisionList`](@ref).
 """
-mutable struct DecisionTree{O} <: AbstractModel{O}
+struct DecisionTree{O} <: AbstractModel{O}
     root::M where {M<:Union{LeafModel{O},Branch{O}}}
     info::NamedTuple
 
@@ -957,7 +957,7 @@ end
 """
 A `Decision Forest` is a symbolic model that wraps an ensemble of models
 
-    mutable struct DecisionForest{O} <: AbstractModel{O}
+    struct DecisionForest{O} <: AbstractModel{O}
         trees::Vector{<:DecisionTree}
         info::NamedTuple
     end
@@ -966,7 +966,7 @@ A `Decision Forest` is a symbolic model that wraps an ensemble of models
 See also [`MixedModel`](@ref), [`DecisionList`](@ref),
 [`DecisionTree`](@ref).
 """
-mutable struct DecisionForest{O} <: AbstractModel{O}
+struct DecisionForest{O} <: AbstractModel{O}
     trees::Vector{<:DecisionTree}
     info::NamedTuple
 
@@ -1040,7 +1040,7 @@ In Sole.jl, this logic can implemented using `AbstractModel`s such as
 `Rule`s, `Branch`s, `DecisionList`s, `DecisionTree`s, and the be wrapped into
 a `MixedModel`:
 
-    mutable struct MixedModel{O,FM<:AbstractModel} <: AbstractModel{O}
+    struct MixedModel{O,FM<:AbstractModel} <: AbstractModel{O}
         root::M where {M<:AbstractModel{<:O}}
         info::NamedTuple
     end
@@ -1049,7 +1049,7 @@ Note that `FM` refers to the Feasible Models (`FM`) allowed in the model's sub-t
 
 See also [`DecisionTree`](@ref), [`DecisionList`](@ref).
 """
-mutable struct MixedModel{O,FM<:AbstractModel} <: AbstractModel{O}
+struct MixedModel{O,FM<:AbstractModel} <: AbstractModel{O}
     root::M where {M<:AbstractModel{<:O}}
     info::NamedTuple
 

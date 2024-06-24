@@ -84,13 +84,15 @@ function apply!(m::Rule, d::AbstractInterpretationSet, y::AbstractVector;
     @assert length(y) == ninstances(d) "$(length(y)) == $(ninstances(d))"
     checkmask = checkantecedent(m, d, check_args...; check_kwargs...)
     preds = Vector{outcometype(m)}(fill(nothing, length(d)))
-    preds[checkmask] .= apply!(consequent(m), slicedataset(d, checkmask; return_view = true, allow_no_instances = true), y;
-        check_args = check_args,
-        check_kwargs = check_kwargs,
-        mode = mode,
-        leavesonly = leavesonly,
-        kwargs...
-    )
+    if any(checkmask)
+        preds[checkmask] .= apply!(consequent(m), slicedataset(d, checkmask; return_view = true), y;
+            check_args = check_args,
+            check_kwargs = check_kwargs,
+            mode = mode,
+            leavesonly = leavesonly,
+            kwargs...
+        )
+    end
     return __apply!(m, mode, preds, y, leavesonly)
 end
 
@@ -104,26 +106,31 @@ function apply!(m::Branch, d::AbstractInterpretationSet, y::AbstractVector;
     @assert length(y) == ninstances(d) "$(length(y)) == $(ninstances(d))"
     checkmask = checkantecedent(m, d, check_args...; check_kwargs...)
     preds = Vector{outputtype(m)}(undef,length(checkmask))
-    preds[checkmask] .= apply!(
-        posconsequent(m),
-        slicedataset(d, checkmask; return_view = true, allow_no_instances = true),
-        y[checkmask];
-        check_args = check_args,
-        check_kwargs = check_kwargs,
-        mode = mode,
-        leavesonly = leavesonly,
-        kwargs...
-    )
-    preds[(!).(checkmask)] .= apply!(
-        negconsequent(m),
-        slicedataset(d, (!).(checkmask); return_view = true, allow_no_instances = true),
-        y[(!).(checkmask)];
-        check_args = check_args,
-        check_kwargs = check_kwargs,
-        mode = mode,
-        leavesonly = leavesonly,
-        kwargs...
-    )
+    if any(checkmask)
+        preds[checkmask] .= apply!(
+            posconsequent(m),
+            slicedataset(d, checkmask; return_view = true),
+            y[checkmask];
+            check_args = check_args,
+            check_kwargs = check_kwargs,
+            mode = mode,
+            leavesonly = leavesonly,
+            kwargs...
+        )
+    end
+    ncheckmask = (!).(checkmask)
+    if any(ncheckmask)
+        preds[ncheckmask] .= apply!(
+            negconsequent(m),
+            slicedataset(d, ncheckmask; return_view = true),
+            y[ncheckmask];
+            check_args = check_args,
+            check_kwargs = check_kwargs,
+            mode = mode,
+            leavesonly = leavesonly,
+            kwargs...
+        )
+    end
     return __apply!(m, mode, preds, y, leavesonly)
 end
 
