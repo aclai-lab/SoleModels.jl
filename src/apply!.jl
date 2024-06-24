@@ -34,20 +34,21 @@
 #     return apply(m, d, i_instance; mode = mode, y = y, kwargs...)
 # end
 
-function __apply!(m, mode, preds, y)
-
-    if mode == :replace
-        empty!(m.info.supporting_predictions)
-        append!(m.info.supporting_predictions, preds)
-        empty!(m.info.supporting_labels)
-        append!(m.info.supporting_labels, y)
-        preds
-    elseif mode == :append
-        append!(preds)
-        append!(y)
-        preds
-    else
-        error("Unexpected apply mode: $mode.")
+function __apply!(m, mode, preds, y, leavesonly)
+    if !leavesonly || m isa LeafModel
+        if mode == :replace
+            empty!(m.info.supporting_predictions)
+            append!(m.info.supporting_predictions, preds)
+            empty!(m.info.supporting_labels)
+            append!(m.info.supporting_labels, y)
+            preds
+        elseif mode == :append
+            append!(preds)
+            append!(y)
+            preds
+        else
+            error("Unexpected apply mode: $mode.")
+        end
     end
 end
 
@@ -67,10 +68,10 @@ end
 # end
 
 
-function apply!(m::ConstantModel, d::AbstractInterpretationSet, y::AbstractVector; mode = :replace, kwargs...)
+function apply!(m::ConstantModel, d::AbstractInterpretationSet, y::AbstractVector; mode = :replace, leavesonly = false, kwargs...)
     @assert length(y) == ninstances(d) "$(length(y)) == $(ninstances(d))"
     preds = fill(outcome(m), ninstances(d))
-    return __apply!(m, mode, preds, y)
+    return __apply!(m, mode, preds, y, leavesonly)
 end
 
 
@@ -78,6 +79,7 @@ function apply!(m::Rule, d::AbstractInterpretationSet, y::AbstractVector;
     check_args::Tuple = (),
     check_kwargs::NamedTuple = (;),
     mode = :replace,
+    leavesonly = false,
     kwargs...)
     @assert length(y) == ninstances(d) "$(length(y)) == $(ninstances(d))"
     checkmask = checkantecedent(m, d, check_args...; check_kwargs...)
@@ -85,9 +87,11 @@ function apply!(m::Rule, d::AbstractInterpretationSet, y::AbstractVector;
     preds[checkmask] .= apply!(consequent(m), slicedataset(d, checkmask; return_view = true, allow_no_instances = true), y;
         check_args = check_args,
         check_kwargs = check_kwargs,
+        mode = mode,
+        leavesonly = leavesonly,
         kwargs...
     )
-    return __apply!(m, mode, preds, y)
+    return __apply!(m, mode, preds, y, leavesonly)
 end
 
 
@@ -95,6 +99,7 @@ function apply!(m::Branch, d::AbstractInterpretationSet, y::AbstractVector;
     check_args::Tuple = (),
     check_kwargs::NamedTuple = (;),
     mode = :replace,
+    leavesonly = false,
     kwargs...)
     @assert length(y) == ninstances(d) "$(length(y)) == $(ninstances(d))"
     checkmask = checkantecedent(m, d, check_args...; check_kwargs...)
@@ -105,6 +110,8 @@ function apply!(m::Branch, d::AbstractInterpretationSet, y::AbstractVector;
         y[checkmask];
         check_args = check_args,
         check_kwargs = check_kwargs,
+        mode = mode,
+        leavesonly = leavesonly,
         kwargs...
     )
     preds[(!).(checkmask)] .= apply!(
@@ -113,18 +120,24 @@ function apply!(m::Branch, d::AbstractInterpretationSet, y::AbstractVector;
         y[(!).(checkmask)];
         check_args = check_args,
         check_kwargs = check_kwargs,
+        mode = mode,
+        leavesonly = leavesonly,
         kwargs...
     )
-    return __apply!(m, mode, preds, y)
+    return __apply!(m, mode, preds, y, leavesonly)
 end
 
 
 function apply!(m::DecisionTree, d::AbstractInterpretationSet, y::AbstractVector;
     mode = :replace,
+    leavesonly = false,
     kwargs...)
     @assert length(y) == ninstances(d) "$(length(y)) == $(ninstances(d))"
-    preds = apply!(root(m), d, y; kwargs...)
-    return __apply!(m, mode, preds, y)
+    preds = apply!(root(m), d, y;
+        mode = mode,
+        leavesonly = leavesonly,
+        kwargs...)
+    return __apply!(m, mode, preds, y, leavesonly)
 end
 
 
