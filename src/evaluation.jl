@@ -10,9 +10,9 @@ function accuracy(
     y_pred::AbstractArray,
 )
     @assert length(y_true) == length(y_pred) "Ground truth and predicted labels should have the same length, but $(length(y_true)) ≠ $(length(y_pred))."
-    @assert length(y_pred) > 0 "Cannot compute metric on non-empty label vectors."
+    # @assert length(y_pred) > 0 "Cannot compute metric with empty label vectors."
 
-    return sum(y_pred .== y_true)/length(y_pred)
+    return (length(y_pred) == 0) ? NaN : sum(y_pred .== y_true)/length(y_pred)
 end
 
 function _error(
@@ -28,10 +28,10 @@ function mae(
     y_pred::AbstractArray,
 )
     @assert length(y_true) == length(y_pred) "Ground truth and predicted labels should have the same length, but $(length(y_true)) ≠ $(length(y_pred))."
-    @assert length(y_pred) > 0 "Cannot compute metric on non-empty label vectors."
+    # @assert length(y_pred) > 0 "Cannot compute metric with empty label vectors."
 
     # return sum(abs.(y_pred.-y_true)) / length(y_pred)
-    return StatsBase.mean(abs, y_true - y_pred)
+    return (length(y_pred) == 0) ? NaN : StatsBase.mean(abs, y_true - y_pred)
 end
 
 function mse(
@@ -39,10 +39,10 @@ function mse(
     y_pred::AbstractArray,
 )
     @assert length(y_true) == length(y_pred) "Ground truth and predicted labels should have the same length, but $(length(y_true)) ≠ $(length(y_pred))."
-    @assert length(y_pred) > 0 "Cannot compute metric on non-empty label vectors."
+    # @assert length(y_pred) > 0 "Cannot compute metric with empty label vectors."
 
     # return sum((y_pred.-y_true).^2) / length(y_pred)
-    return StatsBase.mean(abs2, y_true - y_pred)
+    return (length(y_pred) == 0) ? NaN : StatsBase.mean(abs2, y_true - y_pred)
 end
 
 #############################################################
