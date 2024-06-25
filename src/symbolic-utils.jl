@@ -321,7 +321,7 @@ function listrules(
     min_confidence::Union{Nothing,Number} = nothing,
     min_coverage::Union{Nothing,Number} = nothing,
     min_ninstances::Union{Nothing,Number} = nothing,
-    # ntotinstances::Union{Nothing,Int} = nothing,
+    ntotinstances::Union{Nothing,Int} = nothing,
     kwargs...,
 ) where {O}
 
