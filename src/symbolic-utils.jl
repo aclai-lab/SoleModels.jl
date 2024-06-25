@@ -341,7 +341,7 @@ function listrules(
         kwargs...)
 
     _subrules = []
-    if (haskey(info(m), :supporting_predictions) && length(info(m, :supporting_predictions)) >= min_ninstances)
+    if isnothing(min_ninstances) || (haskey(info(m), :supporting_predictions) && length(info(m, :supporting_predictions)) >= min_ninstances)
     # if (haskey(info(m), :supporting_predictions) && length(info(m, :supporting_predictions)) >= min_ninstances) &&
     #     (haskey(info(m), :supporting_predictions) && length(info(m, :supporting_predictions))/ntotinstances >= min_coverage)
         append!(_subrules, [(true,  r) for r in listrules(posconsequent(m); subkwargs...)])
