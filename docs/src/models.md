@@ -24,7 +24,7 @@ printmodel
 
 ```@autodocs
 Modules = [SoleModels]
-Pages   = ["evaluation.jl"]
+Pages   = ["evaluate.jl"]
 ```
 
 ## Manipulating symbolic knowledge

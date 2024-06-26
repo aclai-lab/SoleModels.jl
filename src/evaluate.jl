@@ -46,9 +46,15 @@ function mse(
 end
 
 #############################################################
+using StatsBase
+using FillArrays
+
+function _metround(confidence, round_digits)
+    return isnothing(round_digits) ? confidence : round(confidence; digits = round_digits)
+end
 
 """
-    readmetrics(m::AbstractModel; digits = 2)
+    readmetrics(m::AbstractModel; round_digits = nothing)
 
 Return a `NamedTuple` with some performance metrics for the given symbolic model.
 Performance metrics can be computed when the `info` structure of the model has the
@@ -56,33 +62,68 @@ Performance metrics can be computed when the `info` structure of the model has t
     - :supporting_labels
     - :supporting_predictions
 
-The `digits` keyword argument is used to `round` accuracy/confidence metrics.
+The `round_digits` keyword argument, if provided, is used to `round` accuracy/confidence metrics.
 """
-
-function readmetrics(m::LeafModel{L}; digits = 2) where {L<:Label}
-    merge(if haskey(info(m), :supporting_labels) && haskey(info(m), :supporting_predictions)
+function readmetrics(m::LeafModel{L}; class_share_map = nothing, round_digits = nothing) where {L<:Label}
+    merge(if haskey(info(m), :supporting_labels)
         _gts = info(m).supporting_labels
-        _preds = info(m).supporting_predictions
-        if L <: CLabel
-            (; ninstances = length(_gts), confidence = round(accuracy(_gts, _preds); digits = digits))
-        elseif L <: RLabel
-            (; ninstances = length(_gts), mse = round(mse(_gts, _preds); digits = digits))
-        else
-            error("Could not compute readmetrics with unknown label type: $(L).")
+        if L <: CLabel && isnothing(class_share_map)
+            class_share_map = Dict(map(((k,v),)->k => v./length(_gts), collect(StatsBase.countmap(_gts))))
         end
-    elseif haskey(info(m), :supporting_labels)
-        return (; ninstances = length(info(m).supporting_labels))
+        base_metrics = (; ninstances = length(_gts))
+        if (haskey(info(m), :supporting_predictions) || m isa ConstantModel)
+            _preds = if haskey(info(m), :supporting_predictions)
+                info(m).supporting_predictions
+            elseif m isa ConstantModel
+                Fill(outcome(m), length(_gts))
+            else
+                error("Implementation error in readmetrics.")
+            end
+            conf_metrics = begin
+                if L <: CLabel
+                    confidence = accuracy(_gts, _preds)
+                    cmet = (; confidence = _metround(confidence, round_digits),)
+                    if m isa ConstantModel && !isnothing(class_share_map)
+                        class = outcome(m)
+                        lift = confidence/class_share_map[class]
+                        cmet = merge(cmet, (;
+                            lift       = _metround(lift, round_digits),
+                        ))
+                    end
+                    cmet
+                elseif L <: RLabel
+                    (;
+                        mse = _metround(mse(_gts, _preds), round_digits),
+                    )
+                else
+                    error("Could not compute readmetrics with unknown label type: $(L).")
+                end
+            end
+            base_metrics = merge(base_metrics, conf_metrics)
+        end
     else
         return (;)
-    end, (; coverage = 1.0))
+    end, (; coverage = 1.0)) # Note: assuming all leaf models are closed (see `isopen`).
 end
 
-function readmetrics(m::Rule; digits = 2, kwargs...)
+function readmetrics(m::Rule{L}; round_digits = nothing, class_share_map = nothing, kwargs...) where {L<:Label}
     if haskey(info(m), :supporting_labels) && haskey(info(consequent(m)), :supporting_labels)
         _gts = info(m).supporting_labels
         _gts_leaf = info(consequent(m)).supporting_labels
-        coverage = length(_gts_leaf)/length(_gts)
-        merge(readmetrics(consequent(m); digits = digits, kwargs...), (; coverage = round(coverage; digits = digits)))
+        if L <: CLabel && isnothing(class_share_map)
+            class_share_map = Dict(map(((k,v),)->k => v./length(_gts), collect(StatsBase.countmap(_gts))))
+        end
+        cons_metrics = readmetrics(consequent(m); round_digits = round_digits, class_share_map = class_share_map, kwargs...)
+        coverage = cons_metrics.coverage * (length(_gts_leaf)/length(_gts))
+        confidence = cons_metrics.confidence
+        lift = cons_metrics.lift
+        metrics = (;
+            ninstances = length(_gts),
+            coverage = _metround(coverage, round_digits),
+            confidence = confidence,
+            lift = lift,
+        )
+        metrics
     elseif haskey(info(m), :supporting_labels)
         return (; ninstances = length(info(m).supporting_labels))
     elseif haskey(info(consequent(m)), :supporting_labels)

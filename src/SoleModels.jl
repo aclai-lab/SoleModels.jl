@@ -74,7 +74,7 @@ include("machine-learning.jl")
 
 export rulemetrics, readmetrics
 
-include("evaluation.jl")
+include("evaluate.jl")
 
 include("experimentals.jl")
 

@@ -318,6 +318,7 @@ function listrules(
     normalize_kwargs::NamedTuple = (; allow_atom_flipping = true, ),
     force_syntaxtree::Bool = false,
     compute_metrics::Union{Nothing,Bool} = nothing,
+    metrics_kwargs::NamedTuple = (;),
     min_confidence::Union{Nothing,Number} = nothing,
     min_coverage::Union{Nothing,Number} = nothing,
     min_ninstances::Union{Nothing,Number} = nothing,
@@ -335,6 +336,7 @@ function listrules(
         normalize = normalize,
         force_syntaxtree = force_syntaxtree,
         compute_metrics = false, # I'm computing them here, afterall
+        metrics_kwargs = metrics_kwargs,
         min_confidence = min_confidence,
         min_coverage = min_coverage,
         min_ninstances = min_ninstances,
@@ -414,7 +416,7 @@ function listrules(
         end, _subrules)
 
     if compute_metrics
-        ms = readmetrics.(rules)
+        ms = readmetrics.(rules; metrics_kwargs...)
         info!(rules, ms)
     end
 

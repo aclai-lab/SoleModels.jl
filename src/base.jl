@@ -262,7 +262,7 @@ outcome(m::ConstantModel) = m.outcome
 isopen(::ConstantModel) = false
 apply(m::ConstantModel, i::AbstractInterpretation; kwargs...) = outcome(m)
 apply(m::ConstantModel, d::AbstractInterpretationSet, i_instance::Integer; kwargs...) = outcome(m)
-apply(m::ConstantModel, d::AbstractInterpretationSet; kwargs...) = fill(outcome(m), ninstances(d))
+apply(m::ConstantModel, d::AbstractInterpretationSet; kwargs...) = Fill(outcome(m), ninstances(d))
 
 convert(::Type{ConstantModel{O}}, o::O) where {O} = ConstantModel{O}(o)
 convert(::Type{<:AbstractModel{F}}, m::ConstantModel) where {F} = ConstantModel{F}(m)
