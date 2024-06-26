@@ -137,9 +137,9 @@ end
 
 function get_metrics_string(
     m::AbstractModel;
-    digits = 2
+    round_digits = 2
 )
-    metrics = readmetrics(m; digits = digits)
+    metrics = readmetrics(m; round_digits = round_digits)
     if m isa LeafModel
         metrics = (; filter(((k,v),)->k != :coverage, [k => metrics[k] for k in keys(metrics)])...)
     end
