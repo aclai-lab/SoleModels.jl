@@ -296,13 +296,57 @@ See also [`listimmediaterules`](@ref),
 [`joinrules`](@ref), [`LeafModel`](@ref),
 [`AbstractModel`](@ref).
 """
-function listrules(m::AbstractModel; kwargs...)
-    error("Please, provide method listrules(::$(typeof(m))) ($(typeof(m)) is a symbolic model).")
+function listrules(m::AbstractModel;
+    compute_metrics::Union{Nothing,Bool} = nothing,
+    metrics_kwargs::NamedTuple = (;),
+    #
+    use_shortforms::Bool = true,
+    use_leftmostlinearform::Bool = false,
+    normalize::Bool = false,
+    normalize_kwargs::NamedTuple = (; allow_atom_flipping = true, ),
+    force_syntaxtree::Bool = false,
+    min_confidence::Union{Nothing,Number} = nothing,
+    min_coverage::Union{Nothing,Number} = nothing,
+    min_ninstances::Union{Nothing,Number} = nothing,
+    kwargs...,
+)
+    subkwargs = (;
+        use_shortforms = use_shortforms,
+        use_leftmostlinearform = use_leftmostlinearform,
+        normalize = normalize,
+        normalize_kwargs = normalize_kwargs,
+        force_syntaxtree = force_syntaxtree,
+        metrics_kwargs = metrics_kwargs,
+        min_confidence = min_confidence,
+        min_coverage = min_coverage,
+        min_ninstances = min_ninstances,
+        kwargs...)
+
+    if isnothing(compute_metrics)
+        compute_metrics = (!isnothing(min_confidence) || !isnothing(min_coverage) || !isnothing(min_ninstances))
+    end
+
+    rules = _listrules(m, subkwargs...)
+
+    if compute_metrics
+        ms = readmetrics.(rules; metrics_kwargs...)
+        info!(rules, ms)
+    end
+
+    rules = filter(r->info(r).confidence >= min_confidence &&
+        info(r).coverage >= min_coverage &&
+        info(r).ninstances >= min_ninstances, rules)
+
+    return rules
 end
 
-listrules(m::LeafModel; kwargs...) = [m]
+function _listrules(m::AbstractModel; kwargs...)
+    error("Please, provide method _listrules(::$(typeof(m))) ($(typeof(m)) is a symbolic model).")
+end
 
-function listrules(
+_listrules(m::LeafModel; kwargs...) = [m]
+
+function _listrules(
     m::Rule{O};
     force_syntaxtree::Bool = false,
 ) where {O}
@@ -310,33 +354,25 @@ function listrules(
     [(force_syntaxtree ? Rule{O}(ant, consequent(m), info(m)) : m)]
 end
 
-function listrules(
+function _listrules(
     m::Branch{O};
     use_shortforms::Bool = true,
     use_leftmostlinearform::Bool = false,
     normalize::Bool = false,
     normalize_kwargs::NamedTuple = (; allow_atom_flipping = true, ),
     force_syntaxtree::Bool = false,
-    compute_metrics::Union{Nothing,Bool} = nothing,
-    metrics_kwargs::NamedTuple = (;),
     min_confidence::Union{Nothing,Number} = nothing,
     min_coverage::Union{Nothing,Number} = nothing,
     min_ninstances::Union{Nothing,Number} = nothing,
-    ntotinstances::Union{Nothing,Int} = nothing,
     kwargs...,
 ) where {O}
-
-    if isnothing(compute_metrics)
-        compute_metrics = (!isnothing(min_confidence) || !isnothing(min_coverage) || !isnothing(min_ninstances) || !isnothing(ntotinstances))
-    end
 
     subkwargs = (;
         use_shortforms = use_shortforms,
         use_leftmostlinearform = use_leftmostlinearform,
         normalize = normalize,
+        normalize_kwargs = normalize_kwargs,
         force_syntaxtree = force_syntaxtree,
-        compute_metrics = false, # I'm computing them here, afterall
-        metrics_kwargs = metrics_kwargs,
         min_confidence = min_confidence,
         min_coverage = min_coverage,
         min_ninstances = min_ninstances,
@@ -346,8 +382,8 @@ function listrules(
     if isnothing(min_ninstances) || (haskey(info(m), :supporting_predictions) && length(info(m, :supporting_predictions)) >= min_ninstances)
     # if (haskey(info(m), :supporting_predictions) && length(info(m, :supporting_predictions)) >= min_ninstances) &&
     #     (haskey(info(m), :supporting_predictions) && length(info(m, :supporting_predictions))/ntotinstances >= min_coverage)
-        append!(_subrules, [(true,  r) for r in listrules(posconsequent(m); subkwargs...)])
-        append!(_subrules, [(false, r) for r in listrules(negconsequent(m); subkwargs...)])
+        append!(_subrules, [(true,  r) for r in _listrules(posconsequent(m); subkwargs...)])
+        append!(_subrules, [(false, r) for r in _listrules(negconsequent(m); subkwargs...)])
     end
 
     rules = map(((flag, subrule),)->begin
@@ -415,15 +451,10 @@ function listrules(
             end
         end, _subrules)
 
-    if compute_metrics
-        ms = readmetrics.(rules; metrics_kwargs...)
-        info!(rules, ms)
-    end
-
     return rules
 end
 
-function listrules(
+function _listrules(
     m::DecisionList;
     # use_shortforms::Bool = true,
     # use_leftmostlinearform::Bool = false,
@@ -436,11 +467,11 @@ function listrules(
     return rules
 end
 
-listrules(m::DecisionTree; kwargs...) = listrules(root(m); kwargs...)
+_listrules(m::DecisionTree; kwargs...) = _listrules(root(m); kwargs...)
 
-listrules(m::DecisionForest; kwargs...) = error("TODO implement")
+_listrules(m::DecisionForest; kwargs...) = error("TODO implement")
 
-listrules(m::MixedModel; kwargs...) = listrules(root(m); kwargs...)
+_listrules(m::MixedModel; kwargs...) = _listrules(root(m); kwargs...)
 
 ############################################################################################
 ############################################################################################
