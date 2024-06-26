@@ -326,7 +326,7 @@ function listrules(m::AbstractModel;
         compute_metrics = (!isnothing(min_confidence) || !isnothing(min_coverage) || !isnothing(min_ninstances))
     end
 
-    rules = _listrules(m, subkwargs...)
+    rules = _listrules(m; subkwargs...)
 
     if compute_metrics
         ms = readmetrics.(rules; metrics_kwargs...)
