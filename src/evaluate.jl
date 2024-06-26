@@ -85,6 +85,9 @@ function readmetrics(m::LeafModel{L}; class_share_map = nothing, round_digits = 
                     cmet = (; confidence = _metround(confidence, round_digits),)
                     if m isa ConstantModel && !isnothing(class_share_map)
                         class = outcome(m)
+                        if !haskey(class_share_map, class)
+                            @show class_share_map
+                        end
                         lift = confidence/class_share_map[class]
                         cmet = merge(cmet, (;
                             lift       = _metround(lift, round_digits),
