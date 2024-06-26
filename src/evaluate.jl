@@ -68,6 +68,9 @@ function readmetrics(m::LeafModel{L}; class_share_map = nothing, round_digits = 
     merge(if haskey(info(m), :supporting_labels)
         _gts = info(m).supporting_labels
         if L <: CLabel && isnothing(class_share_map)
+            if !length(_gts)
+                @show _gts
+            end
             class_share_map = Dict(map(((k,v),)->k => v./length(_gts), collect(StatsBase.countmap(_gts))))
         end
         base_metrics = (; ninstances = length(_gts))
