@@ -297,7 +297,7 @@ See also [`listimmediaterules`](@ref),
 [`AbstractModel`](@ref).
 """
 function listrules(m::AbstractModel;
-    compute_metrics::Union{Nothing,Bool} = nothing,
+    compute_metrics::Union{Nothing,Bool} = false,
     metrics_kwargs::NamedTuple = (;),
     #
     use_shortforms::Bool = true,
@@ -305,9 +305,11 @@ function listrules(m::AbstractModel;
     normalize::Bool = false,
     normalize_kwargs::NamedTuple = (; allow_atom_flipping = true, ),
     force_syntaxtree::Bool = false,
-    min_confidence::Union{Nothing,Number} = nothing,
     min_coverage::Union{Nothing,Number} = nothing,
     min_ninstances::Union{Nothing,Number} = nothing,
+    min_confidence::Union{Nothing,Number} = nothing,
+    min_lift::Union{Nothing,Number} = nothing,
+    custom_thresholding_callback::Union{Nothing,Base.Callable} = nothing,
     kwargs...,
 )
     subkwargs = (;
@@ -317,25 +319,32 @@ function listrules(m::AbstractModel;
         normalize_kwargs = normalize_kwargs,
         force_syntaxtree = force_syntaxtree,
         metrics_kwargs = metrics_kwargs,
-        min_confidence = min_confidence,
-        min_coverage = min_coverage,
         min_ninstances = min_ninstances,
+        min_coverage = min_coverage,
+        min_confidence = min_confidence,
+        min_lift = min_lift,
+        custom_thresholding_callback = custom_thresholding_callback,
         kwargs...)
 
-    if isnothing(compute_metrics)
-        compute_metrics = (!isnothing(min_confidence) || !isnothing(min_coverage) || !isnothing(min_ninstances))
-    end
+    @assert compute_metrics in [false] "TODO implement"
+
+    # if isnothing(compute_metrics)
+    #     compute_metrics = (!isnothing(min_confidence) || !isnothing(min_coverage) || !isnothing(min_ninstances) || !isnothing(min_lift))
+    # end
 
     rules = _listrules(m; subkwargs...)
 
-    if compute_metrics
-        ms = readmetrics.(rules; metrics_kwargs...)
-        info!(rules, ms)
+    if compute_metrics || !isnothing(min_confidence) || !isnothing(min_coverage) || !isnothing(min_ninstances) || !isnothing(min_lift)
+        rules = filter(r->begin
+            ms = readmetrics(r; metrics_kwargs...)
+            compute_metrics && (info!(r, ms))
+            return (isnothing(min_ninstances) || (ms.ninstances >= min_ninstances)) &&
+            (isnothing(min_coverage) || (ms.coverage >= min_coverage)) &&
+            (isnothing(min_confidence) || (ms.confidence >= min_confidence)) &&
+            (isnothing(min_lift) || (ms.lift >= min_lift)) &&
+            (isnothing(custom_thresholding_callback) || custom_thresholding_callback(ms))
+        end, rules)
     end
-
-    rules = filter(r->info(r).confidence >= min_confidence &&
-        info(r).coverage >= min_coverage &&
-        info(r).ninstances >= min_ninstances, rules)
 
     return rules
 end
@@ -394,16 +403,19 @@ function _listrules(
                 @warn "Dropping info keys: $(join(repr.(ks), ", "))"
             end
 
-            i = (;)
-            if haskey(info(m), :supporting_labels)
-                i = merge((;), (;
+            _info = (;)
+            if haskey(info(m), :supporting_labels) && haskey(info(m), :supporting_predictions)
+                _info = merge((;), (;
                     supporting_labels = info(m).supporting_labels,
-                ))
-            end
-            if haskey(info(m), :supporting_predictions)
-                i = merge((;), (;
+                # ))
+            # end
+            # if haskey(info(m), :supporting_predictions)
+                # _info = merge((;), (;
                     supporting_predictions = info(m).supporting_predictions,
                 ))
+            elseif (haskey(info(m), :supporting_labels) != haskey(info(m), :supporting_predictions))
+                @warn "List rules encountered an unexpected case. Both " *
+                    " supporting_labels and supporting_predictions are necessary for correctly computing performance metrics. "
             end
 
             antformula, using_shortform = begin
@@ -427,7 +439,7 @@ function _listrules(
                 #         shortform = ant
                 #     ))
                 # end
-                Rule(ant, subrule, merge(info(subrule), subi, i))
+                Rule(ant, subrule, merge(info(subrule), subi, _info))
             elseif subrule isa Rule
                 ant = begin
                     if using_shortform
@@ -445,7 +457,7 @@ function _listrules(
                     end
                 end
                 normalize && (ant = SoleLogics.normalize(ant; normalize_kwargs...))
-                Rule(ant, consequent(subrule), merge(info(subrule), i))
+                Rule(ant, consequent(subrule), merge(info(subrule), _info))
             else
                 error("Unexpected rule type: $(typeof(subrule)).")
             end
@@ -532,8 +544,8 @@ function joinrules(
         leafinfo, ruleinfo = begin
             if !silent
                 known_infokeys = [:supporting_labels, :supporting_predictions, :shortform, :this, :multipathformula]
-                for i in [info.(these_rules)..., info.(consequent.(these_rules))...]
-                    ks = setdiff(keys(i), known_infokeys)
+                for _info in [info.(these_rules)..., info.(consequent.(these_rules))...]
+                    ks = setdiff(keys(_info), known_infokeys)
                     if length(ks) > 0
                         @warn "Dropping info keys: $(join(repr.(ks), ", "))"
                     end

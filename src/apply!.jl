@@ -1,3 +1,4 @@
+using ProgressMeter
 
 # function apply!(
 #     m::AbstractModel,
@@ -122,6 +123,7 @@ function apply!(m::Branch, d::AbstractInterpretationSet, y::AbstractVector;
     check_kwargs::NamedTuple = (;),
     mode = :replace,
     leavesonly = false,
+    # show_progress = true,
     kwargs...)
     # @assert length(y) == ninstances(d) "$(length(y)) == $(ninstances(d))"
     if mode == :replace
@@ -130,30 +132,34 @@ function apply!(m::Branch, d::AbstractInterpretationSet, y::AbstractVector;
     end
     checkmask = checkantecedent(m, d, check_args...; check_kwargs...)
     preds = Vector{outputtype(m)}(undef,length(checkmask))
-    if any(checkmask)
-        preds[checkmask] .= apply!(
-            posconsequent(m),
-            slicedataset(d, checkmask; return_view = true),
-            y[checkmask];
-            check_args = check_args,
-            check_kwargs = check_kwargs,
-            mode = mode,
-            leavesonly = leavesonly,
-            kwargs...
-        )
-    end
-    ncheckmask = (!).(checkmask)
-    if any(ncheckmask)
-        preds[ncheckmask] .= apply!(
-            negconsequent(m),
-            slicedataset(d, ncheckmask; return_view = true),
-            y[ncheckmask];
-            check_args = check_args,
-            check_kwargs = check_kwargs,
-            mode = mode,
-            leavesonly = leavesonly,
-            kwargs...
-        )
+    @sync begin
+        if any(checkmask)
+            l = Threads.@spawn apply!(
+                posconsequent(m),
+                slicedataset(d, checkmask; return_view = true),
+                y[checkmask];
+                check_args = check_args,
+                check_kwargs = check_kwargs,
+                mode = mode,
+                leavesonly = leavesonly,
+                kwargs...
+            )
+        end
+        ncheckmask = (!).(checkmask)
+        if any(ncheckmask)
+            r = Threads.@spawn apply!(
+                negconsequent(m),
+                slicedataset(d, ncheckmask; return_view = true),
+                y[ncheckmask];
+                check_args = check_args,
+                check_kwargs = check_kwargs,
+                mode = mode,
+                leavesonly = leavesonly,
+                kwargs...
+            )
+        end
+        preds[checkmask] .= fetch(l,r)
+        preds[ncheckmask] .= fetch(l,r)
     end
     return __apply!(m, mode, preds, y, leavesonly)
 end

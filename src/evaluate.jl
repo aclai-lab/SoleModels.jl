@@ -49,8 +49,8 @@ end
 using StatsBase
 using FillArrays
 
-function _metround(confidence, round_digits)
-    return isnothing(round_digits) ? confidence : round(confidence; digits = round_digits)
+function _metround(val, round_digits)
+    return isnothing(round_digits) ? val : round(val; digits = round_digits)
 end
 
 """
@@ -68,9 +68,6 @@ function readmetrics(m::LeafModel{L}; class_share_map = nothing, round_digits = 
     merge(if haskey(info(m), :supporting_labels)
         _gts = info(m).supporting_labels
         if L <: CLabel && isnothing(class_share_map)
-            # if length(_gts) == 0
-            #     @show _gts
-            # end
             class_share_map = Dict(map(((k,v),)->k => v./length(_gts), collect(StatsBase.countmap(_gts))))
         end
         base_metrics = (; ninstances = length(_gts))
@@ -86,12 +83,16 @@ function readmetrics(m::LeafModel{L}; class_share_map = nothing, round_digits = 
                 if L <: CLabel
                     confidence = accuracy(_gts, _preds)
                     cmet = (; confidence = _metround(confidence, round_digits),)
-                    if m isa ConstantModel && !isnothing(class_share_map) && haskey(class_share_map, class)
+                    if m isa ConstantModel && !isnothing(class_share_map)
                         class = outcome(m)
-                        lift = confidence/class_share_map[class]
+                        # if haskey(class_share_map, class)
+                        lift = haskey(class_share_map, class) ? confidence/class_share_map[class] : NaN
                         cmet = merge(cmet, (;
-                            lift       = _metround(lift, round_digits),
+                            lift = _metround(lift, round_digits),
                         ))
+                        # else
+                        #     @show class_share_map, class
+                        # end
                     end
                     cmet
                 elseif L <: RLabel
@@ -119,13 +120,14 @@ function readmetrics(m::Rule{L}; round_digits = nothing, class_share_map = nothi
         cons_metrics = readmetrics(consequent(m); round_digits = round_digits, class_share_map = class_share_map, kwargs...)
         coverage = cons_metrics.coverage * (length(_gts_leaf)/length(_gts))
         confidence = cons_metrics.confidence
-        lift = cons_metrics.lift
         metrics = (;
             ninstances = length(_gts),
             coverage = _metround(coverage, round_digits),
             confidence = confidence,
-            lift = lift,
         )
+        if haskey(cons_metrics, :lift)
+            metrics = merge(metrics, (; lift = cons_metrics.lift,))
+        end
         metrics
     elseif haskey(info(m), :supporting_labels)
         return (; ninstances = length(info(m).supporting_labels))
