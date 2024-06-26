@@ -68,9 +68,9 @@ function readmetrics(m::LeafModel{L}; class_share_map = nothing, round_digits = 
     merge(if haskey(info(m), :supporting_labels)
         _gts = info(m).supporting_labels
         if L <: CLabel && isnothing(class_share_map)
-            if length(_gts) == 0
-                @show _gts
-            end
+            # if length(_gts) == 0
+            #     @show _gts
+            # end
             class_share_map = Dict(map(((k,v),)->k => v./length(_gts), collect(StatsBase.countmap(_gts))))
         end
         base_metrics = (; ninstances = length(_gts))
@@ -86,11 +86,8 @@ function readmetrics(m::LeafModel{L}; class_share_map = nothing, round_digits = 
                 if L <: CLabel
                     confidence = accuracy(_gts, _preds)
                     cmet = (; confidence = _metround(confidence, round_digits),)
-                    if m isa ConstantModel && !isnothing(class_share_map)
+                    if m isa ConstantModel && !isnothing(class_share_map) && haskey(class_share_map, class)
                         class = outcome(m)
-                        if !haskey(class_share_map, class)
-                            @show class_share_map
-                        end
                         lift = confidence/class_share_map[class]
                         cmet = merge(cmet, (;
                             lift       = _metround(lift, round_digits),
