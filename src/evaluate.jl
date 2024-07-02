@@ -85,14 +85,18 @@ function readmetrics(m::LeafModel{L}; class_share_map = nothing, round_digits = 
                     cmet = (; confidence = _metround(confidence, round_digits),)
                     if m isa ConstantModel && !isnothing(class_share_map)
                         class = outcome(m)
-                        # if haskey(class_share_map, class)
-                        lift = haskey(class_share_map, class) ? confidence/class_share_map[class] : NaN
-                        cmet = merge(cmet, (;
-                            lift = _metround(lift, round_digits),
-                        ))
+                        if haskey(class_share_map, class)
+                            lift = confidence/class_share_map[class]
+                            cmet = merge(cmet, (;
+                                lift       = _metround(lift, round_digits),
+                            ))
+                        else # if length(class_share_map) == 0
+                            cmet = merge(cmet, (;
+                                lift       = NaN,
+                            ))
                         # else
-                        #     @show class_share_map, class
-                        # end
+                        #     @warn "Lift cannot be computed with class $class and class_share_map $class_share_map."
+                        end
                     end
                     cmet
                 elseif L <: RLabel
@@ -127,7 +131,6 @@ function readmetrics(m::Rule{L}; round_digits = nothing, class_share_map = nothi
             coverage = _metround(coverage, round_digits),
             confidence = confidence,
             additional_metrics...
-        )
         if haskey(cons_metrics, :lift)
             metrics = merge(metrics, (; lift = cons_metrics.lift,))
         end
