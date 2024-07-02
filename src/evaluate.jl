@@ -64,7 +64,7 @@ Performance metrics can be computed when the `info` structure of the model has t
 
 The `round_digits` keyword argument, if provided, is used to `round` accuracy/confidence metrics.
 """
-function readmetrics(m::LeafModel{L}; class_share_map = nothing, round_digits = nothing) where {L<:Label}
+function readmetrics(m::LeafModel{L}; class_share_map = nothing, round_digits = nothing, additional_metrics = (;),) where {L<:Label}
     merge(if haskey(info(m), :supporting_labels)
         _gts = info(m).supporting_labels
         if L <: CLabel && isnothing(class_share_map)
@@ -110,7 +110,9 @@ function readmetrics(m::LeafModel{L}; class_share_map = nothing, round_digits = 
     end, (; coverage = 1.0)) # Note: assuming all leaf models are closed (see `isopen`).
 end
 
-function readmetrics(m::Rule{L}; round_digits = nothing, class_share_map = nothing, kwargs...) where {L<:Label}
+function readmetrics(m::Rule{L}; round_digits = nothing, class_share_map = nothing, additional_metrics = (;), kwargs...) where {L<:Label}
+    additional_metrics = map(metname->(metname => additional_metrics[metname](m)), keys(additional_metrics)) |> NamedTuple
+
     if haskey(info(m), :supporting_labels) && haskey(info(consequent(m)), :supporting_labels)
         _gts = info(m).supporting_labels
         _gts_leaf = info(consequent(m)).supporting_labels
@@ -124,15 +126,16 @@ function readmetrics(m::Rule{L}; round_digits = nothing, class_share_map = nothi
             ninstances = length(_gts),
             coverage = _metround(coverage, round_digits),
             confidence = confidence,
+            additional_metrics...
         )
         if haskey(cons_metrics, :lift)
             metrics = merge(metrics, (; lift = cons_metrics.lift,))
         end
         metrics
     elseif haskey(info(m), :supporting_labels)
-        return (; ninstances = length(info(m).supporting_labels))
+        return (; ninstances = length(info(m).supporting_labels), additional_metrics...)
     elseif haskey(info(consequent(m)), :supporting_labels)
-        return (; ninstances = length(info(m).supporting_labels))
+        return (; ninstances = length(info(m).supporting_labels), additional_metrics...)
     else
         return (;)
     end

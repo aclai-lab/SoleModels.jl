@@ -81,6 +81,10 @@ end
 # end
 
 
+function apply!(m::AbstractModel, d::Any, y::AbstractVector; kwargs...)
+    apply!(m, SoleData.scalarlogiset(d), y; kwargs...)
+end
+
 function apply!(m::ConstantModel, d::AbstractInterpretationSet, y::AbstractVector; mode = :replace, leavesonly = false, kwargs...)
     # @assert length(y) == ninstances(d) "$(length(y)) == $(ninstances(d))"
     if mode == :replace
@@ -158,8 +162,12 @@ function apply!(m::Branch, d::AbstractInterpretationSet, y::AbstractVector;
                 kwargs...
             )
         end
-        preds[checkmask] .= fetch(l,r)
-        preds[ncheckmask] .= fetch(l,r)
+        if any(checkmask)
+            preds[checkmask] .= fetch(l)
+        end
+        if any(ncheckmask)
+            preds[ncheckmask] .= fetch(r)
+        end
     end
     return __apply!(m, mode, preds, y, leavesonly)
 end
@@ -170,14 +178,22 @@ function apply!(m::DecisionTree, d::AbstractInterpretationSet, y::AbstractVector
     leavesonly = false,
     kwargs...)
     @assert length(y) == ninstances(d) "$(length(y)) == $(ninstances(d))"
-    # _d = SupportedLogiset(d) TODO
+    if haskey(info(m), :apply_preprocess)
+        apply_preprocess_f = info(m, :apply_preprocess)
+        y = apply_preprocess_f.(y)
+    end
+    # _d = SupportedLogiset(d) TODO?
     preds = apply!(root(m), d, y;
         mode = mode,
         leavesonly = leavesonly,
-        kwargs...)
+        kwargs...
+    )
+    if haskey(info(m), :apply_postprocess)
+        apply_postprocess_f = info(m, :apply_postprocess)
+        preds = apply_postprocess_f.(preds)
+    end
     return __apply!(m, mode, preds, y, leavesonly)
 end
-
 
 
 

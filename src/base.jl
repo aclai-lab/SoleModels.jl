@@ -929,7 +929,12 @@ function apply(
     id::AbstractInterpretation;
     kwargs...
 )
-    apply(root(m), id; kwargs...)
+    preds = apply(root(m), id; kwargs...)
+    if haskey(info(m), :apply_postprocess)
+        apply_postprocess_f = info(m, :apply_postprocess)
+        preds = apply_postprocess_f.(preds)
+    end
+    preds
 end
 
 function apply(
@@ -937,7 +942,12 @@ function apply(
     d::AbstractInterpretationSet;
     kwargs...,
 )
-    apply(root(m), d; kwargs...)
+    preds = apply(root(m), d; kwargs...)
+    if haskey(info(m), :apply_postprocess)
+        apply_postprocess_f = info(m, :apply_postprocess)
+        preds = apply_postprocess_f.(preds)
+    end
+    preds
 end
 
 function nnodes(t::DecisionTree)
