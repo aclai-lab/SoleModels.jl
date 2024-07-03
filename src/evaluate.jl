@@ -131,6 +131,7 @@ function readmetrics(m::Rule{L}; round_digits = nothing, class_share_map = nothi
             coverage = _metround(coverage, round_digits),
             confidence = confidence,
             additional_metrics...
+        )
         if haskey(cons_metrics, :lift)
             metrics = merge(metrics, (; lift = cons_metrics.lift,))
         end

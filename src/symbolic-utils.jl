@@ -473,9 +473,16 @@ function _listrules(
     # normalize::Bool = false,
     # normalize_kwargs::NamedTuple = (; allow_atom_flipping = true, ),
     # force_syntaxtree::Bool = false,
+    normalize::Bool = false,
+    normalize_kwargs::NamedTuple = (; allow_atom_flipping = true, ),
+    force_syntaxtree::Bool = false,
     kwargs...
 )
-    rules = reduce(vcat, listimmediaterules(m; kwargs...))
+    rules = reduce(vcat, listimmediaterules(m;
+        normalize = normalize,
+        normalize_kwargs = normalize_kwargs,
+        force_syntaxtree = force_syntaxtree,
+    ))
     return rules
 end
 
