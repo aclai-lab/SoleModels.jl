@@ -820,7 +820,7 @@ function apply(
     check_kwargs::NamedTuple = (;),
 ) where {O}
     nsamp = ninstances(d)
-    pred = Vector{O}(undef, nsamp)
+    preds = Vector{O}(undef, nsamp)
     uncovered_idxs = 1:nsamp
 
     for rule in rulebase(m)
@@ -834,13 +834,13 @@ function apply(
         idxs_sat = uncovered_idxs[idxs_sat]
         uncovered_idxs = setdiff(uncovered_idxs, idxs_sat)
 
-        map((i)->(pred[i] = outcome(consequent(rule))), idxs_sat)
+        foreach((i)->(preds[i] = outcome(consequent(rule))), idxs_sat)
     end
 
     length(uncovered_idxs) != 0 &&
-        map((i)->(pred[i] = outcome(defaultconsequent(m))), uncovered_idxs)
+        foreach((i)->(preds[i] = outcome(defaultconsequent(m))), uncovered_idxs)
 
-    return pred
+    return preds
 end
 
 
