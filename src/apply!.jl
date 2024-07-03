@@ -196,6 +196,49 @@ function apply!(m::DecisionTree, d::AbstractInterpretationSet, y::AbstractVector
 end
 
 
+function apply!(m::DecisionList, d::AbstractInterpretationSet, y::AbstractVector;
+    mode = :replace,
+    leavesonly = false,
+    show_progress = length(rulebase(m)) > 15,
+    kwargs...)
+    # @assert length(y) == ninstances(d) "$(length(y)) == $(ninstances(d))"
+    if mode == :replace
+        recursivelyemptysupports!(m)
+        mode = :append
+    end
+    nsamp = ninstances(d)
+    preds = Vector{outputtype(m)}(undef,nsamp)
+    uncovered_idxs = 1:nsamp
+
+    if show_progress
+        p = Progress(length(rulebase(m)); dt = 1, desc = "Applying list...")
+    end
+
+    for rule in rulebase(m)
+        length(uncovered_idxs) == 0 && break
+
+        uncovered_d = slicedataset(d, uncovered_idxs; return_view = true)
+        
+        cur_preds = apply!(rule, uncovered_d, y[uncovered_idxs], mode = mode, leavesonly = leavesonly, kwargs...)
+
+        idxs_sat = findall(!isnothing, cur_preds)
+        idxs_sat = uncovered_idxs[idxs_sat]
+
+        uncovered_idxs = setdiff(uncovered_idxs, idxs_sat)
+
+        preds[idxs_sat] .= cur_preds[idxs_sat]
+
+        !show_progress || next!(p)
+    end
+
+    if length(uncovered_idxs) != 0
+        apply!(defaultconsequent(m), uncovered_d, y[uncovered_idxs], mode = mode, leavesonly = leavesonly, kwargs...)
+        next!(p)
+    end
+
+    return preds
+end
+
 
 #TODO write in docstring that possible values for compute_metrics are: :append, true, false
 function _apply!(
