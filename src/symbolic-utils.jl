@@ -178,6 +178,7 @@ end
 function combine_antecedents(antformula, f, use_leftmostlinearform, force_syntaxtree)
     if use_leftmostlinearform
         subantformulas = (f isa LeftmostLinearForm ? children(f) : [f])
+        force_syntaxtree ? tree(antformula) : antformula
         lf = LeftmostConjunctiveForm([antformula, subantformulas...])
         force_syntaxtree ? tree(lf) : lf
     else
@@ -190,6 +191,17 @@ function combine_antecedents(antformula, f, use_leftmostlinearform, force_syntax
         end
     end
 end
+
+function _scalar_simplification(φ, scalar_simplification)
+    if scalar_simplification == false
+        φ
+    elseif scalar_simplification == true
+        SoleData.scalar_simplification(φ; silent = false)
+    else
+        SoleData.scalar_simplification(φ; silent = false, scalar_simplification...)
+    end
+end
+
 ############################################################################################
 ############################################################################################
 ############################################################################################
@@ -243,7 +255,7 @@ function listimmediaterules(
     # use_leftmostlinearform::Bool = false,
     normalize::Bool = false,
     normalize_kwargs::NamedTuple = (; allow_atom_flipping = true, rotate_commutatives = false),
-    scalar_simplification::Bool = normalize,
+    scalar_simplification::Union{Bool,NamedTuple} = normalize ? (; allow_scalar_range_conditions = true) : false,
     force_syntaxtree::Bool = false,
 ) where {O}
     assumed_formulas = Formula[]
@@ -259,7 +271,7 @@ function listimmediaterules(
         # normalize && (φ = SoleLogics.normalize(φ; normalize_kwargs...))
         # @show typeof(φ)
         # @show φ
-        scalar_simplification && (φ = SoleData.scalar_simplification(φ; silent = false))
+        φ = _scalar_simplification(φ, scalar_simplification)
         newrule = Rule(φ, consequent(rule), info(rule))
         push!(normalized_rules, newrule)
         ant = antecedent(rule)
@@ -269,14 +281,14 @@ function listimmediaterules(
         # @show typeof(nant)
         normalize && (nant = SoleLogics.normalize(nant; normalize_kwargs...))
         # @show typeof(nant)
-        scalar_simplification && (nant = SoleData.scalar_simplification(nant; silent = false))
+        nant = _scalar_simplification(nant, scalar_simplification)
         # @show typeof(nant)
         assumed_formulas = push!(assumed_formulas, nant)
     end
     # @show eltype(assumed_formulas)
     default_φ = join_antecedents(assumed_formulas)
     # @show default_φ
-    scalar_simplification && (default_φ = SoleData.scalar_simplification(default_φ; silent = false))
+    default_φ = _scalar_simplification(default_φ, scalar_simplification)
     # normalize && (default_φ = SoleLogics.normalize(default_φ; normalize_kwargs...))
     push!(normalized_rules, Rule(default_φ, defaultconsequent(m), info(defaultconsequent(m))))
     normalized_rules
@@ -348,7 +360,7 @@ function listrules(m::AbstractModel;
     use_leftmostlinearform::Bool = false,
     normalize::Bool = false,
     normalize_kwargs::NamedTuple = (; allow_atom_flipping = true, rotate_commutatives = false, ),
-    scalar_simplification::Bool = normalize,
+    scalar_simplification::Union{Bool,NamedTuple} = normalize ? (; allow_scalar_range_conditions = true) : false,
     force_syntaxtree::Bool = false,
     min_coverage::Union{Nothing,Number} = nothing,
     min_ncovered::Union{Nothing,Number} = nothing,
@@ -422,7 +434,7 @@ function _listrules(
     use_leftmostlinearform::Bool = false,
     normalize::Bool = false,
     normalize_kwargs::NamedTuple = (; allow_atom_flipping = true, rotate_commutatives = false, ),
-    scalar_simplification::Bool = normalize,
+    scalar_simplification::Union{Bool,NamedTuple} = normalize ? (; allow_scalar_range_conditions = true) : false,
     force_syntaxtree::Bool = false,
     min_confidence::Union{Nothing,Number} = nothing,
     min_coverage::Union{Nothing,Number} = nothing,
@@ -488,7 +500,7 @@ function _listrules(
             if subrule isa LeafModel
                 ant = antformula
                 normalize && (ant = SoleLogics.normalize(ant; normalize_kwargs...))
-                scalar_simplification && (ant = SoleData.scalar_simplification(ant; silent = false))
+                ant = _scalar_simplification(ant, scalar_simplification)
                 subi = (;)
                 # if use_shortforms
                 #     subi = merge((;), (;
@@ -506,7 +518,7 @@ function _listrules(
                     end
                 end
                 normalize && (ant = SoleLogics.normalize(ant; normalize_kwargs...))
-                scalar_simplification && (ant = SoleData.scalar_simplification(ant; silent = false))
+                ant = _scalar_simplification(ant, scalar_simplification)
                 Rule(ant, consequent(subrule), merge(info(subrule), _info))
             else
                 error("Unexpected rule type: $(typeof(subrule)).")
@@ -525,7 +537,7 @@ function _listrules(
     # force_syntaxtree::Bool = false,
     normalize::Bool = false,
     normalize_kwargs::NamedTuple = (; allow_atom_flipping = true, ),
-    scalar_simplification::Bool = normalize,
+    scalar_simplification::Union{Bool,NamedTuple} = normalize ? (; allow_scalar_range_conditions = true) : false,
     force_syntaxtree::Bool = false,
     kwargs...
 )
@@ -593,7 +605,7 @@ See also [`listrules`](@ref),
 """
 function joinrules(
     rules::AbstractVector{<:Rule},
-    silent = false
+    silent = falsesilent...,
 )
     allconsequents = unique(consequent.(rules))
     # @show info.(rules)

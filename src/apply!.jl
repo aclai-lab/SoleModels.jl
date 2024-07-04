@@ -41,9 +41,9 @@ function emptysupports!(m)
     nothing
 end
 
-function recursivelyemptysupports!(m)
-    emptysupports!(m)
-    recursivelyemptysupports!.(immediatesubmodels(m))
+function recursivelyemptysupports!(m, leavesonly)
+    (!leavesonly || (m isa LeafModel)) && emptysupports!(m)
+    recursivelyemptysupports!.(immediatesubmodels(m), leavesonly)
     nothing
 end
 
@@ -88,16 +88,18 @@ end
 
 
 function apply!(m::AbstractModel, d::Any, y::AbstractVector; kwargs...)
-    apply!(m, SoleData.scalarlogiset(d), y; kwargs...)
+    apply!(m, SoleData.scalarlogiset(d; allow_propositional = true), y; kwargs...)
 end
 
 function apply!(m::ConstantModel, d::AbstractInterpretationSet, y::AbstractVector; mode = :replace, leavesonly = false, kwargs...)
     # @assert length(y) == ninstances(d) "$(length(y)) == $(ninstances(d))"
     if mode == :replace
-        recursivelyemptysupports!(m)
+        recursivelyemptysupports!(m, leavesonly)
         mode = :append
     end
     preds = fill(outcome(m), ninstances(d))
+    # @show m.info
+    # @show y
     return __apply!(m, mode, preds, y, leavesonly)
 end
 
@@ -110,13 +112,14 @@ function apply!(m::Rule, d::AbstractInterpretationSet, y::AbstractVector;
     kwargs...)
     # @assert length(y) == ninstances(d) "$(length(y)) == $(ninstances(d))"
     if mode == :replace
-        recursivelyemptysupports!(m)
+        recursivelyemptysupports!(m, leavesonly)
         mode = :append
     end
     checkmask = checkantecedent(m, d, check_args...; check_kwargs...)
+    # @show checkmask
     preds = Vector{outputtype(m)}(fill(nothing, ninstances(d)))
     if any(checkmask)
-        preds[checkmask] .= apply!(consequent(m), slicedataset(d, checkmask; return_view = true), y;
+        preds[checkmask] .= apply!(consequent(m), slicedataset(d, checkmask; return_view = true), y[checkmask];
             check_args = check_args,
             check_kwargs = check_kwargs,
             mode = mode,
@@ -137,7 +140,7 @@ function apply!(m::Branch, d::AbstractInterpretationSet, y::AbstractVector;
     kwargs...)
     # @assert length(y) == ninstances(d) "$(length(y)) == $(ninstances(d))"
     if mode == :replace
-        recursivelyemptysupports!(m)
+        recursivelyemptysupports!(m, leavesonly)
         mode = :append
     end
     checkmask = checkantecedent(m, d, check_args...; check_kwargs...)
@@ -205,11 +208,11 @@ end
 function apply!(m::DecisionList{O}, d::AbstractInterpretationSet, y::AbstractVector;
     mode = :replace,
     leavesonly = false,
-    show_progress = length(rulebase(m)) > 15,
+    show_progress = false, # length(rulebase(m)) > 15,
     kwargs...) where {O}
     # @assert length(y) == ninstances(d) "$(length(y)) == $(ninstances(d))"
     if mode == :replace
-        recursivelyemptysupports!(m)
+        recursivelyemptysupports!(m, leavesonly)
         mode = :append
     end
     nsamp = ninstances(d)
@@ -225,8 +228,8 @@ function apply!(m::DecisionList{O}, d::AbstractInterpretationSet, y::AbstractVec
 
         uncovered_d = slicedataset(d, uncovered_idxs; return_view = true)
         
+        # @show length(uncovered_idxs)
         cur_preds = apply!(subm, uncovered_d, y[uncovered_idxs], mode = mode, leavesonly = leavesonly, kwargs...)
-        # @show cur_preds
         idxs_sat = findall(!isnothing, cur_preds)
         # @show cur_preds[idxs_sat]
         preds[uncovered_idxs[idxs_sat]] .= cur_preds[idxs_sat]
