@@ -70,7 +70,7 @@ function readmetrics(m::LeafModel{L}; class_share_map = nothing, round_digits = 
         if L <: CLabel && isnothing(class_share_map)
             class_share_map = Dict(map(((k,v),)->k => v./length(_gts), collect(StatsBase.countmap(_gts))))
         end
-        base_metrics = (; ninstances = length(_gts))
+        base_metrics = (; ninstances = length(_gts), ncovered = length(_gts), )
         if (haskey(info(m), :supporting_predictions) || m isa ConstantModel)
             _preds = if haskey(info(m), :supporting_predictions)
                 info(m).supporting_predictions
@@ -114,7 +114,7 @@ function readmetrics(m::LeafModel{L}; class_share_map = nothing, round_digits = 
     end, (; coverage = 1.0)) # Note: assuming all leaf models are closed (see `isopen`).
 end
 
-function readmetrics(m::Rule{L}; round_digits = nothing, class_share_map = nothing, additional_metrics = (;), kwargs...) where {L<:Label}
+function readmetrics(m::Rule{L}; round_digits = nothing, class_share_map = nothing, additional_metrics = (; natoms = r->natoms(antecedent(r))), kwargs...) where {L<:Label}
     additional_metrics = map(metname->(metname => additional_metrics[metname](m)), keys(additional_metrics)) |> NamedTuple
 
     if haskey(info(m), :supporting_labels) && haskey(info(consequent(m)), :supporting_labels)
@@ -128,6 +128,7 @@ function readmetrics(m::Rule{L}; round_digits = nothing, class_share_map = nothi
         confidence = cons_metrics.confidence
         metrics = (;
             ninstances = length(_gts),
+            ncovered = length(_gts_leaf),
             coverage = _metround(coverage, round_digits),
             confidence = confidence,
             additional_metrics...

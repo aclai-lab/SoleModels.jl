@@ -91,10 +91,10 @@ rmodel3 = @test_nowarn Rule{Number}(phi,1)
 # @test_nowarn [rmodel3, rmodel4]
 
 # rmodel3 = @test_nowarn Rule{Number,ConstantModel{Number}}(phi,1)
-@test rmodel3 isa Rule{Number,<:Any}
+@test rmodel3 isa Rule{Number}
 # @test Rule{Number,ConstantModel{Int}}(phi, 1) isa Rule{Number, Union{ConstantModel{Number}}}
 # @test Rule{Int,ConstantModel{Number}}(phi, 1) isa Rule{Int, Union{ConstantModel{Int}}}
-# @test_throws MethodError Rule{Int,<:Any,ConstantModel{Number}}(phi, 1.0)
+# @test_throws MethodError Rule{Int,ConstantModel{Number}}(phi, 1.0)
 
 # @test rmodel3 == Rule{Number,Union{Rule{Int},ConstantModel{Number}}}(phi,1)
 # @test rmodel3 != Rule{Number,Union{Rule{Number},ConstantModel{Int}}}(phi,1)

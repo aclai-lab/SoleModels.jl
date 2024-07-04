@@ -36,7 +36,7 @@ using ProgressMeter
 # end
 
 function emptysupports!(m)
-    empty!(m.info.supporting_predictions)
+    haskey(m.info, :supporting_predictions) && empty!(m.info.supporting_predictions)
     empty!(m.info.supporting_labels)
     nothing
 end
@@ -49,20 +49,26 @@ end
 
 function __apply!(m, mode, preds, y, leavesonly)
     if !leavesonly || m isa LeafModel
+        # idxs = filter(i->!isnothing(preds[i]), 1:length(preds))
+        # _preds = preds[idxs]
+        # _y = y[idxs]
         if mode == :replace
-            empty!(m.info.supporting_predictions)
-            append!(m.info.supporting_predictions, preds)
+            if haskey(m.info, :supporting_predictions)
+                empty!(m.info.supporting_predictions)
+                append!(m.info.supporting_predictions, preds)
+            end
             empty!(m.info.supporting_labels)
             append!(m.info.supporting_labels, y)
-            preds
         elseif mode == :append
-            append!(m.info.supporting_predictions, preds)
+            if haskey(m.info, :supporting_predictions)
+                append!(m.info.supporting_predictions, preds)
+            end
             append!(m.info.supporting_labels, y)
-            preds
         else
             error("Unexpected apply mode: $mode.")
         end
     end
+    return preds
 end
 
 # function __apply!(m, mode, preds, y)
@@ -108,7 +114,7 @@ function apply!(m::Rule, d::AbstractInterpretationSet, y::AbstractVector;
         mode = :append
     end
     checkmask = checkantecedent(m, d, check_args...; check_kwargs...)
-    preds = Vector{outcometype(m)}(fill(nothing, length(d)))
+    preds = Vector{outputtype(m)}(fill(nothing, ninstances(d)))
     if any(checkmask)
         preds[checkmask] .= apply!(consequent(m), slicedataset(d, checkmask; return_view = true), y;
             check_args = check_args,
@@ -196,11 +202,11 @@ function apply!(m::DecisionTree, d::AbstractInterpretationSet, y::AbstractVector
 end
 
 
-function apply!(m::DecisionList, d::AbstractInterpretationSet, y::AbstractVector;
+function apply!(m::DecisionList{O}, d::AbstractInterpretationSet, y::AbstractVector;
     mode = :replace,
     leavesonly = false,
     show_progress = length(rulebase(m)) > 15,
-    kwargs...)
+    kwargs...) where {O}
     # @assert length(y) == ninstances(d) "$(length(y)) == $(ninstances(d))"
     if mode == :replace
         recursivelyemptysupports!(m)
@@ -214,26 +220,19 @@ function apply!(m::DecisionList, d::AbstractInterpretationSet, y::AbstractVector
         p = Progress(length(rulebase(m)); dt = 1, desc = "Applying list...")
     end
 
-    for rule in rulebase(m)
+    for subm in [rulebase(m)..., defaultconsequent(m)]
         length(uncovered_idxs) == 0 && break
 
         uncovered_d = slicedataset(d, uncovered_idxs; return_view = true)
         
-        cur_preds = apply!(rule, uncovered_d, y[uncovered_idxs], mode = mode, leavesonly = leavesonly, kwargs...)
-
+        cur_preds = apply!(subm, uncovered_d, y[uncovered_idxs], mode = mode, leavesonly = leavesonly, kwargs...)
+        # @show cur_preds
         idxs_sat = findall(!isnothing, cur_preds)
-        idxs_sat = uncovered_idxs[idxs_sat]
-
-        uncovered_idxs = setdiff(uncovered_idxs, idxs_sat)
-
-        preds[idxs_sat] .= cur_preds[idxs_sat]
+        # @show cur_preds[idxs_sat]
+        preds[uncovered_idxs[idxs_sat]] .= cur_preds[idxs_sat]
+        uncovered_idxs = setdiff(uncovered_idxs, uncovered_idxs[idxs_sat])
 
         !show_progress || next!(p)
-    end
-
-    if length(uncovered_idxs) != 0
-        apply!(defaultconsequent(m), uncovered_d, y[uncovered_idxs], mode = mode, leavesonly = leavesonly, kwargs...)
-        next!(p)
     end
 
     return preds

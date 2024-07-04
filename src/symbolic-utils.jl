@@ -155,16 +155,41 @@ children(m::AbstractModel) = submodels(m)
 # advanceformula(f::Formula, assumed_formulas::Union{Nothing,Formula}) =
 #     isnothing(assumed_formulas) ? f : ∧(assumed_formulas, f)
 
-function join_antecedents(assumed_formulas::Vector{<:SoleLogics.AbstractSyntaxStructure})
-    return length(assumed_formulas) == 0 ? ⊤ : LeftmostConjunctiveForm(assumed_formulas)
-end
-
 function join_antecedents(assumed_formulas::Vector{<:SoleLogics.Formula})
-    return length(assumed_formulas) == 0 ? ⊤ : (
-        length(assumed_formulas) == 1 ? first(assumed_formulas) : ∧(assumed_formulas...)
-    )
+    if length(assumed_formulas) == 0
+        ⊤
+    else
+        if all(x->x isa SoleLogics.AbstractSyntaxStructure, assumed_formulas)
+            new_assumed_formulas = []
+            for φ in assumed_formulas
+                if φ isa LeftmostConjunctiveForm
+                    append!(new_assumed_formulas, children(φ))
+                else
+                    push!(new_assumed_formulas, φ)
+                end
+            end
+            LeftmostConjunctiveForm(new_assumed_formulas)
+        else
+            (length(assumed_formulas) == 1 ? first(assumed_formulas) : ∧(assumed_formulas...))
+        end
+    end
 end
-
+# TODO unique function for join_antecedents and combine_antecedents
+function combine_antecedents(antformula, f, use_leftmostlinearform, force_syntaxtree)
+    if use_leftmostlinearform
+        subantformulas = (f isa LeftmostLinearForm ? children(f) : [f])
+        lf = LeftmostConjunctiveForm([antformula, subantformulas...])
+        force_syntaxtree ? tree(lf) : lf
+    else
+        if f == ⊤
+            antformula
+        elseif antformula == ⊤
+            f
+        else
+            antformula ∧ f
+        end
+    end
+end
 ############################################################################################
 ############################################################################################
 ############################################################################################
@@ -218,23 +243,42 @@ function listimmediaterules(
     # use_leftmostlinearform::Bool = false,
     normalize::Bool = false,
     normalize_kwargs::NamedTuple = (; allow_atom_flipping = true, rotate_commutatives = false),
+    scalar_simplification::Bool = normalize,
     force_syntaxtree::Bool = false,
 ) where {O}
     assumed_formulas = Formula[]
     normalized_rules = Rule{<:O}[]
     for rule in rulebase(m)
         # @show assumed_formulas
-        newrule = Rule(join_antecedents([assumed_formulas..., antecedent(rule)]), consequent(rule), info(rule))
+        # @show consequent(rule).info
+        # @show eltype([assumed_formulas..., antecedent(rule)])
+        # @show assumed_formulas
+        # @show antecedent(rule)
+        φ = join_antecedents([assumed_formulas..., antecedent(rule)])
+        # @show typeof(φ)
+        # normalize && (φ = SoleLogics.normalize(φ; normalize_kwargs...))
+        # @show typeof(φ)
+        # @show φ
+        scalar_simplification && (φ = SoleData.scalar_simplification(φ; silent = false))
+        newrule = Rule(φ, consequent(rule), info(rule))
         push!(normalized_rules, newrule)
         ant = antecedent(rule)
         force_syntaxtree && (ant = tree(ant))
         # @show ant
         nant = SoleLogics.NEGATION(ant)
+        # @show typeof(nant)
         normalize && (nant = SoleLogics.normalize(nant; normalize_kwargs...))
+        # @show typeof(nant)
+        scalar_simplification && (nant = SoleData.scalar_simplification(nant; silent = false))
+        # @show typeof(nant)
         assumed_formulas = push!(assumed_formulas, nant)
     end
-    default_antecedent = join_antecedents(assumed_formulas)
-    push!(normalized_rules, Rule{O}(default_antecedent, defaultconsequent(m)))
+    # @show eltype(assumed_formulas)
+    default_φ = join_antecedents(assumed_formulas)
+    # @show default_φ
+    scalar_simplification && (default_φ = SoleData.scalar_simplification(default_φ; silent = false))
+    # normalize && (default_φ = SoleLogics.normalize(default_φ; normalize_kwargs...))
+    push!(normalized_rules, Rule(default_φ, defaultconsequent(m), info(defaultconsequent(m))))
     normalized_rules
 end
 
@@ -303,13 +347,15 @@ function listrules(m::AbstractModel;
     use_shortforms::Bool = true,
     use_leftmostlinearform::Bool = false,
     normalize::Bool = false,
-    normalize_kwargs::NamedTuple = (; allow_atom_flipping = true, ),
+    normalize_kwargs::NamedTuple = (; allow_atom_flipping = true, rotate_commutatives = false, ),
+    scalar_simplification::Bool = normalize,
     force_syntaxtree::Bool = false,
     min_coverage::Union{Nothing,Number} = nothing,
+    min_ncovered::Union{Nothing,Number} = nothing,
     min_ninstances::Union{Nothing,Number} = nothing,
     min_confidence::Union{Nothing,Number} = nothing,
     min_lift::Union{Nothing,Number} = nothing,
-    custom_thresholding_callback::Union{Nothing,Base.Callable} = nothing,
+    metric_filter_callback::Union{Nothing,Base.Callable} = nothing,
     kwargs...,
 )
     subkwargs = (;
@@ -317,32 +363,35 @@ function listrules(m::AbstractModel;
         use_leftmostlinearform = use_leftmostlinearform,
         normalize = normalize,
         normalize_kwargs = normalize_kwargs,
+        scalar_simplification = scalar_simplification,
         force_syntaxtree = force_syntaxtree,
         metrics_kwargs = metrics_kwargs,
         min_ninstances = min_ninstances,
         min_coverage = min_coverage,
+        min_ncovered = min_ncovered,
         min_confidence = min_confidence,
         min_lift = min_lift,
-        custom_thresholding_callback = custom_thresholding_callback,
+        metric_filter_callback = metric_filter_callback,
         kwargs...)
 
     @assert compute_metrics in [false] "TODO implement"
 
     # if isnothing(compute_metrics)
-    #     compute_metrics = (!isnothing(min_confidence) || !isnothing(min_coverage) || !isnothing(min_ninstances) || !isnothing(min_lift))
+    #     compute_metrics = (!isnothing(min_confidence) || !isnothing(min_coverage) || !isnothing(min_ncovered) || !isnothing(min_ninstances) || !isnothing(min_lift))
     # end
 
     rules = _listrules(m; subkwargs...)
 
-    if compute_metrics || !isnothing(min_confidence) || !isnothing(min_coverage) || !isnothing(min_ninstances) || !isnothing(min_lift)
+    if compute_metrics || !isnothing(min_confidence) || !isnothing(min_coverage) || !isnothing(min_ncovered) || !isnothing(min_ninstances) || !isnothing(min_lift)
         rules = filter(r->begin
             ms = readmetrics(r; metrics_kwargs...)
             compute_metrics && (info!(r, ms))
             return (isnothing(min_ninstances) || (ms.ninstances >= min_ninstances)) &&
             (isnothing(min_coverage) || (ms.coverage >= min_coverage)) &&
+            (isnothing(min_ncovered) || (ms.ncovered >= min_ncovered)) &&
             (isnothing(min_confidence) || (ms.confidence >= min_confidence)) &&
             (isnothing(min_lift) || (ms.lift >= min_lift)) &&
-            (isnothing(custom_thresholding_callback) || custom_thresholding_callback(ms))
+            (isnothing(metric_filter_callback) || metric_filter_callback(ms))
         end, rules)
     end
 
@@ -353,14 +402,18 @@ function _listrules(m::AbstractModel; kwargs...)
     error("Please, provide method _listrules(::$(typeof(m))) ($(typeof(m)) is a symbolic model).")
 end
 
-_listrules(m::LeafModel; kwargs...) = [m]
+_listrules(m::LeafModel{O}; kwargs...) where {O} = [Rule{O}(⊤, m, info(m))]
 
 function _listrules(
     m::Rule{O};
+    use_leftmostlinearform::Bool = false,
     force_syntaxtree::Bool = false,
+    kwargs...
 ) where {O}
-    ant = force_syntaxtree ? tree(antecedent(m)) : antecedent(m)
-    [(force_syntaxtree ? Rule{O}(ant, consequent(m), info(m)) : m)]
+    [begin
+        φ = combine_antecedents(antecedent(m), antecedent(subrule), use_leftmostlinearform, force_syntaxtree)
+        Rule{O}(φ, consequent(subrule), info(subrule))
+    end for subrule in _listrules(consequent(m); force_syntaxtree = force_syntaxtree, kwargs...)]
 end
 
 function _listrules(
@@ -368,7 +421,8 @@ function _listrules(
     use_shortforms::Bool = true,
     use_leftmostlinearform::Bool = false,
     normalize::Bool = false,
-    normalize_kwargs::NamedTuple = (; allow_atom_flipping = true, ),
+    normalize_kwargs::NamedTuple = (; allow_atom_flipping = true, rotate_commutatives = false, ),
+    scalar_simplification::Bool = normalize,
     force_syntaxtree::Bool = false,
     min_confidence::Union{Nothing,Number} = nothing,
     min_coverage::Union{Nothing,Number} = nothing,
@@ -381,6 +435,7 @@ function _listrules(
         use_leftmostlinearform = use_leftmostlinearform,
         normalize = normalize,
         normalize_kwargs = normalize_kwargs,
+        scalar_simplification = scalar_simplification,
         force_syntaxtree = force_syntaxtree,
         min_confidence = min_confidence,
         min_coverage = min_coverage,
@@ -388,9 +443,9 @@ function _listrules(
         kwargs...)
 
     _subrules = []
-    if isnothing(min_ninstances) || (haskey(info(m), :supporting_predictions) && length(info(m, :supporting_predictions)) >= min_ninstances)
-    # if (haskey(info(m), :supporting_predictions) && length(info(m, :supporting_predictions)) >= min_ninstances) &&
-    #     (haskey(info(m), :supporting_predictions) && length(info(m, :supporting_predictions))/ntotinstances >= min_coverage)
+    if isnothing(min_ninstances) || (haskey(info(m), :supporting_labels) && length(info(m, :supporting_labels)) >= min_ninstances)
+    # if (haskey(info(m), :supporting_labels) && length(info(m, :supporting_labels)) >= min_ninstances) &&
+    #     (haskey(info(m), :supporting_labels) && length(info(m, :supporting_labels))/ntotinstances >= min_coverage)
         append!(_subrules, [(true,  r) for r in _listrules(posconsequent(m); subkwargs...)])
         append!(_subrules, [(false, r) for r in _listrules(negconsequent(m); subkwargs...)])
     end
@@ -433,6 +488,7 @@ function _listrules(
             if subrule isa LeafModel
                 ant = antformula
                 normalize && (ant = SoleLogics.normalize(ant; normalize_kwargs...))
+                scalar_simplification && (ant = SoleData.scalar_simplification(ant; silent = false))
                 subi = (;)
                 # if use_shortforms
                 #     subi = merge((;), (;
@@ -446,17 +502,11 @@ function _listrules(
                         antformula
                     else
                         # Combine antecedents
-                        f = antecedent(subrule)
-                        if use_leftmostlinearform
-                            subantformulas = (f isa LeftmostLinearForm ? children(f) : [f])
-                            lf = LeftmostConjunctiveForm([antformula, subantformulas...])
-                            force_syntaxtree ? tree(lf) : lf
-                        else
-                            antformula ∧ f
-                        end
+                        combine_antecedents(antformula, antecedent(subrule), use_leftmostlinearform, force_syntaxtree)
                     end
                 end
                 normalize && (ant = SoleLogics.normalize(ant; normalize_kwargs...))
+                scalar_simplification && (ant = SoleData.scalar_simplification(ant; silent = false))
                 Rule(ant, consequent(subrule), merge(info(subrule), _info))
             else
                 error("Unexpected rule type: $(typeof(subrule)).")
@@ -475,14 +525,16 @@ function _listrules(
     # force_syntaxtree::Bool = false,
     normalize::Bool = false,
     normalize_kwargs::NamedTuple = (; allow_atom_flipping = true, ),
+    scalar_simplification::Bool = normalize,
     force_syntaxtree::Bool = false,
     kwargs...
 )
-    rules = reduce(vcat, listimmediaterules(m;
+    rules = listimmediaterules(m;
         normalize = normalize,
+        scalar_simplification = scalar_simplification,
         normalize_kwargs = normalize_kwargs,
         force_syntaxtree = force_syntaxtree,
-    ))
+    )
     return rules
 end
 
