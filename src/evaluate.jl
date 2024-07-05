@@ -146,6 +146,29 @@ function readmetrics(m::Rule{L}; round_digits = nothing, class_share_map = nothi
     end
 end
 
+using PrettyTables
+
+# TODO document
+function metricstable(ms::Vector{<:Rule}; metrics_kwargs = (;), syntaxstring_kwargs = (;), pretty_table_kwargs...)
+    mets = readmetrics.(ms; metrics_kwargs...)
+    colnames = unique(Iterators.flatten(keys.(mets)))
+
+    data = hcat(syntaxstring.(antecedent.(ms); syntaxstring_kwargs...), strip.(displaymodel.(consequent.(ms); show_symbols = false)), [[get(met, colname, "") for met in mets] for colname in colnames]...)
+    header = ["Antecedent", "Consequent", colnames...]
+    pretty_table(
+        data;
+        # formatters    = ft_printf("%5.2f", 2:4),
+        header        = header,
+        header_crayon = crayon"yellow bold",
+        # highlighters  = (hl_10, hl_p, hl_v),
+        # tf            = tf_unicode_rounded
+        pretty_table_kwargs...
+    )
+end
+
+metricstable(m::AbstractModel; kwargs...) = metricstable([m]; kwargs...)
+
+
 
 """
     evaluaterule(

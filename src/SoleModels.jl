@@ -72,7 +72,7 @@ export AssociationRule, ClassificationRule, RegressionRule
 
 include("machine-learning.jl")
 
-export rulemetrics, readmetrics
+export rulemetrics, readmetrics, metricstable
 
 include("evaluate.jl")
 

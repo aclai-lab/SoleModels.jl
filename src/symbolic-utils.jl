@@ -176,11 +176,15 @@ function join_antecedents(assumed_formulas::Vector{<:SoleLogics.Formula})
 end
 # TODO unique function for join_antecedents and combine_antecedents
 function combine_antecedents(antformula, f, use_leftmostlinearform, force_syntaxtree)
+    # @show use_leftmostlinearform, force_syntaxtree
     if use_leftmostlinearform
         subantformulas = (f isa LeftmostLinearForm ? children(f) : [f])
+        # @show subantformulas
         force_syntaxtree ? tree(antformula) : antformula
         lf = LeftmostConjunctiveForm([antformula, subantformulas...])
-        force_syntaxtree ? tree(lf) : lf
+        φ2 = force_syntaxtree ? tree(lf) : lf
+        # @show φ2
+        φ2
     else
         if f == ⊤
             antformula
@@ -196,9 +200,11 @@ function _scalar_simplification(φ, scalar_simplification)
     if scalar_simplification == false
         φ
     elseif scalar_simplification == true
-        SoleData.scalar_simplification(φ; silent = false)
+        SoleData.scalar_simplification(φ; silent = true)
     else
-        SoleData.scalar_simplification(φ; silent = false, scalar_simplification...)
+        # @show φ
+        # @show SoleData.scalar_simplification(φ; silent = true, scalar_simplification...)
+        SoleData.scalar_simplification(φ; silent = true, scalar_simplification...)
     end
 end
 
@@ -252,7 +258,7 @@ listimmediaterules(m::Branch{O}) where {O} = [
 function listimmediaterules(
     m::DecisionList{O};
     # use_shortforms::Bool = true,
-    # use_leftmostlinearform::Bool = false,
+    # use_leftmostlinearform::Union{Nothing,Bool} = nothing,
     normalize::Bool = false,
     normalize_kwargs::NamedTuple = (; allow_atom_flipping = true, rotate_commutatives = false),
     scalar_simplification::Union{Bool,NamedTuple} = normalize ? (; allow_scalar_range_conditions = true) : false,
@@ -309,7 +315,7 @@ listimmediaterules(m::MixedModel) = listimmediaterules(root(m))
     listrules(
         m::AbstractModel;
         use_shortforms::Bool = true,
-        use_leftmostlinearform::Bool = false,
+        use_leftmostlinearform::Union{Nothing,Bool} = nothing,
         normalize::Bool = false,
         force_syntaxtree::Bool = false,
     )::Vector{<:Rule}
@@ -357,7 +363,7 @@ function listrules(m::AbstractModel;
     metrics_kwargs::NamedTuple = (;),
     #
     use_shortforms::Bool = true,
-    use_leftmostlinearform::Bool = false,
+    use_leftmostlinearform::Union{Nothing,Bool} = nothing,
     normalize::Bool = false,
     normalize_kwargs::NamedTuple = (; allow_atom_flipping = true, rotate_commutatives = false, ),
     scalar_simplification::Union{Bool,NamedTuple} = normalize ? (; allow_scalar_range_conditions = true) : false,
@@ -418,20 +424,21 @@ _listrules(m::LeafModel{O}; kwargs...) where {O} = [Rule{O}(⊤, m, info(m))]
 
 function _listrules(
     m::Rule{O};
-    use_leftmostlinearform::Bool = false,
+    use_leftmostlinearform::Union{Nothing,Bool} = nothing,
     force_syntaxtree::Bool = false,
     kwargs...
 ) where {O}
+    use_leftmostlinearform = !isnothing(use_leftmostlinearform) ? use_leftmostlinearform : false
     [begin
         φ = combine_antecedents(antecedent(m), antecedent(subrule), use_leftmostlinearform, force_syntaxtree)
         Rule{O}(φ, consequent(subrule), info(subrule))
-    end for subrule in _listrules(consequent(m); force_syntaxtree = force_syntaxtree, kwargs...)]
+    end for subrule in _listrules(consequent(m); force_syntaxtree = force_syntaxtree, use_leftmostlinearform = use_leftmostlinearform, kwargs...)]
 end
 
 function _listrules(
     m::Branch{O};
     use_shortforms::Bool = true,
-    use_leftmostlinearform::Bool = false,
+    use_leftmostlinearform::Union{Nothing,Bool} = nothing,
     normalize::Bool = false,
     normalize_kwargs::NamedTuple = (; allow_atom_flipping = true, rotate_commutatives = false, ),
     scalar_simplification::Union{Bool,NamedTuple} = normalize ? (; allow_scalar_range_conditions = true) : false,
@@ -441,13 +448,14 @@ function _listrules(
     min_ninstances::Union{Nothing,Number} = nothing,
     kwargs...,
 ) where {O}
+    use_leftmostlinearform = !isnothing(use_leftmostlinearform) ? use_leftmostlinearform : (antecedent(m) isa SoleLogics.AbstractSyntaxStructure) # TODO default to true
 
     subkwargs = (;
         use_shortforms = use_shortforms,
         use_leftmostlinearform = use_leftmostlinearform,
-        normalize = normalize,
+        normalize = false,
         normalize_kwargs = normalize_kwargs,
-        scalar_simplification = scalar_simplification,
+        scalar_simplification = false,
         force_syntaxtree = force_syntaxtree,
         min_confidence = min_confidence,
         min_coverage = min_coverage,
@@ -514,10 +522,14 @@ function _listrules(
                         antformula
                     else
                         # Combine antecedents
-                        combine_antecedents(antformula, antecedent(subrule), use_leftmostlinearform, force_syntaxtree)
+                        φ = combine_antecedents(antformula, antecedent(subrule), use_leftmostlinearform, force_syntaxtree)
+                        # @show 3
+                        # @show φ
+                        φ
                     end
                 end
                 normalize && (ant = SoleLogics.normalize(ant; normalize_kwargs...))
+                # @show ant
                 ant = _scalar_simplification(ant, scalar_simplification)
                 Rule(ant, consequent(subrule), merge(info(subrule), _info))
             else
@@ -531,7 +543,7 @@ end
 function _listrules(
     m::DecisionList;
     # use_shortforms::Bool = true,
-    # use_leftmostlinearform::Bool = false,
+    # use_leftmostlinearform::Union{Nothing,Bool} = nothing,
     # normalize::Bool = false,
     # normalize_kwargs::NamedTuple = (; allow_atom_flipping = true, ),
     # force_syntaxtree::Bool = false,
@@ -546,6 +558,7 @@ function _listrules(
         scalar_simplification = scalar_simplification,
         normalize_kwargs = normalize_kwargs,
         force_syntaxtree = force_syntaxtree,
+        # kwargs...
     )
     return rules
 end
@@ -605,7 +618,7 @@ See also [`listrules`](@ref),
 """
 function joinrules(
     rules::AbstractVector{<:Rule},
-    silent = falsesilent...,
+    silent = false...,
 )
     allconsequents = unique(consequent.(rules))
     # @show info.(rules)
