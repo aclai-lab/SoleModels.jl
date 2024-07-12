@@ -15,6 +15,7 @@
 *SoleModels.jl* defines the building blocks of *symbolic* modeling and learning.
 It features:
 - Definitions for symbolic models (decision trees/forests, rules, branches, etc.);
+- Tools for evaluate them, and extracting rules from them;
 - Support for mixed, neuro-symbolic computation.
 
 These definitions provide a unified base for implementing symbolic algorithms, such as:
@@ -24,27 +25,94 @@ These definitions provide a unified base for implementing symbolic algorithms, s
 
 ## Models
 
-### Basic models:
-
+Basic models are:
 - Leaf models: wrapping native Julia computation (e.g., constants, functions);
 - Rules: structures with `IF antecedent THEN consequent END` semantics;
 - Branches: structures with `IF antecedent THEN pos_consequent ELSE neg_consequent END` semantics.
 
-Remember:
+Remember that:
 - An antecedent is a logical formula that can be checked on a logical interpretation (that is, an *instance* of a symbolic learning dataset), yielding a truth value (e.g., `true/false`);
 - A consequent is another model, for example, a (final) constant model or branch to be applied.
 
 Within this framework, a decision tree is no other than a branch with branch and final consequents.
-NoteThat antecedents can consist of *logical formulas* and, in such case, the symbolic models
+Note that antecedents can consist of *logical formulas* and, in such case, the symbolic models
 are can be applied to *logical interpretations*.
 For more information, refer to [*SoleLogics.jl*](https://github.com/aclai-lab/SoleLogics.jl), the underlying logical layer.
 
-### Other noteworthy models:
-
+Other noteworthy models include:
 - Decision List (or decision table): see [Wikipedia](https://en.wikipedia.org/wiki/Decision_list);
 - Decision Tree: see [Wikipedia](https://en.wikipedia.org/wiki/Decision_tree);
 - Decision Forest (or tree ensamble): see [Wikipedia](https://en.wikipedia.org/wiki/Random_forest);
 - Mixed Symbolic Model: a nested structure, mixture of many symbolic models.
+
+## Usage: rule extraction from a decision tree
+
+First, train a decision tree:
+```julia
+# Load packages
+begin
+    Pkg.add("MLJ"); using MLJ
+    Pkg.add("MLJDecisionTreeInterface"); using MLJDecisionTreeInterface
+    Pkg.add("DataFrames"); using DataFrames
+    Pkg.add("Random"); using Random
+end
+
+# Load dataset
+X, y = begin
+    X, y = @load_iris;
+    X = DataFrame(X)
+    X, y
+end
+
+# Split dataset
+X_train, y_train, X_test, y_test = begin
+    train, test = partition(eachindex(y), 0.8, shuffle=true, rng = Random.MersenneTwister(42));
+    X_train, y_train = X[train, :], y[train];
+    X_test, y_test = X[test, :], y[test];
+    X_train, y_train, X_test, y_test
+end;
+
+# Train tree
+mach = begin
+    Tree = MLJ.@load DecisionTreeClassifier pkg=DecisionTree
+    model = Tree(max_depth=-1, rng = Random.MersenneTwister(42))
+    machine(model, X_train, y_train) |> fit!
+end
+
+# Inspect the tree
+🌱 = fitted_params(mach).tree
+```
+
+Then, port it to Sole and play with it:
+```julia
+Pkg.add("SoleDecisionTreeInterface"); using SoleDecisionTreeInterface
+
+# Convert to 🌞-compliant model
+🌲 = solemodel(🌱);
+
+# Print model
+printmodel(🌲);
+
+# Inspect the rules
+listrules(🌲)
+
+# Inspect rule metrics
+metricstable(🌲)
+
+# Inspect normalized rule metrics
+metricstable(🌲, normalize = true)
+
+# Make test instances flow into the model, so that test metrics can, then, be computed.
+apply!(🌲, X_test, y_test)
+
+# Pretty table of rules and their metrics
+metricstable(🌲; normalize = true, metrics_kwargs = (; additional_metrics = (; height = r->SoleLogics.height(antecedent(r)))))
+
+# Join some rules for the same class into a single, sufficient and necessary condition for that class
+metricstable(joinrules(🌲; min_ncovered = 1, normalize = true))
+```
+
+<!-- Be careful extracting rules from tree ensembles; there is a combinatorial explosion! -->
 
 ## Dataset structures (for logical symbolic learning)
 
