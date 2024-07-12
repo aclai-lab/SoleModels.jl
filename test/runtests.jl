@@ -18,6 +18,7 @@ test_suites = [
     ("Models", ["base.jl", ]),
     ("Miscellaneous", ["misc.jl", ]),
     ("Parse", ["parse.jl", ]),
+    ("Rules", ["juliacon2024.jl", ]),
     ("Pluto Demo", ["$(dirname(dirname(pathof(SoleModels))))/pluto-demo.jl", ]),
 ]
 

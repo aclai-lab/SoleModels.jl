@@ -170,7 +170,7 @@ function join_antecedents(assumed_formulas::Vector{<:SoleLogics.Formula})
             end
             LeftmostConjunctiveForm(new_assumed_formulas)
         else
-            (length(assumed_formulas) == 1 ? first(assumed_formulas) : ∧(assumed_formulas...))
+            (length(assumed_formulas) == 1 ? first(assumed_formulas) : ∧(filter(!istop, assumed_formulas)...))
         end
     end
 end
@@ -178,8 +178,9 @@ end
 function combine_antecedents(antformula, f, use_leftmostlinearform, force_syntaxtree)
     # @show use_leftmostlinearform, force_syntaxtree
     if use_leftmostlinearform
-        subantformulas = (f isa LeftmostLinearForm ? children(f) : [f])
-        # @show subantformulas
+        _subantformulas = (f isa LeftmostLinearForm ? children(f) : [f])
+        # @show _subantformulas
+        subantformulas = filter(!=(⊤), _subantformulas)
         force_syntaxtree ? tree(antformula) : antformula
         lf = LeftmostConjunctiveForm([antformula, subantformulas...])
         φ2 = force_syntaxtree ? tree(lf) : lf
@@ -573,6 +574,13 @@ _listrules(m::MixedModel; kwargs...) = _listrules(root(m); kwargs...)
 ############################################################################################
 ############################################################################################
 
+function joinrules(
+    m::AbstractModel,
+    silent = false...;
+    kwargs...
+)
+    return joinrules(listrules(m; kwargs...), silent)
+end
 
 """
     joinrules(rules::AbstractVector{<:Rule})::Vector{<:Rule}
@@ -620,11 +628,12 @@ function joinrules(
     rules::AbstractVector{<:Rule},
     silent = false...,
 )
-    allconsequents = unique(consequent.(rules))
+    @assert all(c->c isa ConstantModel, consequent.(rules))
+    alloutcomes = unique(outcome.(consequent.(rules)))
     # @show info.(rules)
     # @show info.(consequent.(rules))
     return [begin
-        these_rules = filter(r->consequent(r) == _consequent, rules)
+        these_rules = filter(r->outcome(consequent(r)) == _outcome, rules)
         leafinfo, ruleinfo = begin
             if !silent
                 known_infokeys = [:supporting_labels, :supporting_predictions, :shortform, :this, :multipathformula]
@@ -672,8 +681,12 @@ function joinrules(
         end
         ants = antecedent.(these_rules)
         newant = LeftmostDisjunctiveForm(ants)
-        newcons = deepcopy(_consequent)
-        info!(newcons, leafinfo)
+        newcons = ConstantModel(_outcome, leafinfo)
+        # newcons = deepcopy(_outcome)
+        # TODO bring back!!!
+        # @show info(newcons)
+        # @show leafinfo
+        # info!(newcons, leafinfo)
         Rule(newant, newcons, ruleinfo)
-    end for _consequent in allconsequents]
+    end for _outcome in alloutcomes]
 end

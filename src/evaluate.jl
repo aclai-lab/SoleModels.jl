@@ -114,7 +114,9 @@ function readmetrics(m::LeafModel{L}; class_share_map = nothing, round_digits = 
     end, (; coverage = 1.0)) # Note: assuming all leaf models are closed (see `isopen`).
 end
 
-function readmetrics(m::Rule{L}; round_digits = nothing, class_share_map = nothing, additional_metrics = (; natoms = r->natoms(antecedent(r))), kwargs...) where {L<:Label}
+default_additional_metrics = (; natoms = r->natoms(antecedent(r)))
+function readmetrics(m::Rule{L}; round_digits = nothing, class_share_map = nothing, additional_metrics = (;), kwargs...) where {L<:Label}
+    additional_metrics = merge(default_additional_metrics, additional_metrics)
     additional_metrics = map(metname->(metname => additional_metrics[metname](m)), keys(additional_metrics)) |> NamedTuple
 
     if haskey(info(m), :supporting_labels) && haskey(info(consequent(m)), :supporting_labels)
@@ -131,11 +133,14 @@ function readmetrics(m::Rule{L}; round_digits = nothing, class_share_map = nothi
             ncovered = length(_gts_leaf),
             coverage = _metround(coverage, round_digits),
             confidence = confidence,
-            additional_metrics...
         )
         if haskey(cons_metrics, :lift)
             metrics = merge(metrics, (; lift = cons_metrics.lift,))
         end
+        metrics = (;
+            metrics...,
+            additional_metrics...
+        )
         metrics
     elseif haskey(info(m), :supporting_labels)
         return (; ninstances = length(info(m).supporting_labels), additional_metrics...)
@@ -166,7 +171,14 @@ function metricstable(ms::Vector{<:Rule}; metrics_kwargs = (;), syntaxstring_kwa
     )
 end
 
-metricstable(m::AbstractModel; kwargs...) = metricstable([m]; kwargs...)
+metricstable(
+    m::AbstractModel;
+    normalize = false,
+    min_lift = nothing,
+    min_confidence = nothing,
+    min_ncovered = nothing,
+    min_ninstances = nothing, # TODO fix this function and reroute the right params to listrules
+    kwargs...) = metricstable(listrules(m; normalize = normalize, min_lift = min_lift, min_confidence = min_confidence, min_ncovered = min_ncovered, min_ninstances = min_ninstances); kwargs...)
 
 
 
