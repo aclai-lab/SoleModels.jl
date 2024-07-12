@@ -18,6 +18,7 @@ HTTP = "cd3eb016-35fb-5094-929b-558a96fad6f3"
 Lazy = "50d2b5c4-7a5e-59d5-8109-a42b560f39c0"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"
+MLJDecisionTreeInterface = "c6f25543-311c-4c74-83dc-3ea6d1015661"
 MLJModelInterface = "e80e1ace-859a-464e-9ed9-23947d8ae3ea"
 PrettyTables = "08abe8d2-0d0c-5749-adfa-8a2ac140af0d"
 ProgressMeter = "92933f4c-e287-5a05-a399-4b506db050ca"
@@ -63,10 +64,12 @@ julia = "1"
 
 [extras]
 InteractiveUtils = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
+MLJ = "add582a8-e3ab-11e8-2d5e-e98b27df1bc7"
 Markdown = "d6f4376e-aef5-505a-96c1-9c027394607a"
 MultiData = "8cc5100c-b3d1-4f82-90cb-0ea93d317aba"
 PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
+SoleDecisionTreeInterface = "de8eae22-3630-40e0-868c-abfc4c1bb3da"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["Test", "Markdown", "InteractiveUtils", "PlutoUI", "MultiData"]
+test = ["Test", "Markdown", "InteractiveUtils", "PlutoUI", "MultiData", "MLJ", "MLJDecisionTreeInterface", "SoleDecisionTreeInterface"]
