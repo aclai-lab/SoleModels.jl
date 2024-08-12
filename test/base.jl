@@ -38,7 +38,7 @@ consts = @test_nowarn [const_string, const_float, const_integer, const_funwrap]
 cmodel_string = @test_nowarn ConstantModel(const_string)
 @test cmodel_string isa ConstantModel{String}
 cmodel_float = @test_nowarn ConstantModel{Float64}(const_float)
-cmodel_number = @test_nowarn ConstantModel{Number}(const_integer)
+cmodel_number = @test_nowarn ConstantModel{AbstractFloat}(const_integer)
 cmodel_integer = @test_nowarn ConstantModel{Int}(const_integer)
 
 @test (@test_logs (:warn,) SoleModels.FunctionModel{Int}(const_fun)) isa SoleModels.FunctionModel{Int}
@@ -50,7 +50,7 @@ cmodels_num = @test_nowarn [cmodel_float, cmodel_number, cmodel_integer]
 @test_nowarn ConstantModel[cmodel_string, cmodel_float]
 @test_throws MethodError ConstantModel{String}[cmodel_string, cmodel_float]
 @test_nowarn ConstantModel{Int}[cmodel_number, cmodel_integer]
-@test_nowarn ConstantModel{Number}[cmodel_number, cmodel_integer]
+@test_nowarn ConstantModel{AbstractFloat}[cmodel_number, cmodel_integer]
 
 @test convert(AbstractModel{Int}, cmodel_number) isa AbstractModel{Int}
 @test_throws MethodError convert(AbstractModel{<:Int}, cmodel_number)
@@ -60,12 +60,12 @@ cmodels_num = @test_nowarn [cmodel_float, cmodel_number, cmodel_integer]
 rmodel_number = @test_nowarn Rule(phi, cmodel_number)
 rmodel_integer = @test_nowarn Rule(phi, cmodel_integer)
 
-@test rmodel_number isa Rule{Number}
+@test rmodel_number isa Rule{AbstractFloat}
 @test rmodel_integer isa Rule{Int}
 @test Rule{Int}(phi, cmodel_number) isa Rule{Int}
 @test Rule{Int}(phi, cmodel_integer) isa Rule{Int}
-@test Rule{Number}(phi, cmodel_integer) isa Rule{Number}
-@test Rule{Number}(phi, cmodel_number) isa Rule{Number}
+@test Rule{AbstractFloat}(phi, cmodel_integer) isa Rule{AbstractFloat}
+@test Rule{AbstractFloat}(phi, cmodel_number) isa Rule{AbstractFloat}
 
 @test_nowarn [Rule(phi, c) for c in consts]
 @test_nowarn [Rule(phi, c) for c in cmodels]
@@ -83,42 +83,42 @@ rmodel_float2 = @test_nowarn Rule{Float64}(phi,rmodel_float)
 rmodel2_float = @test_nowarn Rule(phi2, rmodel_float)
 
 @test_nowarn [Rule{<:Any}(phi, c) for c in cmodels]
-@test_nowarn [Rule{Number}(phi, c) for c in cmodels_num]
-@test_nowarn [Rule{Number}(phi, c) for c in cmodels_num]
+@test_nowarn [Rule{AbstractFloat}(phi, c) for c in cmodels_num]
+@test_nowarn [Rule{AbstractFloat}(phi, c) for c in cmodels_num]
 
-rmodel3 = @test_nowarn Rule{Number}(phi,1)
-# rmodel4 = @test_nowarn Rule{Number,ConstantModel{Number}}(phi, 1)
+rmodel3 = @test_nowarn Rule{AbstractFloat}(phi,1)
+# rmodel4 = @test_nowarn Rule{AbstractFloat,ConstantModel{AbstractFloat}}(phi, 1)
 # @test_nowarn [rmodel3, rmodel4]
 
-# rmodel3 = @test_nowarn Rule{Number,ConstantModel{Number}}(phi,1)
-@test rmodel3 isa Rule{Number}
-# @test Rule{Number,ConstantModel{Int}}(phi, 1) isa Rule{Number, Union{ConstantModel{Number}}}
-# @test Rule{Int,ConstantModel{Number}}(phi, 1) isa Rule{Int, Union{ConstantModel{Int}}}
-# @test_throws MethodError Rule{Int,ConstantModel{Number}}(phi, 1.0)
+# rmodel3 = @test_nowarn Rule{AbstractFloat,ConstantModel{AbstractFloat}}(phi,1)
+@test rmodel3 isa Rule{AbstractFloat}
+# @test Rule{AbstractFloat,ConstantModel{Int}}(phi, 1) isa Rule{AbstractFloat, Union{ConstantModel{AbstractFloat}}}
+# @test Rule{Int,ConstantModel{AbstractFloat}}(phi, 1) isa Rule{Int, Union{ConstantModel{Int}}}
+# @test_throws MethodError Rule{Int,ConstantModel{AbstractFloat}}(phi, 1.0)
 
-# @test rmodel3 == Rule{Number,Union{Rule{Int},ConstantModel{Number}}}(phi,1)
-# @test rmodel3 != Rule{Number,Union{Rule{Number},ConstantModel{Int}}}(phi,1)
+# @test rmodel3 == Rule{AbstractFloat,Union{Rule{Int},ConstantModel{AbstractFloat}}}(phi,1)
+# @test rmodel3 != Rule{AbstractFloat,Union{Rule{AbstractFloat},ConstantModel{Int}}}(phi,1)
 
-# @test_nowarn Rule{Number,ConstantModel{<:Number}}(phi,1)
-# @test_nowarn Rule{Number,Union{ConstantModel{Int},ConstantModel{Float64}}}(phi,1)
+# @test_nowarn Rule{AbstractFloat,ConstantModel{<:Number}}(phi,1)
+# @test_nowarn Rule{AbstractFloat,Union{ConstantModel{Int},ConstantModel{Float64}}}(phi,1)
 
 # rfloat_number = @test_nowarn Rule{Float64,Union{Rule{Float64},ConstantModel{Float64}}}(phi,1.0)
 rfloat_number = @test_nowarn Rule{Float64}(phi,1.0)
 
-# @test_broken Rule{Number,Union{Rule{Number},ConstantModel{Number}}}(phi, rfloat_number)
-# r = @test_nowarn Rule{Number,Union{Rule{Number},ConstantModel{Number}}}(phi,rmodel3)
-# r = @test_nowarn Rule{Number,Union{Rule{Number},ConstantModel{Number}}}(phi,r)
-# r = @test_nowarn Rule{Number,Union{Rule{Number},ConstantModel{Number}}}(phi,r)
+# @test_broken Rule{AbstractFloat,Union{Rule{AbstractFloat},ConstantModel{AbstractFloat}}}(phi, rfloat_number)
+# r = @test_nowarn Rule{AbstractFloat,Union{Rule{AbstractFloat},ConstantModel{AbstractFloat}}}(phi,rmodel3)
+# r = @test_nowarn Rule{AbstractFloat,Union{Rule{AbstractFloat},ConstantModel{AbstractFloat}}}(phi,r)
+# r = @test_nowarn Rule{AbstractFloat,Union{Rule{AbstractFloat},ConstantModel{AbstractFloat}}}(phi,r)
 
-rfloat_number0 = @test_nowarn Rule{Number}(phi,rmodel3)
-rfloat_number = @test_nowarn Rule{Number}(phi,rfloat_number0)
-rfloat_number = @test_nowarn Rule{Number}(phi,rfloat_number)
-rfloat_number = @test_nowarn Rule{Number}(phi,rfloat_number)
-rfloat_number = @test_nowarn Rule{Number}(phi,rfloat_number)
+rfloat_number0 = @test_nowarn Rule{AbstractFloat}(phi,rmodel3)
+rfloat_number = @test_nowarn Rule{AbstractFloat}(phi,rfloat_number0)
+rfloat_number = @test_nowarn Rule{AbstractFloat}(phi,rfloat_number)
+rfloat_number = @test_nowarn Rule{AbstractFloat}(phi,rfloat_number)
+rfloat_number = @test_nowarn Rule{AbstractFloat}(phi,rfloat_number)
 
 @test typeof(rfloat_number0) == typeof(rfloat_number)
 
-@test outcometype(rfloat_number) == Number
+@test outcometype(rfloat_number) == AbstractFloat
 @test outputtype(rfloat_number) == Union{Nothing,Number}
 
 
@@ -145,7 +145,7 @@ bmodel = @test_nowarn Branch(phi, dlmodel_integer, dlmodel)
 bmodel_mixed = @test_nowarn Branch(phi, rmodel_float, dlmodel_integer)
 @test Branch(phi, rmodel_float, dlmodel_integer) isa Branch{Union{Float64,Int}}
 bmodel_mixed_number = @test_nowarn Branch(phi, rmodel_number, dlmodel)
-@test Branch(phi, rmodel_number, dlmodel) isa Branch{Number}
+@test Branch(phi, rmodel_number, dlmodel) isa Branch{AbstractFloat}
 @test isopen(bmodel_mixed)
 @test outputtype(bmodel_mixed) == Union{Nothing,Float64,Int}
 
