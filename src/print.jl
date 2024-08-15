@@ -182,7 +182,7 @@ function printmodel(
         println(io, "$(indentation_str)$(_typestr)$((length(info(m)) == 0) ?
         "" : "\n$(indentation_str)Info: $(info(m))")")
     end
-    depth == 0 && show_symbols && print(io, "▣")
+    depth == 0 && show_symbols && print(io, "\e[34m▣\e[0m")
     print(io, " $(outcome(m))")
     (show_subtree_metrics || show_metrics != false) && print(io, " : $(get_metrics_string(m; (show_metrics isa NamedTuple ? show_metrics : [])...))")
     show_shortforms != false && haskey(info(m), :shortform) && print(io, "\t\t\t\t\t\t\tSHORTFORM: $(@_antecedent_syntaxstring info(m)[:shortform] m parenthesize_atoms syntaxstring_kwargs kwargs)")
@@ -215,7 +215,7 @@ function printmodel(
         println(io, "$(indentation_str)$(_typestr)$((length(info(m)) == 0) ?
         "" : "\n$(indentation_str)Info: $(info(m))")")
     end
-    depth == 0 && show_symbols && print(io, "▣")
+    depth == 0 && show_symbols && print(io, "\e[34m▣\e[0m")
     print(io, " $(f(m))")
     (show_subtree_metrics || show_metrics != false) && print(io, " : $(get_metrics_string(m; (show_metrics isa NamedTuple ? show_metrics : [])...))")
     show_shortforms != false && haskey(info(m), :shortform) && print(io, "\t\t\t\t\t\t\tSHORTFORM: $(@_antecedent_syntaxstring info(m)[:shortform] m parenthesize_atoms syntaxstring_kwargs kwargs)")
@@ -260,7 +260,7 @@ function printmodel(
         println(io, "$(indentation_str)$(_typestr)$((length(info(m)) == 0) ?
         "" : "\n$(indentation_str)Info: $(info(m))")")
     end
-    depth == 0 && show_symbols && print(io, "▣")
+    depth == 0 && show_symbols && print(io, "\e[34m▣\e[0m")
     ########################################################################################
     if isnothing(max_depth) || depth < max_depth
         pipe = "$(indentation_list_children) "
@@ -282,7 +282,7 @@ function printmodel(
             println(io, "")
         else
             line = "$(pipe)$(ant_str)" * "  $(arrow) "
-            ind_str = indentation_str * repeat(" ", length(line) + length("▣") + 1)
+            ind_str = indentation_str * repeat(" ", length(line) + length("\e[34m▣\e[0m") + 1)
             if (show_subtree_metrics || show_metrics != false)
                 print(io, line)
                 _io = IOBuffer()
@@ -339,7 +339,7 @@ function printmodel(
         println(io, "$(indentation_str)$(_typestr)$((length(info(m)) == 0) ?
         "" : "\n$(indentation_str)Info: $(info(m))")")
     end
-    depth == 0 && show_symbols && print(io, "▣")
+    depth == 0 && show_symbols && print(io, "\e[34m▣\e[0m")
     ########################################################################################
     if isnothing(max_depth) || depth < max_depth
         pipe = "$(indentation_list_children) "
@@ -414,7 +414,7 @@ function printmodel(
         println(io, "$(indentation_str)$(_typestr)$((length(info(m)) == 0) ?
         "" : "\n$(indentation_str)Info: $(info(m))")")
     end
-    depth == 0 && show_symbols && print(io, "▣")
+    depth == 0 && show_symbols && print(io, "\e[34m▣\e[0m")
     ########################################################################################
     _show_rule_metrics = show_rule_metrics
     # TODO show this metrics if show_metrics
