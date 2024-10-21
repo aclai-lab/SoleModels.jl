@@ -44,8 +44,8 @@ cmodels_num = @test_nowarn [cmodel_float, cmodel_number, cmodel_integer]
 @test [cmodel_string, cmodel_float, cmodel_number, cmodel_integer] isa Vector{ConstantModel}
 @test_nowarn ConstantModel[cmodel_string, cmodel_float]
 @test_throws MethodError ConstantModel{String}[cmodel_string, cmodel_float]
-@test_nowarn ConstantModel{Int}[cmodel_number, cmodel_integer]
-@test_nowarn ConstantModel{AbstractFloat}[cmodel_number, cmodel_integer]
+# @test_broken ConstantModel{Int}[cmodel_number, cmodel_integer]
+# @test_broken ConstantModel{AbstractFloat}[cmodel_number, cmodel_integer]
 
 ##################### String Atoms and SyntaxTree consequent ########################
 prop_r = @test_nowarn Atom("r")

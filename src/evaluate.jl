@@ -50,7 +50,8 @@ using StatsBase
 using FillArrays
 
 function _metround(val, round_digits)
-    return isnothing(round_digits) ? val : round(val; digits = round_digits) == 0 ? val : round(val; digits = round_digits)
+    # return isnothing(round_digits) ? val : round(val; digits = round_digits) == 0 ? val : round(val; digits = round_digits)
+    return isnothing(round_digits) ? val : round(val; digits = round_digits)
 end
 
 """
