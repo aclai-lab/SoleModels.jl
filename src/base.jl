@@ -125,7 +125,7 @@ parts of the model.
 
 See also
 [`isopen`](@ref),
-[`readmetrics`](@ref).
+[`readmetrics`](@ref),
 [`AbstractModel`](@ref),
 [`SoleLogics.AbstractInterpretation`](@ref),
 [`SoleLogics.AbstractInterpretationSet`](@ref).
@@ -139,7 +139,7 @@ function apply(
     functional_kwargs::NamedTuple = (;),
     kwargs...,
 )::outputtype(m)
-    return error("Please, provide method apply(::$(typeof(m)), ::$(typeof(i))).")
+    return error("Please, provide method apply(::$(typeof(m)), ::$(typeof(i)); kwargs...).")
 end
 
 function apply(

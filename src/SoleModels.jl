@@ -1,12 +1,12 @@
 module SoleModels
 
 using Reexport
+using StatsBase
+using ThreadSafeDicts
+using Lazy
+using FunctionWrappers: FunctionWrapper
 
 using SoleBase
-
-@reexport using SoleData
-
-using SoleData: AbstractLogiset, ismultilogiseed
 
 @reexport using SoleLogics
 using SoleLogics
@@ -15,17 +15,9 @@ using SoleLogics: SyntaxToken
 using SoleLogics: Formula, synstruct
 using SoleLogics: ⊤, ¬, ∧
 
-using FunctionWrappers: FunctionWrapper
-using StatsBase
-using ThreadSafeDicts
-using Lazy
-
+@reexport using SoleData
 using SoleData: load_arff_dataset
-
-############################################################################################
-############################################################################################
-############################################################################################
-
+using SoleData: AbstractLogiset, ismultilogiseed
 using SoleData.DimensionalDatasets: OneWorld, Interval, Interval2D
 using SoleData.DimensionalDatasets: IARelations
 using SoleData.DimensionalDatasets: IA2DRelations
