@@ -28,9 +28,16 @@ using SoleData.DimensionalDatasets: globalrel
 ############################################################################################
 ############################################################################################
 
+export AbstractModel
+export isopen
 export outcometype, outputtype
+export apply, apply!
+export info, info!, hasinfo
+
+export LeafModel
 
 export ConstantModel
+export outcome
 
 export Rule, Branch
 export checkantecedent
@@ -40,14 +47,14 @@ export posconsequent, negconsequent
 export DecisionList
 export rulebase, defaultconsequent
 
-export apply, apply!
 
 export DecisionTree
 export root
 
 export MixedModel, DecisionForest
 
-include("base.jl")
+include("types/base.jl")
+include("utils/base.jl")
 
 include("apply!.jl")
 

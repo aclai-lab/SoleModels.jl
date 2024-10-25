@@ -7,204 +7,7 @@ using SoleLogics: LeftmostLinearForm, LeftmostConjunctiveForm, LeftmostDisjuncti
 
 import SoleLogics: nleaves, height
 
-# Util
-typename(::Type{T}) where T = eval(nameof(T))
-
 ############################################################################################
-
-"""
-    abstract type AbstractModel{O} end
-
-Abstract type for symbolic models that,
-given an instance object (i.e., a piece of data), output an
-outcome of type `O`.
-
-A model is said to be *symbolic* when its application relies on checking formulas
-of a certain logical language
-(see [SoleLogics.jl](https://github.com/aclai-lab/SoleLogics.jl) package)
-on the instance.
-Symbolic models provide a form of transparent and *interpretable modeling*,
-as a symbolic model can be synthethised into a set of mutually exclusive logical rules
-that can often be translated into natural language.
-
-Examples of symbolic models are [`Rule`](@ref)s, [`Branch`](@ref)es,
-[`DecisionList`](@ref)s and [`DecisionTree`](@ref)s.
-Examples of non-symbolic (or *sub-symbolic*) models include those encoding algebraic mathematical
-functions (e.g., neural networks).
-
-Symbolic models can wrap other `AbstractModel`s, and use them to compute the outcome.
-As such, an `AbstractModel` can actually be the result of a composition of many models,
-and enclose a *tree* of `AbstractModel`s (with `LeafModel`s at the leaves).
-
-See also
-[`LeafModel`](@ref),
-[`Rule`](@ref),
-[`Branch`](@ref),
-[`isopen`](@ref),
-[`apply`](@ref),
-[`info`](@ref),
-[`outcometype`](@ref).
-"""
-abstract type AbstractModel{O} end
-
-"""
-    outcometype(::Type{<:AbstractModel{O}}) where {O} = O
-    outcometype(m::AbstractModel) = outcometype(typeof(m))
-
-Return the outcome type of a model (type).
-
-See also [`AbstractModel`](@ref).
-"""
-outcometype(::Type{<:AbstractModel{O}}) where {O} = O
-outcometype(m::AbstractModel) = outcometype(typeof(m))
-
-doc_open_model = """
-An `AbstractModel{O}` is *closed* if it is always able to provide an outcome of type `O`.
-Otherwise, the model can output `nothing` values and is referred to as *open*.
-"""
-
-"""
-    isopen(::AbstractModel)::Bool
-
-Return whether a model is open.
-$(doc_open_model)
-[`Rule`](@ref) is an example of an *open* model, while [`Branch`](@ref)
-is an example of *closed* model.
-
-See also [`AbstractModel`](@ref).
-"""
-isopen(::AbstractModel) = true
-
-"""
-    outputtype(m::AbstractModel)
-
-Return a supertype for the outputs obtained when `apply`ing a model.
-The result depends on whether the model is open or closed:
-
-    outputtype(M::AbstractModel{O}) = isopen(M) ? Union{Nothing,O} : O
-
-Note that if the model is closed, then `outputtype(m)` is equal to `outcometype(m)`.
-
-See also
-[`isopen`](@ref),
-[`apply`](@ref),
-[`outcometype`](@ref),
-[`AbstractModel`](@ref).
-"""
-function outputtype(m::AbstractModel)
-    isopen(m) ? Union{Nothing,outcometype(m)} : outcometype(m)
-end
-
-"""
-    apply(m, i; kwargs...)::outputtype(m)
-    apply(m, d; kwargs...)::AbstractVector{<:outputtype(m)}
-    apply(m, d, i_instance; kwargs...)::outputtype(m)
-
-Return the output prediction of a model `m` on a logical interpretation `i`,
-on the `i_instance` of a dataset `d`, or on all instances of a dataset `d`.
-Note that predictions can be `nothing` if the model is *open* (e.g., if the model is a `Rule`).
-
-# Keyword Arguments
-- `check_args::Tuple = ()`;
-- `check_kwargs::NamedTuple = (;)`;
-- `functional_args::Tuple = ()`;
-- `functional_kwargs::NamedTuple = (;)`;
-- Any additional keyword argument is passed down to the model subtree's leaves
-
-`check_args` and `check_kwargs` can influence check's behavior at the time
-of its computation (see [`SoleLogics.check](@ref))
-
-`functional_args` and `functional_kwargs` can influence FunctionModel's
-behavior when the corresponding function is applied to AbstractInterpretation (see
-[`FunctionModel`](@ref), [`SoleLogics.AbstractInterpretation](@ref))
-
-A model state-changing version of the function, [`apply!`], exist.
-While producing the output, this function affects the info keys `:supporting_labels` and
-`:supporting_predictions`, which are useful for inspecting the statistical performance of
-parts of the model.
-
-See also
-[`isopen`](@ref),
-[`readmetrics`](@ref),
-[`AbstractModel`](@ref),
-[`SoleLogics.AbstractInterpretation`](@ref),
-[`SoleLogics.AbstractInterpretationSet`](@ref).
-"""
-function apply(
-    m::AbstractModel,
-    i::AbstractInterpretation;
-    check_args::Tuple = (),
-    check_kwargs::NamedTuple = (;),
-    functional_args::Tuple = (),
-    functional_kwargs::NamedTuple = (;),
-    kwargs...,
-)::outputtype(m)
-    return error("Please, provide method apply(::$(typeof(m)), ::$(typeof(i)); kwargs...).")
-end
-
-function apply(
-    m::AbstractModel,
-    d::AbstractInterpretationSet,
-    i_instance::Integer;
-    kwargs...
-)::outputtype(m)
-    interpretation = get_instance(d, i_instance)
-    apply(m, interpretation; kwargs...)
-end
-
-function apply(
-    m::AbstractModel,
-    d::AbstractInterpretationSet;
-    kwargs...
-)::AbstractVector{<:outputtype(m)}
-    map(i_instance->apply(m, d, i_instance; kwargs...), 1:ninstances(d))
-end
-
-
-"""
-    info(m::AbstractModel)::NamedTuple = m.info
-    info(m::AbstractModel, key) = m.info[key]
-    info(m::AbstractModel, key, defaultval)
-
-    info!(m::AbstractModel, info::NamedTuple)
-    info!(m::AbstractModel, key, val)
-
-Return the `info` structure for model `m`; this structure is used
-for storing additional information that does not affect the model's behavior.
-This structure can hold, for example, information
-about the model's statistical performance during the learning phase.
-"""
-info(m::AbstractModel)::NamedTuple = m.info
-info(m::AbstractModel, key) = m.info[key]
-info(m::AbstractModel, key, defaultval) = Base.get(m.info, key, defaultval)
-function info!(m::AbstractModel, info; replace = false)
-    if replace
-        m.info = info
-    else
-        foreach(((key, value),)->info!(m, key, value), pairs(info))
-    end
-end
-info!(m::AbstractModel, key, value) = (m.info = merge((; key = value), m.info); m)
-
-hasinfo(m::AbstractModel, key) = haskey(info(m), key)
-
-############################################################################################
-############################################################################################
-############################################################################################
-
-"""
-    abstract type LeafModel{O} <: AbstractModel{O} end
-
-Abstract type for leaf models, that is, models which outcomes do not depend
-other models, and represents the bottom of the computation.
-In general, an `AbstractModel` can generally wrap other `AbstractModel`s;
-in such case, the outcome can
-depend on the inner models being applied on the instance object. Otherwise, the model is
-considered as a *leaf*, or *final*, and is the *leaf* of a tree of `AbstractModel`s.
-
-See also [`ConstantModel`](@ref), [`FunctionModel`](@ref), [`AbstractModel`](@ref).
-"""
-abstract type LeafModel{O} <: AbstractModel{O} end
 
 """
     struct ConstantModel{O} <: LeafModel{O}
@@ -213,24 +16,16 @@ abstract type LeafModel{O} <: AbstractModel{O} end
     end
 
 The simplest type of model is the `ConstantModel`;
-it is a `LeafModel` that always outputs the same outcome.
+it is a [`LeafModel`](@ref) that always outputs the same outcome.
 
 # Examples
 ```julia-repl
-julia> SoleModels.LeafModel(2) isa SoleModels.ConstantModel
-
-julia> SoleModels.LeafModel(sum) isa SoleModels.FunctionModel
-┌ Warning: Over efficiency concerns, please consider wrappingJulia Function's into FunctionWrapper{O,Tuple{SoleModels.AbstractInterpretation}} structures,where O is their return type.
-└ @ SoleModels ~/.julia/dev/SoleModels/src/base.jl:337
-true
-
+julia> cm = ConstantModel(2);
+julia> outcome(cm)
+2
 ```
 
-See also
-[`apply`](@ref),
-[`FunctionModel`](@ref),
-[`LeafModel`](@ref).
-"""
+See also [`apply`](@ref), [`LeafModel`](@ref)."""
 struct ConstantModel{O} <: LeafModel{O}
     outcome::O
     info::NamedTuple
