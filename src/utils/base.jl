@@ -125,9 +125,9 @@ struct FunctionModel{O} <: LeafModel{O}
     ) where {O}
         # TODO fix warning
         if !silent
-            @warn "Over efficiency concerns, please consider wrapping"*
-            "Julia Function's into FunctionWrapper{O,Tuple{T}}"*
-            " structures, where T<:SoleModels.AbstractInterpretation is the interpretation type."
+            @warn "Over efficiency concerns, please consider wrapping " *
+            "Julia Function's into FunctionWrapper{O,Tuple{T}} structures " *
+            "where T<:SoleModels.AbstractInterpretation is the interpretation type."
         end
         f = FunctionWrapper{O,Tuple{AbstractInterpretation}}(f)
         FunctionModel{O}(f, info)
