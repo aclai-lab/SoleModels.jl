@@ -229,6 +229,11 @@ the semantics:
 where the [`antecedent`](@ref) is a formula to be checked, and the [`consequent`](@ref) is
 the local outcome of the block.
 
+# Examples
+```julia-repl
+
+```
+
 See also [`AbstractModel`](@ref). [`antecedent`](@ref), [`consequent`](@ref),
 `SoleLogics.Formula`.
 """

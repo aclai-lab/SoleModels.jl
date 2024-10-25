@@ -33,11 +33,15 @@ export isopen
 export outcometype, outputtype
 export apply, apply!
 export info, info!, hasinfo
+export wrap
 
 export LeafModel
 
 export ConstantModel
 export outcome
+
+export FunctionModel
+export f
 
 export Rule, Branch
 export checkantecedent
