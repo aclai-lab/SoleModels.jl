@@ -8,6 +8,8 @@ using SoleLogics: LeftmostLinearForm, LeftmostConjunctiveForm, LeftmostDisjuncti
 import SoleLogics: nleaves, height
 
 ############################################################################################
+################################### ConstantModel ##########################################
+############################################################################################
 
 """
     struct ConstantModel{O} <: LeafModel{O}
@@ -65,13 +67,25 @@ outcome(m::ConstantModel) = m.outcome
 isopen(::ConstantModel) = false
 
 apply(m::ConstantModel, i::AbstractInterpretation; kwargs...) = outcome(m)
-apply(m::ConstantModel, d::AbstractInterpretationSet, i_instance::Integer; kwargs...) = outcome(m)
-apply(m::ConstantModel, d::AbstractInterpretationSet; kwargs...) = Fill(outcome(m), ninstances(d))
+apply(
+    m::ConstantModel,
+    d::AbstractInterpretationSet,
+    i_instance::Integer;
+    kwargs...
+) = outcome(m)
+apply(
+    m::ConstantModel,
+    d::AbstractInterpretationSet;
+    kwargs...
+) = Fill(outcome(m), ninstances(d))
 
 convert(::Type{ConstantModel{O}}, o::O) where {O} = ConstantModel{O}(o)
 convert(::Type{<:AbstractModel{F}}, m::ConstantModel) where {F} = ConstantModel{F}(m)
 
-# TODO @Michele explain functional_args/functional_kwargs
+############################################################################################
+################################### FunctionModel ##########################################
+############################################################################################
+
 """
     struct FunctionModel{O} <: LeafModel{O}
         f::FunctionWrapper{O}
@@ -88,7 +102,6 @@ See also [`ConstantModel`](@ref), [`LeafModel`](@ref).
 """
 struct FunctionModel{O} <: LeafModel{O}
     f::FunctionWrapper{O}
-    # isopen::Bool TODO
     info::NamedTuple
 
     function FunctionModel{O}(
