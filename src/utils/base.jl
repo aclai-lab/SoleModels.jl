@@ -79,6 +79,8 @@ apply(
     kwargs...
 ) = Fill(outcome(m), ninstances(d))
 
+wrap(o::O) where {O} = convert(ConstantModel{O}, o)
+
 convert(::Type{ConstantModel{O}}, o::O) where {O} = ConstantModel{O}(o)
 convert(::Type{<:AbstractModel{F}}, m::ConstantModel) where {F} = ConstantModel{F}(m)
 
@@ -92,13 +94,15 @@ convert(::Type{<:AbstractModel{F}}, m::ConstantModel) where {F} = ConstantModel{
         info::NamedTuple
     end
 
-A `FunctionModel` is a `LeafModel` that applies a native Julia `Function`
-in order to compute the outcome. Over efficiency concerns, it is mandatory to make explicit
-the output type `O` by wrapping the `Function` into an object of type
-`FunctionWrapper{O}`
-(see [FunctionWrappers](https://github.com/yuyichao/FunctionWrappers.jl).
+A `FunctionModel` is a `LeafModel` that applies a native Julia `Function` in order to
+compute the outcome.
 
-See also [`ConstantModel`](@ref), [`LeafModel`](@ref).
+!!! warning
+    Over efficiency concerns, it is mandatory to make explicit the output type `O` by
+    wrapping the `Function` into an object of type `FunctionWrapper{O}`
+    (see [FunctionWrappers](https://github.com/yuyichao/FunctionWrappers.jl).
+
+See also [`LeafModel`](@ref).
 """
 struct FunctionModel{O} <: LeafModel{O}
     f::FunctionWrapper{O}
@@ -149,8 +153,18 @@ struct FunctionModel{O} <: LeafModel{O}
     end
 end
 
+"""
+    f(m::FunctionModel)
+
+Getter for the `FunctionWrapper` within `m`.
+
+See also [`FunctionModel`](@ref),
+[FunctionWrappers](https://github.com/yuyichao/FunctionWrappers.jl).
+"""
 f(m::FunctionModel) = m.f
+
 isopen(::FunctionModel) = false
+
 function apply(
     m::FunctionModel,
     i::AbstractInterpretation;
@@ -181,27 +195,8 @@ end
 
 convert(::Type{<:AbstractModel{F}}, m::FunctionModel) where {F} = FunctionModel{F}(m)
 
-"""
-    wrap(o::Any)::AbstractModel
-
-This function wraps anything into an AbstractModel.
-The default behavior is the following:
-- when called on an `AbstractModel`, the model is
-simply returned (no wrapping is performed);
-- `Function`s and `FunctionWrapper`s are wrapped into a `FunctionModel`;
-- every other object is wrapped into a `ConstantModel`.
-
-See also
-[`ConstantModel`](@ref), [`FunctionModel`](@ref), [`LeafModel`](@ref).
-"""
-wrap(o::Any, FM::Type{<:AbstractModel}) = convert(FM, wrap(o))
-wrap(m::AbstractModel) = m
 wrap(o::Function) = FunctionModel(o)
 wrap(o::FunctionWrapper{O}) where {O} = FunctionModel{O}(o)
-wrap(o::O) where {O} = convert(ConstantModel{O}, o)
-
-# Helper
-LeafModel(o) = wrap(o)
 
 ############################################################################################
 ############################################################################################
