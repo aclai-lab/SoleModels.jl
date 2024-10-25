@@ -53,8 +53,17 @@ struct ConstantModel{O} <: LeafModel{O}
     end
 end
 
+"""
+    outcome(m::ConstantModel)
+
+Getter for the constant outcome wrapped by `m`.
+
+See also [`ConstantModel`](@ref).
+"""
 outcome(m::ConstantModel) = m.outcome
+
 isopen(::ConstantModel) = false
+
 apply(m::ConstantModel, i::AbstractInterpretation; kwargs...) = outcome(m)
 apply(m::ConstantModel, d::AbstractInterpretationSet, i_instance::Integer; kwargs...) = outcome(m)
 apply(m::ConstantModel, d::AbstractInterpretationSet; kwargs...) = Fill(outcome(m), ninstances(d))
