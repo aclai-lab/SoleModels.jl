@@ -11,6 +11,9 @@ using SoleModels: listrules, displaymodel, submodels
 
 io = IOBuffer()
 
+# parse_other_kind_of_formula = SoleLogics.parsebaseformula
+parse_other_kind_of_formula = SoleLogics.parseformula
+
 ################################### LeafModel #############################################
 outcome_int =  @test_nowarn ConstantModel(2)
 outcome_float = @test_nowarn ConstantModel(1.5)
@@ -65,26 +68,26 @@ st_1 = @test_nowarn SyntaxTree(prop_1)
 st_100 = @test_nowarn SyntaxTree(prop_100)
 
 ################################### Formulas ###############################################
-p = @test_nowarn SoleLogics.parseformula("p")
+p = @test_nowarn parse_other_kind_of_formula("p")
 p_tree = @test_nowarn SoleLogics.parseformula("p")
 
-# phi = @test_nowarn SoleLogics.parseformula("p∧q∨r")
+# phi = @test_nowarn parse_other_kind_of_formula("p∧q∨r")
 # phi_tree = @test_nowarn SoleLogics.parseformula("p∧q∨r")
 
-# phi2 = @test_nowarn SoleLogics.parseformula("q∧s→r")
+# phi2 = @test_nowarn parse_other_kind_of_formula("q∧s→r")
 # phi2_tree = @test_nowarn SoleLogics.parseformula("q∧s→r")
 
 
-phi = @test_nowarn SoleLogics.parseformula("p∧q∨r")
+phi = @test_nowarn parse_other_kind_of_formula("p∧q∨r")
 phi_tree = @test_nowarn SoleLogics.parseformula("p∧q∨r")
 
-phi2 = @test_nowarn SoleLogics.parseformula("q∧s→r")
+phi2 = @test_nowarn parse_other_kind_of_formula("q∧s→r")
 phi2_tree = @test_nowarn SoleLogics.parseformula("q∧s→r")
 
-formula_p = @test_nowarn SoleLogics.parseformula("p")
-formula_q = @test_nowarn SoleLogics.parseformula("q")
-formula_r = @test_nowarn SoleLogics.parseformula("r")
-formula_s = @test_nowarn SoleLogics.parseformula("s")
+formula_p = @test_nowarn parse_other_kind_of_formula("p")
+formula_q = @test_nowarn parse_other_kind_of_formula("q")
+formula_r = @test_nowarn parse_other_kind_of_formula("r")
+formula_s = @test_nowarn parse_other_kind_of_formula("s")
 
 ############################### SyntaxTree ######################################
 st_not_r = @test_nowarn ¬st_r
