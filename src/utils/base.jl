@@ -199,17 +199,19 @@ wrap(o::Function) = FunctionModel(o)
 wrap(o::FunctionWrapper{O}) where {O} = FunctionModel{O}(o)
 
 ############################################################################################
-############################################################################################
+####################################### Rule ###############################################
 ############################################################################################
 
+# this is never used
 doc_symbolic_basics = """
-Symbolic modeling builds onto two basic building blocks, which are `AbstractModel`s themselves:
+Symbolic modeling builds onto two basic building blocks, which are `AbstractModel`s
+themselves:
 - `Rule`: IF (antecedent) THEN (consequent) END
 - `Branch`: IF (antecedent) THEN (posconsequent) ELSE (negconsequent) END
-The *antecedent* is a formula of a certain logic, that can typically evaluate to true or false
-when the model is applied on an instance object;
-the *consequent*s are `AbstractModel`s themselves, that are to be applied to the instance object
-in order to obtain an outcome.
+The *antecedent* is a formula of a certain logic, that can typically evaluate to true or
+false when the model is applied on an instance object;
+the *consequent*s are `AbstractModel`s themselves, that are to be applied to the instance
+object in order to obtain an outcome.
 """
 
 """
@@ -224,14 +226,11 @@ the semantics:
 
     IF (antecedent) THEN (consequent) END
 
-where the antecedent is a formula to be checked,
-and the consequent is the local outcome of the block.
+where the [`antecedent`](@ref) is a formula to be checked, and the [`consequent`](@ref) is
+the local outcome of the block.
 
-See also
-[`antecedent`](@ref),
-[`consequent`](@ref),
-[`SoleLogics.Formula`](@ref),
-[`AbstractModel`](@ref).
+See also [`AbstractModel`](@ref). [`antecedent`](@ref), [`consequent`](@ref),
+`SoleLogics.Formula`.
 """
 struct Rule{O} <: AbstractModel{O}
     antecedent::Formula
