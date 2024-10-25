@@ -202,18 +202,6 @@ wrap(o::FunctionWrapper{O}) where {O} = FunctionModel{O}(o)
 ####################################### Rule ###############################################
 ############################################################################################
 
-# this is never used
-doc_symbolic_basics = """
-Symbolic modeling builds onto two basic building blocks, which are `AbstractModel`s
-themselves:
-- `Rule`: IF (antecedent) THEN (consequent) END
-- `Branch`: IF (antecedent) THEN (posconsequent) ELSE (negconsequent) END
-The *antecedent* is a formula of a certain logic, that can typically evaluate to true or
-false when the model is applied on an instance object;
-the *consequent*s are `AbstractModel`s themselves, that are to be applied to the instance
-object in order to obtain an outcome.
-"""
-
 """
     struct Rule{O} <: AbstractModel{O}
         antecedent::Formula
@@ -235,7 +223,7 @@ julia> Rule(CONJUNCTION(Atom("p"), Atom("q")), ConstantModel(2))
 ▣ (p) ∧ (q)  ↣  2
 ```
 
-See also [`AbstractModel`](@ref). [`antecedent`](@ref), [`consequent`](@ref),
+See also [`AbstractModel`](@ref), [`antecedent`](@ref), [`consequent`](@ref),
 `SoleLogics.Formula`.
 """
 struct Rule{O} <: AbstractModel{O}
@@ -376,18 +364,13 @@ the semantics:
 
     IF (antecedent) THEN (positive consequent) ELSE (negative consequent) END
 
-where the antecedent is a formula to be checked and the consequents are the feasible
-local outcomes of the block. If checking the antecedent evaluates to the top of the algebra,
-then the positive consequent is applied; otherwise, the negative consequenti is applied.
+where the [`antecedent`](@ref) is a formula to be checked and the [`consequent`](@ref)s are
+the feasible local outcomes of the block. If checking the antecedent evaluates to the top
+of the algebra, then the positive consequent is applied; otherwise, the negative
+consequent is applied.
 
-
-See also
-[`antecedent`](@ref),
-[`posconsequent`](@ref),
-[`negconsequent`](@ref),
-[`SoleLogics.check`](@ref),
-[`SoleLogics.Formula`](@ref),
-[`Rule`](@ref), [`AbstractModel`](@ref).
+See also [`AbstractModel`](@ref), [`antecedent`](@ref), `SoleLogics.check`,
+`SoleLogics.Formula`, [`negconsequent`](@ref), [`posconsequent`](@ref), [`Rule`](@ref).
 """
 struct Branch{O} <: AbstractModel{O}
     antecedent::Formula
@@ -423,24 +406,20 @@ antecedent(m::Branch) = m.antecedent
 """
     posconsequent(m::Branch)::AbstractModel
 
-Return the positive consequent of a branch;
-that is, the model to be applied if the antecedent evaluates to `true`.
+Return the positive consequent of a branch, that is, the model to be applied if the
+[`antecedent`](@ref) evaluates to `true`.
 
-See also
-[`antecedent`](@ref),
-[`Branch`](@ref).
+See also [`antecedent`](@ref), [`Branch`](@ref), [`negconsequent`](@ref).
 """
 posconsequent(m::Branch) = m.posconsequent
 
 """
     negconsequent(m::Branch)::AbstractModel
 
-Return the negative consequent of a branch;
-that is, the model to be applied if the antecedent evaluates to `false`.
+Return the negative [`consequent`](@ref) of a branch; that is, the model to be applied if
+the antecedent evaluates to `false`.
 
-See also
-[`antecedent`](@ref),
-[`Branch`](@ref).
+See also [`antecedent`](@ref), [`Branch`](@ref), [`posconsequent`](@ref).
 """
 negconsequent(m::Branch) = m.negconsequent
 
@@ -519,6 +498,8 @@ end
 
 # Helper: slice a Branch's antecedent
 # TODO remove?
+# from michi and mauro, 25/10/24:
+# currently this is not covered by tests here, but could be used in SolePostHoc.jl
 function Base.getindex(
     m::Branch{O},
     idxs::AbstractVector,
@@ -531,9 +512,25 @@ end
 ############################################################################################
 ############################################################################################
 
-checkantecedent(m::Union{Rule,Branch}, i::AbstractInterpretation, args...; kwargs...) = check(antecedent(m), i, args...; kwargs...)
-checkantecedent(m::Union{Rule,Branch}, d::AbstractInterpretationSet, i_instance::Integer, args...; kwargs...) = check(antecedent(m), d, i_instance, args...; kwargs...)
-checkantecedent(m::Union{Rule,Branch}, d::AbstractInterpretationSet, args...; kwargs...) = check(antecedent(m), d, args...; kwargs...)
+checkantecedent(
+    m::Union{Rule,Branch},
+    i::AbstractInterpretation,
+    args...;
+    kwargs...
+) = check(antecedent(m), i, args...; kwargs...)
+checkantecedent(
+    m::Union{Rule,Branch},
+    d::AbstractInterpretationSet,
+    i_instance::Integer,
+    args...;
+    kwargs...
+) = check(antecedent(m), d, i_instance, args...; kwargs...)
+checkantecedent(
+    m::Union{Rule,Branch},
+    d::AbstractInterpretationSet,
+    args...;
+    kwargs...
+) = check(antecedent(m), d, args...; kwargs...)
 
 # TODO remove:
 # checkantecedent(::Union{Rule{O,Top},Branch{O,Top}}, i::AbstractInterpretation, args...; kwargs...) where {O} = true

@@ -51,7 +51,6 @@ export posconsequent, negconsequent
 export DecisionList
 export rulebase, defaultconsequent
 
-
 export DecisionTree
 export root
 
