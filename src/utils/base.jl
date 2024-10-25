@@ -532,11 +532,6 @@ checkantecedent(
     kwargs...
 ) = check(antecedent(m), d, args...; kwargs...)
 
-# TODO remove:
-# checkantecedent(::Union{Rule{O,Top},Branch{O,Top}}, i::AbstractInterpretation, args...; kwargs...) where {O} = true
-# checkantecedent(::Union{Rule{O,Top},Branch{O,Top}}, d::AbstractInterpretationSet, i_instance::Integer, args...; kwargs...) where {O} = true
-# checkantecedent(::Union{Rule{O,Top},Branch{O,Top}}, d::AbstractInterpretationSet, args...; kwargs...) where {O} = fill(true, ninstances(d))
-
 ############################################################################################
 ############################################################################################
 
