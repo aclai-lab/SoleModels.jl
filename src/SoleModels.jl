@@ -44,8 +44,8 @@ export FunctionModel
 export f
 
 export Rule, Branch
-export checkantecedent
 export antecedent, consequent
+export checkantecedent
 export posconsequent, negconsequent
 
 export DecisionList

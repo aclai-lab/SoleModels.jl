@@ -231,7 +231,8 @@ the local outcome of the block.
 
 # Examples
 ```julia-repl
-
+julia> Rule(CONJUNCTION(Atom("p"), Atom("q")), ConstantModel(2))
+▣ (p) ∧ (q)  ↣  2
 ```
 
 See also [`AbstractModel`](@ref). [`antecedent`](@ref), [`consequent`](@ref),
@@ -275,26 +276,20 @@ end
 """
     antecedent(m::Union{Rule,Branch})::Formula
 
-Return the antecedent of a rule/branch,
-that is, the formula to be checked upon applying the model.
+Return the antecedent of a [`Rule`](@ref) or a [`Branch`](@ref), that is, the formula to be
+checked upon applying the model.
 
-See also
-[`apply`](@ref),
-[`consequent`](@ref),
-[`checkantecedent`](@ref),
-[`Rule`](@ref),
-[`Branch`](@ref).
+See also [`apply`](@ref), [`Branch`](@ref), [`checkantecedent`](@ref), [`consequent`](@ref),
+[`Rule`](@ref).
 """
 antecedent(m::Rule) = m.antecedent
 
 """
     consequent(m::Rule)::AbstractModel
 
-Return the consequent of a rule.
+Return the consequent of `m`.
 
-See also
-[`antecedent`](@ref),
-[`Rule`](@ref).
+See also [`antecedent`](@ref), [`Rule`](@ref).
 """
 consequent(m::Rule) = m.consequent
 
@@ -307,12 +302,10 @@ consequent(m::Rule) = m.consequent
         check(antecedent(m), args...; kwargs...)
     end
 
-Simply check the antecedent of a rule on an instance or dataset.
+Check the [`antecedent`](@ref) of a [`Rule`](@ref) or a [`Branch`](@ref), on an instance or
+dataset.
 
-See also
-[`antecedent`](@ref),
-[`Rule`](@ref),
-[`Branch`](@ref).
+See also [`antecedent`](@ref), [`Rule`](@ref), [`Branch`](@ref).
 """
 function checkantecedent end
 
