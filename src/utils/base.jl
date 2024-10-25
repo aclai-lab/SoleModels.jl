@@ -511,6 +511,7 @@ end
 
 ############################################################################################
 ############################################################################################
+############################################################################################
 
 checkantecedent(
     m::Union{Rule,Branch},
@@ -533,6 +534,7 @@ checkantecedent(
 ) = check(antecedent(m), d, args...; kwargs...)
 
 ############################################################################################
+################################### DecisionList ###########################################
 ############################################################################################
 
 """
@@ -551,16 +553,14 @@ has the semantics of an IF-ELSEIF-ELSE block:
     ELSEIF (antecedent_n) THEN (consequent_n)
     ELSE (consequent_default) END
 
-where the antecedents are formulas to be, and the consequents are the feasible
-local outcomes of the block.
-Using the classical semantics, the antecedents are evaluated in order,
-and a consequent is returned as soon as a valid antecedent is found,
-or when the computation reaches the ELSE clause.
+where the [`antecedent`](@ref)s are formulas to be, and the [`consequent`](@ref)s are the
+feasible local outcomes of the block.
 
-See also
-[`Rule`](@ref),
-[`DecisionTree`](@ref),
-[`AbstractModel`](@ref).
+Using the classical semantics, the [`antecedent`](@ref)s are evaluated in order, and a
+[`consequent`](@ref) is returned as soon as a valid antecedent is found, or when the
+computation reaches the ELSE clause.
+
+See also [`AbstractModel`](@ref), [`DecisionTree`](@ref), [`Rule`](@ref).
 """
 struct DecisionList{O} <: AbstractModel{O}
     rulebase::Vector{Rule{_O} where {_O<:O}}
@@ -578,7 +578,26 @@ struct DecisionList{O} <: AbstractModel{O}
     end
 end
 
+"""
+    rulebase(m::DecisionList)
+
+Getter for the [`Rule`](@ref)s list wrapped within `m`.
+
+See also [`DecisionList`](@ref), [`Rule`](@ref).
+"""
 rulebase(m::DecisionList) = m.rulebase
+
+"""
+    defaultconsequent(m::DecisionList)
+
+Return the default [`consequent`](@ref) for any [`Rule`](@ref) wrapped within `m`.
+
+!!! note
+    If the model returned by this getter is open, then `m` is open too.
+    See also [`isopen`](@ref).
+
+See also [`AbstractModel`](@ref), [`DecisionList`](@ref), [`Rule`](@ref).
+"""
 defaultconsequent(m::DecisionList) = m.defaultconsequent
 
 isopen(m::DecisionList) = isopen(defaultconsequent(m))
@@ -629,8 +648,15 @@ end
 
 
 ############################################################################################
+################################### DecisionTree ###########################################
+############################################################################################
 
 """
+    struct DecisionTree{O} <: AbstractModel{O}
+        root::M where {M<:Union{LeafModel{O},Branch{O}}}
+        info::NamedTuple
+    end
+
 A `DecisionTree` is a symbolic model that operates as a nested structure of
 IF-THEN-ELSE blocks:
 

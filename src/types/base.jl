@@ -35,7 +35,7 @@ and enclose a *tree* of `AbstractModel`s (with `LeafModel`s at the leaves).
 - `wrap(m::AbstractModel)`
 
 # Examples
-TODO:
+TODO
 
 See also [`apply`](@ref), [`Branch`](@ref), [`info`](@ref), [`isopen`](@ref),
 [`LeafModel`](@ref), [`outcometype`](@ref), [`Rule`](@ref).
