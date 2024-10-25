@@ -115,6 +115,10 @@ function readmetrics(m::LeafModel{L}; class_share_map = nothing, round_digits = 
     end, (; coverage = 1.0)) # Note: assuming all leaf models are closed (see `isopen`).
 end
 
+function readmetrics(m::Rule; kwargs...)
+    error("Cannot read metrics on rule of outcometype $(outcometype(m)). Is this a classification, regression rule, or what? See SoleModels.Label.")
+end
+
 default_additional_metrics = (; natoms = r->natoms(antecedent(r)))
 function readmetrics(m::Rule{L}; round_digits = nothing, class_share_map = nothing, additional_metrics = (;), kwargs...) where {L<:Label}
     additional_metrics = merge(default_additional_metrics, additional_metrics)

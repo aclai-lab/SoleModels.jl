@@ -236,10 +236,10 @@ struct ConstantModel{O} <: LeafModel{O}
     info::NamedTuple
 
     function ConstantModel{O}(
-        outcome::O,
+        outcome::O2,
         info::NamedTuple = (;),
-    ) where {O}
-        new{O}(outcome, info)
+    ) where {O,O2}
+        new{O}(convert(O, outcome), info)
     end
 
     function ConstantModel(
