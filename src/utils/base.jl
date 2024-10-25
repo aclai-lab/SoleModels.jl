@@ -2,7 +2,7 @@ import Base: convert, length, getindex, isopen
 
 using SoleData: slicedataset
 
-import SoleLogics: check, syntaxstring, conjuncts, nconjuncts, disjuncts, ndisjuncts
+import SoleLogics: check, syntaxstring
 using SoleLogics: LeftmostLinearForm, LeftmostConjunctiveForm, LeftmostDisjunctiveForm
 
 import SoleLogics: nleaves, height
@@ -344,26 +344,6 @@ function apply(
     else
         nothing
     end
-end
-
-
-# Helpers
-# TODO remove probably
-function conjuncts(m::Rule)
-    @assert antecedent(m) isa LeftmostConjunctiveForm
-    conjuncts(antecedent(m))
-end
-function nconjuncts(m::Rule)
-    @assert antecedent(m) isa LeftmostConjunctiveForm
-    nconjuncts(antecedent(m))
-end
-function disjuncts(m::Rule)
-    @assert antecedent(m) isa LeftmostDisjunctiveForm
-    disjuncts(antecedent(m))
-end
-function ndisjuncts(m::Rule)
-    @assert antecedent(m) isa LeftmostDisjunctiveForm
-    ndisjuncts(antecedent(m))
 end
 
 # Helper: slice a Rule's antecedent
