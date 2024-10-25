@@ -65,26 +65,26 @@ st_1 = @test_nowarn SyntaxTree(prop_1)
 st_100 = @test_nowarn SyntaxTree(prop_100)
 
 ################################### Formulas ###############################################
-p = @test_nowarn SoleLogics.parsebaseformula("p")
+p = @test_nowarn SoleLogics.parseformula("p")
 p_tree = @test_nowarn SoleLogics.parseformula("p")
 
-# phi = @test_nowarn SoleLogics.parsebaseformula("p∧q∨r")
+# phi = @test_nowarn SoleLogics.parseformula("p∧q∨r")
 # phi_tree = @test_nowarn SoleLogics.parseformula("p∧q∨r")
 
-# phi2 = @test_nowarn SoleLogics.parsebaseformula("q∧s→r")
+# phi2 = @test_nowarn SoleLogics.parseformula("q∧s→r")
 # phi2_tree = @test_nowarn SoleLogics.parseformula("q∧s→r")
 
 
-phi = @test_nowarn SoleLogics.parsebaseformula("p∧q∨r")
+phi = @test_nowarn SoleLogics.parseformula("p∧q∨r")
 phi_tree = @test_nowarn SoleLogics.parseformula("p∧q∨r")
 
-phi2 = @test_nowarn SoleLogics.parsebaseformula("q∧s→r")
+phi2 = @test_nowarn SoleLogics.parseformula("q∧s→r")
 phi2_tree = @test_nowarn SoleLogics.parseformula("q∧s→r")
 
-formula_p = @test_nowarn SoleLogics.parsebaseformula("p")
-formula_q = @test_nowarn SoleLogics.parsebaseformula("q")
-formula_r = @test_nowarn SoleLogics.parsebaseformula("r")
-formula_s = @test_nowarn SoleLogics.parsebaseformula("s")
+formula_p = @test_nowarn SoleLogics.parseformula("p")
+formula_q = @test_nowarn SoleLogics.parseformula("q")
+formula_r = @test_nowarn SoleLogics.parseformula("r")
+formula_s = @test_nowarn SoleLogics.parseformula("s")
 
 ############################### SyntaxTree ######################################
 st_not_r = @test_nowarn ¬st_r

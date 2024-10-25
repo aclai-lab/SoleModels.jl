@@ -11,12 +11,12 @@ io = IOBuffer()
 
 p = SoleLogics.parseformula("p")
 phi = SoleLogics.parseformula("p∧q∨r")
-phi2 = SoleLogics.parsebaseformula("q∧s→r")
+phi2 = SoleLogics.parseformula("q∧s→r")
 
-formula_p = SoleLogics.parsebaseformula("p")
-formula_q = SoleLogics.parsebaseformula("q")
-formula_r = SoleLogics.parsebaseformula("r")
-formula_s = SoleLogics.parsebaseformula("s")
+formula_p = SoleLogics.parseformula("p")
+formula_q = SoleLogics.parseformula("q")
+formula_r = SoleLogics.parseformula("r")
+formula_s = SoleLogics.parseformula("s")
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Leaf models ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
