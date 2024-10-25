@@ -348,6 +348,8 @@ end
 
 # Helper: slice a Rule's antecedent
 # TODO remove?
+# from michi and mauro, 25/10/24:
+# currently this is not covered by tests here, but could be used in SolePostHoc.jl
 function Base.getindex(
     m::Rule{O},
     idxs::AbstractVector,
@@ -357,7 +359,8 @@ function Base.getindex(
     Rule{O}(typeof(a)(children(a)[idxs]), consequent(m))
 end
 
-
+############################################################################################
+###################################### Branch ##############################################
 ############################################################################################
 
 """
