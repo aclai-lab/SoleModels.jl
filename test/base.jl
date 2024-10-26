@@ -9,14 +9,16 @@ using Test
 
 io = IOBuffer()
 
+parse_other_kind_of_formula = SoleLogics.parseformula
+
 p = SoleLogics.parseformula("p")
 phi = SoleLogics.parseformula("p∧q∨r")
-phi2 = SoleLogics.parsebaseformula("q∧s→r")
+phi2 = parse_other_kind_of_formula("q∧s→r")
 
-formula_p = SoleLogics.parsebaseformula("p")
-formula_q = SoleLogics.parsebaseformula("q")
-formula_r = SoleLogics.parsebaseformula("r")
-formula_s = SoleLogics.parsebaseformula("s")
+formula_p = parse_other_kind_of_formula("p")
+formula_q = parse_other_kind_of_formula("q")
+formula_r = parse_other_kind_of_formula("r")
+formula_s = parse_other_kind_of_formula("s")
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Leaf models ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
