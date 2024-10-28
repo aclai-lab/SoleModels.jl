@@ -41,7 +41,6 @@ export ConstantModel
 export outcome
 
 export FunctionModel
-export f
 
 export Rule, Branch
 export antecedent, consequent
@@ -56,8 +55,11 @@ export root
 
 export MixedModel, DecisionForest
 
-include("types/base.jl")
-include("utils/base.jl")
+include("types/model.jl")
+include("utils/models/leaf.jl")
+include("utils/models/rule-and-branch.jl")
+include("utils/models/other.jl")
+include("utils/models/linear-forms-utilities.jl")
 
 include("apply!.jl")
 
