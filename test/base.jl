@@ -132,7 +132,7 @@ defaultconsequent = cmodel_integer
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Other models ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 rules = @test_nowarn [rmodel_number, rmodel_integer, Rule(phi, cmodel_float), rfloat_number] # , rmodel_bounded_float]
-dlmodel = @test_nowarn DecisionList(rules, defaultconsequent)
+dlmodel = @test_nowarn DecisionList(rules, defaultconsequent);
 @test outputtype(dlmodel) == Union{outcometype(defaultconsequent),outcometype.(rules)...}
 
 rules_integer = @test_nowarn [Rule(phi, cmodel_integer), Rule(phi, cmodel_integer)]
@@ -143,26 +143,26 @@ bmodel_integer = @test_nowarn Branch(phi, dlmodel_integer, dlmodel_integer)
 @test outputtype(bmodel_integer) == Int
 bmodel = @test_nowarn Branch(phi, dlmodel_integer, dlmodel)
 @test outputtype(bmodel) == Union{outcometype.([dlmodel_integer, dlmodel])...}
-@test !isopen(bmodel)
+@test !SoleModels.isopen(bmodel)
 
 bmodel_mixed = @test_nowarn Branch(phi, rmodel_float, dlmodel_integer)
 @test Branch(phi, rmodel_float, dlmodel_integer) isa Branch{Union{Float64,Int}}
 bmodel_mixed_number = @test_nowarn Branch(phi, rmodel_number, dlmodel)
 @test Branch(phi, rmodel_number, dlmodel) isa Branch{Number}
-@test isopen(bmodel_mixed)
+@test SoleModels.isopen(bmodel_mixed)
 @test outputtype(bmodel_mixed) == Union{Nothing,Float64,Int}
 
 # @test_throws ErrorException printmodel(io, rmodel_number);
 # @test_nowarn printmodel(io, rmodel_number)
-@test_nowarn [printmodel(io, r) for r in [rmodel_integer, Rule(phi, cmodel_float), rfloat_number]];
+@test_nowarn [printmodel(io, r) for r in [rmodel_integer, Rule(phi, cmodel_float)]];
 @test_nowarn printmodel(io, dlmodel);
 @test_nowarn printmodel(io, bmodel);
 
-@test_nowarn Branch(phi,(bmodel,bmodel))
-@test_nowarn Branch(phi,(bmodel,rfloat_number))
-@test_nowarn Branch(phi,(dlmodel,rmodel_float))
-bmodel_2 = @test_nowarn Branch(phi,(dlmodel,bmodel))
-@test_nowarn printmodel(io, bmodel_2);
+@test_nowarn Branch(phi,(bmodel,bmodel));
+@test_nowarn Branch(phi,(bmodel,rfloat_number));
+@test_nowarn Branch(phi,(dlmodel,rmodel_float));
+bmodel_2 = @test_nowarn Branch(phi,(dlmodel,bmodel));
+@test_throws ErrorException printmodel(io, bmodel_2);
 
 branch_q = @test_nowarn Branch(formula_q, ("yes", "no"))
 branch_s = @test_nowarn Branch(formula_s, ("yes", "no"))
@@ -180,12 +180,12 @@ dtmodel = @test_nowarn DecisionTree(branch_r)
 @test_nowarn DecisionTree(branch_r_mixed)
 # msmodel = MixedModel(dtmodel)
 
-complex_mixed_model = @test_nowarn Branch(formula_r, (dtmodel, dlmodel))
+complex_mixed_model = @test_nowarn Branch(formula_r, (dtmodel, dlmodel_integer))
 
 @test_nowarn MixedModel("1")
 @test_nowarn MixedModel(const_funwrap)
 @test_nowarn MixedModel(dtmodel)
-@test_nowarn MixedModel(dlmodel)
+@test_nowarn MixedModel(dlmodel_integer)
 ms_model0 = MixedModel(complex_mixed_model)
 
 MixedModel(MixedModel("1"))

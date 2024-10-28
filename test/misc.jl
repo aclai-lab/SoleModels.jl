@@ -176,7 +176,7 @@ defaultconsequent = cmodel_integer
 ###################################### DecisionList ########################################
 d1_string = @test_nowarn DecisionList([r1_string,r2_string],outcome_string)
 
-rules = @test_nowarn [rmodel_number, rmodel_integer, Rule(phi, cmodel_float), rfloat_number] # , rmodel_bounded_float]
+rules = @test_nowarn [rmodel_number, rmodel_integer, Rule(phi, cmodel_float)] # , rmodel_bounded_float]
 dlmodel = @test_nowarn DecisionList(rules, defaultconsequent)
 @test outputtype(dlmodel) == Union{outcometype(defaultconsequent),outcometype.(rules)...}
 

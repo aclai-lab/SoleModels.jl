@@ -70,6 +70,8 @@ struct Rule{O} <: AbstractModel{O}
     end
 end
 
+isopen(m::Rule) = true
+
 """
     antecedent(m::Union{Rule,Branch})::Formula
 
