@@ -131,7 +131,7 @@ end
         info::NamedTuple
     end
 
-A `DecisionTree` is a symbolic model that operates as a nested structure of
+A [`DecisionTree`](@ref) is a symbolic model that operates as a nested structure of
 IF-THEN-ELSE blocks:
 
     IF (antecedent_1) THEN
@@ -202,6 +202,13 @@ struct DecisionTree{O} <: AbstractModel{O}
     end
 end
 
+"""
+    root(m::DecisionTree)
+
+Return the `root` of the tree `m`.
+
+See also [`DecisionTree`](@ref).
+"""
 root(m::DecisionTree) = m.root
 
 isopen(::DecisionTree) = false
@@ -312,8 +319,16 @@ end
 ############################################################################################
 
 """
-A `MixedModel` is a symbolic model that operaters as a free nested structure of IF-THEN-ELSE
-and IF-ELSEIF-ELSE blocks:
+    struct MixedModel{O,FM<:AbstractModel} <: AbstractModel{O}
+        root::M where {M<:AbstractModel{<:O}}
+        info::NamedTuple
+    end
+
+A [`MixedModel`](@ref) is a wrapper of multiple [`AbstractModel`](@ref)s such as
+[`Rule`](@ref)s, [`Branch`](@ref)s, [`DecisionList`](@ref)s, [`DecisionTree`](@ref).
+
+In other words, a [`MixedModel`](@ref) is a symbolic model that operates as a free nested
+structure of IF-THEN-ELSE and IF-ELSEIF-ELSE blocks:
 
     IF (antecedent_1) THEN
         IF (antecedent_1)     THEN (consequent_1)
@@ -327,21 +342,14 @@ and IF-ELSEIF-ELSE blocks:
         END
     END
 
-where the antecedents are formulas to be checked, and the consequents are the feasible
-local outcomes of the block.
+where the [`antecedent`](@ref)s are formulas to be checked, and the [`consequent`](@ref)s
+are the feasible local outcomes of the block.
 
-In Sole.jl, this logic can implemented using `AbstractModel`s such as
-`Rule`s, `Branch`s, `DecisionList`s, `DecisionTree`s, and the be wrapped into
-a `MixedModel`:
+!!! note
+    Note that `FM` refers to the Feasible Models (`FM`) allowed in the model's sub-tree.
 
-    struct MixedModel{O,FM<:AbstractModel} <: AbstractModel{O}
-        root::M where {M<:AbstractModel{<:O}}
-        info::NamedTuple
-    end
-
-Note that `FM` refers to the Feasible Models (`FM`) allowed in the model's sub-tree.
-
-See also [`DecisionTree`](@ref), [`DecisionList`](@ref).
+See also [`AbstractModel`](@ref), [`Branch`](@ref)s, [`DecisionList`](@ref)s,
+[`DecisionTree`](@ref), [`Rule`](@ref)s.
 """
 struct MixedModel{O,FM<:AbstractModel} <: AbstractModel{O}
     root::M where {M<:AbstractModel{<:O}}
@@ -373,6 +381,13 @@ struct MixedModel{O,FM<:AbstractModel} <: AbstractModel{O}
     end
 end
 
+"""
+    root(m::MixedModel)
+
+Return the `root` of model `m`.
+
+See also [`MixedModel`](@ref).
+"""
 root(m::MixedModel) = m.root
 
 isopen(::MixedModel) = isopen(root)
