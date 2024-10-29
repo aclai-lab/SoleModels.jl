@@ -131,8 +131,11 @@ end
         info::NamedTuple
     end
 
-A [`DecisionTree`](@ref) is a symbolic model that operates as a nested structure of
-IF-THEN-ELSE blocks:
+[`DecisionTree`](@ref) wraps a constrained sub-tree of [`Branch`](@ref) and
+[`LeafModel`](@ref).
+
+In other words, a [`DecisionTree`](@ref) is a symbolic model that operates as a nested
+structure of IF-THEN-ELSE blocks:
 
     IF (antecedent_1) THEN
         IF (antecedent_2) THEN
@@ -148,21 +151,15 @@ IF-THEN-ELSE blocks:
         END
     END
 
-where the antecedents are formulas to be, and the consequents are the feasible
-local outcomes of the block.
+where the [`antecedent`](@ref)s are formulas to be, and the [`consequent`](@ref)s are the
+feasible local outcomes of the block.
 
-In practice, a `DecisionTree` simply wraps a constrained
-sub-tree of `Branch` and `LeafModel`:
+!!!note
+    Note that this structure also includes an `info::NamedTuple` for storing additional
+    information.
 
-    struct DecisionTree{O} <: AbstractModel{O}
-        root::M where {M<:AbstractModel}
-        info::NamedTuple
-    end
-
-Note that this structure also includes an `info::NamedTuple` for storing additional
-information.
-
-See also [`MixedModel`](@ref), [`DecisionList`](@ref).
+See also [`Branch`](@ref), [`DecisionList`](@ref), [`DecisionForest`](@ref),
+[`LeafModel`](@ref), [`MixedModel`](@ref).
 """
 struct DecisionTree{O} <: AbstractModel{O}
     root::M where {M<:Union{LeafModel{O},Branch{O}}}
@@ -299,7 +296,10 @@ function apply(
     kwargs...
 )
     pred = hcat([apply(t, d; kwargs...) for t in trees(f)]...)
-    return [bestguess(pred[i,:]; suppress_parity_warning = suppress_parity_warning) for i in 1:size(pred,1)]
+    return [
+        bestguess(pred[i,:]; suppress_parity_warning = suppress_parity_warning)
+        for i in 1:size(pred,1)
+    ]
 end
 
 function nnodes(f::DecisionForest)
@@ -315,7 +315,7 @@ function height(f::DecisionForest)
 end
 
 ############################################################################################
-############################################################################################
+##################################### MixedModel ###########################################
 ############################################################################################
 
 """
