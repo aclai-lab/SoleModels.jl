@@ -318,6 +318,9 @@ end
 """
     function nnodes(f::DecisionForest)
 
+Return the number of nodes within `f`, that is, the sum of the nodes number in each
+wrapped [`DecisionTree`](@ref).
+
 See also [`DecisionForest`](@ref), [`DecisionTree`](@ref).
 """
 function nnodes(f::DecisionForest)
@@ -327,7 +330,9 @@ end
 """
     function nleaves(f::DecisionForest)
 
-See also [`DecisionForest`](@ref), [`DecisionTree`](@ref).
+Return the number of [`LeafModel`](@ref) within `f`.
+
+See also [`DecisionForest`](@ref), [`DecisionTree`](@ref), [`LeafModel`](@ref).
 """
 function nleaves(f::DecisionForest)
     nleafmodels(f)
@@ -335,6 +340,8 @@ end
 
 """
     function height(f::DecisionForest)
+
+Return the maximum height across all the [`DecisionTree`](@ref)s within `f`.
 
 See also [`DecisionForest`](@ref), [`DecisionTree`](@ref).
 """
