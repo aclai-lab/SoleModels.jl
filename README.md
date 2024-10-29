@@ -114,13 +114,9 @@ metricstable(joinrules(🌲; min_ncovered = 1, normalize = true))
 
 <!-- Be careful extracting rules from tree ensembles; there is a combinatorial explosion! -->
 
-## Dataset structures (for logical symbolic learning)
-
-Learning logical models (that is, models with logical formulas as antecedents)
-[often](https://scholar.google.com/scholar?q=Multi-Models+and+Multi-Formulas+Finite+Model+Checking+for+Modal+Logic+Formulas+Induction.)
-requires performing [model checking](https://en.wikipedia.org/wiki/Model_checking) many times.
-*SoleModels.jl* provides a set of structures for representing [logical datasets](https://github.com/aclai-lab/SoleLogics.jl#interpretation-sets),
-specifically optimized for multiple model checking operations.
+## Want to know more?
+The formal foundations of the Sole framework are given in [giopaglia](https://github.com/giopaglia/)'s PhD thesis:
+[*Modal Symbolic Learning: from theory to practice*, G. Pagliarini (2024)](https://scholar.google.com/citations?view_op=view_citation&hl=en&user=FRo4yrcAAAAJ&citation_for_view=FRo4yrcAAAAJ:LkGwnXOMwfcC)
 
 <!-- TODO explain -->
 
