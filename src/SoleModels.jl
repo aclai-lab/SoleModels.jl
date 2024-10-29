@@ -52,8 +52,12 @@ export rulebase, defaultconsequent
 
 export DecisionTree
 export root
+export nnodes, nleaves
+export height
 
-export MixedModel, DecisionForest
+export DecisionForest
+
+export MixedModel
 
 include("types/model.jl")
 include("utils/models/leaf.jl")

@@ -210,11 +210,9 @@ root(m::DecisionTree) = m.root
 
 isopen(::DecisionTree) = false
 
-# TODO join these two or note that they are kept separate due to possible dispatch ambiguities.
 function apply(
     m::DecisionTree,
-    #id::Union{AbstractInterpretation,AbstractInterpretationSet};
-    id::AbstractInterpretation;
+    id::Union{AbstractInterpretation,AbstractInterpretationSet};
     kwargs...
 )
     preds = apply(root(m), id; kwargs...)
@@ -225,27 +223,35 @@ function apply(
     preds
 end
 
-function apply(
-    m::DecisionTree,
-    d::AbstractInterpretationSet;
-    kwargs...,
-)
-    preds = apply(root(m), d; kwargs...)
-    if haskey(info(m), :apply_postprocess)
-        apply_postprocess_f = info(m, :apply_postprocess)
-        preds = apply_postprocess_f.(preds)
-    end
-    preds
-end
+"""
+    function nnodes(t::DecisionTree)
 
+Return the number of nodes in `t`.
+
+See also [`DecisionTree`](@ref).
+"""
 function nnodes(t::DecisionTree)
     nsubmodels(t)
 end
 
+"""
+    function nleaves(t::DecisionTree)
+
+Return the number of leaves in `t`.
+
+See also [`DecisionTree`](@ref).
+"""
 function nleaves(t::DecisionTree)
     nleafmodels(t)
 end
 
+"""
+    function height(t::DecisionTree)
+
+Return the height of `t`.
+
+See also [`DecisionTree`](@ref).
+"""
 function height(t::DecisionTree)
     subtreeheight(t)
 end
