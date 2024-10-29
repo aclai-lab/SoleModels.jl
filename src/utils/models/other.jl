@@ -120,7 +120,6 @@ function apply(
     return preds
 end
 
-
 ############################################################################################
 ################################### DecisionTree ###########################################
 ############################################################################################
@@ -257,18 +256,19 @@ function height(t::DecisionTree)
 end
 
 ############################################################################################
+################################## DecisionForest ##########################################
+############################################################################################
 
 """
-A `Decision Forest` is a symbolic model that wraps an ensemble of models
-
     struct DecisionForest{O} <: AbstractModel{O}
         trees::Vector{<:DecisionTree}
         info::NamedTuple
     end
 
-
-See also [`MixedModel`](@ref), [`DecisionList`](@ref),
+A [`DecisionForest`](@ref) is a symbolic model that wraps an ensemble of
 [`DecisionTree`](@ref).
+
+See also [`DecisionList`](@ref), [`DecisionTree`](@ref), [`MixedModel`](@ref).
 """
 struct DecisionForest{O} <: AbstractModel{O}
     trees::Vector{<:DecisionTree}
@@ -284,6 +284,13 @@ struct DecisionForest{O} <: AbstractModel{O}
     end
 end
 
+"""
+    trees(forest::DecisionForest)
+
+Return all the [`DecisionTree`](@ref)s wrapped within `forest`.
+
+See also [`DecisionTree`](@ref).
+"""
 trees(forest::DecisionForest) = forest.trees
 
 # TODO check these two.
@@ -308,14 +315,29 @@ function apply(
     ]
 end
 
+"""
+    function nnodes(f::DecisionForest)
+
+See also [`DecisionForest`](@ref), [`DecisionTree`](@ref).
+"""
 function nnodes(f::DecisionForest)
     nsubmodels(f)
 end
 
+"""
+    function nleaves(f::DecisionForest)
+
+See also [`DecisionForest`](@ref), [`DecisionTree`](@ref).
+"""
 function nleaves(f::DecisionForest)
     nleafmodels(f)
 end
 
+"""
+    function height(f::DecisionForest)
+
+See also [`DecisionForest`](@ref), [`DecisionTree`](@ref).
+"""
 function height(f::DecisionForest)
     subtreeheight(f)
 end
