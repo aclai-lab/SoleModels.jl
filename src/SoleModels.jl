@@ -70,7 +70,8 @@ include("print.jl")
 export immediatesubmodels, listimmediaterules
 export listrules, joinrules
 
-include("symbolic-utils.jl")
+include("types/abstract-symbolic-model-interface.jl")
+include("utils/symbolic-model-utilities-implementation.jl")
 
 export AssociationRule, ClassificationRule, RegressionRule
 
@@ -78,7 +79,8 @@ include("machine-learning.jl")
 
 export rulemetrics, readmetrics, metricstable
 
-include("evaluate.jl")
+include("types/evaluation_types.jl")
+include("utils/evaluation_impl.jl")
 
 include("experimentals.jl")
 
