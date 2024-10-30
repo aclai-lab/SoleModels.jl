@@ -17,38 +17,52 @@ function immediatesubmodels(
 end
 
 """
-    listimmediaterules(m::AbstractModel{O} where {O})::Rule{<:O}
+    listimmediaterules(m::AbstractModel{O})::Rule{<:O} where {O}
 
 List the immediate rules equivalent to a symbolic model.
 
 See also [`listrules`](@ref), [`AbstractModel`](@ref).
 """
-listimmediaterules(m::AbstractModel{O} where {O})::Rule{<:O} =
+function listimmediaterules(m::AbstractModel{O})::Rule{<:O} where {O}
     error("Please, provide method listimmediaterules(::$(typeof(m))) ($(typeof(m)) is a symbolic model).")
+end
 
 """
-    listrules(
-        m::AbstractModel;
-        use_shortforms::Bool = true,
-        use_leftmostlinearform::Union{Nothing,Bool} = nothing,
-        normalize::Bool = false,
-        force_syntaxtree::Bool = false,
-    )::Vector{<:Rule}
+    listrules(m::AbstractModel{O}; kwargs...)::Vector{<:Rule{<:O}} where {O}
 
 Return a list of rules capturing the knowledge enclosed in symbolic model.
 The behavior of any symbolic model can be synthesised and represented as a
 set of mutually exclusive (and jointly exaustive, if the model is closed) rules.
 
+# Keyword arguments (symbolics)
+- `normalize::Bool = false`
+- `normalize_kwargs::NamedTuple = (; allow_atom_flipping = true, rotate_commutatives = false, )`
+- `use_shortforms::Bool = true`
+- `use_leftmostlinearform::Union{Nothing,Bool} = nothing`
+- `scalar_simplification::Union{Bool,NamedTuple} = normalize ? (; allow_scalar_range_conditions = true) : false`
+- `force_syntaxtree::Bool = false`
+
+# Keyword arguments (metrics/post-pruning)
+- `compute_metrics::Union{Nothing,Bool} = false`
+- `metrics_kwargs::NamedTuple = (;)`
+- `min_coverage::Union{Nothing,Number} = nothing`
+- `min_ncovered::Union{Nothing,Number} = nothing`
+- `min_ninstances::Union{Nothing,Number} = nothing`
+- `min_confidence::Union{Nothing,Number} = nothing`
+- `min_lift::Union{Nothing,Number} = nothing`
+- `metric_filter_callback::Union{Nothing,Base.Callable} = nothing`
+
 See also [`listimmediaterules`](@ref), [`SoleLogics.CONJUNCTION`](@ref),
 [`joinrules`](@ref), [`LeafModel`](@ref), [`AbstractModel`](@ref).
 """
-function listrules(m::AbstractModel;
+function listrules(
+    m::AbstractModel;
+    normalize::Bool = false,
+    normalize_kwargs::NamedTuple = (; allow_atom_flipping = true, rotate_commutatives = false, ),
     compute_metrics::Union{Nothing,Bool} = false,
     metrics_kwargs::NamedTuple = (;),
     use_shortforms::Bool = true,
     use_leftmostlinearform::Union{Nothing,Bool} = nothing,
-    normalize::Bool = false,
-    normalize_kwargs::NamedTuple = (; allow_atom_flipping = true, rotate_commutatives = false, ),
     scalar_simplification::Union{Bool,NamedTuple} = normalize ? (; allow_scalar_range_conditions = true) : false,
     force_syntaxtree::Bool = false,
     min_coverage::Union{Nothing,Number} = nothing,
@@ -69,7 +83,7 @@ Return a set of rules, with exactly one rule per different outcome from the inpu
 For each outcome, the output rule is computed as the logical disjunction of the antecedents
 of the input rules for that outcome.
 
-See also [`listrules`](@ref), [`SoleLogics.DISJUNCTION`](@ref), 
+See also [`listrules`](@ref), [`SoleLogics.DISJUNCTION`](@ref),
 [`LeafModel`](@ref), [`AbstractModel`](@ref).
 """
 function joinrules(
