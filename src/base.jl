@@ -1,4 +1,4 @@
-import Base: convert, length, getindex, isopen
+import Base: convert, length, getindex, iscomplete
 
 using SoleData: slicedataset
 
@@ -40,7 +40,7 @@ See also
 [`LeafModel`](@ref),
 [`Rule`](@ref),
 [`Branch`](@ref),
-[`isopen`](@ref),
+[`iscomplete`](@ref),
 [`apply`](@ref),
 [`info`](@ref),
 [`outcometype`](@ref).
@@ -64,7 +64,7 @@ Otherwise, the model can output `nothing` values and is referred to as *open*.
 """
 
 """
-    isopen(::AbstractModel)::Bool
+    iscomplete(::AbstractModel)::Bool
 
 Return whether a model is open.
 $(doc_open_model)
@@ -73,7 +73,7 @@ is an example of *closed* model.
 
 See also [`AbstractModel`](@ref).
 """
-isopen(::AbstractModel) = true
+iscomplete(::AbstractModel) = true
 
 """
     outputtype(m::AbstractModel)
@@ -81,18 +81,18 @@ isopen(::AbstractModel) = true
 Return a supertype for the outputs obtained when `apply`ing a model.
 The result depends on whether the model is open or closed:
 
-    outputtype(M::AbstractModel{O}) = isopen(M) ? Union{Nothing,O} : O
+    outputtype(M::AbstractModel{O}) = iscomplete(M) ? Union{Nothing,O} : O
 
 Note that if the model is closed, then `outputtype(m)` is equal to `outcometype(m)`.
 
 See also
-[`isopen`](@ref),
+[`iscomplete`](@ref),
 [`apply`](@ref),
 [`outcometype`](@ref),
 [`AbstractModel`](@ref).
 """
 function outputtype(m::AbstractModel)
-    isopen(m) ? Union{Nothing,outcometype(m)} : outcometype(m)
+    iscomplete(m) ? Union{Nothing,outcometype(m)} : outcometype(m)
 end
 
 """
@@ -124,7 +124,7 @@ While producing the output, this function affects the info keys `:supporting_lab
 parts of the model.
 
 See also
-[`isopen`](@ref),
+[`iscomplete`](@ref),
 [`readmetrics`](@ref).
 [`AbstractModel`](@ref),
 [`SoleLogics.AbstractInterpretation`](@ref),
@@ -259,7 +259,7 @@ struct ConstantModel{O} <: LeafModel{O}
 end
 
 outcome(m::ConstantModel) = m.outcome
-isopen(::ConstantModel) = false
+iscomplete(::ConstantModel) = false
 apply(m::ConstantModel, i::AbstractInterpretation; kwargs...) = outcome(m)
 apply(m::ConstantModel, d::AbstractInterpretationSet, i_instance::Integer; kwargs...) = outcome(m)
 apply(m::ConstantModel, d::AbstractInterpretationSet; kwargs...) = Fill(outcome(m), ninstances(d))
@@ -284,7 +284,7 @@ See also [`ConstantModel`](@ref), [`LeafModel`](@ref).
 """
 struct FunctionModel{O} <: LeafModel{O}
     f::FunctionWrapper{O}
-    # isopen::Bool TODO
+    # iscomplete::Bool TODO
     info::NamedTuple
 
     function FunctionModel{O}(
@@ -333,7 +333,7 @@ struct FunctionModel{O} <: LeafModel{O}
 end
 
 f(m::FunctionModel) = m.f
-isopen(::FunctionModel) = false
+iscomplete(::FunctionModel) = false
 function apply(
     m::FunctionModel,
     i::AbstractInterpretation;
@@ -652,7 +652,7 @@ See also
 """
 negconsequent(m::Branch) = m.negconsequent
 
-isopen(m::Branch) = isopen(posconsequent(m)) || isopen(negconsequent(m))
+iscomplete(m::Branch) = iscomplete(posconsequent(m)) || iscomplete(negconsequent(m))
 
 function apply(
     m::Branch,
@@ -797,7 +797,7 @@ end
 rulebase(m::DecisionList) = m.rulebase
 defaultconsequent(m::DecisionList) = m.defaultconsequent
 
-isopen(m::DecisionList) = isopen(defaultconsequent(m))
+iscomplete(m::DecisionList) = iscomplete(defaultconsequent(m))
 
 function apply(
     m::DecisionList,
@@ -920,7 +920,7 @@ end
 
 root(m::DecisionTree) = m.root
 
-isopen(::DecisionTree) = false
+iscomplete(::DecisionTree) = false
 
 # TODO join these two or note that they are kept separate due to possible dispatch ambiguities.
 function apply(
@@ -1091,7 +1091,7 @@ end
 
 root(m::MixedModel) = m.root
 
-isopen(::MixedModel) = isopen(root)
+iscomplete(::MixedModel) = iscomplete(root)
 
 function apply(
     m::MixedModel,

@@ -111,7 +111,7 @@ function readmetrics(m::LeafModel{L}; class_share_map = nothing, round_digits = 
         end
     else
         return (;)
-    end, (; coverage = 1.0)) # Note: assuming all leaf models are closed (see `isopen`).
+    end, (; coverage = 1.0)) # Note: assuming all leaf models are closed (see `iscomplete`).
 end
 
 default_additional_metrics = (; natoms = r->natoms(antecedent(r)))

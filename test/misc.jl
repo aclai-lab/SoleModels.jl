@@ -193,13 +193,13 @@ bmodel_integer = @test_nowarn Branch(phi, dlmodel_integer, dlmodel_integer)
 @test outputtype(bmodel_integer) == Int
 bmodel = @test_nowarn Branch(phi, dlmodel_integer, dlmodel)
 @test outputtype(bmodel) == Union{outcometype.([dlmodel_integer,dlmodel])...}
-@test !isopen(bmodel)
+@test !iscomplete(bmodel)
 
 bmodel_mixed = @test_nowarn Branch(phi, rmodel_float, dlmodel_integer)
 @test Branch(phi, rmodel_float, dlmodel_integer) isa Branch{Union{Float64,Int}}
 bmodel_mixed_number = @test_nowarn Branch(phi, rmodel_number, dlmodel)
 @test Branch(phi, rmodel_number, dlmodel) isa Branch{Number}
-@test isopen(bmodel_mixed)
+@test iscomplete(bmodel_mixed)
 @test outputtype(bmodel_mixed) == Union{Nothing,Float64,Int}
 
 @test_nowarn [displaymodel(r) for r in rules];
