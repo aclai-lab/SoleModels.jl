@@ -29,10 +29,9 @@ and enclose a *tree* of `AbstractModel`s (with `LeafModel`s at the leaves).
 # Utility functions
 - `outcometype(m::AbstractModel)`
 - `outputtype(m::AbstractModel)`
-- `info(m::AbstractModel, key)`
-- `info!(m::AbstractModel, key)`
+- `info(m::AbstractModel, [key, [defaultval]])`
+- `info!(m::AbstractModel, key, value)`
 - `hasinfo(m::AbstractModel, key)`
-- `wrap(m::AbstractModel)`
 
 # Examples
 TODO
@@ -206,20 +205,23 @@ See also [`AbstractModel`](@ref), [`info`](@ref).
 hasinfo(m::AbstractModel, key) = haskey(info(m), key)
 
 """
+    wrap(o::Any, FM::Type{<:AbstractModel})
+    wrap(m::AbstractModel)
     wrap(o::Any)::AbstractModel
 
 This function wraps anything into an AbstractModel.
 The default behavior is the following:
-- when called on an `AbstractModel`, the model is simply returned
-(no wrapping is performed);
-- Function`s and `FunctionWrapper`s are wrapped into a [`FunctionModel`](@ref);
-- every other object is wrapped into a `ConstantModel`.
+    - when called on an `AbstractModel`, the model is simply returned (no wrapping is
+        performed);
+    - Function`s and `FunctionWrapper`s are wrapped into a [`FunctionModel`](@ref);
+    - every other object is wrapped into a `ConstantModel`.
 
 See also [`AbstractModel`](@ref), [`ConstantModel`](@ref), [`FunctionModel`](@ref),
 [`LeafModel`](@ref).
 """
 wrap(o::Any, FM::Type{<:AbstractModel}) = convert(FM, wrap(o))
 wrap(m::AbstractModel) = m
+wrap(o::Any)::AbstractModel = error("Please, provide method wrap($(typeof(o))).")
 
 ############################################################################################
 ##################################### LeafModel ############################################
