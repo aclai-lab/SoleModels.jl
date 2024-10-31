@@ -181,7 +181,7 @@ info(m::AbstractModel, key, defaultval) = Base.get(m.info, key, defaultval)
     info!(m::AbstractModel, info::NamedTuple; replace::Bool=false)
     info!(m::AbstractModel, key, val)
 
-Setter for model `m` `info` structure.
+Overwrite the `info` structure within `m`.
 
 # Keyword Arguments
 - `replace::Bool`: overwrite the entire info structure.
