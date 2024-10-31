@@ -72,8 +72,6 @@ apply(
     kwargs...
 ) = Fill(outcome(m), ninstances(d))
 
-wrap(o::O) where {O} = convert(ConstantModel{O}, o)
-
 convert(::Type{ConstantModel{O}}, o::O) where {O} = ConstantModel{O}(o)
 convert(::Type{<:AbstractModel{F}}, m::ConstantModel) where {F} = ConstantModel{F}(m)
 
@@ -187,6 +185,3 @@ function apply(
 end
 
 convert(::Type{<:AbstractModel{F}}, m::FunctionModel) where {F} = FunctionModel{F}(m)
-
-wrap(o::Function) = FunctionModel(o)
-wrap(o::FunctionWrapper{O}) where {O} = FunctionModel{O}(o)

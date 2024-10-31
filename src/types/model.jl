@@ -221,7 +221,7 @@ See also [`AbstractModel`](@ref), [`ConstantModel`](@ref), [`FunctionModel`](@re
 """
 wrap(o::Any, FM::Type{<:AbstractModel}) = convert(FM, wrap(o))
 wrap(m::AbstractModel) = m
-wrap(o::Any)::AbstractModel = error("Please, provide method wrap($(typeof(o))).")
+# wrap(o::Any)::AbstractModel = error("Please, provide method wrap($(typeof(o))).")
 
 ############################################################################################
 ##################################### LeafModel ############################################

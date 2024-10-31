@@ -65,6 +65,7 @@ include("utils/models/leaf.jl")
 include("utils/models/rule-and-branch.jl")
 include("utils/models/other.jl")
 include("utils/models/linear-forms-utilities.jl")
+include("utils/models/wrap.jl")
 
 include("apply!.jl")
 
