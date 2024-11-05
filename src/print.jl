@@ -529,7 +529,7 @@ function printmodel(
     end
 
     ########################################################################################
-    depth == 0 && show_symbols && print(io, "▣ Forest of $(ntrees(m)) trees")
+    depth == 0 && show_symbols && print(io, "$(MODEL_SYMBOL) Forest of $(ntrees(m)) trees")
     if isnothing(max_depth) || depth < max_depth
         _show_rule_metrics = show_rule_metrics
         println(io, "$(indentation_list_children)")
