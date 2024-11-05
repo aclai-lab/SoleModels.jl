@@ -116,11 +116,11 @@ Note that predictions can be `nothing` if the model is *open* (e.g., if the mode
 - Any additional keyword argument is passed down to the model subtree's leaves
 
 `check_args` and `check_kwargs` can influence check's behavior at the time
-of its computation (see [`SoleLogics.check](@ref))
+of its computation (see [`SoleLogics.check`](@ref))
 
 `functional_args` and `functional_kwargs` can influence FunctionModel's
 behavior when the corresponding function is applied to AbstractInterpretation (see
-[`FunctionModel`](@ref), [`SoleLogics.AbstractInterpretation](@ref))
+[`FunctionModel`](@ref), [`SoleLogics.AbstractInterpretation`](@ref))
 
 A model state-changing version of the function, [`apply!`], exist.
 While producing the output, this function affects the info keys `:supporting_labels` and

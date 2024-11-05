@@ -349,6 +349,17 @@ function height(f::DecisionForest)
     subtreeheight(f)
 end
 
+"""
+    function ntrees(f::DecisionForest)
+
+Return the number of trees within `f`.
+
+See also [`DecisionForest`](@ref), [`DecisionTree`](@ref), [`trees`](@ref).
+"""
+function ntrees(f::DecisionForest)
+    length(trees(f))
+end
+
 ############################################################################################
 ##################################### MixedModel ###########################################
 ############################################################################################

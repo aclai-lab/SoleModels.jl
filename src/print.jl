@@ -10,7 +10,7 @@ import Base: display
 # const default_indentation_last_space = " "
 
 const default_indentation_list_children = ""
-const default_indentation_hspace     = ""
+const default_indentation_hspace     = " "
 const default_indentation_any_first  = "├" # "╭✔ "
 const default_indentation_any_space  = "│"
 const default_indentation_last_first = "└" # "╰✘ "
@@ -26,6 +26,9 @@ const TICK = "✔"
 # const CROSS = "☒"
 # const CROSS = "〤"
 const CROSS = "✘"
+
+const MODEL_SYMBOL = "\e[34m▣\e[0m"
+# const MODEL_SYMBOL = "▣"
 
 # TODO figure out what is the expected behaviour of show_symbols = false, and comply with it?
 
@@ -182,7 +185,7 @@ function printmodel(
         println(io, "$(indentation_str)$(_typestr)$((length(info(m)) == 0) ?
         "" : "\n$(indentation_str)Info: $(info(m))")")
     end
-    depth == 0 && show_symbols && print(io, "\e[34m▣\e[0m")
+    depth == 0 && show_symbols && print(io, MODEL_SYMBOL)
     print(io, " $(outcome(m))")
     (show_subtree_metrics || show_metrics != false) && print(io, " : $(get_metrics_string(m; (show_metrics isa NamedTuple ? show_metrics : [])...))")
     show_shortforms != false && haskey(info(m), :shortform) && print(io, "\t\t\t\t\t\t\tSHORTFORM: $(@_antecedent_syntaxstring info(m)[:shortform] m parenthesize_atoms syntaxstring_kwargs kwargs)")
@@ -215,7 +218,7 @@ function printmodel(
         println(io, "$(indentation_str)$(_typestr)$((length(info(m)) == 0) ?
         "" : "\n$(indentation_str)Info: $(info(m))")")
     end
-    depth == 0 && show_symbols && print(io, "\e[34m▣\e[0m")
+    depth == 0 && show_symbols && print(io, MODEL_SYMBOL)
     print(io, " $(f(m))")
     (show_subtree_metrics || show_metrics != false) && print(io, " : $(get_metrics_string(m; (show_metrics isa NamedTuple ? show_metrics : [])...))")
     show_shortforms != false && haskey(info(m), :shortform) && print(io, "\t\t\t\t\t\t\tSHORTFORM: $(@_antecedent_syntaxstring info(m)[:shortform] m parenthesize_atoms syntaxstring_kwargs kwargs)")
@@ -260,7 +263,7 @@ function printmodel(
         println(io, "$(indentation_str)$(_typestr)$((length(info(m)) == 0) ?
         "" : "\n$(indentation_str)Info: $(info(m))")")
     end
-    depth == 0 && show_symbols && print(io, "\e[34m▣\e[0m")
+    depth == 0 && show_symbols && print(io, MODEL_SYMBOL)
     ########################################################################################
     if isnothing(max_depth) || depth < max_depth
         pipe = "$(indentation_list_children) "
@@ -282,7 +285,7 @@ function printmodel(
             println(io, "")
         else
             line = "$(pipe)$(ant_str)" * "  $(arrow) "
-            ind_str = indentation_str * repeat(" ", length(line) + length("\e[34m▣\e[0m") + 1)
+            ind_str = indentation_str * repeat(" ", length(line) + length(MODEL_SYMBOL) + 1)
             if (show_subtree_metrics || show_metrics != false)
                 print(io, line)
                 _io = IOBuffer()
@@ -339,7 +342,7 @@ function printmodel(
         println(io, "$(indentation_str)$(_typestr)$((length(info(m)) == 0) ?
         "" : "\n$(indentation_str)Info: $(info(m))")")
     end
-    depth == 0 && show_symbols && print(io, "\e[34m▣\e[0m")
+    depth == 0 && show_symbols && print(io, MODEL_SYMBOL)
     ########################################################################################
     if isnothing(max_depth) || depth < max_depth
         pipe = "$(indentation_list_children) "
@@ -414,7 +417,7 @@ function printmodel(
         println(io, "$(indentation_str)$(_typestr)$((length(info(m)) == 0) ?
         "" : "\n$(indentation_str)Info: $(info(m))")")
     end
-    depth == 0 && show_symbols && print(io, "\e[34m▣\e[0m")
+    depth == 0 && show_symbols && print(io, MODEL_SYMBOL)
     ########################################################################################
     _show_rule_metrics = show_rule_metrics
     # TODO show this metrics if show_metrics
@@ -496,6 +499,7 @@ function printmodel(
     depth = 0,
     max_depth = nothing,
     show_subtree_info = false,
+    show_rule_metrics = true,
     show_subtree_metrics = false,
     show_metrics = false,
     show_shortforms = false,
@@ -525,9 +529,28 @@ function printmodel(
     end
 
     ########################################################################################
-    for tree in trees(m)
-        @_print_submodel io tree indentation_str indentation (depth-1) max_depth show_subtree_info false show_subtree_metrics show_shortforms show_intermediate_finals tree_mode show_symbols syntaxstring_kwargs parenthesize_atoms kwargs
+    depth == 0 && show_symbols && print(io, "▣ Forest of $(ntrees(m)) trees")
+    if isnothing(max_depth) || depth < max_depth
+        _show_rule_metrics = show_rule_metrics
+        println(io, "$(indentation_list_children)")
+        for (i_tree, tree) in enumerate(trees(m))
+            if i_tree < ntrees(m)
+                pipe = indentation_any_first*"[$i_tree/$(ntrees(m))]┐"
+                pad_str = indentation_str*indentation_any_space*repeat(indentation_hspace, length(pipe)-length(indentation_any_space)-1-1)
+                ind_str = pad_str*indentation_last_space
+            else
+                pipe = indentation_last_first*"[$i_tree/$(ntrees(m))]┐"
+                ind_str = indentation_str*indentation_last_space*repeat(indentation_hspace, length(pipe)-length(indentation_last_space)-1-1)*indentation_last_space
+            end
+            print(io, pipe)
+            
+            @_print_submodel io tree ind_str indentation depth max_depth show_subtree_info _show_rule_metrics show_subtree_metrics show_shortforms show_intermediate_finals tree_mode show_symbols syntaxstring_kwargs parenthesize_atoms kwargs
+        end
+    else
+        depth != 0 && print(io, " ")
+        println(io, "[...]")
     end
+    
     nothing
 end
 
