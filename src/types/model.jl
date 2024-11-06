@@ -23,7 +23,7 @@ As such, an `AbstractModel` can actually be the result of a composition of many 
 and enclose a *tree* of `AbstractModel`s (with `LeafModel`s at the leaves).
 
 # Interface
-- `isopen(m::AbstractModel)::Bool`
+- `iscomplete(m::AbstractModel)::Bool`
 - `apply(m::AbstractModel, i::AbstractInterpretation; kwargs...)`
 
 # Utility functions
@@ -36,25 +36,25 @@ and enclose a *tree* of `AbstractModel`s (with `LeafModel`s at the leaves).
 # Examples
 TODO
 
-See also [`apply`](@ref), [`Branch`](@ref), [`info`](@ref), [`isopen`](@ref),
+See also [`apply`](@ref), [`Branch`](@ref), [`info`](@ref), [`iscomplete`](@ref),
 [`LeafModel`](@ref), [`outcometype`](@ref), [`Rule`](@ref).
 """
 abstract type AbstractModel{O} end
 
 """
-    isopen(::AbstractModel)::Bool
+    iscomplete(::AbstractModel)::Bool
 
-Return whether a model is open.
+Return whether a model is complete.
 
-An [`AbstractModel`](@ref) is *closed* if it is always able to provide an outcome of type
-`O`. Otherwise, the model can output `nothing` values and is referred to as *open*.
+An [`AbstractModel`](@ref) is *complete* if it is always able to provide an outcome of type
+`O`. Otherwise, the model can output `nothing` values and is referred to as *incomplete*.
 
-[`Rule`](@ref) is an example of an *open* model, while [`Branch`](@ref) is an example of
-*closed* model.
+[`Rule`](@ref) is an example of an *incomplete* model, while [`Branch`](@ref) is an example of
+*complete* model.
 
 See also [`AbstractModel`](@ref).
 """
-isopen(m::AbstractModel) = error("Please, provide method isopen($(typeof(m))).")
+iscomplete(m::AbstractModel) = error("Please, provide method iscomplete($(typeof(m))).")
 
 
 """
@@ -74,17 +74,17 @@ outcometype(m::AbstractModel) = outcometype(typeof(m))
 Return a supertype for the outputs obtained when `apply`ing a model.
 
 # Implementation
-The result depends on whether the model is open or closed
+The result depends on whether the model is incomplete or complete
 ```julia-repl
-julia> outputtype(M::AbstractModel{O}) = isopen(M) ? Union{Nothing,O} : O
+julia> outputtype(m::AbstractModel{O}) where {O} = iscomplete(m) ? O : Union{Nothing,O}
 ```
 
-Note that if the model is closed, then `outputtype(m)` is equal to `outcometype(m)`.
+Note that if the model is complete, then `outputtype(m)` is equal to `outcometype(m)`.
 
-See also [`AbstractModel`](@ref), [`apply`](@ref), [`isopen`](@ref), [`outcometype`](@ref).
+See also [`AbstractModel`](@ref), [`apply`](@ref), [`iscomplete`](@ref), [`outcometype`](@ref).
 """
 function outputtype(m::AbstractModel)
-    isopen(m) ? Union{Nothing,outcometype(m)} : outcometype(m)
+    iscomplete(m) ? outcometype(m) : Union{Nothing,outcometype(m)}
 end
 
 """
@@ -105,7 +105,7 @@ end
 
 Return the output prediction of a model `m` on a logical interpretation `i`,
 on the `i_instance` of a dataset `d`, or on all instances of a dataset `d`.
-Note that predictions can be `nothing` if the model is *open* (e.g., if the model is a `Rule`).
+Note that predictions can be `nothing` if the model is *incomplete* (e.g., if the model is a `Rule`).
 
 # Keyword Arguments
 - `check_args::Tuple = ()`;
@@ -127,7 +127,7 @@ While producing the output, this function affects the info keys `:supporting_lab
 parts of the model.
 
 See also `SoleLogics.AbstractInterpretation`, `SoleLogics.AbstractInterpretationSet`,
-[`AbstractModel`](@ref), [`isopen`](@ref), [`readmetrics`](@ref).
+[`AbstractModel`](@ref), [`iscomplete`](@ref), [`readmetrics`](@ref).
 """
 function apply(
     m::AbstractModel,

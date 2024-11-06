@@ -1,4 +1,4 @@
-import Base: convert, length, getindex, isopen
+import Base: convert, length, getindex
 
 using SoleData: slicedataset
 
@@ -70,7 +70,7 @@ struct Rule{O} <: AbstractModel{O}
     end
 end
 
-isopen(m::Rule) = true
+iscomplete(m::Rule) = false
 
 """
     antecedent(m::Union{Rule,Branch})::Formula
@@ -233,7 +233,7 @@ See also [`antecedent`](@ref), [`Branch`](@ref), [`posconsequent`](@ref).
 """
 negconsequent(m::Branch) = m.negconsequent
 
-isopen(m::Branch) = isopen(posconsequent(m)) || isopen(negconsequent(m))
+iscomplete(m::Branch) = iscomplete(posconsequent(m)) && iscomplete(negconsequent(m))
 
 function apply(
     m::Branch,

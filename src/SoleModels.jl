@@ -29,7 +29,7 @@ using SoleData.DimensionalDatasets: globalrel
 ############################################################################################
 
 export AbstractModel
-export isopen
+export iscomplete
 export outcometype, outputtype
 export apply, apply!
 export info, info!, hasinfo

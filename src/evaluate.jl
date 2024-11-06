@@ -112,7 +112,7 @@ function readmetrics(m::LeafModel{L}; class_share_map = nothing, round_digits = 
         end
     else
         return (;)
-    end, (; coverage = 1.0)) # Note: assuming all leaf models are closed (see `isopen`).
+    end, (; coverage = 1.0)) # Note: assuming all leaf models are complete (see `iscomplete`).
 end
 
 function readmetrics(m::Rule; kwargs...)

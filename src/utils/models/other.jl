@@ -1,4 +1,4 @@
-import Base: convert, length, getindex, isopen
+import Base: convert, length, getindex
 
 using SoleData: slicedataset
 
@@ -67,14 +67,14 @@ rulebase(m::DecisionList) = m.rulebase
 Return the default [`consequent`](@ref) of `m`.
 
 !!! note
-    The returned model is open if and only if `m` is open.
-    See also [`isopen`](@ref).
+    The returned model is complete if and only if `m` is complete.
+    See also [`iscomplete`](@ref).
 
 See also [`AbstractModel`](@ref), [`DecisionList`](@ref), [`Rule`](@ref).
 """
 defaultconsequent(m::DecisionList) = m.defaultconsequent
 
-isopen(m::DecisionList) = isopen(defaultconsequent(m))
+iscomplete(m::DecisionList) = iscomplete(defaultconsequent(m))
 
 function apply(
     m::DecisionList,
@@ -207,7 +207,7 @@ See also [`DecisionTree`](@ref).
 """
 root(m::DecisionTree) = m.root
 
-isopen(::DecisionTree) = false
+iscomplete(::DecisionTree) = true
 
 function apply(
     m::DecisionTree,
@@ -436,7 +436,7 @@ See also [`MixedModel`](@ref).
 """
 root(m::MixedModel) = m.root
 
-isopen(::MixedModel) = isopen(root)
+iscomplete(::MixedModel) = iscomplete(root)
 
 function apply(
     m::MixedModel,
