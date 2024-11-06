@@ -61,11 +61,13 @@ export trees
 export MixedModel
 
 include("types/model.jl")
+include("types/api.jl")
 include("utils/models/leaf.jl")
 include("utils/models/rule-and-branch.jl")
 include("utils/models/other.jl")
 include("utils/models/linear-forms-utilities.jl")
 include("utils/models/wrap.jl")
+include("utils/models/syntax-utilities.jl")
 
 include("apply!.jl")
 
