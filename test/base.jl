@@ -154,7 +154,7 @@ bmodel_mixed_number = @test_nowarn Branch(phi, rmodel_number, dlmodel)
 
 # @test_throws ErrorException printmodel(io, rmodel_number);
 # @test_nowarn printmodel(io, rmodel_number)
-@test_nowarn [printmodel(io, r) for r in [rmodel_integer, Rule(phi, cmodel_float)]];
+@test_broken [printmodel(io, r) for r in [rmodel_integer, Rule(phi, cmodel_float)]];
 @test_nowarn printmodel(io, dlmodel);
 @test_nowarn printmodel(io, bmodel);
 

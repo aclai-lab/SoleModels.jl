@@ -203,7 +203,7 @@ bmodel_mixed_number = @test_nowarn Branch(phi, rmodel_number, dlmodel)
 @test isopen(bmodel_mixed)
 @test outputtype(bmodel_mixed) == Union{Nothing,Float64,Int}
 
-String(take!(io))
+@test_broken String(take!(io))
 @test_nowarn displaymodel(dlmodel);
 String(take!(io))
 @test_nowarn displaymodel(bmodel);

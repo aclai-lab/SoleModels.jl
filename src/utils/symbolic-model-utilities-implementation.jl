@@ -2,8 +2,6 @@
 # Symbolic Model Utilities Implementation
 ############################################################################################
 
-include("symbolic_model_interface.jl")
-
 # Basic immediate submodels implementations
 immediatesubmodels(m::LeafModel{O}) where {O} = Vector{<:AbstractModel{<:O}}[]
 immediatesubmodels(m::Rule) = [consequent(m)]
