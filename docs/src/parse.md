@@ -4,7 +4,7 @@ CurrentModule = SoleModels
 
 # Parsers
 
-```@autodocs
+```@autodocs; canonical=false
 Modules = [SoleModels]
 Pages   = ["parse.jl"]
 ```

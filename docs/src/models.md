@@ -4,12 +4,15 @@ CurrentModule = SoleModels
 
 # Symbolic models
 
-```@autodocs
+```@index
+```
+
+```@autodocs; canonical=false
 Modules = [SoleModels]
 Pages   = ["base.jl"]
 ```
 
-```@docs
+```@docs; canonical=false
 ConstantModel
 FunctionModel
 Rule
@@ -22,14 +25,14 @@ printmodel
 
 ## Evaluating symbolic models
 
-```@autodocs
+```@autodocs; canonical=false
 Modules = [SoleModels]
 Pages   = ["evaluate.jl"]
 ```
 
 ## Manipulating symbolic knowledge
 
-```@autodocs
+```@autodocs; canonical=false
 Modules = [SoleModels]
 Pages   = ["symbolic-utils.jl"]
 ```

@@ -9,7 +9,10 @@ for this package.
 While the full reference for SoleLogics can be found [here](https://aclai-lab.github.io/SoleLogics.jl/),
 these are the basic logical concepts needed for *symbolic modelling*.
 
-```@docs
+```@index
+```
+
+```@docs; canonical=false
 SoleLogics.Atom
 SoleLogics.CONJUNCTION
 SoleLogics.DISJUNCTION
