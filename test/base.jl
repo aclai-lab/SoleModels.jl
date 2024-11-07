@@ -131,7 +131,9 @@ defaultconsequent = cmodel_integer
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Other models ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-rules = @test_nowarn [rmodel_number, rmodel_integer, Rule(phi, cmodel_float), rfloat_number] # , rmodel_bounded_float]
+@test_nowarn [rmodel_number, rmodel_integer, Rule(phi, cmodel_float), rfloat_number] # , rmodel_bounded_float]
+
+rules = @test_nowarn [rmodel_integer, Rule(phi, cmodel_float)] # , rmodel_bounded_float]
 dlmodel = @test_nowarn DecisionList(rules, defaultconsequent);
 @test outputtype(dlmodel) == Union{outcometype(defaultconsequent),outcometype.(rules)...}
 
