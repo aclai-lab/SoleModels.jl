@@ -35,6 +35,7 @@ Symbolic models can wrap other `AbstractModel`s, and use them to compute the out
 As such, an `AbstractModel` can actually be the result of a composition of many models,
 and enclose a *tree* of `AbstractModel`s (with `LeafModel`s at the leaves).
 
+# TODO - bring missing dispatches here (do the same for other model types)
 # Interface
 - `isopen(m::AbstractModel)`
 - `apply(m::AbstractModel, i::AbstractInterpretation; kwargs...)`
