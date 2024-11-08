@@ -23,15 +23,17 @@ As such, an `AbstractModel` can actually be the result of a composition of many 
 and enclose a *tree* of `AbstractModel`s (with `LeafModel`s at the leaves).
 
 # Interface
-- `iscomplete(m::AbstractModel)::Bool`
 - `apply(m::AbstractModel, i::AbstractInterpretation; kwargs...)`
-
-# Utility functions
+- `iscomplete(m::AbstractModel)::Bool`
 - `outcometype(m::AbstractModel)`
 - `outputtype(m::AbstractModel)`
 - `info(m::AbstractModel, [key, [defaultval]])`
 - `info!(m::AbstractModel, key, value)`
 - `hasinfo(m::AbstractModel, key)`
+- `listrules(m::AbstractModel; kwargs...)`
+
+# Utility functions
+- `apply(m::AbstractModel, i::AbstractInterpretationSet; kwargs...)`
 
 # Examples
 TODO
@@ -115,7 +117,7 @@ Note that predictions can be `nothing` if the model is *incomplete* (e.g., if th
 - Any additional keyword argument is passed down to the model subtree's leaves
 
 `check_args` and `check_kwargs` can influence check's behavior at the time
-of its computation (see [`SoleLogics.check`](@ref))
+of its computation (see [`SoleLogics.check`](@ref)).
 
 `functional_args` and `functional_kwargs` can influence FunctionModel's
 behavior when the corresponding function is applied to AbstractInterpretation (see

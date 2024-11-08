@@ -359,10 +359,11 @@ See also [`listimmediaterules`](@ref),
 [`joinrules`](@ref), [`LeafModel`](@ref),
 [`AbstractModel`](@ref).
 """
-function listrules(m::AbstractModel;
+function listrules(
+    m::AbstractModel;
     compute_metrics::Union{Nothing,Bool} = false,
     metrics_kwargs::NamedTuple = (;),
-    #
+    # 
     use_shortforms::Bool = true,
     use_leftmostlinearform::Union{Nothing,Bool} = nothing,
     normalize::Bool = false,

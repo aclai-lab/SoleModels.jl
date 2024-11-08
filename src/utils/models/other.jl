@@ -215,6 +215,7 @@ function apply(
     kwargs...
 )
     preds = apply(root(m), id; kwargs...)
+    # TODO note: info should probably not interfere on the model's behavior
     if haskey(info(m), :apply_postprocess)
         apply_postprocess_f = info(m, :apply_postprocess)
         preds = apply_postprocess_f.(preds)
