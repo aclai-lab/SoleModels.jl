@@ -34,6 +34,7 @@ and enclose a *tree* of `AbstractModel`s (with `LeafModel`s at the leaves).
 
 # Utility functions
 - `apply(m::AbstractModel, i::AbstractInterpretationSet; kwargs...)`
+- See AbstractTrees...
 
 # Examples
 TODO
@@ -223,6 +224,57 @@ See also [`AbstractModel`](@ref), [`ConstantModel`](@ref), [`FunctionModel`](@re
 wrap(o::Any, FM::Type{<:AbstractModel}) = convert(FM, wrap(o))
 wrap(m::AbstractModel) = m
 # wrap(o::Any)::AbstractModel = error("Please, provide method wrap($(typeof(o))).")
+
+
+"""
+    immediatesubmodels(m::AbstractModel)
+
+Return the list of immediate child models.
+Note: if the model is a leaf model, then the returned list will be empty.
+
+# Examples
+```julia-repl
+julia> using SoleLogics
+
+julia> branch = Branch(SoleLogics.parseformula("p∧q∨r"), "YES", "NO");
+
+julia> immediatesubmodels(branch)
+2-element Vector{SoleModels.ConstantModel{String}}:
+ SoleModels.ConstantModel{String}
+YES
+
+ SoleModels.ConstantModel{String}
+NO
+
+julia> branch2 = Branch(SoleLogics.parseformula("s→p"), branch, 42);
+
+
+julia> printmodel.(immediatesubmodels(branch2));
+Branch
+┐ p ∧ (q ∨ r)
+├ ✔ YES
+└ ✘ NO
+
+ConstantModel
+42
+```
+
+See also
+[`submodels`](@ref),
+[`LeafModel`](@ref),
+[`AbstractModel`](@ref).
+"""
+function immediatesubmodels(
+    m::AbstractModel{O}
+)::Vector{<:{AbstractModel{<:O}}} where {O}
+    return error("Please, provide method immediatesubmodels(::$(typeof(m))).")
+end
+
+# AbstracTrees interface
+using AbstractTrees
+import AbstractTrees: children
+
+AbstractTrees.children(m::AbstractModel) = immediatesubmodels(m)
 
 ############################################################################################
 ##################################### LeafModel ############################################

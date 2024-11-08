@@ -49,14 +49,17 @@ Base.show(io::IO, m::AbstractModel) = printmodel(io, m)
 Base.show(io::IO, ::MIME"text/plain", m::AbstractModel) = printmodel(io, m)
 
 
+# const DEFAULT_HEADER = :brief
+const DEFAULT_HEADER = false
+
 doc_printdisplay_model = """
     printmodel(io::IO, m::AbstractModel; kwargs...)
     displaymodel(m::AbstractModel; kwargs...)
 
-print or returnPa string representation of model `m`.
+print or return a string representation of model `m`.
 
 # Arguments
-- `header::Bool = true`: when set to `true`, a header is printed, displaying the `info` structure for `m`;
+- `header::Bool = $(DEFAULT_HEADER)`: when set to `true`, a header is printed, displaying the `info` structure for `m`;
 - `show_subtree_info::Bool = false`: when set to `true`, the header is printed for models in the sub-tree of `m`;
 - `show_metrics::Bool = false`: when set to `true`, performance metrics at each point of the subtree are shown, whenever they are available in the `info` structure;
 - `max_depth::Union{Nothing,Int} = nothing`: when it is an `Int`, models in the sub-tree with a depth higher than `max_depth` are ellipsed with "...";
@@ -78,9 +81,6 @@ end
 # function printmodel(io::IO, m::AbstractModel; kwargs...)
 #     println(io, displaymodel(m; kwargs...))
 # end
-
-# const DEFAULT_HEADER = :brief
-const DEFAULT_HEADER = false
 
 # Utility macro for recursively displaying submodels
 macro _print_submodel(

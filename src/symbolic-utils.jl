@@ -3,50 +3,6 @@
 # Symbolic modeling utils
 ############################################################################################
 
-"""
-    immediatesubmodels(m::AbstractModel)
-
-Return the list of immediate child models.
-Note: if the model is a leaf model, then the returned list will be empty.
-
-# Examples
-```julia-repl
-julia> using SoleLogics
-
-julia> branch = Branch(SoleLogics.parseformula("p∧q∨r"), "YES", "NO");
-
-julia> immediatesubmodels(branch)
-2-element Vector{SoleModels.ConstantModel{String}}:
- SoleModels.ConstantModel{String}
-YES
-
- SoleModels.ConstantModel{String}
-NO
-
-julia> branch2 = Branch(SoleLogics.parseformula("s→p"), branch, 42);
-
-
-julia> printmodel.(immediatesubmodels(branch2));
-Branch
-┐ p ∧ (q ∨ r)
-├ ✔ YES
-└ ✘ NO
-
-ConstantModel
-42
-```
-
-See also
-[`submodels`](@ref),
-[`LeafModel`](@ref),
-[`AbstractModel`](@ref).
-"""
-function immediatesubmodels(
-    m::AbstractModel{O}
-)::Vector{<:{AbstractModel{<:O}}} where {O}
-    return error("Please, provide method immediatesubmodels(::$(typeof(m))).")
-end
-
 immediatesubmodels(m::LeafModel{O}) where {O} = Vector{<:AbstractModel{<:O}}[]
 immediatesubmodels(m::Rule) = [consequent(m)]
 immediatesubmodels(m::Branch) = [posconsequent(m), negconsequent(m)]
@@ -141,11 +97,6 @@ subtreeheight(m::DecisionList) = maximum(subtreeheight, immediatesubmodels(m))
 subtreeheight(m::DecisionTree) = maximum(subtreeheight, immediatesubmodels(m))
 subtreeheight(m::DecisionForest) = maximum(subtreeheight, immediatesubmodels(m))
 subtreeheight(m::MixedModel) = maximum(subtreeheight, immediatesubmodels(m))
-
-# AbstracTrees interface
-import AbstractTrees: children
-
-children(m::AbstractModel) = submodels(m)
 
 ############################################################################################
 ############################################################################################
