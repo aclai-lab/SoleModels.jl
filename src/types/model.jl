@@ -36,15 +36,39 @@ As such, an `AbstractModel` can actually be the result of a composition of many 
 and enclose a *tree* of `AbstractModel`s (with `LeafModel`s at the leaves).
 
 # Interface
-- `isopen(m::AbstractModel)::Bool`
+- `isopen(m::AbstractModel)`
 - `apply(m::AbstractModel, i::AbstractInterpretation; kwargs...)`
-
-# Utility functions
 - `outcometype(m::AbstractModel)`
 - `outputtype(m::AbstractModel)`
+
+- `immediatesubmodels(m::AbstractModel)`
+- `nimmediatesubmodels(m::AbstractModel)`
+- `leafmodels(m::AbstractModel)`
+- `nleafmodels(m::AbstractModel)`
+
+- `listimmediaterules(m::AbstractModel)`
+
 - `info(m::AbstractModel, [key, [defaultval]])`
 - `info!(m::AbstractModel, key, value)`
 - `hasinfo(m::AbstractModel, key)`
+
+# Utility functions
+- `apply(m::AbstractModel, d::AbstractInterpretationSet, i_instance::Integer; kwargs...)
+
+- `submodels(m::AbstractModel)`(fallback of the general
+    `AbstractTrees.children(m::AbstractModel)`)
+- `nsubmodels(m::AbstractModel)`
+
+- `subtreeheight(m::AbstractModel)`
+- `listrules(
+        m::AbstractModel;
+        use_shortforms::Bool=true,
+        use_leftmostlinearform::Union{Nothing,Bool}=nothing,
+        normalize::Bool=false,
+        force_syntaxtree::Bool=false,
+    )`
+
+- `joinrules(m::AbstractModel, silent=false; kwargs...)`
 
 # Examples
 TODO
@@ -109,13 +133,6 @@ end
         d::AbstractInterpretationSet;
         kwargs...
     )::AbstractVector{<:outputtype(m)}
-
-    apply(
-        m::AbstractModel,
-        d::AbstractInterpretationSet,
-        i_instance::Integer;
-        kwargs...
-    )::outputtype(m)
 
 Return the output prediction of a model `m` on a logical interpretation `i`,
 on the `i_instance` of a dataset `d`, or on all instances of a dataset `d`.
