@@ -38,13 +38,14 @@ and enclose a *tree* of `AbstractModel`s (with `LeafModel`s at the leaves).
 # Interface
 - `isopen(m::AbstractModel)::Bool`
 - `apply(m::AbstractModel, i::AbstractInterpretation; kwargs...)`
-
-# Utility functions
 - `outcometype(m::AbstractModel)`
 - `outputtype(m::AbstractModel)`
 - `info(m::AbstractModel, [key, [defaultval]])`
 - `info!(m::AbstractModel, key, value)`
 - `hasinfo(m::AbstractModel, key)`
+
+# Utility functions
+- `apply(m::AbstractModel, d::AbstractInterpretationSet, i_instance::Integer; kwargs...)
 
 # Examples
 TODO
@@ -109,13 +110,6 @@ end
         d::AbstractInterpretationSet;
         kwargs...
     )::AbstractVector{<:outputtype(m)}
-
-    apply(
-        m::AbstractModel,
-        d::AbstractInterpretationSet,
-        i_instance::Integer;
-        kwargs...
-    )::outputtype(m)
 
 Return the output prediction of a model `m` on a logical interpretation `i`,
 on the `i_instance` of a dataset `d`, or on all instances of a dataset `d`.
