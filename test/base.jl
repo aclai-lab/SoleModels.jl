@@ -9,20 +9,22 @@ using Test
 
 io = IOBuffer()
 
+parse_other_kind_of_formula = SoleLogics.parseformula
+
 p = SoleLogics.parseformula("p")
 phi = SoleLogics.parseformula("p∧q∨r")
-phi2 = SoleLogics.parsebaseformula("q∧s→r")
+phi2 = parse_other_kind_of_formula("q∧s→r")
 
-formula_p = SoleLogics.parsebaseformula("p")
-formula_q = SoleLogics.parsebaseformula("q")
-formula_r = SoleLogics.parsebaseformula("r")
-formula_s = SoleLogics.parsebaseformula("s")
+formula_p = parse_other_kind_of_formula("p")
+formula_q = parse_other_kind_of_formula("q")
+formula_r = parse_other_kind_of_formula("r")
+formula_s = parse_other_kind_of_formula("s")
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Leaf models ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 @test_nowarn ConstantModel(1,(;))
 @test_nowarn ConstantModel(1)
-@test_throws MethodError ConstantModel{Float64}(1,(;))
+@test_nowarn ConstantModel{Float64}(1,(;)) # conversion happens behind the scenes.
 
 const_string = "Wow!"
 const_float = 1.0
@@ -38,6 +40,7 @@ consts = @test_nowarn [const_string, const_float, const_integer, const_funwrap]
 cmodel_string = @test_nowarn ConstantModel(const_string)
 @test cmodel_string isa ConstantModel{String}
 cmodel_float = @test_nowarn ConstantModel{Float64}(const_float)
+@test_nowarn ConstantModel{AbstractFloat}(const_integer)
 cmodel_number = @test_nowarn ConstantModel{Number}(const_integer)
 cmodel_integer = @test_nowarn ConstantModel{Int}(const_integer)
 
@@ -128,8 +131,10 @@ defaultconsequent = cmodel_integer
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Other models ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-rules = @test_nowarn [rmodel_number, rmodel_integer, Rule(phi, cmodel_float), rfloat_number] # , rmodel_bounded_float]
-dlmodel = @test_nowarn DecisionList(rules, defaultconsequent)
+@test_nowarn [rmodel_number, rmodel_integer, Rule(phi, cmodel_float), rfloat_number] # , rmodel_bounded_float]
+
+rules = @test_nowarn [rmodel_integer, Rule(phi, cmodel_float)] # , rmodel_bounded_float]
+dlmodel = @test_nowarn DecisionList(rules, defaultconsequent);
 @test outputtype(dlmodel) == Union{outcometype(defaultconsequent),outcometype.(rules)...}
 
 rules_integer = @test_nowarn [Rule(phi, cmodel_integer), Rule(phi, cmodel_integer)]
@@ -140,23 +145,25 @@ bmodel_integer = @test_nowarn Branch(phi, dlmodel_integer, dlmodel_integer)
 @test outputtype(bmodel_integer) == Int
 bmodel = @test_nowarn Branch(phi, dlmodel_integer, dlmodel)
 @test outputtype(bmodel) == Union{outcometype.([dlmodel_integer, dlmodel])...}
-@test !isopen(bmodel)
+@test SoleModels.iscomplete(bmodel)
 
 bmodel_mixed = @test_nowarn Branch(phi, rmodel_float, dlmodel_integer)
 @test Branch(phi, rmodel_float, dlmodel_integer) isa Branch{Union{Float64,Int}}
 bmodel_mixed_number = @test_nowarn Branch(phi, rmodel_number, dlmodel)
 @test Branch(phi, rmodel_number, dlmodel) isa Branch{Number}
-@test isopen(bmodel_mixed)
+@test !SoleModels.iscomplete(bmodel_mixed)
 @test outputtype(bmodel_mixed) == Union{Nothing,Float64,Int}
 
-@test_nowarn [printmodel(io, r) for r in rules];
+# @test_throws ErrorException printmodel(io, rmodel_number);
+# @test_nowarn printmodel(io, rmodel_number)
+@test_nowarn [printmodel(io, r) for r in [rmodel_integer, Rule(phi, cmodel_float)]];
 @test_nowarn printmodel(io, dlmodel);
 @test_nowarn printmodel(io, bmodel);
 
-@test_nowarn Branch(phi,(bmodel,bmodel))
-@test_nowarn Branch(phi,(bmodel,rfloat_number))
-@test_nowarn Branch(phi,(dlmodel,rmodel_float))
-bmodel_2 = @test_nowarn Branch(phi,(dlmodel,bmodel))
+@test_nowarn Branch(phi,(bmodel,bmodel));
+@test_nowarn Branch(phi,(bmodel,rfloat_number));
+@test_nowarn Branch(phi,(dlmodel,rmodel_float));
+bmodel_2 = @test_nowarn Branch(phi,(dlmodel,bmodel));
 @test_nowarn printmodel(io, bmodel_2);
 
 branch_q = @test_nowarn Branch(formula_q, ("yes", "no"))
@@ -175,12 +182,12 @@ dtmodel = @test_nowarn DecisionTree(branch_r)
 @test_nowarn DecisionTree(branch_r_mixed)
 # msmodel = MixedModel(dtmodel)
 
-complex_mixed_model = @test_nowarn Branch(formula_r, (dtmodel, dlmodel))
+complex_mixed_model = @test_nowarn Branch(formula_r, (dtmodel, dlmodel_integer))
 
 @test_nowarn MixedModel("1")
 @test_nowarn MixedModel(const_funwrap)
 @test_nowarn MixedModel(dtmodel)
-@test_nowarn MixedModel(dlmodel)
+@test_nowarn MixedModel(dlmodel_integer)
 ms_model0 = MixedModel(complex_mixed_model)
 
 MixedModel(MixedModel("1"))

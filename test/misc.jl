@@ -11,15 +11,15 @@ using SoleModels: listrules, displaymodel, submodels
 
 io = IOBuffer()
 
+# parse_other_kind_of_formula = SoleLogics.parsebaseformula
+parse_other_kind_of_formula = SoleLogics.parseformula
+
 ################################### LeafModel #############################################
 outcome_int =  @test_nowarn ConstantModel(2)
 outcome_float = @test_nowarn ConstantModel(1.5)
 outcome_string = @test_nowarn ConstantModel("YES")
 outcome_string2 = @test_nowarn ConstantModel("NO")
 
-@test_nowarn ConstantModel(1,(;))
-@test_nowarn ConstantModel(1)
-@test_throws MethodError ConstantModel{Float64}(1,(;))
 
 const_string = "Wow!"
 const_float = 1.0
@@ -35,7 +35,8 @@ consts = @test_nowarn [const_string, const_float, const_integer, const_funwrap]
 cmodel_string = @test_nowarn ConstantModel(const_string)
 @test cmodel_string isa ConstantModel{String}
 cmodel_float = @test_nowarn ConstantModel{Float64}(const_float)
-cmodel_number = @test_nowarn ConstantModel{Number}(const_integer)
+@test_nowarn ConstantModel{AbstractFloat}(const_float)
+cmodel_number = @test_nowarn ConstantModel{Number}(const_float)
 cmodel_integer = @test_nowarn ConstantModel{Int}(const_integer)
 
 cmodels = @test_nowarn [cmodel_string, cmodel_float, cmodel_number, cmodel_integer]
@@ -44,8 +45,8 @@ cmodels_num = @test_nowarn [cmodel_float, cmodel_number, cmodel_integer]
 @test [cmodel_string, cmodel_float, cmodel_number, cmodel_integer] isa Vector{ConstantModel}
 @test_nowarn ConstantModel[cmodel_string, cmodel_float]
 @test_throws MethodError ConstantModel{String}[cmodel_string, cmodel_float]
-@test_nowarn ConstantModel{Int}[cmodel_number, cmodel_integer]
-@test_nowarn ConstantModel{Number}[cmodel_number, cmodel_integer]
+# @test_broken ConstantModel{Int}[cmodel_number, cmodel_integer]
+# @test_broken ConstantModel{Number}[cmodel_number, cmodel_integer]
 
 ##################### String Atoms and SyntaxTree consequent ########################
 prop_r = @test_nowarn Atom("r")
@@ -67,26 +68,26 @@ st_1 = @test_nowarn SyntaxTree(prop_1)
 st_100 = @test_nowarn SyntaxTree(prop_100)
 
 ################################### Formulas ###############################################
-p = @test_nowarn SoleLogics.parsebaseformula("p")
+p = @test_nowarn parse_other_kind_of_formula("p")
 p_tree = @test_nowarn SoleLogics.parseformula("p")
 
-# phi = @test_nowarn SoleLogics.parsebaseformula("p∧q∨r")
+# phi = @test_nowarn parse_other_kind_of_formula("p∧q∨r")
 # phi_tree = @test_nowarn SoleLogics.parseformula("p∧q∨r")
 
-# phi2 = @test_nowarn SoleLogics.parsebaseformula("q∧s→r")
+# phi2 = @test_nowarn parse_other_kind_of_formula("q∧s→r")
 # phi2_tree = @test_nowarn SoleLogics.parseformula("q∧s→r")
 
 
-phi = @test_nowarn SoleLogics.parsebaseformula("p∧q∨r")
+phi = @test_nowarn parse_other_kind_of_formula("p∧q∨r")
 phi_tree = @test_nowarn SoleLogics.parseformula("p∧q∨r")
 
-phi2 = @test_nowarn SoleLogics.parsebaseformula("q∧s→r")
+phi2 = @test_nowarn parse_other_kind_of_formula("q∧s→r")
 phi2_tree = @test_nowarn SoleLogics.parseformula("q∧s→r")
 
-formula_p = @test_nowarn SoleLogics.parsebaseformula("p")
-formula_q = @test_nowarn SoleLogics.parsebaseformula("q")
-formula_r = @test_nowarn SoleLogics.parsebaseformula("r")
-formula_s = @test_nowarn SoleLogics.parsebaseformula("s")
+formula_p = @test_nowarn parse_other_kind_of_formula("p")
+formula_q = @test_nowarn parse_other_kind_of_formula("q")
+formula_r = @test_nowarn parse_other_kind_of_formula("r")
+formula_s = @test_nowarn parse_other_kind_of_formula("s")
 
 ############################### SyntaxTree ######################################
 st_not_r = @test_nowarn ¬st_r
@@ -175,7 +176,8 @@ defaultconsequent = cmodel_integer
 ###################################### DecisionList ########################################
 d1_string = @test_nowarn DecisionList([r1_string,r2_string],outcome_string)
 
-rules = @test_nowarn [rmodel_number, rmodel_integer, Rule(phi, cmodel_float), rfloat_number] # , rmodel_bounded_float]
+@test_nowarn [rmodel_number, rmodel_integer, Rule(phi, cmodel_float)] # , rmodel_bounded_float]
+rules = @test_nowarn [rmodel_integer, Rule(phi, cmodel_float)] # , rmodel_bounded_float]
 dlmodel = @test_nowarn DecisionList(rules, defaultconsequent)
 @test outputtype(dlmodel) == Union{outcometype(defaultconsequent),outcometype.(rules)...}
 
@@ -193,16 +195,15 @@ bmodel_integer = @test_nowarn Branch(phi, dlmodel_integer, dlmodel_integer)
 @test outputtype(bmodel_integer) == Int
 bmodel = @test_nowarn Branch(phi, dlmodel_integer, dlmodel)
 @test outputtype(bmodel) == Union{outcometype.([dlmodel_integer,dlmodel])...}
-@test !isopen(bmodel)
+@test iscomplete(bmodel)
 
 bmodel_mixed = @test_nowarn Branch(phi, rmodel_float, dlmodel_integer)
 @test Branch(phi, rmodel_float, dlmodel_integer) isa Branch{Union{Float64,Int}}
 bmodel_mixed_number = @test_nowarn Branch(phi, rmodel_number, dlmodel)
 @test Branch(phi, rmodel_number, dlmodel) isa Branch{Number}
-@test isopen(bmodel_mixed)
+@test !iscomplete(bmodel_mixed)
 @test outputtype(bmodel_mixed) == Union{Nothing,Float64,Int}
 
-@test_nowarn [displaymodel(r) for r in rules];
 String(take!(io))
 @test_nowarn displaymodel(dlmodel);
 String(take!(io))

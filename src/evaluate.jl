@@ -50,6 +50,7 @@ using StatsBase
 using FillArrays
 
 function _metround(val, round_digits)
+    # return isnothing(round_digits) ? val : round(val; digits = round_digits) == 0 ? val : round(val; digits = round_digits)
     return isnothing(round_digits) ? val : round(val; digits = round_digits)
 end
 
@@ -58,9 +59,9 @@ end
 
 Return a `NamedTuple` with some performance metrics for the given symbolic model.
 Performance metrics can be computed when the `info` structure of the model has the
-    following keys:
-    - :supporting_labels
-    - :supporting_predictions
+following keys:
+- `:supporting_labels`
+- `:supporting_predictions`
 
 The `round_digits` keyword argument, if provided, is used to `round` accuracy/confidence metrics.
 """
@@ -111,7 +112,11 @@ function readmetrics(m::LeafModel{L}; class_share_map = nothing, round_digits = 
         end
     else
         return (;)
-    end, (; coverage = 1.0)) # Note: assuming all leaf models are closed (see `isopen`).
+    end, (; coverage = 1.0)) # Note: assuming all leaf models are complete (see `iscomplete`).
+end
+
+function readmetrics(m::Rule; kwargs...)
+    error("Cannot read metrics on rule of outcometype $(outcometype(m)). Is this a classification, regression rule, or what? See SoleModels.Label.")
 end
 
 default_additional_metrics = (; natoms = r->natoms(antecedent(r)))
@@ -154,11 +159,12 @@ end
 using PrettyTables
 
 # TODO document
-function metricstable(ms::Vector{<:Rule}; metrics_kwargs = (;), syntaxstring_kwargs = (;), pretty_table_kwargs...)
+function metricstable(ms::Vector{<:Rule}; metrics_kwargs = (;), syntaxstring_kwargs = (;), variable_names_map = nothing, pretty_table_kwargs...)
     mets = readmetrics.(ms; metrics_kwargs...)
     colnames = unique(Iterators.flatten(keys.(mets)))
 
-    data = hcat(syntaxstring.(antecedent.(ms); syntaxstring_kwargs...), strip.(displaymodel.(consequent.(ms); show_symbols = false)), [[get(met, colname, "") for met in mets] for colname in colnames]...)
+    # data = hcat(AnsiTextCell.(...
+    data = hcat((syntaxstring.(antecedent.(ms); variable_names_map = variable_names_map, syntaxstring_kwargs...)), strip.(displaymodel.(consequent.(ms); show_symbols = false)), [[get(met, colname, "") for met in mets] for colname in colnames]...)
     header = ["Antecedent", "Consequent", colnames...]
     pretty_table(
         data;
@@ -301,6 +307,15 @@ function rulemetrics(
         error     = rule_error,
         length    = natoms(antecedent(rule)),
     )
+end
+
+# TODO: if delays not in info(m) ?
+function _meandelaydl(m::DecisionList)
+    i = info(m)
+
+    if :delays in keys(i)
+        return mean(i[:delays])
+    end
 end
 
 ############################################################################################

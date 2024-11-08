@@ -309,12 +309,3 @@ function _apply!(
 
     return DecisionList(rules, defaultconsequent(m), inewnew)
 end
-
-# TODO: if delays not in info(m) ?
-function _meandelaydl(m::DecisionList)
-    i = info(m)
-
-    if :delays in keys(i)
-        return mean(i[:delays])
-    end
-end

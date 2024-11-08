@@ -1,12 +1,12 @@
 module SoleModels
 
 using Reexport
+using StatsBase
+using ThreadSafeDicts
+using Lazy
+using FunctionWrappers: FunctionWrapper
 
 using SoleBase
-
-@reexport using SoleData
-
-using SoleData: AbstractLogiset, ismultilogiseed
 
 @reexport using SoleLogics
 using SoleLogics
@@ -15,17 +15,9 @@ using SoleLogics: SyntaxToken
 using SoleLogics: Formula, synstruct
 using SoleLogics: ⊤, ¬, ∧
 
-using FunctionWrappers: FunctionWrapper
-using StatsBase
-using ThreadSafeDicts
-using Lazy
-
+@reexport using SoleData
 using SoleData: load_arff_dataset
-
-############################################################################################
-############################################################################################
-############################################################################################
-
+using SoleData: AbstractLogiset, ismultilogiseed
 using SoleData.DimensionalDatasets: OneWorld, Interval, Interval2D
 using SoleData.DimensionalDatasets: IARelations
 using SoleData.DimensionalDatasets: IA2DRelations
@@ -36,26 +28,47 @@ using SoleData.DimensionalDatasets: globalrel
 ############################################################################################
 ############################################################################################
 
+export AbstractModel
+export iscomplete
 export outcometype, outputtype
+export apply, apply!
+export info, info!, hasinfo
+export wrap
+
+export LeafModel
 
 export ConstantModel
+export outcome
+
+export FunctionModel
 
 export Rule, Branch
-export checkantecedent
 export antecedent, consequent
+export checkantecedent
 export posconsequent, negconsequent
 
 export DecisionList
 export rulebase, defaultconsequent
 
-export apply, apply!
-
 export DecisionTree
 export root
+export nnodes, nleaves
+export height
 
-export MixedModel, DecisionForest
+export DecisionForest
+export trees
 
-include("base.jl")
+export MixedModel
+
+include("types/model.jl")
+include("types/api.jl")
+
+include("utils/models/leaf.jl")
+include("utils/models/rule-and-branch.jl")
+include("utils/models/other.jl")
+include("utils/models/linear-forms-utilities.jl")
+include("utils/models/wrap.jl")
+include("utils/models/syntax-utilities.jl")
 
 include("apply!.jl")
 
