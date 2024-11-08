@@ -55,7 +55,8 @@ and enclose a *tree* of `AbstractModel`s (with `LeafModel`s at the leaves).
 # Utility functions
 - `apply(m::AbstractModel, d::AbstractInterpretationSet, i_instance::Integer; kwargs...)
 
-- `submodels(m::AbstractModel)` (fallback of the general `children(m::AbstractModel)`)
+- `submodels(m::AbstractModel)`(fallback of the general
+    `AbstractTrees.children(m::AbstractModel)`)
 - `nsubmodels(m::AbstractModel)`
 
 - `subtreeheight(m::AbstractModel)`
