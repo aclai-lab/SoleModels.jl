@@ -164,7 +164,7 @@ bmodel_mixed_number = @test_nowarn Branch(phi, rmodel_number, dlmodel)
 @test_nowarn Branch(phi,(bmodel,rfloat_number));
 @test_nowarn Branch(phi,(dlmodel,rmodel_float));
 bmodel_2 = @test_nowarn Branch(phi,(dlmodel,bmodel));
-@test_throws ErrorException printmodel(io, bmodel_2);
+@test_nowarn printmodel(io, bmodel_2);
 
 branch_q = @test_nowarn Branch(formula_q, ("yes", "no"))
 branch_s = @test_nowarn Branch(formula_s, ("yes", "no"))
