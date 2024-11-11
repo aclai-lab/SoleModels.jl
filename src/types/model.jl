@@ -40,16 +40,13 @@ and enclose a *tree* of `AbstractModel`s (with `LeafModel`s at the leaves).
 - `info!(m::AbstractModel, key, value)`
 - `hasinfo(m::AbstractModel, key)`
 - `listrules(m::AbstractModel; kwargs...)`
+- `AbstractTrees.children(m::AbstractModel)`
 
 # Utility functions
 - `apply(m::AbstractModel, i::AbstractInterpretationSet; kwargs...)`
 - See AbstractTrees...
 
-# Utility functions
-- `apply(m::AbstractModel, d::AbstractInterpretationSet, i_instance::Integer; kwargs...)
-
 - `submodels(m::AbstractModel)`(fallback of the general
-    `AbstractTrees.children(m::AbstractModel)`)
 - `nsubmodels(m::AbstractModel)`
 
 - `subtreeheight(m::AbstractModel)`
@@ -164,17 +161,7 @@ function apply(
     return error("Please, provide method apply(::$(typeof(m)), ::$(typeof(i)); kwargs...).")
 end
 
-function apply(
-    m::AbstractModel,
-    d::AbstractInterpretationSet,
-    i_instance::Integer;
-    kwargs...
-)::outputtype(m)
-    interpretation = get_instance(d, i_instance)
-    apply(m, interpretation; kwargs...)
-end
-
-function apply(
+@inline function apply(
     m::AbstractModel,
     d::AbstractInterpretationSet;
     kwargs...

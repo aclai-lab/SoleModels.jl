@@ -60,6 +60,8 @@ export trees
 
 export MixedModel
 
+export solemodel
+
 include("types/model.jl")
 include("types/api.jl")
 
