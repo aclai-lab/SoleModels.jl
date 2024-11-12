@@ -31,6 +31,7 @@ using SoleData.DimensionalDatasets: globalrel
 export AbstractModel
 export iscomplete
 export outcometype, outputtype
+export immediatesubmodels, nimmediatesubmodels, listimmediaterules
 export apply, apply!
 export info, info!, hasinfo
 export wrap
@@ -79,7 +80,9 @@ export printmodel, displaymodel
 
 include("print.jl")
 
-export immediatesubmodels, listimmediaterules
+export submodels, nsubmodels
+export leafmodels, nleafmodels
+export subtreeheight
 export listrules, joinrules
 
 include("symbolic-utils.jl")
