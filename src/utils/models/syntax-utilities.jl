@@ -44,12 +44,12 @@ nconnectives(m::LeafModel) = 0
 nsyntaxleaves(m::LeafModel) = 0
 
 
-atoms(m::Union{Rule,Branch}) = vcat(atoms(antecedent(m)), atoms(consequent(m)))
-connectives(m::Union{Rule,Branch}) = vcat(connectives(antecedent(m)), connectives(consequent(m)))
-syntaxleaves(m::Union{Rule,Branch}) = vcat(syntaxleaves(antecedent(m)), syntaxleaves(consequent(m)))
-natoms(m::Union{Rule,Branch}) = natoms(antecedent(m)) + natoms(consequent(m))
-nconnectives(m::Union{Rule,Branch}) = nconnectives(antecedent(m)) + nconnectives(consequent(m))
-nsyntaxleaves(m::Union{Rule,Branch}) = nsyntaxleaves(antecedent(m)) + nsyntaxleaves(consequent(m))
+atoms(m::Union{Rule,Branch}) = vcat(atoms(antecedent(m)), atoms.(immediatesubmodels(m))...)
+connectives(m::Union{Rule,Branch}) = vcat(connectives(antecedent(m)), connectives.(immediatesubmodels(m))...)
+syntaxleaves(m::Union{Rule,Branch}) = vcat(syntaxleaves(antecedent(m)), syntaxleaves.(immediatesubmodels(m))...)
+natoms(m::Union{Rule,Branch}) =  sum([natoms(antecedent(m)), natoms.(immediatesubmodels(m))...])
+nconnectives(m::Union{Rule,Branch}) =  sum([nconnectives(antecedent(m)), nconnectives.(immediatesubmodels(m))...])
+nsyntaxleaves(m::Union{Rule,Branch}) =  sum([nsyntaxleaves(antecedent(m)), nsyntaxleaves.(immediatesubmodels(m))...])
 
 
 atoms(m::Union{DecisionTree,MixedModel}) = atoms(root(m))
@@ -81,6 +81,6 @@ nsyntaxleaves(m::DecisionForest) = sum(nsyntaxleaves, trees(m))
 alphabet(m::LeafModel) = SoleLogics.EmptyAlphabet()
 function alphabet(m::AbstractModel, unique = true)
     atms = atoms(m)
-    unique && (atms = unique(atms))
+    unique && (atms = Base.unique(atms))
     convert(SoleLogics.AbstractAlphabet, atms)
 end
