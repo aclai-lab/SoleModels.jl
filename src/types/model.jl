@@ -1,16 +1,3 @@
-# TODO document, together with issymbolic and listrules
-"""
-    solemodel(m::Any)
-
-This function translates a symbolic model to a symbolic model using the structures defined in SoleModel.jl.
-# Interface
-
-See also [`AbstractModel`](@ref), [`ConstantModel`](@ref), [`FunctionModel`](@ref),
-[`LeafModel`](@ref).
-"""
-solemodel(o::Any, FM::Type{<:AbstractModel}) = convert(FM, wrap(o))
-
-
 """
     abstract type AbstractModel{O} end
 
@@ -35,29 +22,30 @@ Symbolic models can wrap other `AbstractModel`s, and use them to compute the out
 As such, an `AbstractModel` can actually be the result of a composition of many models,
 and enclose a *tree* of `AbstractModel`s (with `LeafModel`s at the leaves).
 
+# TODO - bring missing dispatches here (do the same for other model types)
 # Interface
-- `isopen(m::AbstractModel)`
 - `apply(m::AbstractModel, i::AbstractInterpretation; kwargs...)`
+- `iscomplete(m::AbstractModel)`
 - `outcometype(m::AbstractModel)`
 - `outputtype(m::AbstractModel)`
 
 - `immediatesubmodels(m::AbstractModel)`
 - `nimmediatesubmodels(m::AbstractModel)`
-- `leafmodels(m::AbstractModel)`
-- `nleafmodels(m::AbstractModel)`
-
 - `listimmediaterules(m::AbstractModel)`
 
 - `info(m::AbstractModel, [key, [defaultval]])`
 - `info!(m::AbstractModel, key, value)`
 - `hasinfo(m::AbstractModel, key)`
+- `AbstractTrees.children(m::AbstractModel)`
 
 # Utility functions
-- `apply(m::AbstractModel, d::AbstractInterpretationSet, i_instance::Integer; kwargs...)
+- `apply(m::AbstractModel, i::AbstractInterpretationSet; kwargs...)`
+- See AbstractTrees...
 
-- `submodels(m::AbstractModel)`(fallback of the general
-    `AbstractTrees.children(m::AbstractModel)`)
+- `submodels(m::AbstractModel)`
 - `nsubmodels(m::AbstractModel)`
+- `leafmodels(m::AbstractModel)`
+- `nleafmodels(m::AbstractModel)`
 
 - `subtreeheight(m::AbstractModel)`
 - `listrules(
@@ -67,31 +55,30 @@ and enclose a *tree* of `AbstractModel`s (with `LeafModel`s at the leaves).
         normalize::Bool=false,
         force_syntaxtree::Bool=false,
     )`
-
 - `joinrules(m::AbstractModel, silent=false; kwargs...)`
 
 # Examples
 TODO
 
-See also [`apply`](@ref), [`Branch`](@ref), [`info`](@ref), [`isopen`](@ref),
+See also [`apply`](@ref), [`Branch`](@ref), [`info`](@ref), [`iscomplete`](@ref),
 [`LeafModel`](@ref), [`outcometype`](@ref), [`Rule`](@ref).
 """
 abstract type AbstractModel{O} end
 
 """
-    isopen(::AbstractModel)::Bool
+    iscomplete(::AbstractModel)::Bool
 
-Return whether a model is open.
+Return whether a model is complete.
 
-An [`AbstractModel`](@ref) is *closed* if it is always able to provide an outcome of type
-`O`. Otherwise, the model can output `nothing` values and is referred to as *open*.
+An [`AbstractModel`](@ref) is *complete* if it is always able to provide an outcome of type
+`O`. Otherwise, the model can output `nothing` values and is referred to as *incomplete*.
 
-[`Rule`](@ref) is an example of an *open* model, while [`Branch`](@ref) is an example of
-*closed* model.
+[`Rule`](@ref) is an example of an *incomplete* model, while [`Branch`](@ref) is an example of
+*complete* model.
 
 See also [`AbstractModel`](@ref).
 """
-isopen(m::AbstractModel) = error("Please, provide method isopen($(typeof(m))).")
+iscomplete(m::AbstractModel) = error("Please, provide method iscomplete($(typeof(m))).")
 
 
 """
@@ -111,18 +98,106 @@ outcometype(m::AbstractModel) = outcometype(typeof(m))
 Return a supertype for the outputs obtained when `apply`ing a model.
 
 # Implementation
-The result depends on whether the model is open or closed
+The result depends on whether the model is incomplete or complete
 ```julia-repl
-julia> outputtype(M::AbstractModel{O}) = isopen(M) ? Union{Nothing,O} : O
+julia> outputtype(m::AbstractModel{O}) where {O} = iscomplete(m) ? O : Union{Nothing,O}
 ```
 
-Note that if the model is closed, then `outputtype(m)` is equal to `outcometype(m)`.
+Note that if the model is complete, then `outputtype(m)` is equal to `outcometype(m)`.
 
-See also [`AbstractModel`](@ref), [`apply`](@ref), [`isopen`](@ref), [`outcometype`](@ref).
+See also [`AbstractModel`](@ref), [`apply`](@ref), [`iscomplete`](@ref), [`outcometype`](@ref).
 """
 function outputtype(m::AbstractModel)
-    isopen(m) ? Union{Nothing,outcometype(m)} : outcometype(m)
+    iscomplete(m) ? outcometype(m) : Union{Nothing,outcometype(m)}
 end
+
+
+"""
+    immediatesubmodels(m::AbstractModel)
+
+Return the list of immediate child models.
+
+!!! note
+    If the model is a leaf model, then the returned list will be empty.
+
+# Examples
+```julia-repl
+julia> using SoleLogics
+
+julia> branch = Branch(SoleLogics.parseformula("p∧q∨r"), "YES", "NO");
+
+julia> immediatesubmodels(branch)
+2-element Vector{SoleModels.ConstantModel{String}}:
+ SoleModels.ConstantModel{String}
+YES
+
+ SoleModels.ConstantModel{String}
+NO
+
+julia> branch2 = Branch(SoleLogics.parseformula("s→p"), branch, 42);
+
+
+julia> printmodel.(immediatesubmodels(branch2));
+Branch
+┐ p ∧ (q ∨ r)
+├ ✔ YES
+└ ✘ NO
+
+ConstantModel
+42
+```
+
+See also [`AbstractModel`](@ref), [`LeafModel`](@ref), [`submodels`](@ref).
+"""
+function immediatesubmodels(
+    m::AbstractModel{O}
+)::Vector{<:{AbstractModel{<:O}}} where {O}
+    return error("Please, provide method immediatesubmodels(::$(typeof(m))).")
+end
+
+"""
+    nimmediatesubmodels(m::AbstractModel)
+
+Return the number of models returned by [`immediatesubmodels`](@ref).
+
+See also [`AbstractModel`](@ref), [`immediatesubmodels`](@ref).
+"""
+function nimmediatesubmodels(m::AbstractModel)
+    return error("Please, provide method nimmediatesubmodels(::$(typeof(m))).")
+end
+
+"""
+    listimmediaterules(m::AbstractModel{O} where {O})::Rule{<:O}
+
+List the immediate rules equivalent to a symbolic model.
+
+# Examples
+```julia-repl
+julia> using SoleLogics
+
+julia> branch = Branch(SoleLogics.parseformula("p"), Branch(SoleLogics.parseformula("q"), "YES", "NO"), "NO")
+ p
+├✔ q
+│├✔ YES
+│└✘ NO
+└✘ NO
+
+
+julia> printmodel.(listimmediaterules(branch); tree_mode = true);
+▣ p
+└✔ q
+ ├✔ YES
+ └✘ NO
+
+▣ ¬(p)
+└✔ NO
+```
+
+See also [`AbstractModel`](@ref), [`listrules`](@ref).
+"""
+listimmediaterules(m::AbstractModel{O} where {O})::Rule{<:O} =
+    error("Please, provide method listimmediaterules(::$(typeof(m))) " *
+        "($(typeof(m)) is a symbolic model).")
 
 
 """
@@ -136,7 +211,7 @@ end
 
 Return the output prediction of a model `m` on a logical interpretation `i`,
 on the `i_instance` of a dataset `d`, or on all instances of a dataset `d`.
-Note that predictions can be `nothing` if the model is *open* (e.g., if the model is a `Rule`).
+Note that predictions can be `nothing` if the model is *incomplete* (e.g., if the model is a `Rule`).
 
 # Keyword Arguments
 - `check_args::Tuple = ()`;
@@ -146,7 +221,7 @@ Note that predictions can be `nothing` if the model is *open* (e.g., if the mode
 - Any additional keyword argument is passed down to the model subtree's leaves
 
 `check_args` and `check_kwargs` can influence check's behavior at the time
-of its computation (see [`SoleLogics.check`](@ref))
+of its computation (see [`SoleLogics.check`](@ref)).
 
 `functional_args` and `functional_kwargs` can influence FunctionModel's
 behavior when the corresponding function is applied to AbstractInterpretation (see
@@ -158,7 +233,7 @@ While producing the output, this function affects the info keys `:supporting_lab
 parts of the model.
 
 See also `SoleLogics.AbstractInterpretation`, `SoleLogics.AbstractInterpretationSet`,
-[`AbstractModel`](@ref), [`isopen`](@ref), [`readmetrics`](@ref).
+[`AbstractModel`](@ref), [`iscomplete`](@ref), [`readmetrics`](@ref).
 """
 function apply(
     m::AbstractModel,
@@ -172,17 +247,7 @@ function apply(
     return error("Please, provide method apply(::$(typeof(m)), ::$(typeof(i)); kwargs...).")
 end
 
-function apply(
-    m::AbstractModel,
-    d::AbstractInterpretationSet,
-    i_instance::Integer;
-    kwargs...
-)::outputtype(m)
-    interpretation = get_instance(d, i_instance)
-    apply(m, interpretation; kwargs...)
-end
-
-function apply(
+@inline function apply(
     m::AbstractModel,
     d::AbstractInterpretationSet;
     kwargs...
@@ -253,6 +318,14 @@ wrap(o::Any, FM::Type{<:AbstractModel}) = convert(FM, wrap(o))
 wrap(m::AbstractModel) = m
 # wrap(o::Any)::AbstractModel = error("Please, provide method wrap($(typeof(o))).")
 
+
+
+# AbstracTrees interface
+using AbstractTrees
+import AbstractTrees: children
+
+AbstractTrees.children(m::AbstractModel) = immediatesubmodels(m)
+
 ############################################################################################
 ##################################### LeafModel ############################################
 ############################################################################################
@@ -283,3 +356,7 @@ See also [`AbstractModel`](@ref), [`ConstantModel`](@ref), [`FunctionModel`](@re
 abstract type LeafModel{O} <: AbstractModel{O} end
 
 LeafModel(o) = wrap(o)
+
+immediatesubmodels(m::LeafModel{O}) where {O} = Vector{<:AbstractModel{<:O}}[]
+nimmediatesubmodels(m::LeafModel) = 0
+listimmediaterules(m::LeafModel) = [Rule(⊤, m)]

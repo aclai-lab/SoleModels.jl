@@ -29,8 +29,9 @@ using SoleData.DimensionalDatasets: globalrel
 ############################################################################################
 
 export AbstractModel
-export isopen
+export iscomplete
 export outcometype, outputtype
+export immediatesubmodels, nimmediatesubmodels, listimmediaterules
 export apply, apply!
 export info, info!, hasinfo
 export wrap
@@ -60,12 +61,18 @@ export trees
 
 export MixedModel
 
+export solemodel
+
 include("types/model.jl")
+include("types/api.jl")
+
 include("utils/models/leaf.jl")
 include("utils/models/rule-and-branch.jl")
 include("utils/models/other.jl")
 include("utils/models/linear-forms-utilities.jl")
 include("utils/models/wrap.jl")
+include("utils/models/syntax-utilities.jl")
+
 
 include("apply!.jl")
 
@@ -73,7 +80,9 @@ export printmodel, displaymodel
 
 include("print.jl")
 
-export immediatesubmodels, listimmediaterules
+export submodels, nsubmodels
+export leafmodels, nleafmodels
+export subtreeheight
 export listrules, joinrules
 
 include("symbolic-utils.jl")

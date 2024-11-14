@@ -176,7 +176,8 @@ defaultconsequent = cmodel_integer
 ###################################### DecisionList ########################################
 d1_string = @test_nowarn DecisionList([r1_string,r2_string],outcome_string)
 
-rules = @test_nowarn [rmodel_number, rmodel_integer, Rule(phi, cmodel_float)] # , rmodel_bounded_float]
+@test_nowarn [rmodel_number, rmodel_integer, Rule(phi, cmodel_float)] # , rmodel_bounded_float]
+rules = @test_nowarn [rmodel_integer, Rule(phi, cmodel_float)] # , rmodel_bounded_float]
 dlmodel = @test_nowarn DecisionList(rules, defaultconsequent)
 @test outputtype(dlmodel) == Union{outcometype(defaultconsequent),outcometype.(rules)...}
 
@@ -194,13 +195,13 @@ bmodel_integer = @test_nowarn Branch(phi, dlmodel_integer, dlmodel_integer)
 @test outputtype(bmodel_integer) == Int
 bmodel = @test_nowarn Branch(phi, dlmodel_integer, dlmodel)
 @test outputtype(bmodel) == Union{outcometype.([dlmodel_integer,dlmodel])...}
-@test !isopen(bmodel)
+@test iscomplete(bmodel)
 
 bmodel_mixed = @test_nowarn Branch(phi, rmodel_float, dlmodel_integer)
 @test Branch(phi, rmodel_float, dlmodel_integer) isa Branch{Union{Float64,Int}}
 bmodel_mixed_number = @test_nowarn Branch(phi, rmodel_number, dlmodel)
 @test Branch(phi, rmodel_number, dlmodel) isa Branch{Number}
-@test isopen(bmodel_mixed)
+@test !iscomplete(bmodel_mixed)
 @test outputtype(bmodel_mixed) == Union{Nothing,Float64,Int}
 
 String(take!(io))

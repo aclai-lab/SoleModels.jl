@@ -1,4 +1,4 @@
-import Base: convert, length, getindex, isopen
+import Base: convert, length, getindex
 
 ############################################################################################
 ################################### ConstantModel ##########################################
@@ -57,7 +57,7 @@ See also [`ConstantModel`](@ref).
 """
 outcome(m::ConstantModel) = m.outcome
 
-isopen(::ConstantModel) = false
+iscomplete(::ConstantModel) = true
 
 apply(m::ConstantModel, i::AbstractInterpretation; kwargs...) = outcome(m)
 apply(
@@ -154,7 +154,7 @@ See also [`FunctionModel`](@ref),
 """
 f(m::FunctionModel) = m.f
 
-isopen(::FunctionModel) = false
+iscomplete(::FunctionModel) = true
 
 function apply(
     m::FunctionModel,

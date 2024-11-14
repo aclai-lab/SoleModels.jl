@@ -4,70 +4,10 @@
 ############################################################################################
 
 """
-    immediatesubmodels(m::AbstractModel)
-
-Return the list of immediate child models.
-Note: if the model is a leaf model, then the returned list will be empty.
-
-# Examples
-```julia-repl
-julia> using SoleLogics
-
-julia> branch = Branch(SoleLogics.parseformula("p∧q∨r"), "YES", "NO");
-
-julia> immediatesubmodels(branch)
-2-element Vector{SoleModels.ConstantModel{String}}:
- SoleModels.ConstantModel{String}
-YES
-
- SoleModels.ConstantModel{String}
-NO
-
-julia> branch2 = Branch(SoleLogics.parseformula("s→p"), branch, 42);
-
-
-julia> printmodel.(immediatesubmodels(branch2));
-Branch
-┐ p ∧ (q ∨ r)
-├ ✔ YES
-└ ✘ NO
-
-ConstantModel
-42
-```
-
-See also
-[`submodels`](@ref),
-[`LeafModel`](@ref),
-[`AbstractModel`](@ref).
-"""
-function immediatesubmodels(
-    m::AbstractModel{O}
-)::Vector{<:{AbstractModel{<:O}}} where {O}
-    return error("Please, provide method immediatesubmodels(::$(typeof(m))).")
-end
-
-immediatesubmodels(m::LeafModel{O}) where {O} = Vector{<:AbstractModel{<:O}}[]
-immediatesubmodels(m::Rule) = [consequent(m)]
-immediatesubmodels(m::Branch) = [posconsequent(m), negconsequent(m)]
-immediatesubmodels(m::DecisionList) = [rulebase(m)..., defaultconsequent(m)]
-immediatesubmodels(m::DecisionTree) = immediatesubmodels(root(m))
-immediatesubmodels(m::DecisionForest) = trees(m)
-immediatesubmodels(m::MixedModel) = immediatesubmodels(root(m))
-
-nimmediatesubmodels(m::LeafModel) = 0
-nimmediatesubmodels(m::Rule) = 1
-nimmediatesubmodels(m::Branch) = 2
-nimmediatesubmodels(m::DecisionList) = length(rulebase(m)) + 1
-nimmediatesubmodels(m::DecisionTree) = nimmediatesubmodels(root(m))
-nimmediatesubmodels(m::DecisionForest) = length(trees(m))
-nimmediatesubmodels(m::MixedModel) = nimmediatesubmodels(root(m))
-
-"""
     submodels(m::AbstractModel)
 
 Enumerate all submodels in the sub-tree. This function is
-the transitive closure of `immediatesubmodels`; in fact, the returned list
+the transitive closure of [`immediatesubmodels`](@ref); in fact, the returned list
 includes the immediate submodels (`immediatesubmodels(m)`), but also
 their immediate submodels, and so on.
 
@@ -110,10 +50,7 @@ julia> submodels(branch2) == immediatesubmodels(branch2)
 false
 ```
 
-See also
-[`immediatesubmodels`](@ref),
-[`LeafModel`](@ref),
-[`AbstractModel`](@ref).
+See also [`AbstractModel`](@ref), [`immediatesubmodels`](@ref), [`LeafModel`](@ref).
 """
 submodels(m::AbstractModel) = [Iterators.flatten(_submodels.(immediatesubmodels(m)))...]
 _submodels(m::AbstractModel) = [m, Iterators.flatten(_submodels.(immediatesubmodels(m)))...]
@@ -141,11 +78,6 @@ subtreeheight(m::DecisionList) = maximum(subtreeheight, immediatesubmodels(m))
 subtreeheight(m::DecisionTree) = maximum(subtreeheight, immediatesubmodels(m))
 subtreeheight(m::DecisionForest) = maximum(subtreeheight, immediatesubmodels(m))
 subtreeheight(m::MixedModel) = maximum(subtreeheight, immediatesubmodels(m))
-
-# AbstracTrees interface
-import AbstractTrees: children
-
-children(m::AbstractModel) = submodels(m)
 
 ############################################################################################
 ############################################################################################
@@ -214,105 +146,6 @@ end
 ############################################################################################
 
 """
-    listimmediaterules(m::AbstractModel{O} where {O})::Rule{<:O}
-
-List the immediate rules equivalent to a symbolic model.
-
-# Examples
-```julia-repl
-julia> using SoleLogics
-
-julia> branch = Branch(SoleLogics.parseformula("p"), Branch(SoleLogics.parseformula("q"), "YES", "NO"), "NO")
- p
-├✔ q
-│├✔ YES
-│└✘ NO
-└✘ NO
-
-
-julia> printmodel.(listimmediaterules(branch); tree_mode = true);
-▣ p
-└✔ q
- ├✔ YES
- └✘ NO
-
-▣ ¬(p)
-└✔ NO
-
-
-```
-
-See also [`listrules`](@ref), [`AbstractModel`](@ref).
-"""
-listimmediaterules(m::AbstractModel{O} where {O})::Rule{<:O} =
-    error("Please, provide method listimmediaterules(::$(typeof(m))) ($(typeof(m)) is a symbolic model).")
-
-listimmediaterules(m::LeafModel) = [Rule(⊤, m)]
-
-listimmediaterules(m::Rule) = [m]
-
-listimmediaterules(m::Branch{O}) where {O} = [
-    Rule{O}(antecedent(m), posconsequent(m)),
-    Rule{O}(SoleLogics.NEGATION(antecedent(m)), negconsequent(m)),
-]
-
-function listimmediaterules(
-    m::DecisionList{O};
-    # use_shortforms::Bool = true,
-    # use_leftmostlinearform::Union{Nothing,Bool} = nothing,
-    normalize::Bool = false,
-    normalize_kwargs::NamedTuple = (; allow_atom_flipping = true, rotate_commutatives = false),
-    scalar_simplification::Union{Bool,NamedTuple} = normalize ? (; allow_scalar_range_conditions = true) : false,
-    force_syntaxtree::Bool = false,
-) where {O}
-    assumed_formulas = Formula[]
-    normalized_rules = Rule{<:O}[]
-    for rule in rulebase(m)
-        # @show assumed_formulas
-        # @show consequent(rule).info
-        # @show eltype([assumed_formulas..., antecedent(rule)])
-        # @show assumed_formulas
-        # @show antecedent(rule)
-        φ = join_antecedents([assumed_formulas..., antecedent(rule)])
-        # @show typeof(φ)
-        # normalize && (φ = SoleLogics.normalize(φ; normalize_kwargs...))
-        # @show typeof(φ)
-        # @show φ
-        φ = _scalar_simplification(φ, scalar_simplification)
-        newrule = Rule(φ, consequent(rule), info(rule))
-        push!(normalized_rules, newrule)
-        ant = antecedent(rule)
-        force_syntaxtree && (ant = tree(ant))
-        # @show ant
-        nant = SoleLogics.NEGATION(ant)
-        # @show typeof(nant)
-        normalize && (nant = SoleLogics.normalize(nant; normalize_kwargs...))
-        # @show typeof(nant)
-        nant = _scalar_simplification(nant, scalar_simplification)
-        # @show typeof(nant)
-        assumed_formulas = push!(assumed_formulas, nant)
-    end
-    # @show eltype(assumed_formulas)
-    default_φ = join_antecedents(assumed_formulas)
-    # @show default_φ
-    default_φ = _scalar_simplification(default_φ, scalar_simplification)
-    # normalize && (default_φ = SoleLogics.normalize(default_φ; normalize_kwargs...))
-    push!(normalized_rules, Rule(default_φ, defaultconsequent(m), info(defaultconsequent(m))))
-    normalized_rules
-end
-
-listimmediaterules(m::DecisionTree) = listimmediaterules(root(m))
-
-listimmediaterules(m::DecisionForest; kwargs...) = error("TODO implement")
-
-listimmediaterules(m::MixedModel) = listimmediaterules(root(m))
-
-############################################################################################
-############################################################################################
-############################################################################################
-
-# TODO @Michi esempi
-"""
     listrules(
         m::AbstractModel;
         use_shortforms::Bool = true,
@@ -341,7 +174,6 @@ julia> branch = Branch(SoleLogics.parseformula("p"), Branch(SoleLogics.parseform
 │└✘ NO
 └✘ NO
 
-
 julia> printmodel.(listrules(branch); tree_mode = true);
 ▣ p ∧ q
 └✔ YES
@@ -354,12 +186,11 @@ julia> printmodel.(listrules(branch); tree_mode = true);
 
 ```
 
-See also [`listimmediaterules`](@ref),
-[`SoleLogics.CONJUNCTION`](@ref),
-[`joinrules`](@ref), [`LeafModel`](@ref),
-[`AbstractModel`](@ref).
+See also [`AbstractModel`](@ref), [`SoleLogics.CONJUNCTION`](@ref), [`joinrules`](@ref),
+[`listimmediaterules`](@ref), [`LeafModel`](@ref).
 """
-function listrules(m::AbstractModel;
+function listrules(
+    m::AbstractModel;
     compute_metrics::Union{Nothing,Bool} = false,
     metrics_kwargs::NamedTuple = (;),
     #

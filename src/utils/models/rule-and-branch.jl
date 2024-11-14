@@ -1,4 +1,4 @@
-import Base: convert, length, getindex, isopen
+import Base: convert, length, getindex
 
 using SoleData: slicedataset
 
@@ -70,7 +70,7 @@ struct Rule{O} <: AbstractModel{O}
     end
 end
 
-isopen(m::Rule) = true
+iscomplete(m::Rule) = false
 
 """
     antecedent(m::Union{Rule,Branch})::Formula
@@ -107,6 +107,10 @@ dataset.
 See also [`antecedent`](@ref), [`Rule`](@ref), [`Branch`](@ref).
 """
 function checkantecedent end
+
+immediatesubmodels(m::Rule) = [consequent(m)]
+nimmediatesubmodels(m::Rule) = 1
+listimmediaterules(m::Rule) = [m]
 
 function apply(
     m::Rule,
@@ -233,7 +237,14 @@ See also [`antecedent`](@ref), [`Branch`](@ref), [`posconsequent`](@ref).
 """
 negconsequent(m::Branch) = m.negconsequent
 
-isopen(m::Branch) = isopen(posconsequent(m)) || isopen(negconsequent(m))
+iscomplete(m::Branch) = iscomplete(posconsequent(m)) && iscomplete(negconsequent(m))
+
+immediatesubmodels(m::Branch) = [posconsequent(m), negconsequent(m)]
+nimmediatesubmodels(m::Branch) = 2
+listimmediaterules(m::Branch{O}) where {O} = [
+    Rule{O}(antecedent(m), posconsequent(m)),
+    Rule{O}(SoleLogics.NEGATION(antecedent(m)), negconsequent(m)),
+]
 
 function apply(
     m::Branch,

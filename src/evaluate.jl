@@ -59,9 +59,9 @@ end
 
 Return a `NamedTuple` with some performance metrics for the given symbolic model.
 Performance metrics can be computed when the `info` structure of the model has the
-    following keys:
-    - :supporting_labels
-    - :supporting_predictions
+following keys:
+- `:supporting_labels`
+- `:supporting_predictions`
 
 The `round_digits` keyword argument, if provided, is used to `round` accuracy/confidence metrics.
 """
@@ -112,7 +112,7 @@ function readmetrics(m::LeafModel{L}; class_share_map = nothing, round_digits = 
         end
     else
         return (;)
-    end, (; coverage = 1.0)) # Note: assuming all leaf models are closed (see `isopen`).
+    end, (; coverage = 1.0)) # Note: assuming all leaf models are complete (see `iscomplete`).
 end
 
 function readmetrics(m::Rule; kwargs...)
@@ -307,6 +307,15 @@ function rulemetrics(
         error     = rule_error,
         length    = natoms(antecedent(rule)),
     )
+end
+
+# TODO: if delays not in info(m) ?
+function _meandelaydl(m::DecisionList)
+    i = info(m)
+
+    if :delays in keys(i)
+        return mean(i[:delays])
+    end
 end
 
 ############################################################################################

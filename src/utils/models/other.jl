@@ -1,4 +1,4 @@
-import Base: convert, length, getindex, isopen
+import Base: convert, length, getindex
 
 using SoleData: slicedataset
 
@@ -67,14 +67,61 @@ rulebase(m::DecisionList) = m.rulebase
 Return the default [`consequent`](@ref) of `m`.
 
 !!! note
-    The returned model is open if and only if `m` is open.
-    See also [`isopen`](@ref).
+    The returned model is complete if and only if `m` is complete.
+    See also [`iscomplete`](@ref).
 
 See also [`AbstractModel`](@ref), [`DecisionList`](@ref), [`Rule`](@ref).
 """
 defaultconsequent(m::DecisionList) = m.defaultconsequent
 
-isopen(m::DecisionList) = isopen(defaultconsequent(m))
+iscomplete(m::DecisionList) = iscomplete(defaultconsequent(m))
+
+immediatesubmodels(m::DecisionList) = [rulebase(m)..., defaultconsequent(m)]
+nimmediatesubmodels(m::DecisionList) = length(rulebase(m)) + 1
+function listimmediaterules(
+    m::DecisionList{O};
+    # use_shortforms::Bool = true,
+    # use_leftmostlinearform::Union{Nothing,Bool} = nothing,
+    normalize::Bool = false,
+    normalize_kwargs::NamedTuple = (; allow_atom_flipping = true, rotate_commutatives = false),
+    scalar_simplification::Union{Bool,NamedTuple} = normalize ? (; allow_scalar_range_conditions = true) : false,
+    force_syntaxtree::Bool = false,
+) where {O}
+    assumed_formulas = Formula[]
+    normalized_rules = Rule{<:O}[]
+    for rule in rulebase(m)
+        # @show assumed_formulas
+        # @show consequent(rule).info
+        # @show eltype([assumed_formulas..., antecedent(rule)])
+        # @show assumed_formulas
+        # @show antecedent(rule)
+        φ = join_antecedents([assumed_formulas..., antecedent(rule)])
+        # @show typeof(φ)
+        # normalize && (φ = SoleLogics.normalize(φ; normalize_kwargs...))
+        # @show typeof(φ)
+        # @show φ
+        φ = _scalar_simplification(φ, scalar_simplification)
+        newrule = Rule(φ, consequent(rule), info(rule))
+        push!(normalized_rules, newrule)
+        ant = antecedent(rule)
+        force_syntaxtree && (ant = tree(ant))
+        # @show ant
+        nant = SoleLogics.NEGATION(ant)
+        # @show typeof(nant)
+        normalize && (nant = SoleLogics.normalize(nant; normalize_kwargs...))
+        # @show typeof(nant)
+        nant = _scalar_simplification(nant, scalar_simplification)
+        # @show typeof(nant)
+        assumed_formulas = push!(assumed_formulas, nant)
+    end
+    # @show eltype(assumed_formulas)
+    default_φ = join_antecedents(assumed_formulas)
+    # @show default_φ
+    default_φ = _scalar_simplification(default_φ, scalar_simplification)
+    # normalize && (default_φ = SoleLogics.normalize(default_φ; normalize_kwargs...))
+    push!(normalized_rules, Rule(default_φ, defaultconsequent(m), info(defaultconsequent(m))))
+    normalized_rules
+end
 
 function apply(
     m::DecisionList,
@@ -207,20 +254,7 @@ See also [`DecisionTree`](@ref).
 """
 root(m::DecisionTree) = m.root
 
-isopen(::DecisionTree) = false
-
-function apply(
-    m::DecisionTree,
-    id::Union{AbstractInterpretation,AbstractInterpretationSet};
-    kwargs...
-)
-    preds = apply(root(m), id; kwargs...)
-    if haskey(info(m), :apply_postprocess)
-        apply_postprocess_f = info(m, :apply_postprocess)
-        preds = apply_postprocess_f.(preds)
-    end
-    preds
-end
+iscomplete(::DecisionTree) = true
 
 """
     function nnodes(t::DecisionTree)
@@ -253,6 +287,24 @@ See also [`DecisionTree`](@ref).
 """
 function height(t::DecisionTree)
     subtreeheight(t)
+end
+
+immediatesubmodels(m::DecisionTree) = immediatesubmodels(root(m))
+nimmediatesubmodels(m::DecisionTree) = nimmediatesubmodels(root(m))
+listimmediaterules(m::DecisionTree) = listimmediaterules(root(m))
+
+function apply(
+    m::DecisionTree,
+    id::Union{AbstractInterpretation,AbstractInterpretationSet};
+    kwargs...
+)
+    preds = apply(root(m), id; kwargs...)
+    # TODO note: info should probably not interfere on the model's behavior
+    if haskey(info(m), :apply_postprocess)
+        apply_postprocess_f = info(m, :apply_postprocess)
+        preds = apply_postprocess_f.(preds)
+    end
+    preds
 end
 
 ############################################################################################
@@ -292,28 +344,6 @@ Return all the [`DecisionTree`](@ref)s wrapped within `forest`.
 See also [`DecisionTree`](@ref).
 """
 trees(forest::DecisionForest) = forest.trees
-
-# TODO check these two.
-function apply(
-    f::DecisionForest,
-    id::AbstractInterpretation;
-    kwargs...
-)
-    bestguess([apply(t, d; kwargs...) for t in trees(f)])
-end
-
-function apply(
-    f::DecisionForest,
-    d::AbstractInterpretationSet;
-    suppress_parity_warning = false,
-    kwargs...
-)
-    pred = hcat([apply(t, d; kwargs...) for t in trees(f)]...)
-    return [
-        bestguess(pred[i,:]; suppress_parity_warning = suppress_parity_warning)
-        for i in 1:size(pred,1)
-    ]
-end
 
 """
     function nnodes(f::DecisionForest)
@@ -358,6 +388,32 @@ See also [`DecisionForest`](@ref), [`DecisionTree`](@ref), [`trees`](@ref).
 """
 function ntrees(f::DecisionForest)
     length(trees(f))
+end
+
+immediatesubmodels(m::DecisionForest) = trees(m)
+nimmediatesubmodels(m::DecisionForest) = length(trees(m))
+listimmediaterules(m::DecisionForest; kwargs...) = error("TODO implement")
+
+# TODO check these two.
+function apply(
+    f::DecisionForest,
+    id::AbstractInterpretation;
+    kwargs...
+)
+    bestguess([apply(t, d; kwargs...) for t in trees(f)])
+end
+
+function apply(
+    f::DecisionForest,
+    d::AbstractInterpretationSet;
+    suppress_parity_warning = false,
+    kwargs...
+)
+    pred = hcat([apply(t, d; kwargs...) for t in trees(f)]...)
+    return [
+        bestguess(pred[i,:]; suppress_parity_warning = suppress_parity_warning)
+        for i in 1:size(pred,1)
+    ]
 end
 
 ############################################################################################
@@ -436,7 +492,11 @@ See also [`MixedModel`](@ref).
 """
 root(m::MixedModel) = m.root
 
-isopen(::MixedModel) = isopen(root)
+iscomplete(::MixedModel) = iscomplete(root)
+
+immediatesubmodels(m::MixedModel) = immediatesubmodels(root(m))
+nimmediatesubmodels(m::MixedModel) = nimmediatesubmodels(root(m))
+listimmediaterules(m::MixedModel) = listimmediaterules(root(m))
 
 function apply(
     m::MixedModel,
