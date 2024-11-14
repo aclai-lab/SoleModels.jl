@@ -31,23 +31,21 @@ and enclose a *tree* of `AbstractModel`s (with `LeafModel`s at the leaves).
 
 - `immediatesubmodels(m::AbstractModel)`
 - `nimmediatesubmodels(m::AbstractModel)`
-- `leafmodels(m::AbstractModel)`
-- `nleafmodels(m::AbstractModel)`
-
 - `listimmediaterules(m::AbstractModel)`
 
 - `info(m::AbstractModel, [key, [defaultval]])`
 - `info!(m::AbstractModel, key, value)`
 - `hasinfo(m::AbstractModel, key)`
-- `listrules(m::AbstractModel; kwargs...)`
 - `AbstractTrees.children(m::AbstractModel)`
 
 # Utility functions
 - `apply(m::AbstractModel, i::AbstractInterpretationSet; kwargs...)`
 - See AbstractTrees...
 
-- `submodels(m::AbstractModel)`(fallback of the general
+- `submodels(m::AbstractModel)`
 - `nsubmodels(m::AbstractModel)`
+- `leafmodels(m::AbstractModel)`
+- `nleafmodels(m::AbstractModel)`
 
 - `subtreeheight(m::AbstractModel)`
 - `listrules(
@@ -57,7 +55,6 @@ and enclose a *tree* of `AbstractModel`s (with `LeafModel`s at the leaves).
         normalize::Bool=false,
         force_syntaxtree::Bool=false,
     )`
-
 - `joinrules(m::AbstractModel, silent=false; kwargs...)`
 
 # Examples
@@ -113,6 +110,95 @@ See also [`AbstractModel`](@ref), [`apply`](@ref), [`iscomplete`](@ref), [`outco
 function outputtype(m::AbstractModel)
     iscomplete(m) ? outcometype(m) : Union{Nothing,outcometype(m)}
 end
+
+
+"""
+    immediatesubmodels(m::AbstractModel)
+
+Return the list of immediate child models.
+
+!!! note
+    If the model is a leaf model, then the returned list will be empty.
+
+# Examples
+```julia-repl
+julia> using SoleLogics
+
+julia> branch = Branch(SoleLogics.parseformula("p∧q∨r"), "YES", "NO");
+
+julia> immediatesubmodels(branch)
+2-element Vector{SoleModels.ConstantModel{String}}:
+ SoleModels.ConstantModel{String}
+YES
+
+ SoleModels.ConstantModel{String}
+NO
+
+julia> branch2 = Branch(SoleLogics.parseformula("s→p"), branch, 42);
+
+
+julia> printmodel.(immediatesubmodels(branch2));
+Branch
+┐ p ∧ (q ∨ r)
+├ ✔ YES
+└ ✘ NO
+
+ConstantModel
+42
+```
+
+See also [`AbstractModel`](@ref), [`LeafModel`](@ref), [`submodels`](@ref).
+"""
+function immediatesubmodels(
+    m::AbstractModel{O}
+)::Vector{<:{AbstractModel{<:O}}} where {O}
+    return error("Please, provide method immediatesubmodels(::$(typeof(m))).")
+end
+
+"""
+    nimmediatesubmodels(m::AbstractModel)
+
+Return the number of models returned by [`immediatesubmodels`](@ref).
+
+See also [`AbstractModel`](@ref), [`immediatesubmodels`](@ref).
+"""
+function nimmediatesubmodels(m::AbstractModel)
+    return error("Please, provide method nimmediatesubmodels(::$(typeof(m))).")
+end
+
+"""
+    listimmediaterules(m::AbstractModel{O} where {O})::Rule{<:O}
+
+List the immediate rules equivalent to a symbolic model.
+
+# Examples
+```julia-repl
+julia> using SoleLogics
+
+julia> branch = Branch(SoleLogics.parseformula("p"), Branch(SoleLogics.parseformula("q"), "YES", "NO"), "NO")
+ p
+├✔ q
+│├✔ YES
+│└✘ NO
+└✘ NO
+
+
+julia> printmodel.(listimmediaterules(branch); tree_mode = true);
+▣ p
+└✔ q
+ ├✔ YES
+ └✘ NO
+
+▣ ¬(p)
+└✔ NO
+```
+
+See also [`AbstractModel`](@ref), [`listrules`](@ref).
+"""
+listimmediaterules(m::AbstractModel{O} where {O})::Rule{<:O} =
+    error("Please, provide method listimmediaterules(::$(typeof(m))) " *
+        "($(typeof(m)) is a symbolic model).")
+
 
 """
     apply(m::AbstractModel, i::AbstractInterpretation; kwargs...)::outputtype(m)
@@ -233,49 +319,6 @@ wrap(m::AbstractModel) = m
 # wrap(o::Any)::AbstractModel = error("Please, provide method wrap($(typeof(o))).")
 
 
-"""
-    immediatesubmodels(m::AbstractModel)
-
-Return the list of immediate child models.
-Note: if the model is a leaf model, then the returned list will be empty.
-
-# Examples
-```julia-repl
-julia> using SoleLogics
-
-julia> branch = Branch(SoleLogics.parseformula("p∧q∨r"), "YES", "NO");
-
-julia> immediatesubmodels(branch)
-2-element Vector{SoleModels.ConstantModel{String}}:
- SoleModels.ConstantModel{String}
-YES
-
- SoleModels.ConstantModel{String}
-NO
-
-julia> branch2 = Branch(SoleLogics.parseformula("s→p"), branch, 42);
-
-
-julia> printmodel.(immediatesubmodels(branch2));
-Branch
-┐ p ∧ (q ∨ r)
-├ ✔ YES
-└ ✘ NO
-
-ConstantModel
-42
-```
-
-See also
-[`submodels`](@ref),
-[`LeafModel`](@ref),
-[`AbstractModel`](@ref).
-"""
-function immediatesubmodels(
-    m::AbstractModel{O}
-)::Vector{<:{AbstractModel{<:O}}} where {O}
-    return error("Please, provide method immediatesubmodels(::$(typeof(m))).")
-end
 
 # AbstracTrees interface
 using AbstractTrees
@@ -313,3 +356,7 @@ See also [`AbstractModel`](@ref), [`ConstantModel`](@ref), [`FunctionModel`](@re
 abstract type LeafModel{O} <: AbstractModel{O} end
 
 LeafModel(o) = wrap(o)
+
+immediatesubmodels(m::LeafModel{O}) where {O} = Vector{<:AbstractModel{<:O}}[]
+nimmediatesubmodels(m::LeafModel) = 0
+listimmediaterules(m::LeafModel) = [Rule(⊤, m)]
