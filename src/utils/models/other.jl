@@ -167,6 +167,118 @@ function apply(
     return preds
 end
 
+function apply!(
+    m::DecisionList{O},
+    d::AbstractInterpretationSet,
+    y::AbstractVector;
+    mode = :replace,
+    leavesonly = false,
+    show_progress = false, # length(rulebase(m)) > 15,
+    kwargs...
+) where {
+    O
+}
+    # @assert length(y) == ninstances(d) "$(length(y)) == $(ninstances(d))"
+    if mode == :replace
+        recursivelyemptysupports!(m, leavesonly)
+        mode = :append
+    end
+    nsamp = ninstances(d)
+    preds = Vector{outputtype(m)}(undef,nsamp)
+    uncovered_idxs = 1:nsamp
+
+    if show_progress
+        p = Progress(length(rulebase(m)); dt = 1, desc = "Applying list...")
+    end
+
+    for subm in [rulebase(m)..., defaultconsequent(m)]
+        length(uncovered_idxs) == 0 && break
+
+        uncovered_d = slicedataset(d, uncovered_idxs; return_view = true)
+
+        # @show length(uncovered_idxs)
+        cur_preds = apply!(subm, uncovered_d, y[uncovered_idxs], mode = mode, leavesonly = leavesonly, kwargs...)
+        idxs_sat = findall(!isnothing, cur_preds)
+        # @show cur_preds[idxs_sat]
+        preds[uncovered_idxs[idxs_sat]] .= cur_preds[idxs_sat]
+        uncovered_idxs = setdiff(uncovered_idxs, uncovered_idxs[idxs_sat])
+
+        !show_progress || next!(p)
+    end
+
+    return preds
+end
+
+#TODO write in docstring that possible values for compute_metrics are: :append, true, false
+function _apply!(
+    m::DecisionList{O},
+    d::AbstractInterpretationSet;
+    check_args::Tuple = (),
+    check_kwargs::NamedTuple = (;),
+    compute_metrics::Union{Symbol,Bool} = false,
+) where {
+    O
+}
+    nsamp = ninstances(d)
+    pred = Vector{O}(undef, nsamp)
+    delays = Vector{Integer}(undef, nsamp)
+    uncovered_idxs = 1:nsamp
+    rules = rulebase(m)
+
+    for (n, rule) in enumerate(rules)
+        length(uncovered_idxs) == 0 && break
+
+        uncovered_d = slicedataset(d, uncovered_idxs; return_view = true)
+
+        idxs_sat = findall(
+            checkantecedent(rule, uncovered_d, check_args...; check_kwargs...)
+        )
+        idxs_sat = uncovered_idxs[idxs_sat]
+        uncovered_idxs = setdiff(uncovered_idxs, idxs_sat)
+
+        delays[idxs_sat] .= (n-1)
+        map((i)->(pred[i] = outcome(consequent(rule))), idxs_sat)
+    end
+
+    if length(uncovered_idxs) != 0
+        map((i)->(pred[i] = outcome(defaultconsequent(m))), uncovered_idxs)
+        length(rules) == 0 ? (delays .= 0) : (delays[uncovered_idxs] .= length(rules))
+    end
+
+    (length(rules) != 0) && (delays = delays ./ length(rules))
+
+    iprev = info(m)
+    inew = compute_metrics == false ? iprev : begin
+        if :delays ∉ keys(iprev)
+            merge(iprev, (; delays = delays))
+        else
+            prev = iprev[:delays]
+            ntwithout = (; [p for p in pairs(nt) if p[1] != :delays]...)
+            if compute_metrics == :append
+                merge(ntwithout,(; delays = [prev..., delays...]))
+            elseif compute_metrics == true
+                merge(ntwithout,(; delays = delays))
+            end
+        end
+    end
+
+    inewnew = begin
+        if :pred ∉ keys(inew)
+            merge(inew, (; pred = pred))
+        else
+            prev = inew[:pred]
+            ntwithout = (; [p for p in pairs(nt) if p[1] != :pred]...)
+            if compute_metrics == :append
+                merge(ntwithout,(; pred = [prev..., pred...]))
+            elseif compute_metrics == true
+                merge(ntwithout,(; pred = pred))
+            end
+        end
+    end
+
+    return DecisionList(rules, defaultconsequent(m), inewnew)
+end
+
 ############################################################################################
 ################################### DecisionTree ###########################################
 ############################################################################################
@@ -256,6 +368,47 @@ root(m::DecisionTree) = m.root
 
 iscomplete(::DecisionTree) = true
 
+function apply(
+    m::DecisionTree,
+    id::Union{AbstractInterpretation,AbstractInterpretationSet};
+    kwargs...
+)
+    preds = apply(root(m), id; kwargs...)
+    # TODO note: info should probably not interfere on the model's behavior
+    if haskey(info(m), :apply_postprocess)
+        apply_postprocess_f = info(m, :apply_postprocess)
+        preds = apply_postprocess_f.(preds)
+    end
+    preds
+end
+
+
+function apply!(
+    m::DecisionTree,
+    d::AbstractInterpretationSet,
+    y::AbstractVector;
+    mode = :replace,
+    leavesonly = false,
+    kwargs...
+)
+    @assert length(y) == ninstances(d) "$(length(y)) == $(ninstances(d))"
+    if haskey(info(m), :apply_preprocess)
+        apply_preprocess_f = info(m, :apply_preprocess)
+        y = apply_preprocess_f.(y)
+    end
+    # _d = SupportedLogiset(d) TODO?
+    preds = apply!(root(m), d, y;
+        mode = mode,
+        leavesonly = leavesonly,
+        kwargs...
+    )
+    if haskey(info(m), :apply_postprocess)
+        apply_postprocess_f = info(m, :apply_postprocess)
+        preds = apply_postprocess_f.(preds)
+    end
+    return __apply!(m, mode, preds, y, leavesonly)
+end
+
 """
     function nnodes(t::DecisionTree)
 
@@ -292,20 +445,6 @@ end
 immediatesubmodels(m::DecisionTree) = immediatesubmodels(root(m))
 nimmediatesubmodels(m::DecisionTree) = nimmediatesubmodels(root(m))
 listimmediaterules(m::DecisionTree) = listimmediaterules(root(m))
-
-function apply(
-    m::DecisionTree,
-    id::Union{AbstractInterpretation,AbstractInterpretationSet};
-    kwargs...
-)
-    preds = apply(root(m), id; kwargs...)
-    # TODO note: info should probably not interfere on the model's behavior
-    if haskey(info(m), :apply_postprocess)
-        apply_postprocess_f = info(m, :apply_postprocess)
-        preds = apply_postprocess_f.(preds)
-    end
-    preds
-end
 
 ############################################################################################
 ################################## DecisionForest ##########################################

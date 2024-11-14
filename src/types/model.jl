@@ -255,6 +255,45 @@ end
     map(i_instance->apply(m, d, i_instance; kwargs...), 1:ninstances(d))
 end
 
+# function apply!(
+#     m::AbstractModel,
+#     i::AbstractInterpretation,
+#     y;
+#     mode = :replace,
+#     kwargs...
+# ) where {O}
+#     @assert mode in [:append, :replace] "Unexpected apply mode: $mode."
+#     return apply(m, i; mode = mode, y = y, kwargs...)
+# end
+
+# function apply!(
+#     m::AbstractModel,
+#     d::AbstractInterpretationSet,
+#     y::AbstractVector;
+#     mode = :replace,
+#     kwargs...
+# ) where {O}
+#     @assert mode in [:append, :replace] "Unexpected apply mode: $mode."
+#     return apply(m, d; mode = mode, y = y, kwargs...)
+# end
+
+
+# function apply!(
+#     m::AbstractModel,
+#     d::AbstractInterpretationSet,
+#     i_instance::Integer,
+#     y;
+#     mode = :replace,
+#     kwargs...
+# ) where {O}
+#     @assert mode in [:append, :replace] "Unexpected apply mode: $mode."
+#     return apply(m, d, i_instance; mode = mode, y = y, kwargs...)
+# end
+
+function apply!(m::AbstractModel, d::Any, y::AbstractVector; kwargs...)
+    apply!(m, SoleData.scalarlogiset(d; allow_propositional = true), y; kwargs...)
+end
+
 """
     info(m::AbstractModel)::NamedTuple = m.info
     info(m::AbstractModel, key) = m.info[key]
@@ -360,3 +399,54 @@ LeafModel(o) = wrap(o)
 immediatesubmodels(m::LeafModel{O}) where {O} = Vector{<:AbstractModel{<:O}}[]
 nimmediatesubmodels(m::LeafModel) = 0
 listimmediaterules(m::LeafModel) = [Rule(⊤, m)]
+
+function emptysupports!(m)
+    haskey(m.info, :supporting_predictions) && empty!(m.info.supporting_predictions)
+    empty!(m.info.supporting_labels)
+    nothing
+end
+
+function recursivelyemptysupports!(m, leavesonly)
+    (!leavesonly || (m isa LeafModel)) && emptysupports!(m)
+    recursivelyemptysupports!.(immediatesubmodels(m), leavesonly)
+    nothing
+end
+
+function __apply!(m, mode, preds, y, leavesonly)
+    if !leavesonly || m isa LeafModel
+        # idxs = filter(i->!isnothing(preds[i]), 1:length(preds))
+        # _preds = preds[idxs]
+        # _y = y[idxs]
+        if mode == :replace
+            if haskey(m.info, :supporting_predictions)
+                empty!(m.info.supporting_predictions)
+                append!(m.info.supporting_predictions, preds)
+            end
+            empty!(m.info.supporting_labels)
+            append!(m.info.supporting_labels, y)
+        elseif mode == :append
+            if haskey(m.info, :supporting_predictions)
+                append!(m.info.supporting_predictions, preds)
+            end
+            append!(m.info.supporting_labels, y)
+        else
+            error("Unexpected apply mode: $mode.")
+        end
+    end
+    return preds
+end
+
+# function __apply!(m, mode, preds, y)
+
+#     if mode == :replace
+#         m.info.supporting_predictions = preds
+#         m.info.supporting_labels = y
+#         preds
+#     elseif mode == :replace
+#         m.info.supporting_predictions = [info(m, :supporting_predictions)..., preds...]
+#         m.info.supporting_labels = [info(m, :supporting_labels)..., y...]
+#         preds
+#     else
+#         error("Unexpected apply mode: $mode.")
+#     end
+# end
