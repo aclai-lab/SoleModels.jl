@@ -215,7 +215,7 @@ function evaluaterule(
 )
     #println("Evaluation rule in time...")
     ys = apply(rule,X)
-    #if hassupports(X)
+    #if SoleData.hassupports(X)
     #    println("# Memoized Values: $(nmemoizedvalues(X))")
     #end
 
