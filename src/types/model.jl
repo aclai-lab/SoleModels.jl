@@ -36,7 +36,6 @@ and enclose a *tree* of `AbstractModel`s (with `LeafModel`s at the leaves).
 - `info(m::AbstractModel, [key, [defaultval]])`
 - `info!(m::AbstractModel, key, value)`
 - `hasinfo(m::AbstractModel, key)`
-- `AbstractTrees.children(m::AbstractModel)`
 
 # Utility functions
 - `apply(m::AbstractModel, i::AbstractInterpretationSet; kwargs...)`
@@ -110,95 +109,6 @@ See also [`AbstractModel`](@ref), [`apply`](@ref), [`iscomplete`](@ref), [`outco
 function outputtype(m::AbstractModel)
     iscomplete(m) ? outcometype(m) : Union{Nothing,outcometype(m)}
 end
-
-
-"""
-    immediatesubmodels(m::AbstractModel)
-
-Return the list of immediate child models.
-
-!!! note
-    If the model is a leaf model, then the returned list will be empty.
-
-# Examples
-```julia-repl
-julia> using SoleLogics
-
-julia> branch = Branch(SoleLogics.parseformula("p∧q∨r"), "YES", "NO");
-
-julia> immediatesubmodels(branch)
-2-element Vector{SoleModels.ConstantModel{String}}:
- SoleModels.ConstantModel{String}
-YES
-
- SoleModels.ConstantModel{String}
-NO
-
-julia> branch2 = Branch(SoleLogics.parseformula("s→p"), branch, 42);
-
-
-julia> printmodel.(immediatesubmodels(branch2));
-Branch
-┐ p ∧ (q ∨ r)
-├ ✔ YES
-└ ✘ NO
-
-ConstantModel
-42
-```
-
-See also [`AbstractModel`](@ref), [`LeafModel`](@ref), [`submodels`](@ref).
-"""
-function immediatesubmodels(
-    m::AbstractModel{O}
-)::Vector{<:{AbstractModel{<:O}}} where {O}
-    return error("Please, provide method immediatesubmodels(::$(typeof(m))).")
-end
-
-"""
-    nimmediatesubmodels(m::AbstractModel)
-
-Return the number of models returned by [`immediatesubmodels`](@ref).
-
-See also [`AbstractModel`](@ref), [`immediatesubmodels`](@ref).
-"""
-function nimmediatesubmodels(m::AbstractModel)
-    return error("Please, provide method nimmediatesubmodels(::$(typeof(m))).")
-end
-
-"""
-    listimmediaterules(m::AbstractModel{O} where {O})::Rule{<:O}
-
-List the immediate rules equivalent to a symbolic model.
-
-# Examples
-```julia-repl
-julia> using SoleLogics
-
-julia> branch = Branch(SoleLogics.parseformula("p"), Branch(SoleLogics.parseformula("q"), "YES", "NO"), "NO")
- p
-├✔ q
-│├✔ YES
-│└✘ NO
-└✘ NO
-
-
-julia> printmodel.(listimmediaterules(branch); tree_mode = true);
-▣ p
-└✔ q
- ├✔ YES
- └✘ NO
-
-▣ ¬(p)
-└✔ NO
-```
-
-See also [`AbstractModel`](@ref), [`listrules`](@ref).
-"""
-listimmediaterules(m::AbstractModel{O} where {O})::Rule{<:O} =
-    error("Please, provide method listimmediaterules(::$(typeof(m))) " *
-        "($(typeof(m)) is a symbolic model).")
-
 
 """
     apply(m::AbstractModel, i::AbstractInterpretation; kwargs...)::outputtype(m)
@@ -357,13 +267,93 @@ wrap(o::Any, FM::Type{<:AbstractModel}) = convert(FM, wrap(o))
 wrap(m::AbstractModel) = m
 # wrap(o::Any)::AbstractModel = error("Please, provide method wrap($(typeof(o))).")
 
+"""
+    immediatesubmodels(m::AbstractModel)
+
+Return the list of immediate child models.
+
+!!! note
+    If the model is a leaf model, then the returned list will be empty.
+
+# Examples
+```julia-repl
+julia> using SoleLogics
+
+julia> branch = Branch(SoleLogics.parseformula("p∧q∨r"), "YES", "NO");
+
+julia> immediatesubmodels(branch)
+2-element Vector{SoleModels.ConstantModel{String}}:
+ SoleModels.ConstantModel{String}
+YES
+
+ SoleModels.ConstantModel{String}
+NO
+
+julia> branch2 = Branch(SoleLogics.parseformula("s→p"), branch, 42);
 
 
-# AbstracTrees interface
-using AbstractTrees
-import AbstractTrees: children
+julia> printmodel.(immediatesubmodels(branch2));
+Branch
+┐ p ∧ (q ∨ r)
+├ ✔ YES
+└ ✘ NO
 
-AbstractTrees.children(m::AbstractModel) = immediatesubmodels(m)
+ConstantModel
+42
+```
+
+See also [`AbstractModel`](@ref), [`LeafModel`](@ref), [`submodels`](@ref).
+"""
+function immediatesubmodels(
+    m::AbstractModel{O}
+)::Vector{<:{AbstractModel{<:O}}} where {O}
+    return error("Please, provide method immediatesubmodels(::$(typeof(m))).")
+end
+
+"""
+    nimmediatesubmodels(m::AbstractModel)
+
+Return the number of models returned by [`immediatesubmodels`](@ref).
+
+See also [`AbstractModel`](@ref), [`immediatesubmodels`](@ref).
+"""
+function nimmediatesubmodels(m::AbstractModel)
+    return error("Please, provide method nimmediatesubmodels(::$(typeof(m))).")
+end
+
+"""
+    listimmediaterules(m::AbstractModel{O} where {O})::Rule{<:O}
+
+List the immediate rules equivalent to a symbolic model.
+
+# Examples
+```julia-repl
+julia> using SoleLogics
+
+julia> branch = Branch(SoleLogics.parseformula("p"), Branch(SoleLogics.parseformula("q"), "YES", "NO"), "NO")
+ p
+├✔ q
+│├✔ YES
+│└✘ NO
+└✘ NO
+
+
+julia> printmodel.(listimmediaterules(branch); tree_mode = true);
+▣ p
+└✔ q
+ ├✔ YES
+ └✘ NO
+
+▣ ¬(p)
+└✔ NO
+```
+
+See also [`AbstractModel`](@ref), [`listrules`](@ref).
+"""
+listimmediaterules(m::AbstractModel{O} where {O})::Rule{<:O} =
+    error("Please, provide method listimmediaterules(::$(typeof(m))) " *
+        "($(typeof(m)) is a symbolic model).")
+
 
 ############################################################################################
 ##################################### LeafModel ############################################
