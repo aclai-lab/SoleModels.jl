@@ -114,7 +114,7 @@ function join_antecedents(assumed_formulas::Vector{<:SoleLogics.Formula})
             new_assumed_formulas = []
             for φ in assumed_formulas
                 if φ isa LeftmostConjunctiveForm
-                    append!(new_assumed_formulas, children(φ))
+                    append!(new_assumed_formulas, SoleLogics.grandchildren(φ))
                 else
                     push!(new_assumed_formulas, φ)
                 end
@@ -129,7 +129,7 @@ end
 function combine_antecedents(antformula, f, use_leftmostlinearform, force_syntaxtree)
     # @show use_leftmostlinearform, force_syntaxtree
     if use_leftmostlinearform
-        _subantformulas = (f isa LeftmostLinearForm ? children(f) : [f])
+        _subantformulas = (f isa LeftmostLinearForm ? SoleLogics.grandchildren(f) : [f])
         # @show _subantformulas
         subantformulas = filter(!=(⊤), _subantformulas)
         force_syntaxtree ? tree(antformula) : antformula

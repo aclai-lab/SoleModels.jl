@@ -26,8 +26,8 @@ function Base.getindex(
 ) where {O}
     a = antecedent(m)
     @assert a isa LeftmostLinearForm "Cannot slice Rule with antecedent of type $(a)"
-    typeof(a)(children(a)[idxs])
-    # Rule{O}(typeof(a)(children(a)[idxs]), consequent(m))
+    typeof(a)(SoleLogics.grandchildren(a)[idxs])
+    # Rule{O}(typeof(a)(SoleLogics.grandchildren(a)[idxs]), consequent(m))
 end
 
 function Base.getindex(
@@ -36,8 +36,8 @@ function Base.getindex(
 ) where {O}
     a = antecedent(m)
     @assert a isa LeftmostLinearForm "Cannot slice Rule with antecedent of type $(a)"
-    children(a)[ind]
-    # Rule{O}(children(a)[ind], consequent(m))
+    SoleLogics.grandchildren(a)[ind]
+    # Rule{O}(SoleLogics.grandchildren(a)[ind], consequent(m))
 end
 
 # Helper: slice a Branch's antecedent
@@ -47,8 +47,8 @@ function Base.getindex(
 ) where {O}
     a = antecedent(m)
     @assert a isa LeftmostLinearForm "Cannot slice Branch with antecedent of type $(a)"
-    typeof(a)(children(a)[idxs])
-    # Branch{O}(typeof(a)(children(a)[idxs]), posconsequent(m), negconsequent(m))
+    typeof(a)(SoleLogics.grandchildren(a)[idxs])
+    # Branch{O}(typeof(a)(SoleLogics.grandchildren(a)[idxs]), posconsequent(m), negconsequent(m))
 end
 function Base.getindex(
     m::Branch{O},
@@ -56,6 +56,6 @@ function Base.getindex(
 ) where {O}
     a = antecedent(m)
     @assert a isa LeftmostLinearForm "Cannot slice Branch with antecedent of type $(a)"
-    children(a)[ind]
-    # Branch{O}(children(a)[ind], posconsequent(m), negconsequent(m))
+    SoleLogics.grandchildren(a)[ind]
+    # Branch{O}(SoleLogics.grandchildren(a)[ind], posconsequent(m), negconsequent(m))
 end
