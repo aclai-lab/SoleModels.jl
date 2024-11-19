@@ -76,6 +76,53 @@ defaultconsequent(m::DecisionList) = m.defaultconsequent
 
 iscomplete(m::DecisionList) = iscomplete(defaultconsequent(m))
 
+immediatesubmodels(m::DecisionList) = [rulebase(m)..., defaultconsequent(m)]
+nimmediatesubmodels(m::DecisionList) = length(rulebase(m)) + 1
+function listimmediaterules(
+    m::DecisionList{O};
+    # use_shortforms::Bool = true,
+    # use_leftmostlinearform::Union{Nothing,Bool} = nothing,
+    normalize::Bool = false,
+    normalize_kwargs::NamedTuple = (; allow_atom_flipping = true, rotate_commutatives = false),
+    scalar_simplification::Union{Bool,NamedTuple} = normalize ? (; allow_scalar_range_conditions = true) : false,
+    force_syntaxtree::Bool = false,
+) where {O}
+    assumed_formulas = Formula[]
+    normalized_rules = Rule{<:O}[]
+    for rule in rulebase(m)
+        # @show assumed_formulas
+        # @show consequent(rule).info
+        # @show eltype([assumed_formulas..., antecedent(rule)])
+        # @show assumed_formulas
+        # @show antecedent(rule)
+        φ = join_antecedents([assumed_formulas..., antecedent(rule)])
+        # @show typeof(φ)
+        # normalize && (φ = SoleLogics.normalize(φ; normalize_kwargs...))
+        # @show typeof(φ)
+        # @show φ
+        φ = _scalar_simplification(φ, scalar_simplification)
+        newrule = Rule(φ, consequent(rule), info(rule))
+        push!(normalized_rules, newrule)
+        ant = antecedent(rule)
+        force_syntaxtree && (ant = tree(ant))
+        # @show ant
+        nant = SoleLogics.NEGATION(ant)
+        # @show typeof(nant)
+        normalize && (nant = SoleLogics.normalize(nant; normalize_kwargs...))
+        # @show typeof(nant)
+        nant = _scalar_simplification(nant, scalar_simplification)
+        # @show typeof(nant)
+        assumed_formulas = push!(assumed_formulas, nant)
+    end
+    # @show eltype(assumed_formulas)
+    default_φ = join_antecedents(assumed_formulas)
+    # @show default_φ
+    default_φ = _scalar_simplification(default_φ, scalar_simplification)
+    # normalize && (default_φ = SoleLogics.normalize(default_φ; normalize_kwargs...))
+    push!(normalized_rules, Rule(default_φ, defaultconsequent(m), info(defaultconsequent(m))))
+    normalized_rules
+end
+
 function apply(
     m::DecisionList,
     i::AbstractInterpretation;
@@ -118,6 +165,118 @@ function apply(
         foreach((i)->(preds[i] = outcome(defaultconsequent(m))), uncovered_idxs)
 
     return preds
+end
+
+function apply!(
+    m::DecisionList{O},
+    d::AbstractInterpretationSet,
+    y::AbstractVector;
+    mode = :replace,
+    leavesonly = false,
+    show_progress = false, # length(rulebase(m)) > 15,
+    kwargs...
+) where {
+    O
+}
+    # @assert length(y) == ninstances(d) "$(length(y)) == $(ninstances(d))"
+    if mode == :replace
+        recursivelyemptysupports!(m, leavesonly)
+        mode = :append
+    end
+    nsamp = ninstances(d)
+    preds = Vector{outputtype(m)}(undef,nsamp)
+    uncovered_idxs = 1:nsamp
+
+    if show_progress
+        p = Progress(length(rulebase(m)); dt = 1, desc = "Applying list...")
+    end
+
+    for subm in [rulebase(m)..., defaultconsequent(m)]
+        length(uncovered_idxs) == 0 && break
+
+        uncovered_d = slicedataset(d, uncovered_idxs; return_view = true)
+
+        # @show length(uncovered_idxs)
+        cur_preds = apply!(subm, uncovered_d, y[uncovered_idxs], mode = mode, leavesonly = leavesonly, kwargs...)
+        idxs_sat = findall(!isnothing, cur_preds)
+        # @show cur_preds[idxs_sat]
+        preds[uncovered_idxs[idxs_sat]] .= cur_preds[idxs_sat]
+        uncovered_idxs = setdiff(uncovered_idxs, uncovered_idxs[idxs_sat])
+
+        !show_progress || next!(p)
+    end
+
+    return preds
+end
+
+#TODO write in docstring that possible values for compute_metrics are: :append, true, false
+function _apply!(
+    m::DecisionList{O},
+    d::AbstractInterpretationSet;
+    check_args::Tuple = (),
+    check_kwargs::NamedTuple = (;),
+    compute_metrics::Union{Symbol,Bool} = false,
+) where {
+    O
+}
+    nsamp = ninstances(d)
+    pred = Vector{O}(undef, nsamp)
+    delays = Vector{Integer}(undef, nsamp)
+    uncovered_idxs = 1:nsamp
+    rules = rulebase(m)
+
+    for (n, rule) in enumerate(rules)
+        length(uncovered_idxs) == 0 && break
+
+        uncovered_d = slicedataset(d, uncovered_idxs; return_view = true)
+
+        idxs_sat = findall(
+            checkantecedent(rule, uncovered_d, check_args...; check_kwargs...)
+        )
+        idxs_sat = uncovered_idxs[idxs_sat]
+        uncovered_idxs = setdiff(uncovered_idxs, idxs_sat)
+
+        delays[idxs_sat] .= (n-1)
+        map((i)->(pred[i] = outcome(consequent(rule))), idxs_sat)
+    end
+
+    if length(uncovered_idxs) != 0
+        map((i)->(pred[i] = outcome(defaultconsequent(m))), uncovered_idxs)
+        length(rules) == 0 ? (delays .= 0) : (delays[uncovered_idxs] .= length(rules))
+    end
+
+    (length(rules) != 0) && (delays = delays ./ length(rules))
+
+    iprev = info(m)
+    inew = compute_metrics == false ? iprev : begin
+        if :delays ∉ keys(iprev)
+            merge(iprev, (; delays = delays))
+        else
+            prev = iprev[:delays]
+            ntwithout = (; [p for p in pairs(nt) if p[1] != :delays]...)
+            if compute_metrics == :append
+                merge(ntwithout,(; delays = [prev..., delays...]))
+            elseif compute_metrics == true
+                merge(ntwithout,(; delays = delays))
+            end
+        end
+    end
+
+    inewnew = begin
+        if :pred ∉ keys(inew)
+            merge(inew, (; pred = pred))
+        else
+            prev = inew[:pred]
+            ntwithout = (; [p for p in pairs(nt) if p[1] != :pred]...)
+            if compute_metrics == :append
+                merge(ntwithout,(; pred = [prev..., pred...]))
+            elseif compute_metrics == true
+                merge(ntwithout,(; pred = pred))
+            end
+        end
+    end
+
+    return DecisionList(rules, defaultconsequent(m), inewnew)
 end
 
 ############################################################################################
@@ -223,6 +382,33 @@ function apply(
     preds
 end
 
+
+function apply!(
+    m::DecisionTree,
+    d::AbstractInterpretationSet,
+    y::AbstractVector;
+    mode = :replace,
+    leavesonly = false,
+    kwargs...
+)
+    @assert length(y) == ninstances(d) "$(length(y)) == $(ninstances(d))"
+    if haskey(info(m), :apply_preprocess)
+        apply_preprocess_f = info(m, :apply_preprocess)
+        y = apply_preprocess_f.(y)
+    end
+    # _d = SupportedLogiset(d) TODO?
+    preds = apply!(root(m), d, y;
+        mode = mode,
+        leavesonly = leavesonly,
+        kwargs...
+    )
+    if haskey(info(m), :apply_postprocess)
+        apply_postprocess_f = info(m, :apply_postprocess)
+        preds = apply_postprocess_f.(preds)
+    end
+    return __apply!(m, mode, preds, y, leavesonly)
+end
+
 """
     function nnodes(t::DecisionTree)
 
@@ -255,6 +441,10 @@ See also [`DecisionTree`](@ref).
 function height(t::DecisionTree)
     subtreeheight(t)
 end
+
+immediatesubmodels(m::DecisionTree) = immediatesubmodels(root(m))
+nimmediatesubmodels(m::DecisionTree) = nimmediatesubmodels(root(m))
+listimmediaterules(m::DecisionTree) = listimmediaterules(root(m))
 
 ############################################################################################
 ################################## DecisionForest ##########################################
@@ -293,28 +483,6 @@ Return all the [`DecisionTree`](@ref)s wrapped within `forest`.
 See also [`DecisionTree`](@ref).
 """
 trees(forest::DecisionForest) = forest.trees
-
-# TODO check these two.
-function apply(
-    f::DecisionForest,
-    id::AbstractInterpretation;
-    kwargs...
-)
-    bestguess([apply(t, d; kwargs...) for t in trees(f)])
-end
-
-function apply(
-    f::DecisionForest,
-    d::AbstractInterpretationSet;
-    suppress_parity_warning = false,
-    kwargs...
-)
-    pred = hcat([apply(t, d; kwargs...) for t in trees(f)]...)
-    return [
-        bestguess(pred[i,:]; suppress_parity_warning = suppress_parity_warning)
-        for i in 1:size(pred,1)
-    ]
-end
 
 """
     function nnodes(f::DecisionForest)
@@ -359,6 +527,32 @@ See also [`DecisionForest`](@ref), [`DecisionTree`](@ref), [`trees`](@ref).
 """
 function ntrees(f::DecisionForest)
     length(trees(f))
+end
+
+immediatesubmodels(m::DecisionForest) = trees(m)
+nimmediatesubmodels(m::DecisionForest) = length(trees(m))
+listimmediaterules(m::DecisionForest; kwargs...) = error("TODO implement")
+
+# TODO check these two.
+function apply(
+    f::DecisionForest,
+    id::AbstractInterpretation;
+    kwargs...
+)
+    bestguess([apply(t, d; kwargs...) for t in trees(f)])
+end
+
+function apply(
+    f::DecisionForest,
+    d::AbstractInterpretationSet;
+    suppress_parity_warning = false,
+    kwargs...
+)
+    pred = hcat([apply(t, d; kwargs...) for t in trees(f)]...)
+    return [
+        bestguess(pred[i,:]; suppress_parity_warning = suppress_parity_warning)
+        for i in 1:size(pred,1)
+    ]
 end
 
 ############################################################################################
@@ -438,6 +632,10 @@ See also [`MixedModel`](@ref).
 root(m::MixedModel) = m.root
 
 iscomplete(::MixedModel) = iscomplete(root)
+
+immediatesubmodels(m::MixedModel) = immediatesubmodels(root(m))
+nimmediatesubmodels(m::MixedModel) = nimmediatesubmodels(root(m))
+listimmediaterules(m::MixedModel) = listimmediaterules(root(m))
 
 function apply(
     m::MixedModel,

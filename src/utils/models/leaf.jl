@@ -72,6 +72,25 @@ apply(
     kwargs...
 ) = Fill(outcome(m), ninstances(d))
 
+function apply!(
+    m::ConstantModel,
+    d::AbstractInterpretationSet,
+    y::AbstractVector;
+    mode = :replace,
+    leavesonly = false,
+    kwargs...
+)
+    # @assert length(y) == ninstances(d) "$(length(y)) == $(ninstances(d))"
+    if mode == :replace
+        recursivelyemptysupports!(m, leavesonly)
+        mode = :append
+    end
+    preds = fill(outcome(m), ninstances(d))
+    # @show m.info
+    # @show y
+    return __apply!(m, mode, preds, y, leavesonly)
+end
+
 convert(::Type{ConstantModel{O}}, o::O) where {O} = ConstantModel{O}(o)
 convert(::Type{<:AbstractModel{F}}, m::ConstantModel) where {F} = ConstantModel{F}(m)
 

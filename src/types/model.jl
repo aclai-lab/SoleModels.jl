@@ -31,26 +31,20 @@ and enclose a *tree* of `AbstractModel`s (with `LeafModel`s at the leaves).
 
 - `immediatesubmodels(m::AbstractModel)`
 - `nimmediatesubmodels(m::AbstractModel)`
-- `leafmodels(m::AbstractModel)`
-- `nleafmodels(m::AbstractModel)`
-
 - `listimmediaterules(m::AbstractModel)`
 
 - `info(m::AbstractModel, [key, [defaultval]])`
 - `info!(m::AbstractModel, key, value)`
 - `hasinfo(m::AbstractModel, key)`
-- `listrules(m::AbstractModel; kwargs...)`
 
 # Utility functions
 - `apply(m::AbstractModel, i::AbstractInterpretationSet; kwargs...)`
 - See AbstractTrees...
 
-# Utility functions
-- `apply(m::AbstractModel, d::AbstractInterpretationSet, i_instance::Integer; kwargs...)
-
-- `submodels(m::AbstractModel)`(fallback of the general
-    `AbstractTrees.children(m::AbstractModel)`)
+- `submodels(m::AbstractModel)`
 - `nsubmodels(m::AbstractModel)`
+- `leafmodels(m::AbstractModel)`
+- `nleafmodels(m::AbstractModel)`
 
 - `subtreeheight(m::AbstractModel)`
 - `listrules(
@@ -60,7 +54,6 @@ and enclose a *tree* of `AbstractModel`s (with `LeafModel`s at the leaves).
         normalize::Bool=false,
         force_syntaxtree::Bool=false,
     )`
-
 - `joinrules(m::AbstractModel, silent=false; kwargs...)`
 
 # Examples
@@ -164,22 +157,51 @@ function apply(
     return error("Please, provide method apply(::$(typeof(m)), ::$(typeof(i)); kwargs...).")
 end
 
-function apply(
-    m::AbstractModel,
-    d::AbstractInterpretationSet,
-    i_instance::Integer;
-    kwargs...
-)::outputtype(m)
-    interpretation = get_instance(d, i_instance)
-    apply(m, interpretation; kwargs...)
-end
-
-function apply(
+@inline function apply(
     m::AbstractModel,
     d::AbstractInterpretationSet;
     kwargs...
 )::AbstractVector{<:outputtype(m)}
     map(i_instance->apply(m, d, i_instance; kwargs...), 1:ninstances(d))
+end
+
+# function apply!(
+#     m::AbstractModel,
+#     i::AbstractInterpretation,
+#     y;
+#     mode = :replace,
+#     kwargs...
+# ) where {O}
+#     @assert mode in [:append, :replace] "Unexpected apply mode: $mode."
+#     return apply(m, i; mode = mode, y = y, kwargs...)
+# end
+
+# function apply!(
+#     m::AbstractModel,
+#     d::AbstractInterpretationSet,
+#     y::AbstractVector;
+#     mode = :replace,
+#     kwargs...
+# ) where {O}
+#     @assert mode in [:append, :replace] "Unexpected apply mode: $mode."
+#     return apply(m, d; mode = mode, y = y, kwargs...)
+# end
+
+
+# function apply!(
+#     m::AbstractModel,
+#     d::AbstractInterpretationSet,
+#     i_instance::Integer,
+#     y;
+#     mode = :replace,
+#     kwargs...
+# ) where {O}
+#     @assert mode in [:append, :replace] "Unexpected apply mode: $mode."
+#     return apply(m, d, i_instance; mode = mode, y = y, kwargs...)
+# end
+
+function apply!(m::AbstractModel, d::Any, y::AbstractVector; kwargs...)
+    apply!(m, SoleData.scalarlogiset(d; allow_propositional = true), y; kwargs...)
 end
 
 """
@@ -245,12 +267,13 @@ wrap(o::Any, FM::Type{<:AbstractModel}) = convert(FM, wrap(o))
 wrap(m::AbstractModel) = m
 # wrap(o::Any)::AbstractModel = error("Please, provide method wrap($(typeof(o))).")
 
-
 """
     immediatesubmodels(m::AbstractModel)
 
 Return the list of immediate child models.
-Note: if the model is a leaf model, then the returned list will be empty.
+
+!!! note
+    If the model is a leaf model, then the returned list will be empty.
 
 # Examples
 ```julia-repl
@@ -279,10 +302,7 @@ ConstantModel
 42
 ```
 
-See also
-[`submodels`](@ref),
-[`LeafModel`](@ref),
-[`AbstractModel`](@ref).
+See also [`AbstractModel`](@ref), [`LeafModel`](@ref), [`submodels`](@ref).
 """
 function immediatesubmodels(
     m::AbstractModel{O}
@@ -290,11 +310,50 @@ function immediatesubmodels(
     return error("Please, provide method immediatesubmodels(::$(typeof(m))).")
 end
 
-# AbstracTrees interface
-using AbstractTrees
-import AbstractTrees: children
+"""
+    nimmediatesubmodels(m::AbstractModel)
 
-AbstractTrees.children(m::AbstractModel) = immediatesubmodels(m)
+Return the number of models returned by [`immediatesubmodels`](@ref).
+
+See also [`AbstractModel`](@ref), [`immediatesubmodels`](@ref).
+"""
+function nimmediatesubmodels(m::AbstractModel)
+    return error("Please, provide method nimmediatesubmodels(::$(typeof(m))).")
+end
+
+"""
+    listimmediaterules(m::AbstractModel{O} where {O})::Rule{<:O}
+
+List the immediate rules equivalent to a symbolic model.
+
+# Examples
+```julia-repl
+julia> using SoleLogics
+
+julia> branch = Branch(SoleLogics.parseformula("p"), Branch(SoleLogics.parseformula("q"), "YES", "NO"), "NO")
+ p
+├✔ q
+│├✔ YES
+│└✘ NO
+└✘ NO
+
+
+julia> printmodel.(listimmediaterules(branch); tree_mode = true);
+▣ p
+└✔ q
+ ├✔ YES
+ └✘ NO
+
+▣ ¬(p)
+└✔ NO
+```
+
+See also [`AbstractModel`](@ref), [`listrules`](@ref).
+"""
+listimmediaterules(m::AbstractModel{O} where {O})::Rule{<:O} =
+    error("Please, provide method listimmediaterules(::$(typeof(m))) " *
+        "($(typeof(m)) is a symbolic model).")
+
 
 ############################################################################################
 ##################################### LeafModel ############################################
@@ -326,3 +385,58 @@ See also [`AbstractModel`](@ref), [`ConstantModel`](@ref), [`FunctionModel`](@re
 abstract type LeafModel{O} <: AbstractModel{O} end
 
 LeafModel(o) = wrap(o)
+
+immediatesubmodels(m::LeafModel{O}) where {O} = Vector{<:AbstractModel{<:O}}[]
+nimmediatesubmodels(m::LeafModel) = 0
+listimmediaterules(m::LeafModel) = [Rule(⊤, m)]
+
+function emptysupports!(m)
+    haskey(m.info, :supporting_predictions) && empty!(m.info.supporting_predictions)
+    empty!(m.info.supporting_labels)
+    nothing
+end
+
+function recursivelyemptysupports!(m, leavesonly)
+    (!leavesonly || (m isa LeafModel)) && emptysupports!(m)
+    recursivelyemptysupports!.(immediatesubmodels(m), leavesonly)
+    nothing
+end
+
+function __apply!(m, mode, preds, y, leavesonly)
+    if !leavesonly || m isa LeafModel
+        # idxs = filter(i->!isnothing(preds[i]), 1:length(preds))
+        # _preds = preds[idxs]
+        # _y = y[idxs]
+        if mode == :replace
+            if haskey(m.info, :supporting_predictions)
+                empty!(m.info.supporting_predictions)
+                append!(m.info.supporting_predictions, preds)
+            end
+            empty!(m.info.supporting_labels)
+            append!(m.info.supporting_labels, y)
+        elseif mode == :append
+            if haskey(m.info, :supporting_predictions)
+                append!(m.info.supporting_predictions, preds)
+            end
+            append!(m.info.supporting_labels, y)
+        else
+            error("Unexpected apply mode: $mode.")
+        end
+    end
+    return preds
+end
+
+# function __apply!(m, mode, preds, y)
+
+#     if mode == :replace
+#         m.info.supporting_predictions = preds
+#         m.info.supporting_labels = y
+#         preds
+#     elseif mode == :replace
+#         m.info.supporting_predictions = [info(m, :supporting_predictions)..., preds...]
+#         m.info.supporting_labels = [info(m, :supporting_labels)..., y...]
+#         preds
+#     else
+#         error("Unexpected apply mode: $mode.")
+#     end
+# end

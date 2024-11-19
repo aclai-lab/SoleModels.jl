@@ -108,6 +108,10 @@ See also [`antecedent`](@ref), [`Rule`](@ref), [`Branch`](@ref).
 """
 function checkantecedent end
 
+immediatesubmodels(m::Rule) = [consequent(m)]
+nimmediatesubmodels(m::Rule) = 1
+listimmediaterules(m::Rule) = [m]
+
 function apply(
     m::Rule,
     i::AbstractInterpretation;
@@ -143,6 +147,36 @@ function apply(
     else
         nothing
     end
+end
+
+function apply!(
+    m::Rule,
+    d::AbstractInterpretationSet,
+    y::AbstractVector;
+    check_args::Tuple = (),
+    check_kwargs::NamedTuple = (;),
+    mode = :replace,
+    leavesonly = false,
+    kwargs...
+)
+    # @assert length(y) == ninstances(d) "$(length(y)) == $(ninstances(d))"
+    if mode == :replace
+        recursivelyemptysupports!(m, leavesonly)
+        mode = :append
+    end
+    checkmask = checkantecedent(m, d, check_args...; check_kwargs...)
+    # @show checkmask
+    preds = Vector{outputtype(m)}(fill(nothing, ninstances(d)))
+    if any(checkmask)
+        preds[checkmask] .= apply!(consequent(m), slicedataset(d, checkmask; return_view = true), y[checkmask];
+            check_args = check_args,
+            check_kwargs = check_kwargs,
+            mode = mode,
+            leavesonly = leavesonly,
+            kwargs...
+        )
+    end
+    return __apply!(m, mode, preds, y, leavesonly)
 end
 
 ############################################################################################
@@ -235,6 +269,13 @@ negconsequent(m::Branch) = m.negconsequent
 
 iscomplete(m::Branch) = iscomplete(posconsequent(m)) && iscomplete(negconsequent(m))
 
+immediatesubmodels(m::Branch) = [posconsequent(m), negconsequent(m)]
+nimmediatesubmodels(m::Branch) = 2
+listimmediaterules(m::Branch{O}) where {O} = [
+    Rule{O}(antecedent(m), posconsequent(m)),
+    Rule{O}(SoleLogics.NEGATION(antecedent(m)), negconsequent(m)),
+]
+
 function apply(
     m::Branch,
     i::AbstractInterpretation;
@@ -304,6 +345,60 @@ function apply(
         kwargs...
     )
     preds
+end
+
+function apply!(
+    m::Branch,
+    d::AbstractInterpretationSet,
+    y::AbstractVector;
+    check_args::Tuple = (),
+    check_kwargs::NamedTuple = (;),
+    mode = :replace,
+    leavesonly = false,
+    # show_progress = true,
+    kwargs...
+)
+    # @assert length(y) == ninstances(d) "$(length(y)) == $(ninstances(d))"
+    if mode == :replace
+        recursivelyemptysupports!(m, leavesonly)
+        mode = :append
+    end
+    checkmask = checkantecedent(m, d, check_args...; check_kwargs...)
+    preds = Vector{outputtype(m)}(undef,length(checkmask))
+    @sync begin
+        if any(checkmask)
+            l = Threads.@spawn apply!(
+                posconsequent(m),
+                slicedataset(d, checkmask; return_view = true),
+                y[checkmask];
+                check_args = check_args,
+                check_kwargs = check_kwargs,
+                mode = mode,
+                leavesonly = leavesonly,
+                kwargs...
+            )
+        end
+        ncheckmask = (!).(checkmask)
+        if any(ncheckmask)
+            r = Threads.@spawn apply!(
+                negconsequent(m),
+                slicedataset(d, ncheckmask; return_view = true),
+                y[ncheckmask];
+                check_args = check_args,
+                check_kwargs = check_kwargs,
+                mode = mode,
+                leavesonly = leavesonly,
+                kwargs...
+            )
+        end
+        if any(checkmask)
+            preds[checkmask] .= fetch(l)
+        end
+        if any(ncheckmask)
+            preds[ncheckmask] .= fetch(r)
+        end
+    end
+    return __apply!(m, mode, preds, y, leavesonly)
 end
 
 ############################################################################################
