@@ -61,8 +61,11 @@ export trees
 
 export MixedModel
 
+export solemodel
+
 include("types/model.jl")
 include("types/AbstractTrees.jl")
+include("types/api.jl")
 
 include("utils/models/leaf.jl")
 include("utils/models/rule-and-branch.jl")

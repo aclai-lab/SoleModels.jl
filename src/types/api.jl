@@ -1,6 +1,3 @@
-module SoleDecisionTreeInterfaceExt
-
-using SoleModels, SoleDecisionTreeInterface
 
 # TODO document, together with issymbolic and listrules
 """
@@ -24,5 +21,3 @@ function solemodel(o::Any, args...; kwargs...)
         end
     end
 end
-
-end # module

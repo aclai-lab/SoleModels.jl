@@ -33,12 +33,6 @@ Tables = "bd369af6-aec1-5ad0-b16a-f7cc5008161c"
 ThreadSafeDicts = "4239201d-c60e-5e0a-9702-85d713665ba7"
 ZipFile = "a5390f91-8eb1-5f08-bee0-b1d1ffed6cea"
 
-[weakdeps]
-SoleDecisionTreeInterface = "de8eae22-3630-40e0-868c-abfc4c1bb3da"
-
-[extensions]
-SoleDecisionTreeInterfaceExt = "SoleDecisionTreeInterface"
-
 [compat]
 AbstractTrees = "0.4"
 BenchmarkTools = "1"
@@ -59,7 +53,6 @@ Reexport = "1"
 Revise = "3"
 SoleBase = "0.12"
 SoleData = "0.15, 0.16"
-SoleDecisionTreeInterface = "0.1"
 SoleLogics = "0.9, 0.10"
 StatsBase = "0.30 - 0.34"
 Suppressor = "0.2"
@@ -75,6 +68,7 @@ MLJDecisionTreeInterface = "c6f25543-311c-4c74-83dc-3ea6d1015661"
 Markdown = "d6f4376e-aef5-505a-96c1-9c027394607a"
 MultiData = "8cc5100c-b3d1-4f82-90cb-0ea93d317aba"
 PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
+SoleDecisionTreeInterface = "de8eae22-3630-40e0-868c-abfc4c1bb3da"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
