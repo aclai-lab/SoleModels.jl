@@ -386,6 +386,8 @@ abstract type LeafModel{O} <: AbstractModel{O} end
 
 LeafModel(o) = wrap(o)
 
+leafmodelname(o::LeafModel) = error("Please, provide method leafmodelname(::$(typeof(o))).")
+
 immediatesubmodels(m::LeafModel{O}) where {O} = Vector{<:AbstractModel{<:O}}[]
 nimmediatesubmodels(m::LeafModel) = 0
 listimmediaterules(m::LeafModel) = [Rule(⊤, m)]

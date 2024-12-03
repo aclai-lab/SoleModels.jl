@@ -162,7 +162,7 @@ end
 
 function printmodel(
     io::IO,
-    m::ConstantModel;
+    m::LeafModel;
     header = DEFAULT_HEADER,
     indentation_str = "",
     show_subtree_info = false,
@@ -186,40 +186,7 @@ function printmodel(
         "" : "\n$(indentation_str)Info: $(info(m))")")
     end
     depth == 0 && show_symbols && print(io, MODEL_SYMBOL)
-    print(io, " $(outcome(m))")
-    (show_subtree_metrics || show_metrics != false) && print(io, " : $(get_metrics_string(m; (show_metrics isa NamedTuple ? show_metrics : [])...))")
-    show_shortforms != false && haskey(info(m), :shortform) && print(io, "\t\t\t\t\t\t\tSHORTFORM: $(@_antecedent_syntaxstring info(m)[:shortform] m parenthesize_atoms syntaxstring_kwargs kwargs)")
-    println(io, "")
-    nothing
-end
-
-function printmodel(
-    io::IO,
-    m::FunctionModel;
-    header = DEFAULT_HEADER,
-    indentation_str = "",
-    depth = 0,
-    show_subtree_info = false,
-    show_subtree_metrics = false,
-    show_metrics = false,
-    show_shortforms = false,
-    show_intermediate_finals = false,
-    tree_mode = false,
-    show_symbols = true,
-    syntaxstring_kwargs = (;),
-    parenthesize_atoms = true,
-    kwargs...,
-)
-    if header != false
-        _typestr = string(header == true ? typeof(m) :
-            header == :brief ? nameof(typeof(m)) :
-                error("Unexpected value for parameter header: $(header).")
-        )
-        println(io, "$(indentation_str)$(_typestr)$((length(info(m)) == 0) ?
-        "" : "\n$(indentation_str)Info: $(info(m))")")
-    end
-    depth == 0 && show_symbols && print(io, MODEL_SYMBOL)
-    print(io, " $(f(m))")
+    print(io, " $(leafmodelname(m))")
     (show_subtree_metrics || show_metrics != false) && print(io, " : $(get_metrics_string(m; (show_metrics isa NamedTuple ? show_metrics : [])...))")
     show_shortforms != false && haskey(info(m), :shortform) && print(io, "\t\t\t\t\t\t\tSHORTFORM: $(@_antecedent_syntaxstring info(m)[:shortform] m parenthesize_atoms syntaxstring_kwargs kwargs)")
     println(io, "")

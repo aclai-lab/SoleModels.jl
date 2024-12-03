@@ -56,6 +56,7 @@ Return the constant outcome wrapped by `m`.
 See also [`ConstantModel`](@ref).
 """
 outcome(m::ConstantModel) = m.outcome
+leafmodelname(m::ConstantModel) = string(outcome(m))
 
 iscomplete(::ConstantModel) = true
 
@@ -172,6 +173,7 @@ See also [`FunctionModel`](@ref),
 [FunctionWrappers](https://github.com/yuyichao/FunctionWrappers.jl).
 """
 f(m::FunctionModel) = m.f
+leafmodelname(m::FunctionModel) = string(f(m))
 
 iscomplete(::FunctionModel) = true
 
