@@ -1,4 +1,4 @@
-import Base: convert, length, getindex, isopen
+import Base: convert, length, getindex
 
 ############################################################################################
 ################################### ConstantModel ##########################################
@@ -56,8 +56,9 @@ Return the constant outcome wrapped by `m`.
 See also [`ConstantModel`](@ref).
 """
 outcome(m::ConstantModel) = m.outcome
+leafmodelname(m::ConstantModel) = string(outcome(m))
 
-isopen(::ConstantModel) = false
+iscomplete(::ConstantModel) = true
 
 apply(m::ConstantModel, i::AbstractInterpretation; kwargs...) = outcome(m)
 apply(
@@ -72,7 +73,24 @@ apply(
     kwargs...
 ) = Fill(outcome(m), ninstances(d))
 
-wrap(o::O) where {O} = convert(ConstantModel{O}, o)
+function apply!(
+    m::ConstantModel,
+    d::AbstractInterpretationSet,
+    y::AbstractVector;
+    mode = :replace,
+    leavesonly = false,
+    kwargs...
+)
+    # @assert length(y) == ninstances(d) "$(length(y)) == $(ninstances(d))"
+    if mode == :replace
+        recursivelyemptysupports!(m, leavesonly)
+        mode = :append
+    end
+    preds = fill(outcome(m), ninstances(d))
+    # @show m.info
+    # @show y
+    return __apply!(m, mode, preds, y, leavesonly)
+end
 
 convert(::Type{ConstantModel{O}}, o::O) where {O} = ConstantModel{O}(o)
 convert(::Type{<:AbstractModel{F}}, m::ConstantModel) where {F} = ConstantModel{F}(m)
@@ -155,8 +173,9 @@ See also [`FunctionModel`](@ref),
 [FunctionWrappers](https://github.com/yuyichao/FunctionWrappers.jl).
 """
 f(m::FunctionModel) = m.f
+leafmodelname(m::FunctionModel) = string(f(m))
 
-isopen(::FunctionModel) = false
+iscomplete(::FunctionModel) = true
 
 function apply(
     m::FunctionModel,
@@ -187,6 +206,3 @@ function apply(
 end
 
 convert(::Type{<:AbstractModel{F}}, m::FunctionModel) where {F} = FunctionModel{F}(m)
-
-wrap(o::Function) = FunctionModel(o)
-wrap(o::FunctionWrapper{O}) where {O} = FunctionModel{O}(o)

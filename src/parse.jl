@@ -2,7 +2,7 @@ using SoleData
 using SoleLogics
 using SoleModels
 const SPACE = " "
-const UNDERCORE = "_"
+const UNDERSCORE = "_"
 
 # This file contains utility functions for porting symbolic models from string and custom representations.
 
@@ -13,7 +13,6 @@ Parser for [orange](https://orange3.readthedocs.io/)-style decision lists.
 Reference: https://orange3.readthedocs.io/projects/orange-visual-programming/en/latest/widgets/model/cn2ruleinduction.html
 
 # Arguments
-
 * `decision_list` is an `AbstractString` containing the orange-style representation of a decision list;
 * `ignoredefaultrule` is an optional, Boolean parameter indicating whether to use the default rule
     as the default rule for the resulting decision list.
@@ -122,7 +121,7 @@ function parse_orange_decision_list(
         end
         currentrule_distribution = parse.(Int, split(distribution_str, ','))
         antecedent_conditions = String.(strip.(split(antecedents_str, "AND")))
-        antecedent_conditions = replace.(antecedent_conditions, SPACE=>UNDERCORE)
+        antecedent_conditions = replace.(antecedent_conditions, SPACE=>UNDERSCORE)
         antecedent_conditions = match.(r"(.+?)([<>]=?|==|!=)(.*)", antecedent_conditions)
 
         antecedent = LeftmostConjunctiveForm([begin

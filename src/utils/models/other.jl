@@ -1,4 +1,4 @@
-import Base: convert, length, getindex, isopen
+import Base: convert, length, getindex
 
 using SoleData: slicedataset
 
@@ -67,14 +67,61 @@ rulebase(m::DecisionList) = m.rulebase
 Return the default [`consequent`](@ref) of `m`.
 
 !!! note
-    The returned model is open if and only if `m` is open.
-    See also [`isopen`](@ref).
+    The returned model is complete if and only if `m` is complete.
+    See also [`iscomplete`](@ref).
 
 See also [`AbstractModel`](@ref), [`DecisionList`](@ref), [`Rule`](@ref).
 """
 defaultconsequent(m::DecisionList) = m.defaultconsequent
 
-isopen(m::DecisionList) = isopen(defaultconsequent(m))
+iscomplete(m::DecisionList) = iscomplete(defaultconsequent(m))
+
+immediatesubmodels(m::DecisionList) = [rulebase(m)..., defaultconsequent(m)]
+nimmediatesubmodels(m::DecisionList) = length(rulebase(m)) + 1
+function listimmediaterules(
+    m::DecisionList{O};
+    # use_shortforms::Bool = true,
+    # use_leftmostlinearform::Union{Nothing,Bool} = nothing,
+    normalize::Bool = false,
+    normalize_kwargs::NamedTuple = (; allow_atom_flipping = true, rotate_commutatives = false),
+    scalar_simplification::Union{Bool,NamedTuple} = normalize ? (; allow_scalar_range_conditions = true) : false,
+    force_syntaxtree::Bool = false,
+) where {O}
+    assumed_formulas = Formula[]
+    normalized_rules = Rule{<:O}[]
+    for rule in rulebase(m)
+        # @show assumed_formulas
+        # @show consequent(rule).info
+        # @show eltype([assumed_formulas..., antecedent(rule)])
+        # @show assumed_formulas
+        # @show antecedent(rule)
+        φ = join_antecedents([assumed_formulas..., antecedent(rule)])
+        # @show typeof(φ)
+        # normalize && (φ = SoleLogics.normalize(φ; normalize_kwargs...))
+        # @show typeof(φ)
+        # @show φ
+        φ = _scalar_simplification(φ, scalar_simplification)
+        newrule = Rule(φ, consequent(rule), info(rule))
+        push!(normalized_rules, newrule)
+        ant = antecedent(rule)
+        force_syntaxtree && (ant = tree(ant))
+        # @show ant
+        nant = SoleLogics.NEGATION(ant)
+        # @show typeof(nant)
+        normalize && (nant = SoleLogics.normalize(nant; normalize_kwargs...))
+        # @show typeof(nant)
+        nant = _scalar_simplification(nant, scalar_simplification)
+        # @show typeof(nant)
+        assumed_formulas = push!(assumed_formulas, nant)
+    end
+    # @show eltype(assumed_formulas)
+    default_φ = join_antecedents(assumed_formulas)
+    # @show default_φ
+    default_φ = _scalar_simplification(default_φ, scalar_simplification)
+    # normalize && (default_φ = SoleLogics.normalize(default_φ; normalize_kwargs...))
+    push!(normalized_rules, Rule(default_φ, defaultconsequent(m), info(defaultconsequent(m))))
+    normalized_rules
+end
 
 function apply(
     m::DecisionList,
@@ -120,6 +167,117 @@ function apply(
     return preds
 end
 
+function apply!(
+    m::DecisionList{O},
+    d::AbstractInterpretationSet,
+    y::AbstractVector;
+    mode = :replace,
+    leavesonly = false,
+    show_progress = false, # length(rulebase(m)) > 15,
+    kwargs...
+) where {
+    O
+}
+    # @assert length(y) == ninstances(d) "$(length(y)) == $(ninstances(d))"
+    if mode == :replace
+        recursivelyemptysupports!(m, leavesonly)
+        mode = :append
+    end
+    nsamp = ninstances(d)
+    preds = Vector{outputtype(m)}(undef,nsamp)
+    uncovered_idxs = 1:nsamp
+
+    if show_progress
+        p = Progress(length(rulebase(m)); dt = 1, desc = "Applying list...")
+    end
+
+    for subm in [rulebase(m)..., defaultconsequent(m)]
+        length(uncovered_idxs) == 0 && break
+
+        uncovered_d = slicedataset(d, uncovered_idxs; return_view = true)
+
+        # @show length(uncovered_idxs)
+        cur_preds = apply!(subm, uncovered_d, y[uncovered_idxs], mode = mode, leavesonly = leavesonly, kwargs...)
+        idxs_sat = findall(!isnothing, cur_preds)
+        # @show cur_preds[idxs_sat]
+        preds[uncovered_idxs[idxs_sat]] .= cur_preds[idxs_sat]
+        uncovered_idxs = setdiff(uncovered_idxs, uncovered_idxs[idxs_sat])
+
+        !show_progress || next!(p)
+    end
+
+    return preds
+end
+
+#TODO write in docstring that possible values for compute_metrics are: :append, true, false
+function _apply!(
+    m::DecisionList{O},
+    d::AbstractInterpretationSet;
+    check_args::Tuple = (),
+    check_kwargs::NamedTuple = (;),
+    compute_metrics::Union{Symbol,Bool} = false,
+) where {
+    O
+}
+    nsamp = ninstances(d)
+    pred = Vector{O}(undef, nsamp)
+    delays = Vector{Integer}(undef, nsamp)
+    uncovered_idxs = 1:nsamp
+    rules = rulebase(m)
+
+    for (n, rule) in enumerate(rules)
+        length(uncovered_idxs) == 0 && break
+
+        uncovered_d = slicedataset(d, uncovered_idxs; return_view = true)
+
+        idxs_sat = findall(
+            checkantecedent(rule, uncovered_d, check_args...; check_kwargs...)
+        )
+        idxs_sat = uncovered_idxs[idxs_sat]
+        uncovered_idxs = setdiff(uncovered_idxs, idxs_sat)
+
+        delays[idxs_sat] .= (n-1)
+        map((i)->(pred[i] = outcome(consequent(rule))), idxs_sat)
+    end
+
+    if length(uncovered_idxs) != 0
+        map((i)->(pred[i] = outcome(defaultconsequent(m))), uncovered_idxs)
+        length(rules) == 0 ? (delays .= 0) : (delays[uncovered_idxs] .= length(rules))
+    end
+
+    (length(rules) != 0) && (delays = delays ./ length(rules))
+
+    iprev = info(m)
+    inew = compute_metrics == false ? iprev : begin
+        if :delays ∉ keys(iprev)
+            merge(iprev, (; delays = delays))
+        else
+            prev = iprev[:delays]
+            ntwithout = (; [p for p in pairs(nt) if p[1] != :delays]...)
+            if compute_metrics == :append
+                merge(ntwithout,(; delays = [prev..., delays...]))
+            elseif compute_metrics == true
+                merge(ntwithout,(; delays = delays))
+            end
+        end
+    end
+
+    inewnew = begin
+        if :pred ∉ keys(inew)
+            merge(inew, (; pred = pred))
+        else
+            prev = inew[:pred]
+            ntwithout = (; [p for p in pairs(nt) if p[1] != :pred]...)
+            if compute_metrics == :append
+                merge(ntwithout,(; pred = [prev..., pred...]))
+            elseif compute_metrics == true
+                merge(ntwithout,(; pred = pred))
+            end
+        end
+    end
+
+    return DecisionList(rules, defaultconsequent(m), inewnew)
+end
 
 ############################################################################################
 ################################### DecisionTree ###########################################
@@ -131,8 +289,11 @@ end
         info::NamedTuple
     end
 
-A `DecisionTree` is a symbolic model that operates as a nested structure of
-IF-THEN-ELSE blocks:
+[`DecisionTree`](@ref) wraps a constrained sub-tree of [`Branch`](@ref) and
+[`LeafModel`](@ref).
+
+In other words, a [`DecisionTree`](@ref) is a symbolic model that operates as a nested
+structure of IF-THEN-ELSE blocks:
 
     IF (antecedent_1) THEN
         IF (antecedent_2) THEN
@@ -148,21 +309,15 @@ IF-THEN-ELSE blocks:
         END
     END
 
-where the antecedents are formulas to be, and the consequents are the feasible
-local outcomes of the block.
+where the [`antecedent`](@ref)s are formulas to be, and the [`consequent`](@ref)s are the
+feasible local outcomes of the block.
 
-In practice, a `DecisionTree` simply wraps a constrained
-sub-tree of `Branch` and `LeafModel`:
+!!!note
+    Note that this structure also includes an `info::NamedTuple` for storing additional
+    information.
 
-    struct DecisionTree{O} <: AbstractModel{O}
-        root::M where {M<:AbstractModel}
-        info::NamedTuple
-    end
-
-Note that this structure also includes an `info::NamedTuple` for storing additional
-information.
-
-See also [`MixedModel`](@ref), [`DecisionList`](@ref).
+See also [`Branch`](@ref), [`DecisionList`](@ref), [`DecisionForest`](@ref),
+[`LeafModel`](@ref), [`MixedModel`](@ref).
 """
 struct DecisionTree{O} <: AbstractModel{O}
     root::M where {M<:Union{LeafModel{O},Branch{O}}}
@@ -202,18 +357,24 @@ struct DecisionTree{O} <: AbstractModel{O}
     end
 end
 
+"""
+    root(m::DecisionTree)
+
+Return the `root` of the tree `m`.
+
+See also [`DecisionTree`](@ref).
+"""
 root(m::DecisionTree) = m.root
 
-isopen(::DecisionTree) = false
+iscomplete(::DecisionTree) = true
 
-# TODO join these two or note that they are kept separate due to possible dispatch ambiguities.
 function apply(
     m::DecisionTree,
-    #id::Union{AbstractInterpretation,AbstractInterpretationSet};
-    id::AbstractInterpretation;
+    id::Union{AbstractInterpretation,AbstractInterpretationSet};
     kwargs...
 )
     preds = apply(root(m), id; kwargs...)
+    # TODO note: info should probably not interfere on the model's behavior
     if haskey(info(m), :apply_postprocess)
         apply_postprocess_f = info(m, :apply_postprocess)
         preds = apply_postprocess_f.(preds)
@@ -221,44 +382,84 @@ function apply(
     preds
 end
 
-function apply(
+
+function apply!(
     m::DecisionTree,
-    d::AbstractInterpretationSet;
-    kwargs...,
+    d::AbstractInterpretationSet,
+    y::AbstractVector;
+    mode = :replace,
+    leavesonly = false,
+    kwargs...
 )
-    preds = apply(root(m), d; kwargs...)
+    @assert length(y) == ninstances(d) "$(length(y)) == $(ninstances(d))"
+    if haskey(info(m), :apply_preprocess)
+        apply_preprocess_f = info(m, :apply_preprocess)
+        y = apply_preprocess_f.(y)
+    end
+    # _d = SupportedLogiset(d) TODO?
+    preds = apply!(root(m), d, y;
+        mode = mode,
+        leavesonly = leavesonly,
+        kwargs...
+    )
     if haskey(info(m), :apply_postprocess)
         apply_postprocess_f = info(m, :apply_postprocess)
         preds = apply_postprocess_f.(preds)
     end
-    preds
+    return __apply!(m, mode, preds, y, leavesonly)
 end
 
+"""
+    function nnodes(t::DecisionTree)
+
+Return the number of nodes in `t`.
+
+See also [`DecisionTree`](@ref).
+"""
 function nnodes(t::DecisionTree)
     nsubmodels(t)
 end
 
+"""
+    function nleaves(t::DecisionTree)
+
+Return the number of leaves in `t`.
+
+See also [`DecisionTree`](@ref).
+"""
 function nleaves(t::DecisionTree)
     nleafmodels(t)
 end
 
+"""
+    function height(t::DecisionTree)
+
+Return the height of `t`.
+
+See also [`DecisionTree`](@ref).
+"""
 function height(t::DecisionTree)
     subtreeheight(t)
 end
 
+immediatesubmodels(m::DecisionTree) = immediatesubmodels(root(m))
+nimmediatesubmodels(m::DecisionTree) = nimmediatesubmodels(root(m))
+listimmediaterules(m::DecisionTree) = listimmediaterules(root(m))
+
+############################################################################################
+################################## DecisionForest ##########################################
 ############################################################################################
 
 """
-A `Decision Forest` is a symbolic model that wraps an ensemble of models
-
     struct DecisionForest{O} <: AbstractModel{O}
         trees::Vector{<:DecisionTree}
         info::NamedTuple
     end
 
-
-See also [`MixedModel`](@ref), [`DecisionList`](@ref),
+A [`DecisionForest`](@ref) is a symbolic model that wraps an ensemble of
 [`DecisionTree`](@ref).
+
+See also [`DecisionList`](@ref), [`DecisionTree`](@ref), [`MixedModel`](@ref).
 """
 struct DecisionForest{O} <: AbstractModel{O}
     trees::Vector{<:DecisionTree}
@@ -274,7 +475,63 @@ struct DecisionForest{O} <: AbstractModel{O}
     end
 end
 
+"""
+    trees(forest::DecisionForest)
+
+Return all the [`DecisionTree`](@ref)s wrapped within `forest`.
+
+See also [`DecisionTree`](@ref).
+"""
 trees(forest::DecisionForest) = forest.trees
+
+"""
+    function nnodes(f::DecisionForest)
+
+Return the number of nodes within `f`, that is, the sum of the nodes number in each
+wrapped [`DecisionTree`](@ref).
+
+See also [`DecisionForest`](@ref), [`DecisionTree`](@ref).
+"""
+function nnodes(f::DecisionForest)
+    nsubmodels(f)
+end
+
+"""
+    function nleaves(f::DecisionForest)
+
+Return the number of [`LeafModel`](@ref) within `f`.
+
+See also [`DecisionForest`](@ref), [`DecisionTree`](@ref), [`LeafModel`](@ref).
+"""
+function nleaves(f::DecisionForest)
+    nleafmodels(f)
+end
+
+"""
+    function height(f::DecisionForest)
+
+Return the maximum height across all the [`DecisionTree`](@ref)s within `f`.
+
+See also [`DecisionForest`](@ref), [`DecisionTree`](@ref).
+"""
+function height(f::DecisionForest)
+    subtreeheight(f)
+end
+
+"""
+    function ntrees(f::DecisionForest)
+
+Return the number of trees within `f`.
+
+See also [`DecisionForest`](@ref), [`DecisionTree`](@ref), [`trees`](@ref).
+"""
+function ntrees(f::DecisionForest)
+    length(trees(f))
+end
+
+immediatesubmodels(m::DecisionForest) = trees(m)
+nimmediatesubmodels(m::DecisionForest) = length(trees(m))
+listimmediaterules(m::DecisionForest; kwargs...) = error("TODO implement")
 
 # TODO check these two.
 function apply(
@@ -292,28 +549,27 @@ function apply(
     kwargs...
 )
     pred = hcat([apply(t, d; kwargs...) for t in trees(f)]...)
-    return [bestguess(pred[i,:]; suppress_parity_warning = suppress_parity_warning) for i in 1:size(pred,1)]
-end
-
-function nnodes(f::DecisionForest)
-    nsubmodels(f)
-end
-
-function nleaves(f::DecisionForest)
-    nleafmodels(f)
-end
-
-function height(f::DecisionForest)
-    subtreeheight(f)
+    return [
+        bestguess(pred[i,:]; suppress_parity_warning = suppress_parity_warning)
+        for i in 1:size(pred,1)
+    ]
 end
 
 ############################################################################################
-############################################################################################
+##################################### MixedModel ###########################################
 ############################################################################################
 
 """
-A `MixedModel` is a symbolic model that operaters as a free nested structure of IF-THEN-ELSE
-and IF-ELSEIF-ELSE blocks:
+    struct MixedModel{O,FM<:AbstractModel} <: AbstractModel{O}
+        root::M where {M<:AbstractModel{<:O}}
+        info::NamedTuple
+    end
+
+A [`MixedModel`](@ref) is a wrapper of multiple [`AbstractModel`](@ref)s such as
+[`Rule`](@ref)s, [`Branch`](@ref)s, [`DecisionList`](@ref)s, [`DecisionTree`](@ref).
+
+In other words, a [`MixedModel`](@ref) is a symbolic model that operates as a free nested
+structure of IF-THEN-ELSE and IF-ELSEIF-ELSE blocks:
 
     IF (antecedent_1) THEN
         IF (antecedent_1)     THEN (consequent_1)
@@ -327,21 +583,14 @@ and IF-ELSEIF-ELSE blocks:
         END
     END
 
-where the antecedents are formulas to be checked, and the consequents are the feasible
-local outcomes of the block.
+where the [`antecedent`](@ref)s are formulas to be checked, and the [`consequent`](@ref)s
+are the feasible local outcomes of the block.
 
-In Sole.jl, this logic can implemented using `AbstractModel`s such as
-`Rule`s, `Branch`s, `DecisionList`s, `DecisionTree`s, and the be wrapped into
-a `MixedModel`:
+!!! note
+    Note that `FM` refers to the Feasible Models (`FM`) allowed in the model's sub-tree.
 
-    struct MixedModel{O,FM<:AbstractModel} <: AbstractModel{O}
-        root::M where {M<:AbstractModel{<:O}}
-        info::NamedTuple
-    end
-
-Note that `FM` refers to the Feasible Models (`FM`) allowed in the model's sub-tree.
-
-See also [`DecisionTree`](@ref), [`DecisionList`](@ref).
+See also [`AbstractModel`](@ref), [`Branch`](@ref)s, [`DecisionList`](@ref)s,
+[`DecisionTree`](@ref), [`Rule`](@ref)s.
 """
 struct MixedModel{O,FM<:AbstractModel} <: AbstractModel{O}
     root::M where {M<:AbstractModel{<:O}}
@@ -373,9 +622,20 @@ struct MixedModel{O,FM<:AbstractModel} <: AbstractModel{O}
     end
 end
 
+"""
+    root(m::MixedModel)
+
+Return the `root` of model `m`.
+
+See also [`MixedModel`](@ref).
+"""
 root(m::MixedModel) = m.root
 
-isopen(::MixedModel) = isopen(root)
+iscomplete(::MixedModel) = iscomplete(root)
+
+immediatesubmodels(m::MixedModel) = immediatesubmodels(root(m))
+nimmediatesubmodels(m::MixedModel) = nimmediatesubmodels(root(m))
+listimmediaterules(m::MixedModel) = listimmediaterules(root(m))
 
 function apply(
     m::MixedModel,

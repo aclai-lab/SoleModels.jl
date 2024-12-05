@@ -131,7 +131,9 @@ defaultconsequent = cmodel_integer
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Other models ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-rules = @test_nowarn [rmodel_number, rmodel_integer, Rule(phi, cmodel_float), rfloat_number] # , rmodel_bounded_float]
+@test_nowarn [rmodel_number, rmodel_integer, Rule(phi, cmodel_float), rfloat_number] # , rmodel_bounded_float]
+
+rules = @test_nowarn [rmodel_integer, Rule(phi, cmodel_float)] # , rmodel_bounded_float]
 dlmodel = @test_nowarn DecisionList(rules, defaultconsequent);
 @test outputtype(dlmodel) == Union{outcometype(defaultconsequent),outcometype.(rules)...}
 
@@ -143,13 +145,13 @@ bmodel_integer = @test_nowarn Branch(phi, dlmodel_integer, dlmodel_integer)
 @test outputtype(bmodel_integer) == Int
 bmodel = @test_nowarn Branch(phi, dlmodel_integer, dlmodel)
 @test outputtype(bmodel) == Union{outcometype.([dlmodel_integer, dlmodel])...}
-@test !SoleModels.isopen(bmodel)
+@test SoleModels.iscomplete(bmodel)
 
 bmodel_mixed = @test_nowarn Branch(phi, rmodel_float, dlmodel_integer)
 @test Branch(phi, rmodel_float, dlmodel_integer) isa Branch{Union{Float64,Int}}
 bmodel_mixed_number = @test_nowarn Branch(phi, rmodel_number, dlmodel)
 @test Branch(phi, rmodel_number, dlmodel) isa Branch{Number}
-@test SoleModels.isopen(bmodel_mixed)
+@test !SoleModels.iscomplete(bmodel_mixed)
 @test outputtype(bmodel_mixed) == Union{Nothing,Float64,Int}
 
 # @test_throws ErrorException printmodel(io, rmodel_number);
@@ -162,7 +164,7 @@ bmodel_mixed_number = @test_nowarn Branch(phi, rmodel_number, dlmodel)
 @test_nowarn Branch(phi,(bmodel,rfloat_number));
 @test_nowarn Branch(phi,(dlmodel,rmodel_float));
 bmodel_2 = @test_nowarn Branch(phi,(dlmodel,bmodel));
-@test_throws ErrorException printmodel(io, bmodel_2);
+@test_nowarn printmodel(io, bmodel_2);
 
 branch_q = @test_nowarn Branch(formula_q, ("yes", "no"))
 branch_s = @test_nowarn Branch(formula_s, ("yes", "no"))

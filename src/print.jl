@@ -10,7 +10,7 @@ import Base: display
 # const default_indentation_last_space = " "
 
 const default_indentation_list_children = ""
-const default_indentation_hspace     = ""
+const default_indentation_hspace     = " "
 const default_indentation_any_first  = "├" # "╭✔ "
 const default_indentation_any_space  = "│"
 const default_indentation_last_first = "└" # "╰✘ "
@@ -26,6 +26,9 @@ const TICK = "✔"
 # const CROSS = "☒"
 # const CROSS = "〤"
 const CROSS = "✘"
+
+const MODEL_SYMBOL = "\e[34m▣\e[0m"
+# const MODEL_SYMBOL = "▣"
 
 # TODO figure out what is the expected behaviour of show_symbols = false, and comply with it?
 
@@ -46,14 +49,17 @@ Base.show(io::IO, m::AbstractModel) = printmodel(io, m)
 Base.show(io::IO, ::MIME"text/plain", m::AbstractModel) = printmodel(io, m)
 
 
+# const DEFAULT_HEADER = :brief
+const DEFAULT_HEADER = false
+
 doc_printdisplay_model = """
     printmodel(io::IO, m::AbstractModel; kwargs...)
     displaymodel(m::AbstractModel; kwargs...)
 
-print or returnPa string representation of model `m`.
+print or return a string representation of model `m`.
 
 # Arguments
-- `header::Bool = true`: when set to `true`, a header is printed, displaying the `info` structure for `m`;
+- `header::Bool = $(DEFAULT_HEADER)`: when set to `true`, a header is printed, displaying the `info` structure for `m`;
 - `show_subtree_info::Bool = false`: when set to `true`, the header is printed for models in the sub-tree of `m`;
 - `show_metrics::Bool = false`: when set to `true`, performance metrics at each point of the subtree are shown, whenever they are available in the `info` structure;
 - `max_depth::Union{Nothing,Int} = nothing`: when it is an `Int`, models in the sub-tree with a depth higher than `max_depth` are ellipsed with "...";
@@ -75,9 +81,6 @@ end
 # function printmodel(io::IO, m::AbstractModel; kwargs...)
 #     println(io, displaymodel(m; kwargs...))
 # end
-
-# const DEFAULT_HEADER = :brief
-const DEFAULT_HEADER = false
 
 # Utility macro for recursively displaying submodels
 macro _print_submodel(
@@ -159,7 +162,7 @@ end
 
 function printmodel(
     io::IO,
-    m::ConstantModel;
+    m::LeafModel;
     header = DEFAULT_HEADER,
     indentation_str = "",
     show_subtree_info = false,
@@ -182,41 +185,8 @@ function printmodel(
         println(io, "$(indentation_str)$(_typestr)$((length(info(m)) == 0) ?
         "" : "\n$(indentation_str)Info: $(info(m))")")
     end
-    depth == 0 && show_symbols && print(io, "\e[34m▣\e[0m")
-    print(io, " $(outcome(m))")
-    (show_subtree_metrics || show_metrics != false) && print(io, " : $(get_metrics_string(m; (show_metrics isa NamedTuple ? show_metrics : [])...))")
-    show_shortforms != false && haskey(info(m), :shortform) && print(io, "\t\t\t\t\t\t\tSHORTFORM: $(@_antecedent_syntaxstring info(m)[:shortform] m parenthesize_atoms syntaxstring_kwargs kwargs)")
-    println(io, "")
-    nothing
-end
-
-function printmodel(
-    io::IO,
-    m::FunctionModel;
-    header = DEFAULT_HEADER,
-    indentation_str = "",
-    depth = 0,
-    show_subtree_info = false,
-    show_subtree_metrics = false,
-    show_metrics = false,
-    show_shortforms = false,
-    show_intermediate_finals = false,
-    tree_mode = false,
-    show_symbols = true,
-    syntaxstring_kwargs = (;),
-    parenthesize_atoms = true,
-    kwargs...,
-)
-    if header != false
-        _typestr = string(header == true ? typeof(m) :
-            header == :brief ? nameof(typeof(m)) :
-                error("Unexpected value for parameter header: $(header).")
-        )
-        println(io, "$(indentation_str)$(_typestr)$((length(info(m)) == 0) ?
-        "" : "\n$(indentation_str)Info: $(info(m))")")
-    end
-    depth == 0 && show_symbols && print(io, "\e[34m▣\e[0m")
-    print(io, " $(f(m))")
+    depth == 0 && show_symbols && print(io, MODEL_SYMBOL)
+    print(io, " $(leafmodelname(m))")
     (show_subtree_metrics || show_metrics != false) && print(io, " : $(get_metrics_string(m; (show_metrics isa NamedTuple ? show_metrics : [])...))")
     show_shortforms != false && haskey(info(m), :shortform) && print(io, "\t\t\t\t\t\t\tSHORTFORM: $(@_antecedent_syntaxstring info(m)[:shortform] m parenthesize_atoms syntaxstring_kwargs kwargs)")
     println(io, "")
@@ -260,7 +230,7 @@ function printmodel(
         println(io, "$(indentation_str)$(_typestr)$((length(info(m)) == 0) ?
         "" : "\n$(indentation_str)Info: $(info(m))")")
     end
-    depth == 0 && show_symbols && print(io, "\e[34m▣\e[0m")
+    depth == 0 && show_symbols && print(io, MODEL_SYMBOL)
     ########################################################################################
     if isnothing(max_depth) || depth < max_depth
         pipe = "$(indentation_list_children) "
@@ -282,7 +252,7 @@ function printmodel(
             println(io, "")
         else
             line = "$(pipe)$(ant_str)" * "  $(arrow) "
-            ind_str = indentation_str * repeat(" ", length(line) + length("\e[34m▣\e[0m") + 1)
+            ind_str = indentation_str * repeat(" ", length(line) + length(MODEL_SYMBOL) + 1)
             if (show_subtree_metrics || show_metrics != false)
                 print(io, line)
                 _io = IOBuffer()
@@ -339,7 +309,7 @@ function printmodel(
         println(io, "$(indentation_str)$(_typestr)$((length(info(m)) == 0) ?
         "" : "\n$(indentation_str)Info: $(info(m))")")
     end
-    depth == 0 && show_symbols && print(io, "\e[34m▣\e[0m")
+    depth == 0 && show_symbols && print(io, MODEL_SYMBOL)
     ########################################################################################
     if isnothing(max_depth) || depth < max_depth
         pipe = "$(indentation_list_children) "
@@ -414,7 +384,7 @@ function printmodel(
         println(io, "$(indentation_str)$(_typestr)$((length(info(m)) == 0) ?
         "" : "\n$(indentation_str)Info: $(info(m))")")
     end
-    depth == 0 && show_symbols && print(io, "\e[34m▣\e[0m")
+    depth == 0 && show_symbols && print(io, MODEL_SYMBOL)
     ########################################################################################
     _show_rule_metrics = show_rule_metrics
     # TODO show this metrics if show_metrics
@@ -496,6 +466,7 @@ function printmodel(
     depth = 0,
     max_depth = nothing,
     show_subtree_info = false,
+    show_rule_metrics = true,
     show_subtree_metrics = false,
     show_metrics = false,
     show_shortforms = false,
@@ -525,9 +496,28 @@ function printmodel(
     end
 
     ########################################################################################
-    for tree in trees(m)
-        @_print_submodel io tree indentation_str indentation (depth-1) max_depth show_subtree_info false show_subtree_metrics show_shortforms show_intermediate_finals tree_mode show_symbols syntaxstring_kwargs parenthesize_atoms kwargs
+    depth == 0 && show_symbols && print(io, "$(MODEL_SYMBOL) Forest of $(ntrees(m)) trees")
+    if isnothing(max_depth) || depth < max_depth
+        _show_rule_metrics = show_rule_metrics
+        println(io, "$(indentation_list_children)")
+        for (i_tree, tree) in enumerate(trees(m))
+            if i_tree < ntrees(m)
+                pipe = indentation_any_first*"[$i_tree/$(ntrees(m))]┐"
+                pad_str = indentation_str*indentation_any_space*repeat(indentation_hspace, length(pipe)-length(indentation_any_space)-1-1)
+                ind_str = pad_str*indentation_last_space
+            else
+                pipe = indentation_last_first*"[$i_tree/$(ntrees(m))]┐"
+                ind_str = indentation_str*indentation_last_space*repeat(indentation_hspace, length(pipe)-length(indentation_last_space)-1-1)*indentation_last_space
+            end
+            print(io, pipe)
+            
+            @_print_submodel io tree ind_str indentation depth max_depth show_subtree_info _show_rule_metrics show_subtree_metrics show_shortforms show_intermediate_finals tree_mode show_symbols syntaxstring_kwargs parenthesize_atoms kwargs
+        end
+    else
+        depth != 0 && print(io, " ")
+        println(io, "[...]")
     end
+    
     nothing
 end
 

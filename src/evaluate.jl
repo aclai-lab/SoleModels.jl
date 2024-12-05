@@ -59,9 +59,9 @@ end
 
 Return a `NamedTuple` with some performance metrics for the given symbolic model.
 Performance metrics can be computed when the `info` structure of the model has the
-    following keys:
-    - :supporting_labels
-    - :supporting_predictions
+following keys:
+- `:supporting_labels`
+- `:supporting_predictions`
 
 The `round_digits` keyword argument, if provided, is used to `round` accuracy/confidence metrics.
 """
@@ -112,7 +112,7 @@ function readmetrics(m::LeafModel{L}; class_share_map = nothing, round_digits = 
         end
     else
         return (;)
-    end, (; coverage = 1.0)) # Note: assuming all leaf models are closed (see `isopen`).
+    end, (; coverage = 1.0)) # Note: assuming all leaf models are complete (see `iscomplete`).
 end
 
 function readmetrics(m::Rule; kwargs...)
@@ -163,7 +163,8 @@ function metricstable(ms::Vector{<:Rule}; metrics_kwargs = (;), syntaxstring_kwa
     mets = readmetrics.(ms; metrics_kwargs...)
     colnames = unique(Iterators.flatten(keys.(mets)))
 
-    data = hcat(AnsiTextCell.(syntaxstring.(antecedent.(ms); variable_names_map = variable_names_map, syntaxstring_kwargs...)), strip.(displaymodel.(consequent.(ms); show_symbols = false)), [[get(met, colname, "") for met in mets] for colname in colnames]...)
+    # data = hcat(AnsiTextCell.(...
+    data = hcat((syntaxstring.(antecedent.(ms); variable_names_map = variable_names_map, syntaxstring_kwargs...)), strip.(displaymodel.(consequent.(ms); show_symbols = false)), [[get(met, colname, "") for met in mets] for colname in colnames]...)
     header = ["Antecedent", "Consequent", colnames...]
     pretty_table(
         data;
@@ -214,7 +215,7 @@ function evaluaterule(
 )
     #println("Evaluation rule in time...")
     ys = apply(rule,X)
-    #if X isa SupportedLogiset
+    #if SoleData.hassupports(X)
     #    println("# Memoized Values: $(nmemoizedvalues(X))")
     #end
 
@@ -248,16 +249,6 @@ function evaluaterule(
         # cons_sat    = cons_sat,
     )
 end
-
-# """
-#     natoms(rule::Rule{O}) where {O}
-
-# See also
-# [`Rule`](@ref),
-# [`SoleLogics.Formula`](@ref),
-# [`antecedent`](@ref),
-# """
-# natoms(rule::Rule{O}) where {O} = natoms(antecedent(rule))
 
 """
     rulemetrics(
@@ -316,6 +307,15 @@ function rulemetrics(
         error     = rule_error,
         length    = natoms(antecedent(rule)),
     )
+end
+
+# TODO: if delays not in info(m) ?
+function _meandelaydl(m::DecisionList)
+    i = info(m)
+
+    if :delays in keys(i)
+        return mean(i[:delays])
+    end
 end
 
 ############################################################################################
