@@ -1,26 +1,80 @@
 module DecisionTreeExt
 
 using SoleModels
+import SoleModels: solemodel
 
 import DecisionTree as DT
 
-function SoleModels.solemodel(model::DT.Ensemble, args...; kwargs...)
-    return SoleModels.DecisionForest(map(t -> SoleModels.DecisionTree(SoleModels.solemodel(t, args...; kwargs...)), model.trees))
+function SoleModels.solemodel(
+    model::DT.Ensemble,
+    classlabels = nothing,
+    featurenames = nothing,
+    args...;
+    keep_condensed = true,
+    kwargs...
+)
+    if isnothing(classlabels)
+        error("Please, provide classlabels argument, as in solemodel(forest, classlabels; kwargs...). If your forest was trained via MLJ, use `classlabels = (mach).fitresult[2][sortperm((mach).fitresult[3])]`.")
+    end
+    if keep_condensed
+        info = (;
+            apply_preprocess=(y -> UInt32(findfirst(x -> x == y, classlabels))),
+            apply_postprocess=(y -> classlabels[y]),
+        )
+        keep_condensed = !keep_condensed
+        # O = UInt32
+    else
+        info = (;)
+        # O = UInt32
+    end
+    trees = map(t -> SoleModels.solemodel(t, args...; keep_condensed, featurenames, kwargs...), model.trees)
+    # trees = map(t -> let b = SoleModels.solemodel(t, args...; keep_condensed, featurenames, kwargs...); SoleModels.DecisionTree(b, 
+    #     (;
+    #         supporting_predictions=b.info[:supporting_predictions],
+    #         supporting_labels=b.info[:supporting_labels],
+    #     )
+    # ) end, model.trees)
+
+    if !isnothing(featurenames)
+        info = merge(info, (; featurenames=featurenames, ))
+    end
+
+    info = merge(info, (;
+            supporting_predictions=vcat([t.info[:supporting_predictions] for t in trees]...),
+            supporting_labels=vcat([t.info[:supporting_labels] for t in trees]...),
+        )
+    )
+
+    if !isnothing(classlabels)
+        O = eltype(classlabels)
+        # O = eltype(levels(classnames))
+    else
+        O = nothing
+    end
+
+    if isnothing(O)
+        m = DecisionEnsemble(trees, info)
+    else
+        m = DecisionEnsemble{O}(trees, info)
+    end
+    return m
 end
 
-function SoleModels.solemodel(tree::DT.InfoNode, keep_condensed = false; use_featurenames = true, kwargs...)
+function SoleModels.solemodel(tree::DT.InfoNode; keep_condensed = true, featurenames = true, classlabels = tree.info.classlabels, kwargs...)
     # @show fieldnames(typeof(tree))
-    use_featurenames = use_featurenames ? tree.info.featurenames : false
+    featurenames = featurenames == true ? tree.info.featurenames : featurenames
+    
     root, info = begin
         if keep_condensed
-            root = SoleModels.solemodel(tree.node; use_featurenames = use_featurenames, kwargs...)
+            root = SoleModels.solemodel(tree.node; featurenames, kwargs...)
             info = (;
-                apply_preprocess=(y -> UInt32(findfirst(x -> x == y, tree.info.classlabels))),
-                apply_postprocess=(y -> tree.info.classlabels[y]),
+                apply_preprocess=(y -> UInt32(findfirst(x -> x == y, classlabels))),
+                apply_postprocess=(y -> classlabels[y]),
             )
+            keep_condensed = !keep_condensed
             root, info
         else
-            root = SoleModels.solemodel(tree.node; replace_classlabels = tree.info.classlabels, use_featurenames = use_featurenames, kwargs...)
+            root = SoleModels.solemodel(tree.node; replace_classlabels = classlabels, featurenames, kwargs...)
             info = (;)
             root, info
         end
@@ -33,7 +87,19 @@ function SoleModels.solemodel(tree::DT.InfoNode, keep_condensed = false; use_fea
             supporting_labels=root.info[:supporting_labels],
         )
     )
-    return DecisionTree(root, info)
+    
+    # if !isnothing(classlabels)
+    #     O = eltype(classlabels)
+    # else
+    #     O = nothing
+    # end
+
+    # if isnothing(O)
+        dt = DecisionTree(root, info)
+    # else
+    #     dt = DecisionTree{O}(root, info)
+    # end
+    return dt
 end
 
 # function SoleModels.solemodel(tree::DT.Root)
@@ -48,14 +114,15 @@ end
 #     return DecisionTree(root, info)
 # end
 
-function SoleModels.solemodel(tree::DT.Node; replace_classlabels = nothing, use_featurenames = false)
+function SoleModels.solemodel(tree::DT.Node; replace_classlabels = nothing, featurenames = nothing, keep_condensed = false)
+    keep_condensed && error("Cannot keep condensed DecisionTree.Node.")
     test_operator = (<)
     # @show fieldnames(typeof(tree))
-    feature = (use_featurenames != false) ? VariableValue(use_featurenames[tree.featid]) : VariableValue(tree.featid)
+    feature = !isnothing(featurenames) ? VariableValue(featurenames[tree.featid]) : VariableValue(tree.featid)
     cond = ScalarCondition(feature, test_operator, tree.featval)
     antecedent = Atom(cond)
-    lefttree = SoleModels.solemodel(tree.left; replace_classlabels = replace_classlabels, use_featurenames = use_featurenames)
-    righttree = SoleModels.solemodel(tree.right; replace_classlabels = replace_classlabels, use_featurenames = use_featurenames)
+    lefttree = SoleModels.solemodel(tree.left; replace_classlabels, featurenames)
+    righttree = SoleModels.solemodel(tree.right; replace_classlabels, featurenames)
     info = (;
         supporting_predictions = [lefttree.info[:supporting_predictions]..., righttree.info[:supporting_predictions]...],
         supporting_labels = [lefttree.info[:supporting_labels]..., righttree.info[:supporting_labels]...],
@@ -63,7 +130,8 @@ function SoleModels.solemodel(tree::DT.Node; replace_classlabels = nothing, use_
     return Branch(antecedent, lefttree, righttree, info)
 end
 
-function SoleModels.solemodel(tree::DT.Leaf; replace_classlabels = nothing, use_featurenames = false)
+function SoleModels.solemodel(tree::DT.Leaf; replace_classlabels = nothing, featurenames = nothing, keep_condensed = false)
+    keep_condensed && error("Cannot keep condensed DecisionTree.Node.")
     # @show fieldnames(typeof(tree))
     prediction = tree.majority
     labels = tree.values

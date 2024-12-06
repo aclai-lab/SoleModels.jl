@@ -56,8 +56,8 @@ export root
 export nnodes, nleaves
 export height
 
-export DecisionForest
-export trees
+export DecisionEnsemble, models
+export DecisionForest, trees
 
 export MixedModel
 

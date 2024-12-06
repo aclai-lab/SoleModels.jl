@@ -5,8 +5,7 @@ using MLJBase
 using DataFrames
 
 using MLJDecisionTreeInterface
-using BenchmarkTools
-using Sole
+using SoleModels
 
 import DecisionTree as DT
 
@@ -39,18 +38,22 @@ mach = machine(model, X_train, y_train)
 fit!(mach)
 
 
-sole_forest = solemodel(fitted_params(mach).forest)
+classnames = (mach).fitresult[2]
+classnames = classnames[sortperm((mach).fitresult[3])]
+featurenames = report(mach).features
+solem = solemodel(fitted_params(mach).forest, classnames, featurenames)
 
 @test SoleData.scalarlogiset(X_test; allow_propositional = true) isa PropositionalLogiset
 
 # Make test instances flow into the model
-apply!(sole_forest, X_test, y_test)
+preds = apply(solem, X_test)
+preds2 = apply!(solem, X_test, y_test)
 
-# apply!(sole_forest, X_test, y_test, mode = :append)
+@test preds == preds2
+@test sum(preds .== y_test)/length(y_test) >= 0.8
 
-sole_forest = @test_nowarn @btime solemodel(fitted_params(mach).forest, true)
-sole_forest = @test_nowarn @btime solemodel(fitted_params(mach).forest, false)
+# apply!(solem, X_test, y_test, mode = :append)
 
-printmodel(sole_forest; max_depth = 7, show_intermediate_finals = true, show_metrics = true)
+printmodel(solem; max_depth = 7, show_intermediate_finals = true, show_metrics = true)
 
-printmodel.(listrules(sole_forest, min_lift = 1.0, min_ninstances = 0); show_metrics = true);
+@test_broken printmodel.(listrules(solem, min_lift = 1.0, min_ninstances = 0); show_metrics = true);

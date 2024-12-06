@@ -5,8 +5,7 @@ using MLJBase
 using DataFrames
 
 using MLJDecisionTreeInterface
-using BenchmarkTools
-using Sole
+using SoleModels
 
 import DecisionTree as DT
 
@@ -38,32 +37,38 @@ mach = machine(model, X_train, y_train)
 fit!(mach)
 
 
-sole_dt = solemodel(fitted_params(mach).tree)
+solem = solemodel(fitted_params(mach).tree)
+solem = solemodel(fitted_params(mach).tree; keep_condensed = false)
 
 @test SoleData.scalarlogiset(X_test; allow_propositional = true) isa PropositionalLogiset
 
 # Make test instances flow into the model
-apply!(sole_dt, X_test, y_test)
+preds = apply(solem, X_test)
+preds2 = apply!(solem, X_test, y_test)
 
-# apply!(sole_dt, X_test, y_test, mode = :append)
+@test preds == preds2
+@test sum(preds .== y_test)/length(y_test) > 0.7
 
-sole_dt = @test_nowarn @btime solemodel(fitted_params(mach).tree, true)
-sole_dt = @test_nowarn @btime solemodel(fitted_params(mach).tree, false)
+# apply!(solem, X_test, y_test, mode = :append)
 
-printmodel(sole_dt; max_depth = 7, show_intermediate_finals = true, show_metrics = true)
+solem = @test_nowarn solemodel(fitted_params(mach).tree; keep_condensed = true)
+solem = @test_nowarn solemodel(fitted_params(mach).tree; keep_condensed = false)
 
-printmodel.(listrules(sole_dt, min_lift = 1.0, min_ninstances = 0); show_metrics = true);
+printmodel(solem; max_depth = 7, show_intermediate_finals = true, show_metrics = true)
 
-printmodel.(listrules(sole_dt, min_lift = 1.0, min_ninstances = 0); show_metrics = true, show_subtree_metrics = true);
+printmodel.(listrules(solem, min_lift = 1.0, min_ninstances = 0); show_metrics = true);
 
-printmodel.(listrules(sole_dt, min_lift = 1.0, min_ninstances = 0); show_metrics = true, show_subtree_metrics= true, tree_mode=true);
+printmodel.(listrules(solem, min_lift = 1.0, min_ninstances = 0); show_metrics = true, show_subtree_metrics = true);
 
-readmetrics.(listrules(sole_dt; min_lift=1.0, min_ninstances = 0))
+printmodel.(listrules(solem, min_lift = 1.0, min_ninstances = 0); show_metrics = true, show_subtree_metrics= true, tree_mode=true);
 
-printmodel.(listrules(sole_dt, min_lift = 1.0, min_ninstances = 0); show_metrics = true);
+readmetrics.(listrules(solem; min_lift=1.0, min_ninstances = 0))
 
-interesting_rules = listrules(sole_dt; min_lift=1.0, min_ninstances = 0, custom_thresholding_callback = (ms)->ms.coverage*ms.ninstances >= 4)
+printmodel.(listrules(solem, min_lift = 1.0, min_ninstances = 0); show_metrics = true);
+
+interesting_rules = listrules(solem; min_lift=1.0, min_ninstances = 0, custom_thresholding_callback = (ms)->ms.coverage*ms.ninstances >= 4)
 # printmodel.(sort(interesting_rules, by = readmetrics); show_metrics = (; round_digits = nothing, ));
 printmodel.(sort(interesting_rules, by = readmetrics); show_metrics = (; round_digits = nothing, additional_metrics = (; length = r->natoms(antecedent(r)))));
 
-@test_broken joinrules(interesting_rules) == "Check this result."
+@test length(joinrules(interesting_rules)) == 3
+@test (natoms.((interesting_rules)) |> sum) == (natoms.(joinrules(interesting_rules)) |> sum)
