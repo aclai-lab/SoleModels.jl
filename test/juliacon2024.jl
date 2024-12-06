@@ -34,7 +34,7 @@ end
 🌱 = fitted_params(mach).tree
 
 # Convert to 🌞-compliant model
-using SoleDecisionTreeInterface
+import DecisionTree as DT
 🌲 = solemodel(🌱);
 
 # Print model
