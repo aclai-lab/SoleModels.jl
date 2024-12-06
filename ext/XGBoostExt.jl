@@ -4,30 +4,31 @@ using XGBoost
 
 import Sole: alphabet, solemodel
 
-function alphabet(model::XGBoost.Booster; kwargs...)
-    function _alphabet!(a::Vector, model::XGBoost.Booster; kwargs...)
-        return a
-    end
-    function _alphabet!(a::Vector, tree::XGBoost.Node; kwargs...)
-        # Base case: if it's a leaf node
-        if length(tree.children) == 0
-            return a
-        end
+# TODO fix and test
+# function alphabet(model::XGBoost.Booster; kwargs...)
+#     function _alphabet!(a::Vector, model::XGBoost.Booster; kwargs...)
+#         return a
+#     end
+#     function _alphabet!(a::Vector, tree::XGBoost.Node; kwargs...)
+#         # Base case: if it's a leaf node
+#         if length(tree.children) == 0
+#             return a
+#         end
 
-        # Recursive case: split node
-        feature = Sole.VariableValue(tree.split isa String ? Symbol(tree.split) : tree.split)
-        condition = ScalarCondition(feature, (<), tree.split_condition)
-        push!(a, condition)
-        if length(tree.children) == 2
-            _alphabet!(a, tree.children[1]; with_stats, kwargs...)
-            _alphabet!(a, tree.children[2]; with_stats, kwargs...)
-        else
-            error("Found $(length(tree.children)) children while 2 were expected: $(tree.children).")
-        end
-        return a
-    end
-    _alphabet!([], model; kwargs...)
-end
+#         # Recursive case: split node
+#         feature = Sole.VariableValue(tree.split isa String ? Symbol(tree.split) : tree.split)
+#         condition = ScalarCondition(feature, (<), tree.split_condition)
+#         push!(a, condition)
+#         if length(tree.children) == 2
+#             _alphabet!(a, tree.children[1]; with_stats, kwargs...)
+#             _alphabet!(a, tree.children[2]; with_stats, kwargs...)
+#         else
+#             error("Found $(length(tree.children)) children while 2 were expected: $(tree.children).")
+#         end
+#         return a
+#     end
+#     _alphabet!([], model; kwargs...)
+# end
 
 
 # TODO fix and test. Problem: where are the tree weights? How do I write this in the multi-class case?
