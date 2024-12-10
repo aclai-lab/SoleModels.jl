@@ -41,7 +41,8 @@ fit!(mach)
 classnames = (mach).fitresult[2]
 classnames = classnames[sortperm((mach).fitresult[3])]
 featurenames = report(mach).features
-solem = solemodel(fitted_params(mach).forest, classnames, featurenames)
+solem = solemodel(fitted_params(mach).forest; classnames, featurenames)
+solem = solemodel(fitted_params(mach).forest; classnames, featurenames, keep_condensed = false)
 
 @test SoleData.scalarlogiset(X_test; allow_propositional = true) isa PropositionalLogiset
 

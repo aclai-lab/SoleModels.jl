@@ -54,14 +54,14 @@ end
 
 function SoleModels.solemodel(
     model::DT.Ensemble,
+    args...;
     classlabels = nothing,
     featurenames = nothing,
-    args...;
     keep_condensed = true,
     kwargs...
 )
     if isnothing(classlabels)
-        error("Please, provide classlabels argument, as in solemodel(forest, classlabels; kwargs...). If your forest was trained via MLJ, use `classlabels = (mach).fitresult[2][sortperm((mach).fitresult[3])]`.")
+        error("Please, provide classlabels argument, as in solemodel(forest; classlabels = classlabels, kwargs...). If your forest was trained via MLJ, use `classlabels = (mach).fitresult[2][sortperm((mach).fitresult[3])]`. Also consider providing `featurenames = report(mach).features`.")
     end
     if keep_condensed
         info = (;
