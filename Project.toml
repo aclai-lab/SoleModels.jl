@@ -33,16 +33,9 @@ ZipFile = "a5390f91-8eb1-5f08-bee0-b1d1ffed6cea"
 [weakdeps]
 DecisionTree = "7806a523-6efd-50cb-b5f6-3fa6f1930dbb"
 XGBoost = "009559a3-9522-5dbb-924b-0b6ed2b22bb9"
-MLJ = "add582a8-e3ab-11e8-2d5e-e98b27df1bc7"
-MLJBase = "a7f614a8-145f-11e9-1d2a-a57a1082229d"
-MLJDecisionTreeInterface = "c6f25543-311c-4c74-83dc-3ea6d1015661"
-MLJModelInterface = "e80e1ace-859a-464e-9ed9-23947d8ae3ea"
 
 [extensions]
 DecisionTreeExt = "DecisionTree"
-MLJDecisionTreeInterfaceExt = "MLJDecisionTreeInterface"
-MLJExt = "MLJ"
-MLJModelInterfaceExt = "MLJModelInterface"
 XGBoostExt = "XGBoost"
 
 [compat]
@@ -52,7 +45,6 @@ CSV = "0.10"
 CategoricalArrays = "0.10"
 DataFrames = "1"
 DataStructures = "0.18"
-DecisionTree = "0.12"
 FillArrays = "1"
 FunctionWrappers = "1"
 Graphs = "1.8"
@@ -71,7 +63,6 @@ Revise = "3"
 SoleBase = "0.12"
 SoleData = "0.15, 0.16"
 SoleLogics = "0.11"
-XGBoost = "2.5"
 StatsBase = "0.30 - 0.34"
 Suppressor = "0.2"
 Tables = "1"
@@ -89,6 +80,10 @@ PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 SoleData = "123f1ae1-6307-4526-ab5b-aab3a92a2b8c"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+MLJ = "add582a8-e3ab-11e8-2d5e-e98b27df1bc7"
+MLJBase = "a7f614a8-145f-11e9-1d2a-a57a1082229d"
+MLJDecisionTreeInterface = "c6f25543-311c-4c74-83dc-3ea6d1015661"
+MLJModelInterface = "e80e1ace-859a-464e-9ed9-23947d8ae3ea"
 
 [targets]
 test = ["Test", "DataFrames", "Random", "MLJ", "MultiData", "Markdown", "InteractiveUtils", "BenchmarkTools", "MLJBase", "XGBoost", "DecisionTree", "MLJDecisionTreeInterface", "SoleData"]

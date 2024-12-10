@@ -1,5 +1,0 @@
-module MLJDecisionTreeInterfaceExt
-
-using SoleModels, MLJDecisionTreeInterface
-
-end
