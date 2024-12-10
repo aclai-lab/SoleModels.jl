@@ -7,7 +7,10 @@ jobs:
   CompatHelper:
     runs-on: ubuntu-latest
     steps:
-      - uses: JuliaRegistries/compathelper-action@v1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          ssh: ${{ secrets.DOCUMENTER_KEY }}
+      - name: Pkg.add("CompatHelper")
+        run: julia -e 'using Pkg; Pkg.add("CompatHelper")'
+      - name: CompatHelper.main()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          COMPATHELPER_PRIV: ${{ secrets.DOCUMENTER_KEY }}
+        run: julia -e 'using CompatHelper; CompatHelper.main()'
