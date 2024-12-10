@@ -24,22 +24,19 @@ function SoleModels.alphabet(
     kwargs...
 )
 
-    function _alphabet!(a::Vector, model::DT.Ensemble, args...; kwargs...)
-        map(t -> _alphabet!(a, t, args...; kwargs...), model.trees)
+    function _alphabet!(a::Vector, model::DT.Ensemble, args...; featurenames = nothing, kwargs...)
+        map(t -> _alphabet!(a, t, args...; featurenames, kwargs...), model.trees)
         return a
     end
 
-    function _alphabet!(a::Vector, model::DT.InfoNode, args...; kwargs...)
-        _alphabet!(a, model.left, args...; kwargs...)
-        _alphabet!(a, model.right, args...; kwargs...)
-        return a
-    end
-
-    function _alphabet!(a::Vector, model::DT.Node, args...;
-        featurenames = true,
-        kwargs...
-    )
+    function _alphabet!(a::Vector, model::DT.InfoNode, args...; featurenames = true, kwargs...)
         featurenames = featurenames == true ? model.info.featurenames : featurenames
+        _alphabet!(a, model.left, args...; featurenames, kwargs...)
+        _alphabet!(a, model.right, args...; featurenames, kwargs...)
+        return a
+    end
+
+    function _alphabet!(a::Vector, model::DT.Node, args...; featurenames, kwargs...)
         push!(a, Atom(get_condition(model.featid, model.featval, featurenames)))
         return a
     end
@@ -50,7 +47,6 @@ function SoleModels.alphabet(
     
     return SoleData.scalaralphabet(_alphabet!(Atom{ScalarCondition}[], model, args...; kwargs...))
 end
-
 
 function SoleModels.solemodel(
     model::DT.Ensemble,
