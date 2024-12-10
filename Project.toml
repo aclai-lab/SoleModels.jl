@@ -2,7 +2,7 @@ name = "SoleModels"
 uuid = "4249d9c7-3290-4ddd-961c-e1d3ec2467f8"
 license = "MIT"
 authors = ["Michele GHIOTTI", "Giovanni PAGLIARINI", "Edoardo PONSANESI", "Eduard I. STAN"]
-version = "0.9.0"
+version = "0.9.1"
 
 [deps]
 AbstractTrees = "1520ce14-60c1-5f80-bbc7-55ef81b5835c"
