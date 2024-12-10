@@ -2,8 +2,55 @@ module DecisionTreeExt
 
 using SoleModels
 import SoleModels: solemodel
+import SoleModels: alphabet
 
 import DecisionTree as DT
+
+function get_condition(featid, featval, featurenames)
+    test_operator = (<)
+    # @show fieldnames(typeof(tree))
+    feature = !isnothing(featurenames) ? VariableValue(featurenames[featid]) : VariableValue(featid)
+    return ScalarCondition(feature, test_operator, featval)
+end
+
+function SoleModels.alphabet(
+    model::Union{
+        DT.Ensemble,
+        DT.InfoNode,
+        DT.Node,
+        DT.Leaf,
+    },
+    args...;
+    kwargs...
+)
+
+    function _alphabet!(a::Vector, model::DT.Ensemble, args...; kwargs...)
+        map(t -> _alphabet!(a, t, args...; kwargs...), model.trees)
+        return a
+    end
+
+    function _alphabet!(a::Vector, model::DT.InfoNode, args...; kwargs...)
+        _alphabet!(a, model.left, args...; kwargs...)
+        _alphabet!(a, model.right, args...; kwargs...)
+        return a
+    end
+
+    function _alphabet!(a::Vector, model::DT.Node, args...;
+        featurenames = true,
+        kwargs...
+    )
+        featurenames = featurenames == true ? model.info.featurenames : featurenames
+        push!(a, Atom(get_condition(model.featid, model.featval, featurenames)))
+        return a
+    end
+
+    function _alphabet!(a::Vector, model::DT.Leaf, args...; kwargs...)
+        return a
+    end
+    
+    return SoleData.scalaralphabet(_alphabet!(Atom{ScalarCondition}[], model, args...; kwargs...))
+end
+
 
 function SoleModels.solemodel(
     model::DT.Ensemble,
@@ -116,10 +163,7 @@ end
 
 function SoleModels.solemodel(tree::DT.Node; replace_classlabels = nothing, featurenames = nothing, keep_condensed = false)
     keep_condensed && error("Cannot keep condensed DecisionTree.Node.")
-    test_operator = (<)
-    # @show fieldnames(typeof(tree))
-    feature = !isnothing(featurenames) ? VariableValue(featurenames[tree.featid]) : VariableValue(tree.featid)
-    cond = ScalarCondition(feature, test_operator, tree.featval)
+    cond = get_condition(tree.featid, tree.featval, featurenames)
     antecedent = Atom(cond)
     lefttree = SoleModels.solemodel(tree.left; replace_classlabels, featurenames)
     righttree = SoleModels.solemodel(tree.right; replace_classlabels, featurenames)

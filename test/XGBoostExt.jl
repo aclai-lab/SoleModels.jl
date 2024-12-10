@@ -38,7 +38,7 @@ println("Test Accuracy: $acc")
 
 
 
-using Sole
+using SoleModels
 
 @test_nowarn alphabet(fitted_params(mach).fitresult[1])
 

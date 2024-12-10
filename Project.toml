@@ -83,7 +83,8 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 MLJ = "add582a8-e3ab-11e8-2d5e-e98b27df1bc7"
 MLJBase = "a7f614a8-145f-11e9-1d2a-a57a1082229d"
 MLJDecisionTreeInterface = "c6f25543-311c-4c74-83dc-3ea6d1015661"
+MLJXGBoostInterface = "54119dfa-1dab-4055-a167-80440f4f7a91"
 MLJModelInterface = "e80e1ace-859a-464e-9ed9-23947d8ae3ea"
 
 [targets]
-test = ["Test", "DataFrames", "Random", "MLJ", "MultiData", "Markdown", "InteractiveUtils", "BenchmarkTools", "MLJBase", "XGBoost", "DecisionTree", "MLJDecisionTreeInterface", "SoleData"]
+test = ["Test", "DataFrames", "Random", "MLJ", "MLJXGBoostInterface", "MultiData", "Markdown", "InteractiveUtils", "BenchmarkTools", "MLJBase", "XGBoost", "DecisionTree", "MLJDecisionTreeInterface", "SoleData"]
