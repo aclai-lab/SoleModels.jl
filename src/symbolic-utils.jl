@@ -1,3 +1,4 @@
+using IterTools
 
 ############################################################################################
 # Symbolic modeling utils
@@ -56,14 +57,14 @@ submodels(m::AbstractModel) = [Iterators.flatten(_submodels.(immediatesubmodels(
 _submodels(m::AbstractModel) = [m, Iterators.flatten(_submodels.(immediatesubmodels(m)))...]
 _submodels(m::DecisionList) = [Iterators.flatten(_submodels.(immediatesubmodels(m)))...]
 _submodels(m::DecisionTree) = [Iterators.flatten(_submodels.(immediatesubmodels(m)))...]
-_submodels(m::DecisionForest) = [Iterators.flatten(_submodels.(immediatesubmodels(m)))...]
+_submodels(m::DecisionEnsemble) = [Iterators.flatten(_submodels.(immediatesubmodels(m)))...]
 _submodels(m::MixedModel) = [Iterators.flatten(_submodels.(immediatesubmodels(m)))...]
 
 nsubmodels(m::AbstractModel) = 1 + sum(nsubmodels, immediatesubmodels(m))
 nsubmodels(m::LeafModel) = 1
 nsubmodels(m::DecisionList) = sum(nsubmodels, immediatesubmodels(m))
 nsubmodels(m::DecisionTree) = sum(nsubmodels, immediatesubmodels(m))
-nsubmodels(m::DecisionForest) = sum(nsubmodels, immediatesubmodels(m))
+nsubmodels(m::DecisionEnsemble) = sum(nsubmodels, immediatesubmodels(m))
 nsubmodels(m::MixedModel) = sum(nsubmodels, immediatesubmodels(m))
 
 leafmodels(m::AbstractModel) = [Iterators.flatten(leafmodels.(immediatesubmodels(m)))...]
@@ -76,7 +77,7 @@ subtreeheight(m::AbstractModel) = 1 + maximum(subtreeheight, immediatesubmodels(
 subtreeheight(m::LeafModel) = 0
 subtreeheight(m::DecisionList) = maximum(subtreeheight, immediatesubmodels(m))
 subtreeheight(m::DecisionTree) = maximum(subtreeheight, immediatesubmodels(m))
-subtreeheight(m::DecisionForest) = maximum(subtreeheight, immediatesubmodels(m))
+subtreeheight(m::DecisionEnsemble) = maximum(subtreeheight, immediatesubmodels(m))
 subtreeheight(m::MixedModel) = maximum(subtreeheight, immediatesubmodels(m))
 
 ############################################################################################
@@ -233,7 +234,7 @@ function listrules(
     rules = _listrules(m; subkwargs...)
 
     if compute_metrics || !isnothing(min_confidence) || !isnothing(min_coverage) || !isnothing(min_ncovered) || !isnothing(min_ninstances) || !isnothing(min_lift)
-        rules = filter(r->begin
+        rules = Iterators.filter(r->begin
             ms = readmetrics(r; metrics_kwargs...)
             compute_metrics && (info!(r, ms))
             return (isnothing(min_ninstances) || (ms.ninstances >= min_ninstances)) &&
@@ -244,6 +245,8 @@ function listrules(
             (isnothing(metric_filter_callback) || metric_filter_callback(ms))
         end, rules)
     end
+    
+    rules = collect(rules) # TODO remove in the future?
 
     return rules
 end
@@ -397,7 +400,25 @@ end
 
 _listrules(m::DecisionTree; kwargs...) = _listrules(root(m); kwargs...)
 
-_listrules(m::DecisionForest; kwargs...) = error("TODO implement")
+function _listrules(
+    m::DecisionEnsemble;
+    suppress_parity_warning = false,
+    kwargs...
+)
+    error("TODO check method & implement more efficient strategies for specific cases.")
+    modelrules = [listrules(subm; kwargs...) for subm in models(m)]
+    @assert all(r->consequent(r) isa ConstantModel, Iterators.flatten(modelrules))
+
+    IterTools.imap(rulecombination->begin
+        rulecombination = collect(rulecombination)
+        ant = join_antecedents(antecedent.(rulecombination))
+        cons = bestguess(outcome.(consequent.(rulecombination)); suppress_parity_warning)
+        infos = info.(rulecombination)
+        # TODO @show infos; info = (;)
+        Rule(ant, cons)
+        end, Iterators.product(modelrules...)
+    )
+end
 
 _listrules(m::MixedModel; kwargs...) = _listrules(root(m); kwargs...)
 
@@ -456,9 +477,11 @@ See also [`listrules`](@ref),
 [`AbstractModel`](@ref).
 """
 function joinrules(
-    rules::AbstractVector{<:Rule},
+    rules,
     silent = false...,
 )
+    # !Base.isiterable(typeof(rules)) || error("Unexpected ruleset encountered, type: $(typeof(rules)).")
+    rules = collect(rules)
     @assert all(c->c isa ConstantModel, consequent.(rules))
     alloutcomes = unique(outcome.(consequent.(rules)))
     # @show info.(rules)

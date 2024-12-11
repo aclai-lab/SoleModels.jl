@@ -165,6 +165,25 @@ end
     map(i_instance->apply(m, d, i_instance; kwargs...), 1:ninstances(d))
 end
 
+function __apply_post(m, preds)
+    if haskey(info(m), :apply_postprocess)
+        apply_postprocess_f = info(m, :apply_postprocess)
+        preds = apply_postprocess_f.(preds)
+    end
+    preds
+end
+
+function __apply_pre(m, d, y)
+    @assert length(y) == ninstances(d) "$(length(y)) == $(ninstances(d))"
+    if haskey(info(m), :apply_preprocess)
+        # @show "CIAO"
+        apply_preprocess_f = info(m, :apply_preprocess)
+        y = apply_preprocess_f.(y)
+    end
+    y
+end
+
+
 # function apply!(
 #     m::AbstractModel,
 #     i::AbstractInterpretation,
@@ -200,8 +219,22 @@ end
 #     return apply(m, d, i_instance; mode = mode, y = y, kwargs...)
 # end
 
-function apply!(m::AbstractModel, d::Any, y::AbstractVector; kwargs...)
-    apply!(m, SoleData.scalarlogiset(d; allow_propositional = true), y; kwargs...)
+function apply(m::AbstractModel, d::Any; silent = false, suppress_parity_warning = silent, kwargs...)
+    if d isa SoleData.AbstractLogiset
+        error("Please, provide method apply(::$(typeof(m)), ::$(typeof(d)); kwargs...).")
+    else
+        d = SoleData.scalarlogiset(d; silent, allow_propositional = true)
+        apply(m, d; suppress_parity_warning, kwargs...)
+    end
+end
+
+function apply!(m::AbstractModel, d::Any, y::AbstractVector; silent = false, suppress_parity_warning = silent, kwargs...)
+    if d isa SoleData.AbstractLogiset
+        error("Please, provide method apply!(::$(typeof(m)), ::$(typeof(d)), ::$(typeof(y)); kwargs...).")
+    else
+        d = SoleData.scalarlogiset(d; silent, allow_propositional = true)
+        apply!(m, d, y; suppress_parity_warning, kwargs...)
+    end
 end
 
 """
@@ -425,6 +458,8 @@ function __apply!(m, mode, preds, y, leavesonly)
             error("Unexpected apply mode: $mode.")
         end
     end
+    preds = __apply_post(m, preds)
+
     return preds
 end
 

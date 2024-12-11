@@ -85,7 +85,7 @@ end
 
 Then, port it to Sole and play with it:
 ```julia
-Pkg.add("SoleDecisionTreeInterface"); using SoleDecisionTreeInterface
+Pkg.add("DecisionTree"); import DecisionTree as DT
 
 # Convert to 🌞-compliant model
 🌲 = solemodel(🌱);

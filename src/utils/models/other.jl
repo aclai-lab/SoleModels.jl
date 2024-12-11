@@ -323,6 +323,13 @@ struct DecisionTree{O} <: AbstractModel{O}
     root::M where {M<:Union{LeafModel{O},Branch{O}}}
     info::NamedTuple
 
+    # function DecisionTree{O}(
+    #     root::Union{LeafModel,Branch},
+    #     info::NamedTuple = (;),
+    # )
+    #     new{O}(root, info)
+    # end
+
     function DecisionTree(
         root::Union{LeafModel{O},Branch{O}},
         info::NamedTuple = (;),
@@ -370,16 +377,21 @@ iscomplete(::DecisionTree) = true
 
 function apply(
     m::DecisionTree,
-    id::Union{AbstractInterpretation,AbstractInterpretationSet};
+    i::AbstractInterpretation;
     kwargs...
 )
-    preds = apply(root(m), id; kwargs...)
-    # TODO note: info should probably not interfere on the model's behavior
-    if haskey(info(m), :apply_postprocess)
-        apply_postprocess_f = info(m, :apply_postprocess)
-        preds = apply_postprocess_f.(preds)
-    end
-    preds
+    preds = apply(root(m), i; kwargs...)
+    __apply_post(m, preds)
+end
+
+# Don't join (dispatch ambiguities)
+function apply(
+    m::DecisionTree,
+    d::AbstractInterpretationSet;
+    kwargs...
+)
+    preds = apply(root(m), d; kwargs...)
+    __apply_post(m, preds)
 end
 
 
@@ -391,55 +403,47 @@ function apply!(
     leavesonly = false,
     kwargs...
 )
-    @assert length(y) == ninstances(d) "$(length(y)) == $(ninstances(d))"
-    if haskey(info(m), :apply_preprocess)
-        apply_preprocess_f = info(m, :apply_preprocess)
-        y = apply_preprocess_f.(y)
-    end
+    y = __apply_pre(m, d, y)
     # _d = SupportedLogiset(d) TODO?
     preds = apply!(root(m), d, y;
         mode = mode,
         leavesonly = leavesonly,
         kwargs...
     )
-    if haskey(info(m), :apply_postprocess)
-        apply_postprocess_f = info(m, :apply_postprocess)
-        preds = apply_postprocess_f.(preds)
-    end
     return __apply!(m, mode, preds, y, leavesonly)
 end
 
 """
-    function nnodes(t::DecisionTree)
+    function nnodes(m::DecisionTree)
 
-Return the number of nodes in `t`.
+Return the number of nodes in `m`.
 
 See also [`DecisionTree`](@ref).
 """
-function nnodes(t::DecisionTree)
-    nsubmodels(t)
+function nnodes(m::DecisionTree)
+    nsubmodels(m)
 end
 
 """
-    function nleaves(t::DecisionTree)
+    function nleaves(m::DecisionTree)
 
-Return the number of leaves in `t`.
+Return the number of leaves in `m`.
 
 See also [`DecisionTree`](@ref).
 """
-function nleaves(t::DecisionTree)
-    nleafmodels(t)
+function nleaves(m::DecisionTree)
+    nleafmodels(m)
 end
 
 """
-    function height(t::DecisionTree)
+    function height(m::DecisionTree)
 
-Return the height of `t`.
+Return the height of `m`.
 
 See also [`DecisionTree`](@ref).
 """
-function height(t::DecisionTree)
-    subtreeheight(t)
+function height(m::DecisionTree)
+    subtreeheight(m)
 end
 
 immediatesubmodels(m::DecisionTree) = immediatesubmodels(root(m))
@@ -451,109 +455,179 @@ listimmediaterules(m::DecisionTree) = listimmediaterules(root(m))
 ############################################################################################
 
 """
-    struct DecisionForest{O} <: AbstractModel{O}
+    struct DecisionEnsemble{O} <: AbstractModel{O}
         trees::Vector{<:DecisionTree}
         info::NamedTuple
     end
 
-A [`DecisionForest`](@ref) is a symbolic model that wraps an ensemble of
+A [`DecisionEnsemble`](@ref) is a symbolic model that wraps an ensemble of
 [`DecisionTree`](@ref).
 
 See also [`DecisionList`](@ref), [`DecisionTree`](@ref), [`MixedModel`](@ref).
 """
-struct DecisionForest{O} <: AbstractModel{O}
-    trees::Vector{<:DecisionTree}
+struct DecisionEnsemble{O,T<:AbstractModel} <: AbstractModel{O}
+    models::Vector{T}
     info::NamedTuple
 
-    function DecisionForest(
-        trees::Vector{<:DecisionTree},
+    function DecisionEnsemble{O}(
+        models::Vector{T},
         info::NamedTuple = (;),
-    )
-        @assert length(trees) > 0 "Cannot instantiate forest with no trees!"
-        O = Union{outcometype.(trees)...}
-        new{O}(trees, info)
+    ) where {O,T<:AbstractModel}
+        @assert length(models) > 0 "Cannot instantiate empty ensemble!"
+        new{O,T}(models, info)
     end
+    
+    function DecisionEnsemble(
+        models::Vector{T},
+        info::NamedTuple = (;),
+    ) where {T<:AbstractModel}
+        @assert length(models) > 0 "Cannot instantiate empty ensemble!"
+        O = Union{outcometype.(models)...}
+        new{O,T}(models, info)
+    end
+
 end
 
-"""
-    trees(forest::DecisionForest)
+modelstype(m::DecisionEnsemble{O,T}) where {O,T} = T
+models(m::DecisionEnsemble) = m.models
+nmodels(m::DecisionEnsemble) = length(models(m))
 
-Return all the [`DecisionTree`](@ref)s wrapped within `forest`.
 
-See also [`DecisionTree`](@ref).
-"""
-trees(forest::DecisionForest) = forest.trees
 
 """
-    function nnodes(f::DecisionForest)
+    function nnodes(m::DecisionEnsemble)
 
-Return the number of nodes within `f`, that is, the sum of the nodes number in each
+Return the number of nodes within `m`, that is, the sum of the nodes number in each
 wrapped [`DecisionTree`](@ref).
 
-See also [`DecisionForest`](@ref), [`DecisionTree`](@ref).
+See also [`DecisionEnsemble`](@ref), [`DecisionTree`](@ref).
 """
-function nnodes(f::DecisionForest)
-    nsubmodels(f)
+function nnodes(m::DecisionEnsemble)
+    nsubmodels(m)
 end
 
 """
-    function nleaves(f::DecisionForest)
+    function nleaves(m::DecisionEnsemble)
 
-Return the number of [`LeafModel`](@ref) within `f`.
+Return the number of [`LeafModel`](@ref) within `m`.
 
-See also [`DecisionForest`](@ref), [`DecisionTree`](@ref), [`LeafModel`](@ref).
+See also [`DecisionEnsemble`](@ref), [`DecisionTree`](@ref), [`LeafModel`](@ref).
 """
-function nleaves(f::DecisionForest)
-    nleafmodels(f)
+function nleaves(m::DecisionEnsemble)
+    nleafmodels(m)
 end
 
 """
-    function height(f::DecisionForest)
+    function height(m::DecisionEnsemble)
 
-Return the maximum height across all the [`DecisionTree`](@ref)s within `f`.
+Return the maximum height across all the [`DecisionTree`](@ref)s within `m`.
 
-See also [`DecisionForest`](@ref), [`DecisionTree`](@ref).
+See also [`DecisionEnsemble`](@ref), [`DecisionTree`](@ref).
 """
-function height(f::DecisionForest)
-    subtreeheight(f)
+function height(m::DecisionEnsemble)
+    subtreeheight(m)
 end
 
-"""
-    function ntrees(f::DecisionForest)
-
-Return the number of trees within `f`.
-
-See also [`DecisionForest`](@ref), [`DecisionTree`](@ref), [`trees`](@ref).
-"""
-function ntrees(f::DecisionForest)
-    length(trees(f))
-end
-
-immediatesubmodels(m::DecisionForest) = trees(m)
-nimmediatesubmodels(m::DecisionForest) = length(trees(m))
-listimmediaterules(m::DecisionForest; kwargs...) = error("TODO implement")
+immediatesubmodels(m::DecisionEnsemble) = trees(m)
+nimmediatesubmodels(m::DecisionEnsemble) = length(trees(m))
+listimmediaterules(m::DecisionEnsemble; kwargs...) = error("TODO implement")
 
 # TODO check these two.
 function apply(
-    f::DecisionForest,
+    m::DecisionEnsemble,
     id::AbstractInterpretation;
+    suppress_parity_warning = false,
     kwargs...
 )
-    bestguess([apply(t, d; kwargs...) for t in trees(f)])
+    preds = [apply(subm, d; suppress_parity_warning, kwargs...) for subm in models(m)]
+    preds = __apply_post(m, preds)
+    bestguess(preds)
 end
 
+# TODO parallelize
 function apply(
-    f::DecisionForest,
+    m::DecisionEnsemble,
     d::AbstractInterpretationSet;
     suppress_parity_warning = false,
     kwargs...
 )
-    pred = hcat([apply(t, d; kwargs...) for t in trees(f)]...)
-    return [
-        bestguess(pred[i,:]; suppress_parity_warning = suppress_parity_warning)
-        for i in 1:size(pred,1)
+    preds = hcat([apply(subm, d; kwargs...) for subm in models(m)]...)
+    preds = __apply_post(m, preds)
+    preds = [
+        bestguess(preds[i,:]; suppress_parity_warning = suppress_parity_warning)
+        for i in 1:size(preds,1)
     ]
+    return preds
 end
+
+# TODO parallelize
+function apply!(
+    m::DecisionEnsemble,
+    d::AbstractInterpretationSet,
+    y::AbstractVector;
+    mode = :replace,
+    leavesonly = false,
+    # show_progress = false, # length(ntrees(m)) > 15,
+    suppress_parity_warning = false,
+    kwargs...
+)
+    @show y
+    y = __apply_pre(m, d, y)
+    # _d = SupportedLogiset(d) TODO?
+    @show y
+    preds = hcat([apply!(subm, d, y; mode, leavesonly, kwargs...) for subm in models(m)]...)
+
+    preds = __apply_post(m, preds)
+
+    preds = [
+        bestguess(preds[i,:]; suppress_parity_warning, kwargs...)
+        for i in 1:size(preds,1)
+    ]
+
+    preds = __apply_pre(m, d, preds)
+    return __apply!(m, mode, preds, y, leavesonly)
+end
+
+
+
+"""
+    const DecisionForest{O} = DecisionEnsemble{<:DecisionTree{O}}
+
+A [`DecisionForest`](@ref) is a symbolic model that wraps an ensemble of
+[`DecisionTree`](@ref)'s.
+
+See also [`DecisionList`](@ref), [`DecisionTree`](@ref), [`MixedModel`](@ref).
+"""
+const DecisionForest{O} = DecisionEnsemble{O,<:DecisionTree}
+
+function DecisionForest(trees::Vector{<:DecisionTree}, info::NamedTuple = (;),)
+    DecisionEnsemble(trees, info)
+end
+
+function DecisionForest{O}(trees::Vector{<:DecisionTree}, info::NamedTuple = (;),) where {O}
+    DecisionEnsemble{O}(trees, info)
+end
+
+"""
+    trees(m::DecisionForest)
+
+Return all the [`DecisionTree`](@ref)s wrapped within a forest.
+
+See also [`DecisionTree`](@ref).
+"""
+trees(m::DecisionForest) = models(m)
+
+"""
+    function ntrees(m::DecisionForest)
+
+Return the number of trees within `m`.
+
+See also [`DecisionForest`](@ref), [`DecisionTree`](@ref), [`trees`](@ref).
+"""
+function ntrees(m::DecisionForest)
+    length(trees(m))
+end
+
 
 ############################################################################################
 ##################################### MixedModel ###########################################

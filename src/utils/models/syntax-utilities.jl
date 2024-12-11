@@ -1,38 +1,3 @@
-import SoleLogics: alphabet,
-                    atoms,
-                    connectives,
-                    # leaves,
-                    natoms,
-                    nconnectives
-                    # nleaves
-
-doc_syntax_utils_models = """
-    atoms(::AbstractModel)
-    connectives(::AbstractModel)
-    syntaxleaves(::AbstractModel)
-    
-    natoms(::AbstractModel)
-    nconnectives(::AbstractModel)
-    nsyntaxleaves(::AbstractModel)
-
-See also
-[`AbstractModel`](@ref),
-[`listrules`](@ref).
-"""
-
-"""$doc_syntax_utils_models"""
-atoms(m::AbstractModel) = error("Please, provide method atoms(::$(typeof(m))).")
-"""$doc_syntax_utils_models"""
-connectives(m::AbstractModel) = error("Please, provide method connectives(::$(typeof(m))).")
-"""$doc_syntax_utils_models"""
-syntaxleaves(m::AbstractModel) = error("Please, provide method syntaxleaves(::$(typeof(m))).")
-
-"""$doc_syntax_utils_models"""
-natoms(m::AbstractModel) = error("Please, provide method natoms(::$(typeof(m))).")
-"""$doc_syntax_utils_models"""
-nconnectives(m::AbstractModel) = error("Please, provide method nconnectives(::$(typeof(m))).")
-"""$doc_syntax_utils_models"""
-nsyntaxleaves(m::AbstractModel) = error("Please, provide method nsyntaxleaves(::$(typeof(m))).")
 
 
 
