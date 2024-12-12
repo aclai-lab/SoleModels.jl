@@ -53,7 +53,7 @@ function SoleModels.solemodel(
     args...;
     classlabels = nothing,
     featurenames = nothing,
-    keep_condensed = true,
+    keep_condensed = false,
     kwargs...
 )
     if isnothing(classlabels)
@@ -103,7 +103,7 @@ function SoleModels.solemodel(
     return m
 end
 
-function SoleModels.solemodel(tree::DT.InfoNode; keep_condensed = true, featurenames = true, classlabels = tree.info.classlabels, kwargs...)
+function SoleModels.solemodel(tree::DT.InfoNode; keep_condensed = false, featurenames = true, classlabels = tree.info.classlabels, kwargs...)
     # @show fieldnames(typeof(tree))
     featurenames = featurenames == true ? tree.info.featurenames : featurenames
     
@@ -157,12 +157,12 @@ end
 #     return DecisionTree(root, info)
 # end
 
-function SoleModels.solemodel(tree::DT.Node; replace_classlabels = nothing, featurenames = nothing, keep_condensed = false)
+function SoleModels.solemodel(tree::DT.Node; replace_classlabels=nothing, featurenames=nothing, keep_condensed=false)
     keep_condensed && error("Cannot keep condensed DecisionTree.Node.")
     cond = get_condition(tree.featid, tree.featval, featurenames)
     antecedent = Atom(cond)
-    lefttree = SoleModels.solemodel(tree.left; replace_classlabels, featurenames)
-    righttree = SoleModels.solemodel(tree.right; replace_classlabels, featurenames)
+    lefttree = SoleModels.solemodel(tree.left; replace_classlabels=replace_classlabels, featurenames=featurenames)
+    righttree = SoleModels.solemodel(tree.right; replace_classlabels=replace_classlabels, featurenames=featurenames)
     info = (;
         supporting_predictions = [lefttree.info[:supporting_predictions]..., righttree.info[:supporting_predictions]...],
         supporting_labels = [lefttree.info[:supporting_labels]..., righttree.info[:supporting_labels]...],
@@ -170,7 +170,7 @@ function SoleModels.solemodel(tree::DT.Node; replace_classlabels = nothing, feat
     return Branch(antecedent, lefttree, righttree, info)
 end
 
-function SoleModels.solemodel(tree::DT.Leaf; replace_classlabels = nothing, featurenames = nothing, keep_condensed = false)
+function SoleModels.solemodel(tree::DT.Leaf; replace_classlabels=nothing, featurenames=nothing, keep_condensed=false)
     keep_condensed && error("Cannot keep condensed DecisionTree.Node.")
     # @show fieldnames(typeof(tree))
     prediction = tree.majority
