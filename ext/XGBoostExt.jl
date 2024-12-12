@@ -18,7 +18,7 @@ function alphabet(model::XGBoost.Booster; kwargs...)
 
         # Recursive case: split node
         feature = Sole.VariableValue(tree.split isa String ? Symbol(tree.split) : tree.split)
-        condition = ScalarCondition(feature, (<), tree.split_condition)
+        condition = ScalarCondition(feature, (<), tree.split_condition) # TODO verify.
         push!(a, condition)
         if length(tree.children) == 2
             _alphabet!(a, tree.children[1]; with_stats, kwargs...)
@@ -52,7 +52,7 @@ end
 # # Convert a single XGBoost tree into a Sole tree
 # function solemodel(tree::XGBoost.Node; with_stats::Bool = true, kwargs...)
 #     function _makeleaf(value)
-#         SoleModels.ConstantModel(value, (; supporting_predictions=[value]))
+#         SoleModels.ConstantModel(value, (; supporting_predictions=repeat("yes", tree.yes), supporting_labels=repeat("yes", tree.yes)))
 #     end
     
 #     # Base case: if it's a leaf node
@@ -76,7 +76,8 @@ end
 
 #     # Aggregate info (e.g., supporting predictions) from children
 #     info = (;
-#         supporting_predictions=[left_tree.info[:supporting_predictions]..., right_tree.info[:supporting_predictions]...],
+#         # supporting_predictions=[left_tree.info[:supporting_predictions]..., right_tree.info[:supporting_predictions]...],
+#         # supporting_labels=[left_tree.info[:supporting_labels]..., right_tree.info[:supporting_labels]...],
 #         this=_makeleaf(tree.leaf),
 #         xgboost_gain = tree.gain,
 #         xgboost_yes = tree.yes,
@@ -87,7 +88,6 @@ end
 #     # Create and return a Sole Branch
 #     return Branch(antecedent, left_tree, right_tree, info)
 # end
-# solemodel(model)
 
 
 end
