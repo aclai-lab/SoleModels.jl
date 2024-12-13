@@ -90,7 +90,7 @@ function SoleModels.solemodel(
 
     if !isnothing(classlabels)
         O = eltype(classlabels)
-        # O = eltype(levels(classnames))
+        # O = eltype(levels(classlabels))
     else
         O = nothing
     end
