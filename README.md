@@ -42,7 +42,7 @@ For more information, refer to [*SoleLogics.jl*](https://github.com/aclai-lab/So
 Other noteworthy models include:
 - Decision List (or decision table): see [Wikipedia](https://en.wikipedia.org/wiki/Decision_list);
 - Decision Tree: see [Wikipedia](https://en.wikipedia.org/wiki/Decision_tree);
-- Decision Forest (or tree ensamble): see [Wikipedia](https://en.wikipedia.org/wiki/Random_forest);
+- Decision Forest (or tree ensemble): see [Wikipedia](https://en.wikipedia.org/wiki/Random_forest);
 - Mixed Symbolic Model: a nested structure, mixture of many symbolic models.
 
 ## Usage: rule extraction from a decision tree
