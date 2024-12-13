@@ -25,12 +25,12 @@ nconnectives(m::Union{DecisionTree,MixedModel}) = nconnectives(root(m))
 nsyntaxleaves(m::Union{DecisionTree,MixedModel}) = nsyntaxleaves(root(m))
 
 
-atoms(m::DecisionForest) = vcat(map(atoms, trees(m))...)
-connectives(m::DecisionForest) = vcat(map(connectives, trees(m))...)
-syntaxleaves(m::DecisionForest) = vcat(map(syntaxleaves, trees(m))...)
-natoms(m::DecisionForest) = sum(natoms, trees(m))
-nconnectives(m::DecisionForest) = sum(nconnectives, trees(m))
-nsyntaxleaves(m::DecisionForest) = sum(nsyntaxleaves, trees(m))
+atoms(m::DecisionEnsemble) = vcat(map(atoms, models(m))...)
+connectives(m::DecisionEnsemble) = vcat(map(connectives, models(m))...)
+syntaxleaves(m::DecisionEnsemble) = vcat(map(syntaxleaves, models(m))...)
+natoms(m::DecisionEnsemble) = sum(natoms, models(m))
+nconnectives(m::DecisionEnsemble) = sum(nconnectives, models(m))
+nsyntaxleaves(m::DecisionEnsemble) = sum(nsyntaxleaves, models(m))
 
 
 
