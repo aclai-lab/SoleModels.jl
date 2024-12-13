@@ -1,22 +1,26 @@
-using SoleBase: bestguess
+using SoleBase: Label, CLabel, RLabel, bestguess
+
+abstract type AbstractDecisionEnsemble{O} <: AbstractModel{O} end
 
 ############################################################################################
 ################################# DecisionEnsemble #########################################
 ############################################################################################
 
 """
-    struct DecisionEnsemble{O,T<:AbstractModel,A<:Base.Callable} <: AbstractModel{O}
+    struct DecisionEnsemble{O,T<:AbstractModel,A<:Base.Callable,W<:Union{Nothing,AbstractVector}} <: AbstractDecisionEnsemble{O}
         models::Vector{T}
         aggregation::A
+        weights::W
         info::NamedTuple
     end
 
-A `DecisionEnsemble` is an ensemble of models of type `T`. Upon prediction, all
+A `DecisionEnsemble` is an ensemble of models; upon prediction, all
 models are used, and an `aggregation` function is used to pool their outputs.
+Optionally, model weights can be specified.
 
-See also [`DecisionForest`](@ref), [`DecisionTree`](@ref), [`MultiDecisionBag`](@ref).
+See also [`DecisionForest`](@ref), [`DecisionTree`](@ref), [`MaxDecisionBag`](@ref).
 """
-struct DecisionEnsemble{O,T<:AbstractModel,A<:Base.Callable,W<:Union{Nothing,AbstractVector}} <: AbstractModel{O}
+struct DecisionEnsemble{O,T<:AbstractModel,A<:Base.Callable,W<:Union{Nothing,AbstractVector}} <: AbstractDecisionEnsemble{O}
     models::Vector{T}
     aggregation::A
     weights::W
@@ -76,7 +80,7 @@ struct DecisionEnsemble{O,T<:AbstractModel,A<:Base.Callable,W<:Union{Nothing,Abs
     function DecisionEnsemble(
         models::Vector,
         args...; kwargs...
-    ) where {T<:AbstractModel}
+    )
         @assert length(models) > 0 "Cannot instantiate empty ensemble!"
         models = wrap.(models)
         O = Union{outcometype.(models)...}
@@ -159,7 +163,7 @@ function apply(
     suppress_parity_warning = false,
     kwargs...
 )
-    preds = hcat([apply(subm, d; kwargs...) for subm in models(m)]...)
+    preds = hcat([apply(subm, d; suppress_parity_warning, kwargs...) for subm in models(m)]...)
     preds = __apply_post(m, preds)
     preds = [
         weighted_aggregation(m)(preds[i,:]; suppress_parity_warning)
@@ -204,7 +208,7 @@ end
 A [`DecisionForest`](@ref) is an ensemble of (unweighted) [`DecisionTree`](@ref)'s,
 aggregated by `bestguess`.
 
-See also [`DecisionEnsemble`](@ref), [`DecisionTree`](@ref), [`MultiDecisionBag`](@ref), [`bestguess`](@ref).
+See also [`DecisionEnsemble`](@ref), [`DecisionTree`](@ref), [`MaxDecisionBag`](@ref), [`bestguess`](@ref).
 """
 const DecisionForest{O} = DecisionEnsemble{O,<:DecisionTree,typeof(bestguess),Nothing}
 
@@ -235,3 +239,113 @@ See also [`DecisionForest`](@ref), [`DecisionTree`](@ref), [`trees`](@ref).
 function ntrees(m::DecisionForest)
     length(trees(m))
 end
+
+
+
+
+"""
+A `MaxDecisionBag` is an ensemble of models, weighted by a set of other models.
+In this simplified implementation, only the model with the highest (`max`) weight is responsible for the outcome.
+
+See also [`DecisionForest`](@ref), [`DecisionTree`](@ref), [`DecisionEnsemble`](@ref), [`MaxDecisionBag`](@ref).
+"""
+struct MaxDecisionBag{O,TO<:AbstractModel,TU<:AbstractModel
+    # ,A<:Base.Callable
+    # ,W<:Union{Nothing,AbstractVector}
+    } <: AbstractDecisionEnsemble{O}
+    output_producing_models::Vector{TO}
+    weight_producing_models::Vector{TU}
+    # aggregation::A
+    # weights::W
+    info::NamedTuple
+
+    function MaxDecisionBag{O}(
+        output_producing_models::Vector,
+        weight_producing_models::Vector,
+        # aggregation::Union{Nothing,Base.Callable},
+        # weights::Union{Nothing,AbstractVector},
+        info::NamedTuple = (;);
+        suppress_parity_warning = nothing,
+    ) where {O}
+        @assert length(output_producing_models) > 0 "Cannot instantiate empty bagoutput-producing models!"
+        @assert length(weight_producing_models) > 0 "Cannot instantiate empty bagweight-producing models!"
+        @assert length(output_producing_models) == length(weight_producing_models) "Cannot instantiate bag with different numbers of output and weight producing models: $(length(output_producing_models)) != $(length(weight_producing_models))."
+        output_producing_models = wrap.(output_producing_models)
+        weight_producing_models = wrap.(weight_producing_models)
+        # if isnothing(aggregation)
+        #     # if a suppress_parity_warning parameter is provided, then the aggregation's suppress_parity_warning defaults to it;
+        #     #  otherwise, it defaults to bestguess's suppress_parity_warning
+        #     if isnothing(suppress_parity_warning)
+        #         aggregation = function (args...; kwargs...) bestguess(args...; kwargs...) end
+        #     else
+        #         aggregation = function (args...; suppress_parity_warning = suppress_parity_warning, kwargs...) bestguess(args...; suppress_parity_warning, kwargs...) end
+        #     end
+        # else
+        #     isnothing(suppress_parity_warning) || @warn "Unexpected value for suppress_parity_warning: $(suppress_parity_warning)."
+        # end
+        TO = typeof(output_producing_models)
+        TU = typeof(weight_producing_models)
+        # W = typeof(weights)
+        # A = typeof(aggregation)
+        new{O,TO,TU}(output_producing_models, weight_producing_models, aggregation, info) # , weights
+    end
+    
+    function MaxDecisionBag(
+        output_producing_models::Vector,
+        weight_producing_models::Vector,
+        args...; kwargs...
+    )
+        @assert length(output_producing_models) > 0 "Cannot instantiate empty bagoutput-producing models!"
+        @assert length(weight_producing_models) > 0 "Cannot instantiate empty bagweight-producing models!"
+        @assert length(output_producing_models) == length(weight_producing_models) "Cannot instantiate bag with different numbers of output and weight producing models: $(length(output_producing_models)) != $(length(weight_producing_models))."
+        output_producing_models = wrap.(output_producing_models)
+        weight_producing_models = wrap.(weight_producing_models)
+        O = Union{outcometype.(output_producing_models)...}
+        MaxDecisionBag{O}(output_producing_models, weight_producing_models, args...; kwargs...)
+    end
+end
+
+function apply(m::MaxDecisionBag, d::AbstractInterpretation; suppress_parity_warning = false, kwargs...)
+    weights = [apply(wm, d; suppress_parity_warning, kwargs...) for wm in m.weight_producing_models]
+    om = m.output_producing_models[argmax(weights)]
+    pred = apply(om, d; suppress_parity_warning, kwargs...)
+    # preds = [apply(om, d; suppress_parity_warning, kwargs...) for om in m.output_producing_models]
+    # pred = aggregation(m)(preds, weights; suppress_parity_warning)
+    pred
+end
+
+# TODO parallelize
+function apply(
+    m::MaxDecisionBag,
+    d::AbstractInterpretationSet;
+    suppress_parity_warning = false,
+    kwargs...
+)
+    weights = hcat([apply(wm, d; suppress_parity_warning, kwargs...) for wm in m.weight_producing_models]...)
+    preds = __apply_post(m, preds)
+    preds = [
+        apply(m.output_producing_models[im], d; suppress_parity_warning, kwargs...)
+        for im in argmax(weights; dims=2)
+    ]
+    preds = __apply_pre(m, d, preds)
+    return preds
+end
+
+function apply!(m::MaxDecisionBag, d::AbstractInterpretationSet, y::AbstractVector; mode = :replace, leavesonly = false, suppress_parity_warning = false, kwargs...)
+    y = __apply_pre(m, d, y)
+    weights = hcat([apply!(wm, d, y; mode, leavesonly, suppress_parity_warning, kwargs...) for wm in m.weight_producing_models]...)
+    preds = __apply_post(m, preds)
+    preds = [
+        apply!(m.output_producing_models[im], d, y; mode, leavesonly, suppress_parity_warning, kwargs...)
+        for im in argmax(weights; dims=2)
+    ]
+    preds = __apply_pre(m, d, preds)
+    return __apply!(m, mode, preds, y, leavesonly)
+end
+
+"""
+TODO explain. The output of XGBoost via the strategy "multi:softmax".
+"""
+const MaxTreeBag{O,W<:RLabel,A<:typeof(+),WW<:RLabel} = MaxDecisionBag{O,ConstantModel{O},DecisionEnsemble{W,DecisionTree,A,WW}}
+
+
