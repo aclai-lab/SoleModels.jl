@@ -314,6 +314,8 @@ function apply(m::MaxDecisionBag, d::AbstractInterpretation; suppress_parity_war
     pred
 end
 
+# TODO Add a keyword argument that toggles the soft or hard behavior. The hard behavior is one where you first find the bestguess among the weights, and then perform the apply only on the first
+
 # TODO parallelize
 function apply(
     m::MaxDecisionBag,

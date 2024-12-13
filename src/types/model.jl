@@ -64,6 +64,12 @@ See also [`apply`](@ref), [`Branch`](@ref), [`info`](@ref), [`iscomplete`](@ref)
 """
 abstract type AbstractModel{O} end
 
+# TODO shift to a more trait-based system.
+@doc (@doc AbstractModel)
+issymbolicmodel(m::Any) = false
+issymbolicmodel(m::AbstractModel) = true
+
+
 """
     iscomplete(::AbstractModel)::Bool
 
