@@ -70,7 +70,7 @@ function SoleModels.solemodel(
         info = (;)
         # O = UInt32
     end
-    trees = map(t -> SoleModels.solemodel(t, args...; keep_condensed, featurenames, kwargs...), model.trees)
+    trees = map(t -> SoleModels.solemodel(t, args...; classlabels, featurenames, keep_condensed, kwargs...), model.trees)
     # trees = map(t -> let b = SoleModels.solemodel(t, args...; keep_condensed, featurenames, kwargs...); SoleModels.DecisionTree(b, 
     #     (;
     #         supporting_predictions=b.info[:supporting_predictions],
@@ -117,7 +117,7 @@ function SoleModels.solemodel(tree::DT.InfoNode; keep_condensed = false, feature
             keep_condensed = !keep_condensed
             root, info
         else
-            root = SoleModels.solemodel(tree.node; replace_classlabels = classlabels, featurenames, kwargs...)
+            root = SoleModels.solemodel(tree.node; classlabels = classlabels, featurenames, kwargs...)
             info = (;)
             root, info
         end
@@ -157,12 +157,12 @@ end
 #     return DecisionTree(root, info)
 # end
 
-function SoleModels.solemodel(tree::DT.Node; replace_classlabels=nothing, featurenames=nothing, keep_condensed=false)
+function SoleModels.solemodel(tree::DT.Node; classlabels=nothing, featurenames=nothing, keep_condensed=false)
     keep_condensed && error("Cannot keep condensed DecisionTree.Node.")
     cond = get_condition(tree.featid, tree.featval, featurenames)
     antecedent = Atom(cond)
-    lefttree = SoleModels.solemodel(tree.left; replace_classlabels=replace_classlabels, featurenames=featurenames)
-    righttree = SoleModels.solemodel(tree.right; replace_classlabels=replace_classlabels, featurenames=featurenames)
+    lefttree = SoleModels.solemodel(tree.left; classlabels=classlabels, featurenames=featurenames)
+    righttree = SoleModels.solemodel(tree.right; classlabels=classlabels, featurenames=featurenames)
     info = (;
         supporting_predictions = [lefttree.info[:supporting_predictions]..., righttree.info[:supporting_predictions]...],
         supporting_labels = [lefttree.info[:supporting_labels]..., righttree.info[:supporting_labels]...],
@@ -170,14 +170,14 @@ function SoleModels.solemodel(tree::DT.Node; replace_classlabels=nothing, featur
     return Branch(antecedent, lefttree, righttree, info)
 end
 
-function SoleModels.solemodel(tree::DT.Leaf; replace_classlabels=nothing, featurenames=nothing, keep_condensed=false)
+function SoleModels.solemodel(tree::DT.Leaf; classlabels=nothing, featurenames=nothing, keep_condensed=false)
     keep_condensed && error("Cannot keep condensed DecisionTree.Node.")
     # @show fieldnames(typeof(tree))
     prediction = tree.majority
     labels = tree.values
-    if !isnothing(replace_classlabels)
-        prediction = replace_classlabels[prediction]
-        labels = replace_classlabels[labels]
+    if !isnothing(classlabels)
+        prediction = classlabels[prediction]
+        labels = classlabels[labels]
     end
     info = (;
         supporting_predictions = fill(prediction, length(labels)),

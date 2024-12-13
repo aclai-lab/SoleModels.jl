@@ -571,10 +571,10 @@ function apply!(
     suppress_parity_warning = false,
     kwargs...
 )
-    @show y
+    # @show y
     y = __apply_pre(m, d, y)
     # _d = SupportedLogiset(d) TODO?
-    @show y
+    # @show y
     preds = hcat([apply!(subm, d, y; mode, leavesonly, kwargs...) for subm in models(m)]...)
 
     preds = __apply_post(m, preds)

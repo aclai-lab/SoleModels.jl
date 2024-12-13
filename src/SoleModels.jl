@@ -5,6 +5,7 @@ using StatsBase
 using ThreadSafeDicts
 using Lazy
 using FunctionWrappers: FunctionWrapper
+using CategoricalArrays
 
 using SoleBase
 

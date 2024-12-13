@@ -448,6 +448,8 @@ function __apply!(m, mode, preds, y, leavesonly)
                 append!(m.info.supporting_predictions, preds)
             end
             empty!(m.info.supporting_labels)
+
+            # y isa CategoricalArray && (y = y.refs)
             append!(m.info.supporting_labels, y)
         elseif mode == :append
             if haskey(m.info, :supporting_predictions)
