@@ -71,6 +71,7 @@ function SoleModels.solemodel(
         # O = UInt32
     end
     trees = map(t -> SoleModels.solemodel(t, args...; classlabels, featurenames, keep_condensed, kwargs...), model.trees)
+    # trees = map(t -> SoleModels.solemodel(t, args...; featurenames, keep_condensed, kwargs...), model.trees)
     # trees = map(t -> let b = SoleModels.solemodel(t, args...; keep_condensed, featurenames, kwargs...); SoleModels.DecisionTree(b, 
     #     (;
     #         supporting_predictions=b.info[:supporting_predictions],
@@ -88,19 +89,19 @@ function SoleModels.solemodel(
         )
     )
 
-    if !isnothing(classlabels)
+    # if !isnothing(classlabels)
         O = eltype(classlabels)
-        # O = eltype(levels(classlabels))
-    else
-        O = nothing
-    end
+    #     # O = eltype(levels(classlabels))
+    # else
+    #     O = nothing
+    # end
 
-    if isnothing(O)
-        m = DecisionEnsemble(trees, info)
-    else
+    # if isnothing(O)
+    #     m = DecisionEnsemble(trees, info)
+    # else
         m = DecisionEnsemble{O}(trees, info)
-    end
-    return m
+    # end
+    # return m
 end
 
 function SoleModels.solemodel(tree::DT.InfoNode; keep_condensed = false, featurenames = true, classlabels = tree.info.classlabels, kwargs...)

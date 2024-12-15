@@ -27,12 +27,12 @@ struct DecisionEnsemble{O,T<:AbstractModel,A<:Base.Callable,W<:Union{Nothing,Abs
     info::NamedTuple
 
     function DecisionEnsemble{O}(
-        models::Vector,
+        models::Vector{T},
         aggregation::Union{Nothing,Base.Callable},
         weights::Union{Nothing,AbstractVector},
         info::NamedTuple = (;);
         suppress_parity_warning = nothing,
-    ) where {O}
+    ) where {O,T<:AbstractModel}
         @assert length(models) > 0 "Cannot instantiate empty ensemble!"
         models = wrap.(models)
         if isnothing(aggregation)
@@ -46,10 +46,10 @@ struct DecisionEnsemble{O,T<:AbstractModel,A<:Base.Callable,W<:Union{Nothing,Abs
         else
             isnothing(suppress_parity_warning) || @warn "Unexpected value for suppress_parity_warning: $(suppress_parity_warning)."
         end
-        T = typeof(models)
+        # T = typeof(models)
         W = typeof(weights)
         A = typeof(aggregation)
-        new{O,T,W,A}(models, aggregation, weights, info)
+        new{O,T,A,W}(models, aggregation, weights, info)
     end
     
     function DecisionEnsemble{O}(
