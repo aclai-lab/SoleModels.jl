@@ -51,6 +51,7 @@ end
 function SoleModels.solemodel(
     model::DT.Ensemble,
     args...;
+    weights::Union{AbstractVector{<:Number}, Nothing}=nothing,
     classlabels = nothing,
     featurenames = nothing,
     keep_condensed = false,
@@ -96,12 +97,12 @@ function SoleModels.solemodel(
     #     O = nothing
     # end
 
-    # if isnothing(O)
-    #     m = DecisionEnsemble(trees, info)
-    # else
+    if isnothing(weights)
         m = DecisionEnsemble{O}(trees, info)
-    # end
-    # return m
+    else
+        m = DecisionEnsemble{O}(trees, weights, info)
+    end
+    return m
 end
 
 function SoleModels.solemodel(tree::DT.InfoNode; keep_condensed = false, featurenames = true, classlabels = tree.info.classlabels, kwargs...)

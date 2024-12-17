@@ -77,6 +77,15 @@ struct DecisionEnsemble{O,T<:AbstractModel,A<:Base.Callable,W<:Union{Nothing,Abs
         DecisionEnsemble{O}(models, aggregation, nothing, info; kwargs...)
     end
 
+    function DecisionEnsemble{O}(
+        models::Vector,
+        weights::Vector,
+        info::NamedTuple = (;);
+        kwargs...
+    ) where {O}
+        DecisionEnsemble{O}(models, nothing, weights, info; kwargs...)
+    end
+
     function DecisionEnsemble(
         models::Vector,
         args...; kwargs...
@@ -350,4 +359,37 @@ TODO explain. The output of XGBoost via the strategy "multi:softmax".
 """
 const MaxTreeBag{O,W<:RLabel,A<:typeof(+),WW<:RLabel} = MaxDecisionBag{O,ConstantModel{O},DecisionEnsemble{W,DecisionTree,A,WW}}
 
+function unique_with_indices(x)
+    unique_vals = unique(x)
+    indices = [findall(==(val), x) for val in unique_vals]
+    return unique_vals, indices
+end
+
+# function apply!(
+#     dbag::SoleModels.DecisionBag, 
+#     X,
+#     y, 
+#     classlabels
+# )
+#     n_stumps = length(dbag.output_producing_models)
+#     values, idx_groups = unique_with_indices(dbag.info.supporting_predictions)
+
+#     count_trees = Dict()
+#     for i in 1:n_stumps
+#         prediction = DecisionTree.apply_tree(dbag.output_producing_models[i], classlabels)
+#         count_trees[prediction] = get(count_trees, prediction, 0.0) + weights[i]
+#     end
+#     top_prediction = dbag.output_producing_models[1].left.majority
+#     top_count = -Inf
+#     for (k, v) in count_trees
+#         if v > top_count
+#             top_prediction = k
+#             top_count = v
+#         end
+#     end
+#     return top_prediction
+
+#     dbag.info.supporting_labels = y
+#     dbag.info.supporting_predictions = top_prediction
+# end
 
