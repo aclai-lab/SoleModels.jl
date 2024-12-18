@@ -43,7 +43,7 @@ nsyntaxleaves(m::DecisionEnsemble) = sum(nsyntaxleaves, models(m))
 # [`SoleLogics.Formula`](@ref).
 # """
 # alphabet(m::AbstractModel) = error("Please, provide method alphabet(::$(typeof(m))).")
-alphabet(m::LeafModel) = SoleLogics.EmptyAlphabet()
+alphabet(m::LeafModel, unique = true) = SoleLogics.EmptyAlphabet()
 function alphabet(m::AbstractModel, unique = true)
     atms = atoms(m)
     unique && (atms = Base.unique(atms))

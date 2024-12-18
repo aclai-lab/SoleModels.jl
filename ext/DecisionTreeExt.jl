@@ -49,27 +49,28 @@ function SoleModels.alphabet(
 end
 
 function SoleModels.solemodel(
-    model::DT.Ensemble,
+    model::DT.Ensemble{T,orig_O},
     args...;
     weights::Union{AbstractVector{<:Number}, Nothing}=nothing,
     classlabels = nothing,
     featurenames = nothing,
     keep_condensed = false,
     kwargs...
-)
-    if isnothing(classlabels)
-        error("Please, provide classlabels argument, as in solemodel(forest; classlabels = classlabels, kwargs...). If your forest was trained via MLJ, use `classlabels = (mach).fitresult[2][sortperm((mach).fitresult[3])]`. Also consider providing `featurenames = report(mach).features`.")
-    end
-    if keep_condensed
+) where {T,orig_O}
+    # TODO rewrite error according to orig_O
+    # if isnothing(classlabels)
+    #     error("Please, provide classlabels argument, as in solemodel(forest; classlabels = classlabels, kwargs...). If your forest was trained via MLJ, use `classlabels = (mach).fitresult[2][sortperm((mach).fitresult[3])]`. Also consider providing `featurenames = report(mach).features`.")
+    # end
+    if keep_condensed && !isnothing(classlabels)
         info = (;
-            apply_preprocess=(y -> UInt32(findfirst(x -> x == y, classlabels))),
+            apply_preprocess=(y -> orig_O(findfirst(x -> x == y, classlabels))),
             apply_postprocess=(y -> classlabels[y]),
         )
         keep_condensed = !keep_condensed
-        # O = UInt32
+        O = eltype(classlabels)
     else
         info = (;)
-        # O = UInt32
+        O = orig_O
     end
     trees = map(t -> SoleModels.solemodel(t, args...; classlabels, featurenames, keep_condensed, kwargs...), model.trees)
     # trees = map(t -> SoleModels.solemodel(t, args...; featurenames, keep_condensed, kwargs...), model.trees)
@@ -91,10 +92,10 @@ function SoleModels.solemodel(
     )
 
     # if !isnothing(classlabels)
-        O = eltype(classlabels)
+    #     O = eltype(classlabels)
     #     # O = eltype(levels(classlabels))
-    # else
-    #     O = nothing
+    # # else
+    # #     O = nothing
     # end
 
     if isnothing(weights)
