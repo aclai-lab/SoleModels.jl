@@ -85,9 +85,13 @@ include("print.jl")
 export submodels, nsubmodels
 export leafmodels, nleafmodels
 export subtreeheight
-export listrules, joinrules
 
 include("symbolic-utils.jl")
+
+export PlainRuleExtractor
+export extractrules, listrules, joinrules
+
+include("rule-extraction.jl")
 
 export AssociationRule, ClassificationRule, RegressionRule
 
