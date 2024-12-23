@@ -189,68 +189,6 @@ metricstable(
 
 
 """
-    evaluaterule(
-        r::Rule{O},
-        X::AbstractInterpretationSet,
-        Y::AbstractVector{L}
-    ) where {O,L<:Label}
-
-Evaluate the rule on a labeled dataset, and return a `NamedTuple` consisting of:
-- `antsat::Vector{Bool}`: satsfaction of the antecedent for each instance in the dataset;
-- `ys::Vector{Union{Nothing,O}}`: rule prediction. For each instance in X:
-    - `consequent(rule)` if the antecedent is satisfied,
-    - `nothing` otherwise.
-
-See also
-[`Rule`](@ref),
-[`SoleLogics.AbstractInterpretationSet`](@ref),
-[`Label`](@ref),
-[`checkantecedent`](@ref).
-"""
-function evaluaterule(
-    rule::Rule,
-    X::AbstractInterpretationSet,
-    Y::AbstractVector{<:Label};
-    kwargs...,
-)
-    #println("Evaluation rule in time...")
-    ys = apply(rule,X)
-    #if SoleData.hassupports(X)
-    #    println("# Memoized Values: $(nmemoizedvalues(X))")
-    #end
-
-    antsat = ys .!= nothing
-
-    cons_sat = begin
-        idxs_sat = findall(antsat .== true)
-        cons_sat = Vector{Union{Bool,Nothing}}(fill(nothing, length(Y)))
-
-        idxs_true = begin
-            idx_cons = findall(outcome(consequent(rule)) .== Y)
-            intersect(idxs_sat, idx_cons)
-        end
-        idxs_false = begin
-            idx_cons = findall(outcome(consequent(rule)) .!= Y)
-            intersect(idxs_sat, idx_cons)
-        end
-        cons_sat[idxs_true]  .= true
-        cons_sat[idxs_false] .= false
-        cons_sat
-    end
-
-    # - `cons_sat::Vector{Union{Nothing,Bool}}`: for each instance in the dataset:
-    #     - `nothing` if antecedent is not satisfied.
-    #     - `false` if the antecedent is satisfied, but the consequent does not match the ground-truth label,
-    #     - `true` if the antecedent is satisfied, and the consequent matches the ground-truth label,
-
-    return (;
-        ys = ys,
-        antsat     = antsat,
-        # cons_sat    = cons_sat,
-    )
-end
-
-"""
     rulemetrics(
         r::Rule,
         X::AbstractInterpretationSet,
@@ -281,7 +219,7 @@ function rulemetrics(
     kwargs...,
 )
     eval_result = evaluaterule(rule, X, Y; kwargs...)
-    ys = eval_result[:ys]
+    ys = apply(rule,X)
     antsat = eval_result[:antsat]
     n_instances = ninstances(X)
     n_satisfy = sum(antsat)
@@ -306,6 +244,89 @@ function rulemetrics(
         support   = rule_support,
         error     = rule_error,
         length    = natoms(antecedent(rule)),
+    )
+end
+
+
+"""
+    evaluaterule(
+        r::Rule{O},
+        X::AbstractInterpretationSet,
+        Y::AbstractVector{L}
+    ) where {O,L<:Label}
+
+Evaluate the rule on a labeled dataset, and return a `NamedTuple` consisting of:
+- `antsat::Vector{Bool}`: satsfaction of the antecedent for each instance in the dataset;
+- `ys::Vector{Union{Nothing,O}}`: rule prediction. For each instance in X:
+    - `consequent(rule)` if the antecedent is satisfied,
+    - `nothing` otherwise.
+
+See also
+[`Rule`](@ref),
+[`SoleLogics.AbstractInterpretationSet`](@ref),
+[`Label`](@ref),
+[`checkantecedent`](@ref).
+"""
+function evaluaterule(
+    rule::Rule,
+    X::AbstractInterpretationSet,
+    Y::AbstractVector{<:Label};
+    kwargs...,
+)
+    #println("Evaluation rule in time...")
+    # ys = apply(rule,X)
+    #if SoleData.hassupports(X)
+    #    println("# Memoized Values: $(nmemoizedvalues(X))")
+    #end
+
+    antsat = checkantecedent(rule, X)
+
+    cons_sat = begin
+        idxs_sat = findall(antsat .== true)
+        cons_sat = Vector{Union{Bool,Nothing}}(fill(nothing, length(Y)))
+
+        idxs_true = begin
+            idx_cons = findall(outcome(consequent(rule)) .== Y)
+            intersect(idxs_sat, idx_cons)
+        end
+        idxs_false = begin
+            idx_cons = findall(outcome(consequent(rule)) .!= Y)
+            intersect(idxs_sat, idx_cons)
+        end
+        cons_sat[idxs_true]  .= true
+        cons_sat[idxs_false] .= false
+        cons_sat
+    end
+
+    # - `cons_sat::Vector{Union{Nothing,Bool}}`: for each instance in the dataset:
+    #     - `nothing` if antecedent is not satisfied.
+    #     - `false` if the antecedent is satisfied, but the consequent does not match the ground-truth label,
+    #     - `true` if the antecedent is satisfied, and the consequent matches the ground-truth label,
+
+    return (;
+        # ys = apply(rule,X),
+        antsat     = antsat,
+        # cons_sat    = cons_sat,
+    )
+end
+"""
+TODO
+"""
+function evaluaterule(
+    rule::Rule{L},
+    X::AbstractInterpretationSet,
+    Y::AbstractVector{<:Label};
+    kwargs...,
+) where {L<:CLabel}
+    classmask = (Y .== outcome(consequent(rule)))
+    checkmask = checkantecedent(r, X; kwargs...)
+    class_checkmask = checkmask[classmask]
+    anticlass_checkmask = checkmask[(!).(classmask)]
+    return (;
+        classmask = classmask,
+        checkmask = checkmask,
+        sensitivity = sum(class_checkmask)/length(class_checkmask),
+        specificity = sum(anticlass_checkmask)/length(anticlass_checkmask),
     )
 end
 
