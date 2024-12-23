@@ -27,7 +27,7 @@ struct DecisionEnsemble{O,T<:AbstractModel,A<:Base.Callable,W<:Union{Nothing,Abs
     info::NamedTuple
 
     function DecisionEnsemble{O}(
-        models::Vector{T},
+        models::AbstractVector{T},
         aggregation::Union{Nothing,Base.Callable},
         weights::Union{Nothing,AbstractVector},
         info::NamedTuple = (;);
@@ -49,11 +49,11 @@ struct DecisionEnsemble{O,T<:AbstractModel,A<:Base.Callable,W<:Union{Nothing,Abs
         # T = typeof(models)
         W = typeof(weights)
         A = typeof(aggregation)
-        new{O,T,A,W}(models, aggregation, weights, info)
+        new{O,T,A,W}(collect(models), aggregation, weights, info)
     end
     
     function DecisionEnsemble{O}(
-        models::Vector;
+        models::AbstractVector;
         kwargs...
     ) where {O}
         info = (;)
@@ -61,7 +61,7 @@ struct DecisionEnsemble{O,T<:AbstractModel,A<:Base.Callable,W<:Union{Nothing,Abs
     end
 
     function DecisionEnsemble{O}(
-        models::Vector,
+        models::AbstractVector,
         info::NamedTuple;
         kwargs...
     ) where {O}
@@ -69,7 +69,7 @@ struct DecisionEnsemble{O,T<:AbstractModel,A<:Base.Callable,W<:Union{Nothing,Abs
     end
 
     function DecisionEnsemble{O}(
-        models::Vector,
+        models::AbstractVector,
         aggregation::Union{Nothing,Base.Callable},
         info::NamedTuple = (;);
         kwargs...
@@ -78,8 +78,8 @@ struct DecisionEnsemble{O,T<:AbstractModel,A<:Base.Callable,W<:Union{Nothing,Abs
     end
 
     function DecisionEnsemble{O}(
-        models::Vector,
-        weights::Vector,
+        models::AbstractVector,
+        weights::AbstractVector,
         info::NamedTuple = (;);
         kwargs...
     ) where {O}
@@ -87,7 +87,7 @@ struct DecisionEnsemble{O,T<:AbstractModel,A<:Base.Callable,W<:Union{Nothing,Abs
     end
 
     function DecisionEnsemble(
-        models::Vector,
+        models::AbstractVector,
         args...; kwargs...
     )
         @assert length(models) > 0 "Cannot instantiate empty ensemble!"
