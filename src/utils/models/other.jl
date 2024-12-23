@@ -312,7 +312,7 @@ struct DecisionSet{O} <: AbstractModel{O}
         isnonoverlapping::Bool = false,
         info::NamedTuple = (;),
     ) where {O}
-        DecisionSet{O}(rules, iscomplete, isnonoverlapping, info)
+        new{O}(rules, iscomplete, isnonoverlapping, info)
     end
 
     function DecisionSet(
