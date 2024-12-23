@@ -220,9 +220,9 @@ function rulemetrics(
 )
     eval_result = evaluaterule(rule, X, Y; kwargs...)
     ys = apply(rule,X)
-    antsat = eval_result[:antsat]
+    checkmask = eval_result[:checkmask]
     n_instances = ninstances(X)
-    n_satisfy = sum(antsat)
+    n_satisfy = sum(checkmask)
 
     rule_support =  n_satisfy / n_instances
 
@@ -230,17 +230,17 @@ function rulemetrics(
         if outcometype(consequent(rule)) <: CLabel
             # Number of incorrectly classified instances divided by number of instances
             # satisfying the rule condition.
-            _error(ys[antsat],Y[antsat])
+            _error(ys[checkmask],Y[checkmask])
         elseif outcometype(consequent(rule)) <: RLabel
             # Mean Squared Error (mse)
-            mse(ys[antsat],Y[antsat])
+            mse(ys[checkmask],Y[checkmask])
         else
             error("The outcome type of the consequent of the input rule $(outcometype(consequent(rule))) is not among those accepted")
         end
     end
 
     return (;
-        antsat    = antsat,
+        checkmask    = checkmask,
         support   = rule_support,
         error     = rule_error,
         length    = natoms(antecedent(rule)),
@@ -256,7 +256,7 @@ end
     ) where {O,L<:Label}
 
 Evaluate the rule on a labeled dataset, and return a `NamedTuple` consisting of:
-- `antsat::Vector{Bool}`: satsfaction of the antecedent for each instance in the dataset;
+- `checkmask::Vector{Bool}`: satsfaction of the antecedent for each instance in the dataset;
 - `ys::Vector{Union{Nothing,O}}`: rule prediction. For each instance in X:
     - `consequent(rule)` if the antecedent is satisfied,
     - `nothing` otherwise.
@@ -279,10 +279,10 @@ function evaluaterule(
     #    println("# Memoized Values: $(nmemoizedvalues(X))")
     #end
 
-    antsat = checkantecedent(rule, X)
+    checkmask = checkantecedent(rule, X)
 
     cons_sat = begin
-        idxs_sat = findall(antsat .== true)
+        idxs_sat = findall(checkmask .== true)
         cons_sat = Vector{Union{Bool,Nothing}}(fill(nothing, length(Y)))
 
         idxs_true = begin
@@ -305,7 +305,7 @@ function evaluaterule(
 
     return (;
         # ys = apply(rule,X),
-        antsat     = antsat,
+        checkmask     = checkmask,
         # cons_sat    = cons_sat,
     )
 end
@@ -319,7 +319,7 @@ function evaluaterule(
     kwargs...,
 ) where {L<:CLabel}
     classmask = (Y .== outcome(consequent(rule)))
-    checkmask = checkantecedent(r, X; kwargs...)
+    checkmask = checkantecedent(rule, X; kwargs...)
     class_checkmask = checkmask[classmask]
     anticlass_checkmask = checkmask[(!).(classmask)]
     return (;
