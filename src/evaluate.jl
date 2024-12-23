@@ -326,7 +326,7 @@ function evaluaterule(
         classmask = classmask,
         checkmask = checkmask,
         sensitivity = sum(class_checkmask)/length(class_checkmask),
-        specificity = sum(anticlass_checkmask)/length(anticlass_checkmask),
+        specificity = 1-(sum(anticlass_checkmask)/length(anticlass_checkmask)),
     )
 end
 
