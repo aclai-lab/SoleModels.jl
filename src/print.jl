@@ -459,6 +459,68 @@ end
 
 function printmodel(
     io::IO,
+    m::DecisionSet;
+    header = DEFAULT_HEADER,
+    indentation_str = "",
+    indentation = default_indentation,
+    depth = 0,
+    max_depth = nothing,
+    show_subtree_info = false,
+    show_rule_metrics = true,
+    show_subtree_metrics = false,
+    show_metrics = false,
+    show_shortforms = false,
+    show_intermediate_finals = false,
+    tree_mode = false,
+    show_symbols = true,
+    syntaxstring_kwargs = (;),
+    #
+    parenthesize_atoms = true,
+    kwargs...,
+)
+    (
+        indentation_list_children,
+        indentation_hspace,
+        indentation_any_first,
+        indentation_any_space,
+        indentation_last_first,
+        indentation_last_space
+    ) = indentation
+    if header != false
+        _typestr = string(header == true ? typeof(m) :
+            header == :brief ? nameof(typeof(m)) :
+                error("Unexpected value for parameter header: $(header).")
+        )
+        println(io, "$(indentation_str)$(_typestr)$((length(info(m)) == 0) ?
+        "" : "\n$(indentation_str)Info: $(info(m))")")
+    end
+    depth == 0 && show_symbols && print(io, MODEL_SYMBOL)
+    ########################################################################################
+    _show_rule_metrics = show_rule_metrics
+    # TODO show this metrics if show_metrics
+    ########################################################################################
+    if isnothing(max_depth) || depth < max_depth
+        println(io, "$(indentation_list_children)")
+        for (i_rule, rule) in enumerate(rules(m))
+            # pipe = indentation_any_first
+            pipe = (i_rule != nrules(m) ? indentation_any_first : indentation_last_first)*"[$(i_rule)/$(nrules(m))]"
+            # println(io, "$(indentation_str*pipe)$(syntaxstring(antecedent(rule); (haskey(info(rule), :syntaxstring_kwargs) ? info(rule).syntaxstring_kwargs : (;))..., syntaxstring_kwargs..., parenthesize_atoms = parenthesize_atoms, kwargs...))")
+            pad_str = indentation_str*indentation_any_space*repeat(indentation_hspace, length(pipe)-length(indentation_any_space)-1)
+            # print(io, "$(pad_str*indentation_last_first)")
+            ind_str = pad_str*indentation_last_space
+            # @_print_submodel io consequent(rule) ind_str indentation depth max_depth show_subtree_info false show_subtree_metrics show_shortforms show_intermediate_finals tree_mode show_symbols syntaxstring_kwargs parenthesize_atoms kwargs
+            print(io, pipe)
+            @_print_submodel io rule ind_str indentation depth max_depth show_subtree_info _show_rule_metrics show_subtree_metrics show_shortforms show_intermediate_finals tree_mode show_symbols syntaxstring_kwargs parenthesize_atoms kwargs
+        end
+    else
+        depth != 0 && print(io, " ")
+        println(io, "[...]")
+    end
+    nothing
+end
+
+function printmodel(
+    io::IO,
     m::DecisionEnsemble;
     header = DEFAULT_HEADER,
     indentation_str = "",

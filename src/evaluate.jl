@@ -316,18 +316,34 @@ function evaluaterule(
     rule::Rule{L},
     X::AbstractInterpretationSet,
     Y::AbstractVector{<:Label};
+    compute_explanations = false,
     kwargs...,
 ) where {L<:CLabel}
     classmask = (Y .== outcome(consequent(rule)))
-    checkmask = checkantecedent(rule, X; kwargs...)
+    checkmask, explanations = begin
+        if compute_explanations
+            disjs = SoleLogics.disjuncts(SoleLogics.LeftmostDisjunctiveForm(antecedent(rule)))
+            checkmatrix = hcat([check(disj, X; kwargs...) for disj in disjs]...)
+            # @show checkmatrix
+            checkmask = map(any, eachrow(checkmatrix))
+            explanations = [disjs[checkrow] for checkrow in eachrow(checkmatrix)]
+            checkmask, explanations
+        else
+            checkmask = checkantecedent(rule, X; kwargs...)
+            explanations = nothing
+            checkmask, explanations
+        end
+    end
     class_checkmask = checkmask[classmask]
     anticlass_checkmask = checkmask[(!).(classmask)]
-    return (;
+    out = (;
         classmask = classmask,
         checkmask = checkmask,
         sensitivity = sum(class_checkmask)/length(class_checkmask),
         specificity = 1-(sum(anticlass_checkmask)/length(anticlass_checkmask)),
+        explanations = explanations,
     )
+    return out
 end
 
 # TODO: if delays not in info(m) ?

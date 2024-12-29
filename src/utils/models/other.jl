@@ -336,6 +336,7 @@ struct DecisionSet{O} <: AbstractModel{O}
 end
 
 rules(m::DecisionSet) = m.rules
+nrules(m::DecisionSet) = length(rules(m))
 
 iscomplete(m::DecisionSet) = m.iscomplete
 isnonoverlapping(m::DecisionSet) = m.isnonoverlapping
