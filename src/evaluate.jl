@@ -322,6 +322,7 @@ function evaluaterule(
     classmask = (Y .== outcome(consequent(rule)))
     checkmask, explanations = begin
         if compute_explanations
+            # Note: This is kind of quick and dirty.
             disjs = SoleLogics.disjuncts(SoleLogics.LeftmostDisjunctiveForm(antecedent(rule)))
             checkmatrix = hcat([check(disj, X; kwargs...) for disj in disjs]...)
             # @show checkmatrix
