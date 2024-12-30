@@ -42,8 +42,13 @@ See also [`listrules`](@ref), [`Rule`](@ref)], [`issymbolicmodel`](@ref).
 """
 struct PlainRuleExtractor <: RuleExtractor end
 isexact(::PlainRuleExtractor) = true
-extractrules(::PlainRuleExtractor, m, args...; kwargs...) = listrules(m, args...; kwargs...)
-
+function extractrules(::PlainRuleExtractor, m, args...; kwargs...)
+    if haslistrules(m)
+        listrules(m, args...; kwargs...)
+    else
+        listrules(solemodel(m), args...; kwargs...)
+    end
+end
 
 ############################################################################################
 ############################################################################################

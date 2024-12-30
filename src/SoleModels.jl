@@ -62,7 +62,9 @@ export DecisionForest, trees
 
 export MixedModel
 
-export solemodel
+export haslistrules, solemodel
+
+export isensemble
 
 include("types/model.jl")
 include("types/AbstractTrees.jl")

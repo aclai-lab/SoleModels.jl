@@ -1,10 +1,20 @@
+# TODO document, together with issymbolic and listrules
+"""
+    haslistrules(m::Any)
+
+This function extracts symbolic final rules from a symbolic model..
+
+See also [`AbstractModel`](@ref), [`listrules`](@ref)
+[`LeafModel`](@ref).
+"""
+haslistrules(m) = false
+haslistrules(m::AbstractModel) = true
 
 # TODO document, together with issymbolic and listrules
 """
     solemodel(m::Any)
 
 This function translates a symbolic model to a symbolic model using the structures defined in SoleModel.jl.
-# Interface
 
 See also [`AbstractModel`](@ref), [`ConstantModel`](@ref), [`FunctionModel`](@ref),
 [`LeafModel`](@ref).
@@ -58,3 +68,7 @@ natoms(m::AbstractModel) = error("Please, provide method natoms(::$(typeof(m))).
 nconnectives(m::AbstractModel) = error("Please, provide method nconnectives(::$(typeof(m))).")
 """$doc_syntax_utils_models"""
 nsyntaxleaves(m::AbstractModel) = error("Please, provide method nsyntaxleaves(::$(typeof(m))).")
+
+
+# TODO
+isensemble(m) = false

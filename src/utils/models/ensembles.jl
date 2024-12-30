@@ -98,6 +98,9 @@ struct DecisionEnsemble{O,T<:AbstractModel,A<:Base.Callable,W<:Union{Nothing,Abs
 
 end
 
+
+isensemble(m::DecisionEnsemble) = true
+
 modelstype(m::DecisionEnsemble{O,T}) where {O,T} = T
 models(m::DecisionEnsemble) = m.models
 nmodels(m::DecisionEnsemble) = length(models(m))
@@ -313,6 +316,8 @@ struct MaxDecisionBag{O,TO<:AbstractModel,TU<:AbstractModel
         MaxDecisionBag{O}(output_producing_models, weight_producing_models, args...; kwargs...)
     end
 end
+
+isensemble(m::MaxDecisionBag) = true
 
 function apply(m::MaxDecisionBag, d::AbstractInterpretation; suppress_parity_warning = false, kwargs...)
     weights = [apply(wm, d; suppress_parity_warning, kwargs...) for wm in m.weight_producing_models]
