@@ -4,6 +4,7 @@ using Reexport
 using StatsBase
 using ThreadSafeDicts
 using Lazy
+using Lazy: @forward
 using FunctionWrappers: FunctionWrapper
 using CategoricalArrays
 
@@ -59,6 +60,7 @@ export height
 
 export DecisionEnsemble, models
 export DecisionForest, trees
+export DecisionSet, rules, nrules
 
 export MixedModel
 

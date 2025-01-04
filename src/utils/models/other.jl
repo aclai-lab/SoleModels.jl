@@ -344,6 +344,19 @@ end
 rules(m::DecisionSet) = m.rules
 nrules(m::DecisionSet) = length(rules(m))
 
+# Helpers
+@forward DecisionSet.rules (
+    Base.length,
+    Base.getindex,
+    Base.setindex!,
+    Base.push!,
+    Base.pushfirst!,
+    Base.append!,
+    Base.iterate, Base.IteratorSize, Base.IteratorEltype,
+    Base.firstindex, Base.lastindex,
+    Base.keys, Base.values,
+)
+
 iscomplete(m::DecisionSet) = m.iscomplete
 isnonoverlapping(m::DecisionSet) = m.isnonoverlapping
 
