@@ -134,7 +134,7 @@ function readmetrics(m::Rule{L}; round_digits = nothing, class_share_map = nothi
         coverage = cons_metrics.coverage * (length(_gts_leaf)/length(_gts))
         confidence = cons_metrics.confidence
         metrics = (;
-            ninstances = length(_gts),
+            ninstances  = length(_gts),
             ncovered = length(_gts_leaf),
             coverage = _metround(coverage, round_digits),
             confidence = confidence,
@@ -149,8 +149,8 @@ function readmetrics(m::Rule{L}; round_digits = nothing, class_share_map = nothi
         metrics
     elseif haskey(info(m), :supporting_labels)
         return (; ninstances = length(info(m).supporting_labels), additional_metrics...)
-    elseif haskey(info(consequent(m)), :supporting_labels)
-        return (; ninstances = length(info(m).supporting_labels), additional_metrics...)
+    # elseif haskey(info(consequent(m)), :supporting_labels)
+    #     return (; ninstances = length(info(consequent(m)).supporting_labels), additional_metrics...)
     else
         return (;)
     end
@@ -196,7 +196,7 @@ metricstable(
     )
 
 Compute metrics for a rule with respect to a labeled dataset and returns a `NamedTuple` consisting of:
-- `support`: number of instances satisfying the antecedent of the rule divided by
+- `coverage`: number of instances satisfying the antecedent of the rule divided by
     the total number of instances;
 - `error`:
     - For classification problems: number of instances that were not classified
@@ -218,13 +218,12 @@ function rulemetrics(
     Y::AbstractVector{<:Label};
     kwargs...,
 )
-    eval_result = evaluaterule(rule, X, Y; kwargs...)
     ys = apply(rule,X)
-    checkmask = eval_result[:checkmask]
+    checkmask = checkantecedent(rule, X; kwargs...)
     n_instances = ninstances(X)
     n_satisfy = sum(checkmask)
 
-    rule_support =  n_satisfy / n_instances
+    rule_coverage =  n_satisfy / n_instances
 
     rule_error = begin
         if outcometype(consequent(rule)) <: CLabel
@@ -241,9 +240,9 @@ function rulemetrics(
 
     return (;
         checkmask    = checkmask,
-        support   = rule_support,
+        coverage   = rule_coverage,
         error     = rule_error,
-        length    = natoms(antecedent(rule)),
+        natoms    = natoms(antecedent(rule)),
     )
 end
 

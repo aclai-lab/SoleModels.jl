@@ -106,18 +106,24 @@ function listimmediaterules(
         ant = antecedent(rule)
         force_syntaxtree && (ant = tree(ant))
         # @show ant
-        nant = SoleLogics.NEGATION(ant)
+        # println()
+        # @show typeof(ant)
+        nant = SoleLogics.NEGATION(tree(ant))
+        # @show typeof(nant)
         # @show typeof(nant)
         normalize && (nant = SoleLogics.normalize(nant; normalize_kwargs...))
         # @show typeof(nant)
         nant = _scalar_simplification(nant, scalar_simplification)
         # @show typeof(nant)
+        # readline()
         assumed_formulas = push!(assumed_formulas, nant)
     end
     # @show eltype(assumed_formulas)
+    # @show assumed_formulas
     default_φ = join_antecedents(assumed_formulas)
     # @show default_φ
     default_φ = _scalar_simplification(default_φ, scalar_simplification)
+    # @show default_φ
     # normalize && (default_φ = SoleLogics.normalize(default_φ; normalize_kwargs...))
     push!(normalized_rules, Rule(default_φ, defaultconsequent(m), info(defaultconsequent(m))))
     normalized_rules

@@ -19,10 +19,10 @@ This function translates a symbolic model to a symbolic model using the structur
 See also [`AbstractModel`](@ref), [`ConstantModel`](@ref), [`FunctionModel`](@ref),
 [`LeafModel`](@ref).
 """
-function solemodel(o::Any, args...; kwargs...)
+function solemodel(o::Any, FM::Type{<:AbstractModel} = AbstractModel, args...; kwargs...)
     try
-        convert(FM, wrap(o))
         # FM TODO
+        convert(FM, wrap(o))
     catch e
         if e isa MethodError
             throw(MethodError("Please, provide solemodel(::$(typeof(o)))"))

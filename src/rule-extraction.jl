@@ -71,6 +71,9 @@ function join_antecedents(assumed_formulas::Vector{<:SoleLogics.Formula})
                     push!(new_assumed_formulas, φ)
                 end
             end
+            # @show typeof.(new_assumed_formulas)
+            # @show syntaxstring.(new_assumed_formulas)
+            # @show LeftmostConjunctiveForm(new_assumed_formulas)
             LeftmostConjunctiveForm(new_assumed_formulas)
         else
             (length(assumed_formulas) == 1 ? first(assumed_formulas) : ∧(filter(!istop, assumed_formulas)...))
@@ -252,6 +255,7 @@ function _listrules(
     min_confidence::Union{Nothing,Number} = nothing,
     min_coverage::Union{Nothing,Number} = nothing,
     min_ninstances::Union{Nothing,Number} = nothing,
+    flip_atoms::Bool = true,
     kwargs...,
 ) where {O}
     use_leftmostlinearform = !isnothing(use_leftmostlinearform) ? use_leftmostlinearform : (antecedent(m) isa SoleLogics.AbstractSyntaxStructure) # TODO default to true
@@ -259,7 +263,8 @@ function _listrules(
     subkwargs = (;
         use_shortforms = use_shortforms,
         use_leftmostlinearform = use_leftmostlinearform,
-        normalize = false,
+        # normalize = false, TODO?
+        normalize = normalize,
         normalize_kwargs = normalize_kwargs,
         scalar_simplification = false,
         force_syntaxtree = force_syntaxtree,
@@ -267,7 +272,7 @@ function _listrules(
         min_coverage = min_coverage,
         min_ninstances = min_ninstances,
         kwargs...)
-
+    # @show normalize, normalize_kwargs
     _subrules = []
     if isnothing(min_ninstances) || (haskey(info(m), :supporting_labels) && length(info(m, :supporting_labels)) >= min_ninstances)
     # if (haskey(info(m), :supporting_labels) && length(info(m, :supporting_labels)) >= min_ninstances) &&
@@ -303,7 +308,10 @@ function _listrules(
                 if (use_shortforms && haskey(info(subrule), :shortform))
                     info(subrule)[:shortform], true
                 else
-                    (flag ? antecedent(m) : ¬antecedent(m)), false
+                    # Automatic flip.
+                    smart_neg(f) = (f isa Atom && flip_atoms && SoleLogics.hasdual(f) ? SoleLogics.dual(f) : ¬f)
+                    _antd = antecedent(m)
+                    (flag ? _antd : smart_neg(_antd)), false
                 end
             end
             antformula = force_syntaxtree ? tree(antformula) : antformula
@@ -334,9 +342,14 @@ function _listrules(
                         φ
                     end
                 end
+                # @show normalize, normalize_kwargs
                 normalize && (ant = SoleLogics.normalize(ant; normalize_kwargs...))
+                # @show 1
                 # @show ant
                 ant = _scalar_simplification(ant, scalar_simplification)
+                # @show 2
+                # @show ant
+                # readline()
                 Rule(ant, consequent(subrule), merge(info(subrule), _info))
             else
                 error("Unexpected rule type: $(typeof(subrule)).")
