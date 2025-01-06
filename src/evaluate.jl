@@ -308,6 +308,7 @@ function evaluaterule(
         # cons_sat    = cons_sat,
     )
 end
+
 """
 TODO
 """
@@ -334,13 +335,13 @@ function evaluaterule(
             checkmask, explanations
         end
     end
-    class_checkmask = checkmask[classmask]
-    anticlass_checkmask = checkmask[(!).(classmask)]
+    pos_checkmask = checkmask[classmask]
+    neg_checkmask = checkmask[(!).(classmask)]
     out = (;
         classmask = classmask,
         checkmask = checkmask,
-        sensitivity = sum(class_checkmask)/length(class_checkmask),
-        specificity = 1-(sum(anticlass_checkmask)/length(anticlass_checkmask)),
+        sensitivity = sum(pos_checkmask)/length(pos_checkmask),
+        specificity = 1-(sum(neg_checkmask)/length(neg_checkmask)),
         explanations = explanations,
     )
     return out
