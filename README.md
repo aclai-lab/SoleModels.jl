@@ -120,6 +120,7 @@ The formal foundations of the Sole framework are given in [giopaglia](https://gi
 
 <!-- TODO explain -->
 
+
 ## About
 
 The package is developed by the [ACLAI Lab](https://aclai.unife.it/en/) @ University of Ferrara.
