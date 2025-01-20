@@ -15,7 +15,7 @@ end
 println("Julia version: ", VERSION)
 
 test_suites = [
-    ("Models", ["base.jl", ]),
+    ("Models", ["base.jl", "test_tree.jl"]),
     ("Miscellaneous", ["misc.jl", ]),
     ("Parse", ["parse.jl", ]),
     ("Rules", ["juliacon2024.jl", ]),
