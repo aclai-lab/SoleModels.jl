@@ -386,20 +386,22 @@ _listrules(m::DecisionTree; kwargs...) = _listrules(root(m); kwargs...)
 
 function _listrules(
     m::DecisionEnsemble;
-    suppress_parity_warning = false,
+    # weights::Union{Nothing, AbstractVector} = nothing,
+    suppress_parity_warning = true,
     kwargs...
 )
-    error("TODO check method & implement more efficient strategies for specific cases.")
-    modelrules = [listrules(subm; kwargs...) for subm in models(m)]
+    # error("TODO check method & implement more efficient strategies for specific cases.")
+    modelrules = [_listrules(subm; kwargs...) for subm in models(m)]
     @assert all(r->consequent(r) isa ConstantModel, Iterators.flatten(modelrules))
 
     IterTools.imap(rulecombination->begin
         rulecombination = collect(rulecombination)
         ant = join_antecedents(antecedent.(rulecombination))
-        cons = bestguess(outcome.(consequent.(rulecombination)); suppress_parity_warning)
-        infos = info.(rulecombination)
-        # TODO @show infos; info = (;)
-        Rule(ant, cons)
+        o_cons = bestguess(outcome.(consequent.(rulecombination)), m.weights; suppress_parity_warning)
+        i_cons = merge(info.(consequent.(rulecombination))...)
+        cons = ConstantModel(o_cons, i_cons)
+        infos = merge(info.(rulecombination)...)
+        Rule(ant, cons, infos)
         end, Iterators.product(modelrules...)
     )
 end

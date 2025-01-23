@@ -95,7 +95,6 @@ struct DecisionEnsemble{O,T<:AbstractModel,A<:Base.Callable,W<:Union{Nothing,Abs
         O = Union{outcometype.(models)...}
         DecisionEnsemble{O}(models, args...; kwargs...)
     end
-
 end
 
 
@@ -104,6 +103,8 @@ isensemble(m::DecisionEnsemble) = true
 modelstype(m::DecisionEnsemble{O,T}) where {O,T} = T
 models(m::DecisionEnsemble) = m.models
 nmodels(m::DecisionEnsemble) = length(models(m))
+
+iscomplete(m::DecisionEnsemble) = any(iscomplete.(models(m)))
 
 aggregation(m::DecisionEnsemble) = m.aggregation
 weights(m::DecisionEnsemble) = m.weights
