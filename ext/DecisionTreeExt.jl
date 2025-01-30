@@ -9,7 +9,8 @@ import DecisionTree as DT
 function get_condition(featid, featval, featurenames)
     test_operator = (<)
     # @show fieldnames(typeof(tree))
-    feature = !isnothing(featurenames) ? VariableValue(featurenames[featid]) : VariableValue(featid)
+    # feature = !isnothing(featurenames) ? VariableValue(featurenames[featid]) : VariableValue(featid)
+    feature = !isnothing(featurenames) ? VariableValue(featurenames[featid], featid) : VariableValue(featid)
     return ScalarCondition(feature, test_operator, featval)
 end
 
