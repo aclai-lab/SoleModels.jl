@@ -106,9 +106,16 @@ function SoleModels.solemodel(
     return m
 end
 
-function SoleModels.solemodel(tree::DT.InfoNode; keep_condensed = false, featurenames = true, classlabels = tree.info.classlabels, kwargs...)
+function SoleModels.solemodel(
+    tree::DT.InfoNode{T,orig_O};
+    keep_condensed=false,
+    featurenames=true,
+    # classlabels=tree.info.classlabels,
+    kwargs...
+) where {T,orig_O}
     # @show fieldnames(typeof(tree))
     featurenames = featurenames == true ? tree.info.featurenames : featurenames
+    classlabels = haskey(tree.info, :classlabels) ? tree.info.classlabels : nothing
     
     root, info = begin
         if keep_condensed
