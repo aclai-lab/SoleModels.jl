@@ -153,12 +153,9 @@ function SoleModels.solemodel(
         )
     )
 
-    if isnothing(weights)
-        m = DecisionEnsemble(trees, info)
-    else
-        m = DecisionEnsemble(trees, weights, info)
-    end
-    return m
+    return isnothing(weights) ?
+        DecisionEnsemble(trees, info) :
+        DecisionEnsemble(trees, weights, info)
 end
 
 """
@@ -170,7 +167,7 @@ When reaching a leaf, calls `xgbleaf` with the path's collected conditions.
 """
 function SoleModels.solemodel(
     tree::XGBoost.Node,
-    X,
+    X::AbstractMatrix,
     y::AbstractVector;
     path_conditions = Formula[],
     classlabels=nothing,
@@ -217,7 +214,7 @@ end
 function xgbleaf(
     leaf::XGBoost.Node,
     formula::Vector{<:Formula},
-    X,
+    X::AbstractMatrix,
     y::AbstractVector;
     classlabels=nothing,
     featurenames=nothing,
