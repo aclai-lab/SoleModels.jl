@@ -116,7 +116,9 @@ end
 
 function SoleModels.solemodel(
     model::Vector{<:XGBoost.Node},
-    args...;
+    # args...;
+    X::AbstractMatrix,
+    y::AbstractVector;
     weights::Union{AbstractVector{<:Number}, Nothing}=nothing,
     classlabels = nothing,
     featurenames = nothing,
@@ -140,7 +142,11 @@ function SoleModels.solemodel(
         # O = orig_O
     end
     
-    trees = filter(!isnothing, map(t -> SoleModels.solemodel(t, args...; classlabels, featurenames, keep_condensed, kwargs...), model))
+    trees = map(t -> begin
+        # isnothing(t.split) ?
+        # xgbleaf(t, Formula[], X, y; classlabels, featurenames) :
+        SoleModels.solemodel(t, X, y; classlabels, featurenames, keep_condensed, kwargs...)
+    end, model)
 
     if !isnothing(featurenames)
         info = merge(info, (; featurenames=featurenames, ))
@@ -177,7 +183,8 @@ function SoleModels.solemodel(
     keep_condensed && error("Cannot keep condensed XGBoost.Node.")
 
     # xgboost trees could be composed of only one leaf, without any split
-    isnothing(tree.split) && return nothing
+    # isnothing(tree.split) && return nothing
+    isnothing(tree.split) && return xgbleaf(tree, Formula[], X, y; classlabels, featurenames)
 
     antecedent = Atom(get_condition(tree.split, tree.split_condition, featurenames; test_operator=(<)))
     
@@ -195,6 +202,7 @@ function SoleModels.solemodel(
     else
         SoleModels.solemodel(tree.children[1], X, y; path_conditions=left_path, classlabels=classlabels, featurenames=featurenames)
     end
+    isnothing(lefttree) && return Nothing
     
     righttree = if isnothing(tree.children[2].split)
         # @show SoleModels.join_antecedents(right_path)
@@ -202,6 +210,7 @@ function SoleModels.solemodel(
     else
         SoleModels.solemodel(tree.children[2], X, y; path_conditions=right_path, classlabels=classlabels, featurenames=featurenames)
     end
+    isnothing(righttree) && return Nothing
 
     info = (;
         leaf_values = [lefttree.info[:leaf_values]..., righttree.info[:leaf_values]...],
@@ -223,6 +232,7 @@ function xgbleaf(
     keep_condensed && error("Cannot keep condensed XGBoost.Node.")
 
     bitX = bitmap_check_conditions(X, formula)
+    # all(bitX) == false && return Nothing
     prediction = SoleModels.bestguess(y[bitX]; suppress_parity_warning=true)
     labels = unique(y)
 
