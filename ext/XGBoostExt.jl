@@ -232,20 +232,18 @@ function xgbleaf(
     keep_condensed && error("Cannot keep condensed XGBoost.Node.")
 
     bitX = bitmap_check_conditions(X, formula)
-    # all(bitX) == false && return Nothing
-    prediction = SoleModels.bestguess(y[bitX]; suppress_parity_warning=true)
-    labels = unique(y)
+    push!(bitX, 0)
 
-    # if !isnothing(classlabels)
-    #     prediction = classlabels[prediction]
-    #     labels = classlabels[labels]
-    # end
+    labels = unique(y)
+    prediction = SoleModels.bestguess(y[bitX]; suppress_parity_warning=true)
+
+    isnothing(prediction) && (prediction = labels[findfirst(x -> x == "nothing", labels)])
 
     info = (;
-        leaf_values = leaf.leaf,
-        supporting_predictions = fill(prediction, length(labels)),
-        supporting_labels = labels,
-    )
+    leaf_values = leaf.leaf,
+    supporting_predictions = fill(prediction, length(labels)),
+    supporting_labels = labels,
+)
     return SoleModels.ConstantModel(prediction, info)
 end
 
