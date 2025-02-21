@@ -32,12 +32,10 @@ ZipFile = "a5390f91-8eb1-5f08-bee0-b1d1ffed6cea"
 
 [weakdeps]
 DecisionTree = "7806a523-6efd-50cb-b5f6-3fa6f1930dbb"
-MLJXGBoostInterface = "54119dfa-1dab-4055-a167-80440f4f7a91"
 XGBoost = "009559a3-9522-5dbb-924b-0b6ed2b22bb9"
 
 [extensions]
 DecisionTreeExt = "DecisionTree"
-MLJXGBoostInterfaceExt = "MLJXGBoostInterface"
 XGBoostExt = "XGBoost"
 
 [compat]
