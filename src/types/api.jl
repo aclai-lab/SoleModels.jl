@@ -32,6 +32,7 @@ function solemodel(o::Any, FM::Type{<:AbstractModel} = AbstractModel, args...; k
     end
 end
 
+function fitted_params end
 
 import SoleLogics: alphabet,
                     atoms,
