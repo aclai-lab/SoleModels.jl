@@ -323,7 +323,20 @@ function evaluaterule(
     checkmask, explanations = begin
         if compute_explanations
             # Note: This is kind of quick and dirty.
-            disjs = SoleLogics.disjuncts(SoleLogics.LeftmostDisjunctiveForm(antecedent(rule)))
+
+            #disjs = SoleLogics.disjuncts(SoleLogics.LeftmostDisjunctiveForm(antecedent(rule)))
+            
+            ante = antecedent(rule)
+            if (ante isa SyntaxBranch)
+                # Radice disgiuntiva: trasformiamo in forma “disjunctive” e poi estraiamo i disgiunti
+                dnf = SoleLogics.LeftmostDisjunctiveForm(ante)
+                disjs = SoleLogics.disjuncts(dnf)
+            else
+                # Non è un OR in radice → un singolo disgiunto
+                disjs = [ante] 
+            end
+            
+
             checkmatrix = hcat([check(disj, X; kwargs...) for disj in disjs]...)
             # @show checkmatrix
             checkmask = map(any, eachrow(checkmatrix))
