@@ -350,11 +350,24 @@ function evaluaterule(
     end
     pos_checkmask = checkmask[classmask]
     neg_checkmask = checkmask[(!).(classmask)]
+    
+    #=
+    println("pos_checkmask: ",pos_checkmask)
+    println("neg_checkmask: ",neg_checkmask)
+
+    println("lgh pos_checkmask ",length(pos_checkmask))
+    println("lgh neg_checkmask ",length(neg_checkmask))
+    =#
+
+    # Controlli per array vuoti
+    sensitivity = length(pos_checkmask) > 0 ? sum(pos_checkmask)/length(pos_checkmask) : 0.0
+    specificity = length(neg_checkmask) > 0 ? 1-(sum(neg_checkmask)/length(neg_checkmask)) : 1.0
+
     out = (;
         classmask = classmask,
         checkmask = checkmask,
-        sensitivity = sum(pos_checkmask)/length(pos_checkmask),
-        specificity = 1-(sum(neg_checkmask)/length(neg_checkmask)),
+        sensitivity = sensitivity,
+        specificity = specificity,
         explanations = explanations,
     )
     return out
