@@ -74,6 +74,7 @@ include("types/api.jl")
 
 include("utils/models/leaf.jl")
 include("utils/models/rule-and-branch.jl")
+include("utils/models/decisionset.jl")
 include("utils/models/other.jl")
 include("utils/models/meta.jl") # TODO deprecate?
 include("utils/models/ensembles.jl")
