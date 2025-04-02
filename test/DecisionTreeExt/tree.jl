@@ -6,6 +6,7 @@ using DataFrames
 
 using MLJDecisionTreeInterface
 using SoleModels
+using Random
 
 import DecisionTree as DT
 
@@ -13,8 +14,9 @@ X, y = @load_iris
 X = DataFrame(X)
 
 train_ratio = 0.8
+rng = Xoshiro(11)
 
-train, test = partition(eachindex(y), train_ratio, shuffle=true)
+train, test = partition(eachindex(y), train_ratio; shuffle=true, rng)
 X_train, y_train = X[train, :], y[train]
 X_test, y_test = X[test, :], y[test]
 
@@ -47,7 +49,8 @@ preds = apply(solem, X_test)
 preds2 = apply!(solem, X_test, y_test)
 
 @test preds == preds2
-@test sum(preds .== y_test)/length(y_test) > 0.7
+accuracy = sum(preds .== y_test)/length(y_test)
+@test accuracy > 0.7
 
 # apply!(solem, X_test, y_test, mode = :append)
 
