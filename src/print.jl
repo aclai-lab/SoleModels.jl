@@ -521,7 +521,7 @@ end
 
 function printmodel(
     io::IO,
-    m::DecisionEnsemble;
+    m::Union{DecisionEnsemble, DecisionXGBoost};
     header = DEFAULT_HEADER,
     indentation_str = "",
     indentation = default_indentation,

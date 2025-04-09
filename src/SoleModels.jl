@@ -62,6 +62,8 @@ export DecisionEnsemble, models
 export DecisionForest, trees
 export DecisionSet, rules, nrules
 
+export DecisionXGBoost
+
 export MixedModel
 
 export haslistrules, solemodel

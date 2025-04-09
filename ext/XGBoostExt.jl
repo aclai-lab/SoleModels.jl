@@ -3,6 +3,8 @@ module XGBoostExt
 using SoleModels
 using XGBoost
 
+using CategoricalArrays
+
 import SoleModels: alphabet, solemodel
 
 function alphabet(model::XGBoost.Booster; kwargs...)
@@ -31,8 +33,8 @@ function alphabet(model::XGBoost.Booster; kwargs...)
     _alphabet!(Atom{ScalarCondition}[], model; kwargs...)
 end
 
-
 # TODO fix and test. Problem: where are the tree weights? How do I write this in the multi-class case?
+# leaf values are actually the weight of the tree
 
 # # Convert an XGBoost.Booster to a Sole Ensemble
 # function solemodel(model::XGBoost.Booster; with_stats::Bool = true, kwargs...)
@@ -95,15 +97,12 @@ function get_condition(featidstr, featval, featurenames; test_operator)
     return ScalarCondition(feature, test_operator, featval)
 end
 
-function satisfies_conditions(row, formula)
-    # check_cond = true
-    # for atom in formula
-    #     if !atom.value.metacond.test_operator(row[atom.value.metacond.feature.i_variable], atom.value.threshold)
-    #         check_cond = false
-    #     end
-    # end
-    # return check_cond
+function get_condition(class_idx, featurenames; test_operator, featval)
+    feature = isnothing(featurenames) ? VariableValue(class_idx) : VariableValue(class_idx, featurenames[class_idx])
+    return ScalarCondition(feature, test_operator, featval)
+end
 
+function satisfies_conditions(row, formula)
     all(atom -> atom.value.metacond.test_operator(
                     row[atom.value.metacond.feature.i_variable],
                     atom.value.threshold), formula
@@ -114,54 +113,59 @@ function bitmap_check_conditions(X, formula)
     BitVector([satisfies_conditions(row, formula) for row in eachrow(X)])
 end
 
+function early_return(leaf, antecedent, clabel, classl)
+    info =(;
+    leaf_values = leaf,
+    supporting_predictions = clabel,
+    supporting_labels = [classl],
+    )
+
+    return Branch(
+            antecedent,
+            SoleModels.ConstantModel(first(clabel), info),
+            SoleModels.ConstantModel(first(clabel), info),
+            info
+        )
+end
+
+# ---------------------------------------------------------------------------- #
+#                          DecisionXGBoost solemodel                           #
+# ---------------------------------------------------------------------------- #
 function SoleModels.solemodel(
     model::Vector{<:XGBoost.Node},
-    # args...;
     X::AbstractMatrix,
     y::AbstractVector;
-    weights::Union{AbstractVector{<:Number}, Nothing}=nothing,
-    classlabels = nothing,
-    featurenames = nothing,
-    keep_condensed = false,
+    classlabels,
+    featurenames=nothing,
+    keep_condensed=false,
     kwargs...
 )
-    # TODO
-    if keep_condensed && !isnothing(classlabels)
-        # info = (;
-        #     apply_preprocess=(y -> orig_O(findfirst(x -> x == y, classlabels))),
-        #     apply_postprocess=(y -> classlabels[y]),
-        # )
-        info = (;
-            apply_preprocess=(y -> findfirst(x -> x == y, classlabels)),
-            apply_postprocess=(y -> classlabels[y]),
-        )
-        keep_condensed = !keep_condensed
-        # O = eltype(classlabels)
-    else
-        info = (;)
-        # O = orig_O
-    end
-    
-    trees = map(t -> begin
-        # isnothing(t.split) ?
-        # xgbleaf(t, Formula[], X, y; classlabels, featurenames) :
-        SoleModels.solemodel(t, X, y; classlabels, featurenames, keep_condensed, kwargs...)
-    end, model)
+    keep_condensed && error("Cannot keep condensed XGBoost.Node.")
 
-    if !isnothing(featurenames)
-        info = merge(info, (; featurenames=featurenames, ))
+    nclasses = length(classlabels)
+
+    trees = map(enumerate(model)) do (i, t)
+        class_idx = (i - 1) % nclasses + 1
+        clabels = categorical([classlabels[class_idx]])
+        # xgboost trees could be composed of only one leaf, without any split
+        if isnothing(t.split)
+            antecedent = Atom(get_condition(class_idx, featurenames; test_operator=(<), featval=Inf))
+            early_return(t.leaf, antecedent, clabels, classlabels[class_idx])
+        else
+            SoleModels.solemodel(t, X, y; classlabels, featurenames, class_idx, clabels, kwargs...)
+        end
     end
 
-    info = merge(info, (;
-            leaf_values=vcat([t.info[:leaf_values] for t in trees]...),
-            supporting_predictions=vcat([t.info[:supporting_predictions] for t in trees]...),
-            supporting_labels=vcat([t.info[:supporting_labels] for t in trees]...),
+    info = merge(
+        isnothing(featurenames) ? (;) : (;featurenames=featurenames),
+        (;
+            leaf_values = reduce(vcat, getindex.(getproperty.(trees, :info), :leaf_values)),
+            supporting_predictions = reduce(vcat, getindex.(getproperty.(trees, :info), :supporting_predictions)),
+            supporting_labels = reduce(vcat, getindex.(getproperty.(trees, :info), :supporting_labels))
         )
     )
 
-    return isnothing(weights) ?
-        DecisionEnsemble(trees, info) :
-        DecisionEnsemble(trees, weights, info)
+    return DecisionXGBoost(trees, info)
 end
 
 """
@@ -175,42 +179,43 @@ function SoleModels.solemodel(
     tree::XGBoost.Node,
     X::AbstractMatrix,
     y::AbstractVector;
-    path_conditions = Formula[],
-    classlabels=nothing,
+    classlabels,
+    path_conditions=Formula[],
     featurenames=nothing,
-    keep_condensed=false
+    class_idx,
+    clabels
 )
-    keep_condensed && error("Cannot keep condensed XGBoost.Node.")
-
-    # xgboost trees could be composed of only one leaf, without any split
-    # isnothing(tree.split) && return nothing
-    isnothing(tree.split) && return xgbleaf(tree, Formula[], X, y; classlabels, featurenames)
-
     antecedent = Atom(get_condition(tree.split, tree.split_condition, featurenames; test_operator=(<)))
-    
-    # Create a new path for the left branch
+
+    # create a new path for the left branch
     left_path = copy(path_conditions)
     push!(left_path, Atom(get_condition(tree.split, tree.split_condition, featurenames; test_operator=(<))))
     
-    # Create a new path for the right branch
+    # create a new path for the right branch
     right_path = copy(path_conditions)
     push!(right_path, Atom(get_condition(tree.split, tree.split_condition, featurenames; test_operator=(≥))))
     
     lefttree = if isnothing(tree.children[1].split)
         # @show SoleModels.join_antecedents(left_path)
-        xgbleaf(tree.children[1], left_path, X, y; classlabels, featurenames)
+        xgbleaf(tree.children[1], left_path, X, y)
     else
-        SoleModels.solemodel(tree.children[1], X, y; path_conditions=left_path, classlabels=classlabels, featurenames=featurenames)
+        SoleModels.solemodel(tree.children[1], X, y; path_conditions=left_path, classlabels, class_idx, clabels,featurenames)
     end
-    isnothing(lefttree) && return Nothing
-    
+    isnothing(lefttree) && 
+    begin 
+        return early_return(tree.children[1].leaf, antecedent, clabels, classlabels[class_idx])
+    end
+
     righttree = if isnothing(tree.children[2].split)
         # @show SoleModels.join_antecedents(right_path)
-        xgbleaf(tree.children[2], right_path, X, y; classlabels, featurenames)
+        xgbleaf(tree.children[2], right_path, X, y)
     else
-        SoleModels.solemodel(tree.children[2], X, y; path_conditions=right_path, classlabels=classlabels, featurenames=featurenames)
+        SoleModels.solemodel(tree.children[2], X, y; path_conditions=right_path, classlabels, class_idx, clabels, featurenames)
     end
-    isnothing(righttree) && return Nothing
+    isnothing(righttree) && 
+    begin
+        return early_return(tree.children[2].leaf, antecedent, clabels, classlabels[class_idx])
+    end
 
     info = (;
         leaf_values = [lefttree.info[:leaf_values]..., righttree.info[:leaf_values]...],
@@ -224,26 +229,20 @@ function xgbleaf(
     leaf::XGBoost.Node,
     formula::Vector{<:Formula},
     X::AbstractMatrix,
-    y::AbstractVector;
-    classlabels=nothing,
-    featurenames=nothing,
-    keep_condensed=false
+    y::AbstractVector
 )
-    keep_condensed && error("Cannot keep condensed XGBoost.Node.")
-
     bitX = bitmap_check_conditions(X, formula)
-    push!(bitX, 0)
-
-    labels = unique(y)
     prediction = SoleModels.bestguess(y[bitX]; suppress_parity_warning=true)
+    labels = unique(y)
 
-    isnothing(prediction) && (prediction = labels[findfirst(x -> x == "nothing", labels)])
+    isnothing(prediction) && return nothing
 
     info = (;
-    leaf_values = leaf.leaf,
-    supporting_predictions = fill(prediction, length(labels)),
-    supporting_labels = labels,
-)
+        leaf_values = leaf.leaf,
+        supporting_predictions = fill(prediction, length(labels)),
+        supporting_labels = labels,
+    )
+
     return SoleModels.ConstantModel(prediction, info)
 end
 
