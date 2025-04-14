@@ -140,6 +140,7 @@ function SoleModels.solemodel(
     classlabels,
     featurenames=nothing,
     keep_condensed=false,
+    use_float32::Bool=true,
     kwargs...
 )
     keep_condensed && error("Cannot keep condensed XGBoost.Node.")
@@ -152,11 +153,10 @@ function SoleModels.solemodel(
         # xgboost trees could be composed of only one leaf, without any split
         if isnothing(t.split)
             antecedent = Atom(get_condition(class_idx, featurenames; test_operator=(<), featval=Inf))
-            ### debug different test_operator TODO delete
-            # antecedent = Atom(get_condition(class_idx, featurenames; test_operator=(≤), featval=Inf))
-            early_return(t.leaf, antecedent, clabels, classlabels[class_idx])
+            leaf = use_float32 ? Float32(t.leaf) : t.leaf
+            early_return(leaf, antecedent, clabels, classlabels[class_idx])
         else
-            SoleModels.solemodel(t, X, y; classlabels, featurenames, class_idx, clabels, kwargs...)
+            SoleModels.solemodel(t, X, y; classlabels, class_idx, clabels, featurenames, use_float32, kwargs...)
         end
     end
 
@@ -184,32 +184,28 @@ function SoleModels.solemodel(
     X::AbstractMatrix,
     y::AbstractVector;
     classlabels,
-    path_conditions=Formula[],
-    featurenames=nothing,
     class_idx,
-    clabels
+    clabels,
+    featurenames=nothing,
+    path_conditions=Formula[],
+    use_float32::Bool,
 )
-    antecedent = Atom(get_condition(tree.split, tree.split_condition, featurenames; test_operator=(<)))
-    ### debug different test_operator TODO delete
-    # antecedent = Atom(get_condition(tree.split, tree.split_condition, featurenames; test_operator=(≤)))
+split_condition = use_float32 ? Float32(tree.split_condition) : tree.split_condition
+    antecedent = Atom(get_condition(tree.split, split_condition, featurenames; test_operator=(<)))
 
     # create a new path for the left branch
     left_path = copy(path_conditions)
-    push!(left_path, Atom(get_condition(tree.split, tree.split_condition, featurenames; test_operator=(<))))
-    ### debug different test_operator TODO delete
-    # push!(left_path, Atom(get_condition(tree.split, tree.split_condition, featurenames; test_operator=(≤))))
+    push!(left_path, Atom(get_condition(tree.split, split_condition, featurenames; test_operator=(<))))
     
     # create a new path for the right branch
     right_path = copy(path_conditions)
-    push!(right_path, Atom(get_condition(tree.split, tree.split_condition, featurenames; test_operator=(≥))))
-    ### debug different test_operator TODO delete
-    # push!(right_path, Atom(get_condition(tree.split, tree.split_condition, featurenames; test_operator=(>))))
+    push!(right_path, Atom(get_condition(tree.split, split_condition, featurenames; test_operator=(≥))))
     
     lefttree = if isnothing(tree.children[1].split)
         # @show SoleModels.join_antecedents(left_path)
-        xgbleaf(tree.children[1], left_path, X, y)
+        xgbleaf(tree.children[1], left_path, X, y; use_float32)
     else
-        SoleModels.solemodel(tree.children[1], X, y; path_conditions=left_path, classlabels, class_idx, clabels,featurenames)
+        SoleModels.solemodel(tree.children[1], X, y; path_conditions=left_path, classlabels, class_idx, clabels, featurenames, use_float32)
     end
     isnothing(lefttree) && 
     begin 
@@ -218,9 +214,9 @@ function SoleModels.solemodel(
 
     righttree = if isnothing(tree.children[2].split)
         # @show SoleModels.join_antecedents(right_path)
-        xgbleaf(tree.children[2], right_path, X, y)
+        xgbleaf(tree.children[2], right_path, X, y; use_float32)
     else
-        SoleModels.solemodel(tree.children[2], X, y; path_conditions=right_path, classlabels, class_idx, clabels, featurenames)
+        SoleModels.solemodel(tree.children[2], X, y; path_conditions=right_path, classlabels, class_idx, clabels, featurenames, use_float32)
     end
     isnothing(righttree) && 
     begin
@@ -239,7 +235,8 @@ function xgbleaf(
     leaf::XGBoost.Node,
     formula::Vector{<:Formula},
     X::AbstractMatrix,
-    y::AbstractVector
+    y::AbstractVector;
+    use_float32::Bool,
 )
     bitX = bitmap_check_conditions(X, formula)
     prediction = SoleModels.bestguess(y[bitX]; suppress_parity_warning=true)
@@ -247,10 +244,10 @@ function xgbleaf(
 
     isnothing(prediction) && return nothing
 
+    leaf_values = use_float32 ? Float32(leaf.leaf) : leaf.leaf
+
     info = (;
-        # leaf_values = leaf.leaf,
-        ### debug convert to Float32 TODO delete
-        leaf_values = Float32(leaf.leaf),
+        leaf_values,
         supporting_predictions = fill(prediction, length(labels)),
         supporting_labels = labels,
     )
