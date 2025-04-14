@@ -1,6 +1,6 @@
 using MLJ
 using DataFrames
-using MLJXGBoostInterface
+# using MLJXGBoostInterface
 import MLJModelInterface as MMI
 using SoleModels
 import XGBoost as XGB
@@ -124,12 +124,15 @@ featurenames = mach.report.vals[1].features
 
 solem = solemodel(trees, Matrix(X_train), y_train; classlabels, featurenames, use_float32=false)
 preds = apply(solem, DataFrame(reshape(Float32.(Vector(X_test[28,:])), 1, :), :auto)) # NOT WORKING
+@test preds[1] == "versicolor"
 
 solem = solemodel(trees, Matrix(X_train), y_train; classlabels, featurenames, use_float32=true)
 preds = apply(solem, DataFrame(reshape(Float32.(Vector(X_test[28,:])), 1, :), :auto)) # WORKING
+@test preds[1] == "virginica"
 
 solem = solemodel(trees, Matrix(X_train), y_train; classlabels, featurenames)
 preds = apply(solem, DataFrame(reshape(Float32.(Vector(X_test[28,:])), 1, :), :auto)) # WORKING
+@test preds[1] == "virginica"
 
 predsl = CategoricalArrays.levelcode.(categorical(preds)) .- 1
 

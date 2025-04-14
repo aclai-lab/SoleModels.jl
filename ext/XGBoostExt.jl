@@ -115,9 +115,7 @@ end
 
 function early_return(leaf, antecedent, clabel, classl)
     info =(;
-    # leaf_values = leaf,
-    ### debug convert to Float32 TODO delete
-    leaf_values = Float32(leaf),
+    leaf_values = leaf,
     supporting_predictions = clabel,
     supporting_labels = [classl],
     )

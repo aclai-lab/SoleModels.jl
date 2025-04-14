@@ -33,7 +33,6 @@ ZipFile = "a5390f91-8eb1-5f08-bee0-b1d1ffed6cea"
 [weakdeps]
 DecisionTree = "7806a523-6efd-50cb-b5f6-3fa6f1930dbb"
 XGBoost = "009559a3-9522-5dbb-924b-0b6ed2b22bb9"
-MLJModelInterface = "e80e1ace-859a-464e-9ed9-23947d8ae3ea"
 
 [extensions]
 DecisionTreeExt = "DecisionTree"
