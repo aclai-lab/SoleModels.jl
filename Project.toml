@@ -84,4 +84,4 @@ SoleData = "123f1ae1-6307-4526-ab5b-aab3a92a2b8c"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["Test", "DataFrames", "Random", "MLJ", "MLJXGBoostInterface", "MultiData", "Markdown", "InteractiveUtils", "BenchmarkTools", "MLJBase", "XGBoost", "DecisionTree", "MLJDecisionTreeInterface", "SoleData"]
+test = ["Test", "DataFrames", "Random", "MLJ", "MultiData", "Markdown", "InteractiveUtils", "BenchmarkTools", "MLJBase", "XGBoost", "DecisionTree", "MLJDecisionTreeInterface", "SoleData"]

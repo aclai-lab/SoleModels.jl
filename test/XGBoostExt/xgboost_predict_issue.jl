@@ -1,6 +1,6 @@
 using MLJ
 using DataFrames
-# using MLJXGBoostInterface
+
 import MLJModelInterface as MMI
 using SoleModels
 import XGBoost as XGB

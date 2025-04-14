@@ -4,7 +4,6 @@ using MLJ
 using MLJBase
 using DataFrames
 
-# using MLJXGBoostInterface
 using SoleModels
 
 import MLJModelInterface as MMI
