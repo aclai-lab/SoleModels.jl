@@ -7,6 +7,13 @@ import XGBoost as XGB
 using CategoricalArrays
 using Random
 
+# References:
+# https://github.com/chengjunhou/xgb2sql/issues/1
+# https://xgboost.readthedocs.io/en/latest/R-package/xgboostfromJSON.html
+
+# per me
+# https://xgboost.readthedocs.io/en/latest/build.html
+
 function predict_xgboost_bag(trees, X; n_classes=0, objective="binary:logistic")
     n_samples = size(X, 1)
     ntree_limit = length(trees)
@@ -15,10 +22,10 @@ function predict_xgboost_bag(trees, X; n_classes=0, objective="binary:logistic")
     # Initialize predictions
     if startswith(objective, "multi:softprob") || startswith(objective, "multi:softmax")
         # For multi-class probabilities, we need a matrix
-        raw_preds = zeros(Float64, n_samples, n_classes)
+        raw_preds = zeros(Float32, n_samples, n_classes)
     else
         # For binary and regression, a vector is sufficient
-        raw_preds = zeros(Float64, n_samples)
+        raw_preds = zeros(Float32, n_samples)
     end
     
     # Iterate through trees and accumulate predictions
@@ -45,9 +52,9 @@ function predict_xgboost_bag(trees, X; n_classes=0, objective="binary:logistic")
         # Apply softmax transformation
         exp_preds = exp.(raw_preds)
         row_sums = sum(exp_preds, dims=2)
-        @show exp_preds
-        @show row_sums
-        @show exp_preds ./ row_sums
+        @show typeof(exp_preds)
+        @show typeof(row_sums)
+        @show typeof(exp_preds ./ row_sums)
         return exp_preds ./ row_sums
     elseif objective == "multi:softmax"
         # Return class with highest score
@@ -68,11 +75,12 @@ end
 
 function predict_tree(tree, X)
     n_samples = size(X, 1)
-    predictions = zeros(Float64, n_samples)
+    predictions = zeros(Float32, n_samples)
     
     for i in 1:n_samples
         predictions[i] = traverse_tree(tree, X[i, :])
     end
+    @show typeof(predictions)
     return predictions
 end
 
@@ -84,9 +92,11 @@ function traverse_tree(tree, x)
     while !isempty(node.children)
         # Get the split feature and value
         feature_idx = node.split
-        split_value = node.split_condition
+        split_value = Float32(node.split_condition)
         
         # Decide which child to go to
+        @show typeof(x[feature_idx])
+        @show typeof(split_value)
         if x[feature_idx] < split_value
             node = node.children[1]
         else
@@ -94,7 +104,8 @@ function traverse_tree(tree, x)
         end
     end
     # Return the leaf value
-    return node.leaf
+    @show typeof(node.leaf)
+    return Float32(node.leaf)
 end
 
 X, y = @load_iris
@@ -137,7 +148,14 @@ rename!(X_test, [:f0, :f1, :f2, :f3])
 class_probs = predict_xgboost_bag(trees, DataFrame(X_test[28,:]); n_classes=3, objective="multi:softprob") # NOT WORKING
 class_preds = [argmax(probs) for probs in eachrow(class_probs)] .-1
 
-isapprox(Float32.(class_probs), yyy, atol=1e-5)
+X_train32 = DataFrame(Float32.(Matrix(X_train)), [:f0, :f1, :f2, :f3])
+bst32 = XGB.xgboost((X_train32, yl_train); num_round, eta, num_class=3, objective="multi:softprob")
+xtrs32 = XGB.trees(bst32)
+X_test32 = DataFrame(reshape(Float32.(Vector(X_test[28,:])), 1, :), [:f0, :f1, :f2, :f3])
+class_probs = predict_xgboost_bag(xtrs32, X_test32; n_classes=3, objective="multi:softprob") # NOT WORKING
+
+
+# isapprox(Float32.(class_probs), yyy, atol=1e-5) # appunto per ricordarsi "atol"
 
 # # For regression
 # reg_preds = predict_xgboost_bag(mtrs, X_test, objective="reg:squarederror")

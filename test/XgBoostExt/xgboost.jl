@@ -90,6 +90,7 @@ predsl = CategoricalArrays.levelcode.(categorical(preds)) .- 1
 outperform = 0
 underperform = 0
 i = 0
+j = 0
 
 for seed in 1:40
     rng = Xoshiro(seed)
@@ -110,17 +111,39 @@ for seed in 1:40
             bst = XGB.xgboost((X_train, yl_train); num_round, eta, num_class=3, objective="multi:softmax")
             ŷ = XGB.predict(bst, X_test)
 
+            (predsl .-1) != ŷ && global j += 1
+
             sole_accuracy = sum(predsl .== CategoricalArrays.levelcode.(categorical(y_test)))/length(y_test)
             xgb_accuracy = sum(ŷ .== CategoricalArrays.levelcode.(categorical(y_test)) .- 1)/length(y_test)
 
             sole_accuracy > xgb_accuracy && global outperform += 1
             sole_accuracy < xgb_accuracy && global underperform += 1
-            i += 1
+            global i += 1
         end
     end
 end
 
 @test outperform > underperform
+println("Different predictions: $j out of $i tests.")
 println("SoleModel outperformed XGBoost in $outperform out of $i tests.")
 println("SoleModel underperform XGBoost in $underperform out of $i tests.")
+println("Total different accuracy: ", outperform + underperform)
+
+"""
+Test with original test operator = <
+Different predictions: 1051 out of 3600 tests.
+SoleModel outperformed XGBoost in 744 out of 3600 tests.
+SoleModel underperform XGBoost in 231 out of 3600 tests.
+Total different accuracy: 975
+"""
+
+"""
+Test with custom test operator = <=
+Different predictions: 1538 out of 3600 tests.
+SoleModel outperformed XGBoost in 1231 out of 3600 tests.
+SoleModel underperform XGBoost in 202 out of 3600 tests.
+Total different accuracy: 1433
+
+da notare come è aumentata l'accuratezza. Ma comunque stiamo lavorando su iris, magari è un caso isolato
+"""
 

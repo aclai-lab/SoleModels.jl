@@ -115,7 +115,9 @@ end
 
 function early_return(leaf, antecedent, clabel, classl)
     info =(;
-    leaf_values = leaf,
+    # leaf_values = leaf,
+    ### debug convert to Float32 TODO delete
+    leaf_values = Float32(leaf),
     supporting_predictions = clabel,
     supporting_labels = [classl],
     )
@@ -150,6 +152,8 @@ function SoleModels.solemodel(
         # xgboost trees could be composed of only one leaf, without any split
         if isnothing(t.split)
             antecedent = Atom(get_condition(class_idx, featurenames; test_operator=(<), featval=Inf))
+            ### debug different test_operator TODO delete
+            # antecedent = Atom(get_condition(class_idx, featurenames; test_operator=(≤), featval=Inf))
             early_return(t.leaf, antecedent, clabels, classlabels[class_idx])
         else
             SoleModels.solemodel(t, X, y; classlabels, featurenames, class_idx, clabels, kwargs...)
@@ -186,14 +190,20 @@ function SoleModels.solemodel(
     clabels
 )
     antecedent = Atom(get_condition(tree.split, tree.split_condition, featurenames; test_operator=(<)))
+    ### debug different test_operator TODO delete
+    # antecedent = Atom(get_condition(tree.split, tree.split_condition, featurenames; test_operator=(≤)))
 
     # create a new path for the left branch
     left_path = copy(path_conditions)
     push!(left_path, Atom(get_condition(tree.split, tree.split_condition, featurenames; test_operator=(<))))
+    ### debug different test_operator TODO delete
+    # push!(left_path, Atom(get_condition(tree.split, tree.split_condition, featurenames; test_operator=(≤))))
     
     # create a new path for the right branch
     right_path = copy(path_conditions)
     push!(right_path, Atom(get_condition(tree.split, tree.split_condition, featurenames; test_operator=(≥))))
+    ### debug different test_operator TODO delete
+    # push!(right_path, Atom(get_condition(tree.split, tree.split_condition, featurenames; test_operator=(>))))
     
     lefttree = if isnothing(tree.children[1].split)
         # @show SoleModels.join_antecedents(left_path)
@@ -238,7 +248,9 @@ function xgbleaf(
     isnothing(prediction) && return nothing
 
     info = (;
-        leaf_values = leaf.leaf,
+        # leaf_values = leaf.leaf,
+        ### debug convert to Float32 TODO delete
+        leaf_values = Float32(leaf.leaf),
         supporting_predictions = fill(prediction, length(labels)),
         supporting_labels = labels,
     )
