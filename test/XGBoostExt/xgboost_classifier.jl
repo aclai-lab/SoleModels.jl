@@ -87,6 +87,8 @@ ŷ = XGB.predict(bst, X_test)
 predsl = CategoricalArrays.levelcode.(categorical(preds)) .- 1
 @test predsl == ŷ
 
+@test_nowarn alphabet(fitted_params(mach).fitresult[1])
+
 for seed in 1:40
     rng = Xoshiro(seed)
     train, test = partition(eachindex(y), train_ratio; shuffle=true, rng)

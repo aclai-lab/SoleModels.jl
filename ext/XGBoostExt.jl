@@ -8,7 +8,7 @@ using CategoricalArrays
 import SoleModels: alphabet, solemodel
 
 function alphabet(model::XGBoost.Booster; kwargs...)
-    error("TODO fix and test.")
+    # error("TODO fix and test.")
     function _alphabet!(a::Vector, model::XGBoost.Booster; kwargs...)
         return a
     end

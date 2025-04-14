@@ -22,7 +22,7 @@ test_suites = [
     ("Linear forms", ["linear-form-utilities.jl", ]),
     ("Pluto Demo", ["$(dirname(dirname(pathof(SoleModels))))/pluto-demo.jl", ]),
     ("DecisionTreeExt", ["DecisionTreeExt/tree.jl", "DecisionTreeExt/forest.jl"]),
-    ("XGBoostExt", ["XGBoostExt.jl"]),
+    ("XGBoostExt", ["XGBoostExt/xgboost_classifier.jl"]),
 ]
 
 @testset "SoleModels.jl" begin
