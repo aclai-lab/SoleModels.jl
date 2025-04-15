@@ -102,10 +102,14 @@ function get_condition(class_idx, featurenames; test_operator, featval)
     return ScalarCondition(feature, test_operator, featval)
 end
 
+get_operator(atom::Atom{<:ScalarCondition}) = atom.value.metacond.test_operator
+get_i_variable(atom::Atom{<:ScalarCondition}) = atom.value.metacond.feature.i_variable
+get_threshold(atom::Atom{<:ScalarCondition}) = atom.value.threshold
+
 function satisfies_conditions(row, formula)
-    all(atom -> atom.value.metacond.test_operator(
-                    row[atom.value.metacond.feature.i_variable],
-                    atom.value.threshold), formula
+    all(atom -> get_operator(atom)(
+                    row[get_i_variable(atom)],
+                    get_threshold(atom)), formula
                 )
 end
 
