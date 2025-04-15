@@ -88,27 +88,31 @@ predsl = CategoricalArrays.levelcode.(categorical(preds)) .- 1
 
 @test_nowarn alphabet(fitted_params(mach).fitresult[1])
 
-for seed in 1:40
-    rng = Xoshiro(seed)
-    train, test = partition(eachindex(y), train_ratio; shuffle=true, rng)
-    X_train, y_train = X[train, :], y[train]
-    X_test, y_test = X[test, :], y[test]
-    for num_round in 10:10:100
-        for eta in 0.1:0.1:0.9
-            model = XGTrees(; num_round, eta, objective="multi:softmax")
-            mach = machine(model, X_train, y_train)
-            fit!(mach)
-            trees = XGB.trees(mach.fitresult[1])
-            solem = solemodel(trees, Matrix(X_train), y_train; classlabels, featurenames, use_float32=true)
-            X_test_f32 = mapcols(col -> Float32.(col), X_test)
-            preds = apply(solem, X_test_f32)
-            predsl = CategoricalArrays.levelcode.(categorical(preds))
+# ---------------------------------------------------------------------------- #
+#                                Data Validation                               #
+# ---------------------------------------------------------------------------- #
+@testset "data validation" begin
+    for seed in 1:40
+        train, test = partition(eachindex(y), train_ratio; shuffle=true, rng=Xoshiro(seed))
+        X_train, y_train = X[train, :], y[train]
+        X_test, y_test = X[test, :], y[test]
+        for num_round in 10:10:100
+            for eta in 0.1:0.1:0.9
+                model = XGTrees(; num_round, eta, objective="multi:softmax")
+                mach = machine(model, X_train, y_train)
+                fit!(mach)
+                trees = XGB.trees(mach.fitresult[1])
+                solem = solemodel(trees, Matrix(X_train), y_train; classlabels, featurenames, use_float32=true)
+                X_test_f32 = mapcols(col -> Float32.(col), X_test)
+                preds = apply(solem, X_test_f32)
+                predsl = CategoricalArrays.levelcode.(categorical(preds))
 
-            yl_train = CategoricalArrays.levelcode.(categorical(y_train)) .- 1
-            bst = XGB.xgboost((X_train, yl_train); num_round, eta, num_class=3, objective="multi:softmax")
-            ŷ = XGB.predict(bst, X_test)
+                yl_train = CategoricalArrays.levelcode.(categorical(y_train)) .- 1
+                bst = XGB.xgboost((X_train, yl_train); num_round, eta, num_class=3, objective="multi:softmax")
+                ŷ = XGB.predict(bst, X_test)
 
-            @test (predsl .-1) == ŷ
+                @test (predsl .-1) == ŷ
+            end
         end
     end
 end

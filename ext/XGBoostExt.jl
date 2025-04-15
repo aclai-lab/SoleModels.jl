@@ -7,6 +7,9 @@ using CategoricalArrays
 
 import SoleModels: alphabet, solemodel
 
+# ---------------------------------------------------------------------------- #
+#                          DecisionXGBoost alphabet                            #
+# ---------------------------------------------------------------------------- #
 function alphabet(model::XGBoost.Booster; kwargs...)
     # error("TODO fix and test.")
     function _alphabet!(a::Vector, model::XGBoost.Booster; kwargs...)
