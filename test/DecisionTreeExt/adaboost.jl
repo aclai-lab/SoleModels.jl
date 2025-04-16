@@ -3,6 +3,7 @@ using Test
 using MLJ
 using MLJBase
 using DataFrames
+using CategoricalArrays
 
 using MLJDecisionTreeInterface
 using SoleModels
@@ -14,7 +15,7 @@ X, y = @load_iris
 X = DataFrame(X)
 
 train_ratio = 0.7
-rng = Xoshiro(11)
+rng = Xoshiro(1)
 
 train, test = partition(eachindex(y), train_ratio; shuffle=true, rng)
 X_train, y_train = X[train, :], y[train]
@@ -39,7 +40,7 @@ model = Stump(;
 # Bind the model and data into a machine
 mach = machine(model, X_train, y_train)
 # Fit the model
-fit!(mach)
+fit!(mach, verbosity=0)
 
 weights = mach.fitresult[2]
 classlabels = sort(mach.fitresult[3])
@@ -68,9 +69,9 @@ printmodel(solem; max_depth = 7, show_intermediate_finals = true, show_metrics =
 # train adaptive-boosted stumps, using 10 iterations
 dt_model, dt_coeffs = DT.build_adaboost_stumps(y_train, Matrix(X_train), 10)
 # apply learned model
-dt_preds = apply_adaboost_stumps(dt_model, dt_coeffs, Matrix(X_test))
+dt_preds = DT.apply_adaboost_stumps(dt_model, dt_coeffs, Matrix(X_test))
 # get the probability of each label
-dt_proba = apply_adaboost_stumps_proba(dt_model, dt_coeffs, Matrix(X_test), classlabels)
+dt_proba = DT.apply_adaboost_stumps_proba(dt_model, dt_coeffs, Matrix(X_test), classlabels)
 
 @test preds == dt_preds
 
@@ -84,16 +85,16 @@ ada_accuracy = sum(preds .== y_test)/length(y_test)
 Tree = MLJ.@load DecisionTreeClassifier pkg=DecisionTree
 dt_model = Tree(max_depth=-1, min_samples_leaf=1, min_samples_split=2)
 dt_mach = machine(dt_model, X_train, y_train)
-fit!(dt_mach)
+fit!(dt_mach, verbosity=0)
 dt_solem = solemodel(fitted_params(dt_mach).tree)
 dt_preds = apply(dt_solem, X_test)
 dt_accuracy = sum(dt_preds .== y_test)/length(y_test)
 
 # random forest
 Forest = MLJ.@load RandomForestClassifier pkg=DecisionTree
-rm_model = Forest(max_depth=3, min_samples_leaf=1, min_samples_split=2, n_trees=10)
+rm_model = Forest(; max_depth=3, min_samples_leaf=1, min_samples_split=2, n_trees=10, rng)
 rm_mach = machine(rm_model, X_train, y_train)
-fit!(rm_mach)
+fit!(rm_mach, verbosity=0)
 classlabels = (rm_mach).fitresult[2]
 classlabels = classlabels[sortperm((rm_mach).fitresult[3])]
 featurenames = report(rm_mach).features
@@ -123,7 +124,7 @@ println("RandomForest accuracy: ", rm_accuracy)
                 # solemodel
                 model = Stump(; n_iter, rng=Xoshiro(seed))
                 mach = machine(model, X_train, y_train)
-                fit!(mach)
+                fit!(mach, verbosity=0)
                 weights = mach.fitresult[2]
                 classlabels = sort(mach.fitresult[3])
                 featurenames = MLJ.report(mach).features
@@ -133,7 +134,7 @@ println("RandomForest accuracy: ", rm_accuracy)
                 # decisiontree
                 yl_train = CategoricalArrays.levelcode.(y_train)
                 dt_model, dt_coeffs = DT.build_adaboost_stumps(yl_train, Matrix(X_train), n_iter; rng=Xoshiro(seed))
-                dt_preds = apply_adaboost_stumps(dt_model, dt_coeffs, Matrix(X_test))
+                dt_preds = DT.apply_adaboost_stumps(dt_model, dt_coeffs, Matrix(X_test))
 
                 code_preds = CategoricalArrays.levelcode.(preds)
                 @test code_preds == dt_preds

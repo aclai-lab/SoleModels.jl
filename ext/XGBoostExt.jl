@@ -122,9 +122,9 @@ end
 
 function early_return(leaf, antecedent, clabel, classl)
     info =(;
-    leaf_values = leaf,
-    supporting_predictions = clabel,
-    supporting_labels = [classl],
+    leaf_values=leaf,
+    supporting_predictions=clabel,
+    supporting_labels=[classl],
     )
 
     return Branch(
@@ -212,20 +212,12 @@ split_condition = use_float32 ? Float32(tree.split_condition) : tree.split_condi
     else
         SoleModels.solemodel(tree.children[1], X, y; path_conditions=left_path, classlabels, class_idx, clabels, featurenames, use_float32)
     end
-    isnothing(lefttree) && 
-    begin 
-        return early_return(tree.children[1].leaf, antecedent, clabels, classlabels[class_idx])
-    end
 
     righttree = if isnothing(tree.children[2].split)
         # @show SoleModels.join_antecedents(right_path)
         xgbleaf(tree.children[2], right_path, X, y; use_float32)
     else
         SoleModels.solemodel(tree.children[2], X, y; path_conditions=right_path, classlabels, class_idx, clabels, featurenames, use_float32)
-    end
-    isnothing(righttree) && 
-    begin
-        return early_return(tree.children[2].leaf, antecedent, clabels, classlabels[class_idx])
     end
 
     info = (;
@@ -244,7 +236,11 @@ function xgbleaf(
     use_float32::Bool,
 )
     bitX = bitmap_check_conditions(X, formula)
+
+    # this could happens when the split condition doesn't match any class
+    !any(bitX) && (bitX = trues(length(y)))
     prediction = SoleModels.bestguess(y[bitX]; suppress_parity_warning=true)
+
     labels = unique(y)
 
     isnothing(prediction) && return nothing
