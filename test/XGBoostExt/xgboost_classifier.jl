@@ -59,10 +59,9 @@ X_test_f32 = mapcols(col -> Float32.(col), X_test)
 preds = apply(solem, X_test_f32)
 predsl = CategoricalArrays.levelcode.(categorical(preds)) .- 1
 
-# TODO fix in rule-and-branch.jl
-# preds2 = apply!(solem, X_test, y_test)
-
-# @test preds == preds2
+apply!(solem, X_test, y_test)
+@test solem.info.supporting_predictions == preds
+@test solem.info.supporting_labels == y_test
 
 # ---------------------------------------------------------------------------- #
 #                                 julia XGBoost                                #

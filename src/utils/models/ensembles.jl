@@ -507,30 +507,24 @@ function apply(
 end
 
 # TODO parallelize
-# function apply!(
-#     m::DecisionXGBoost,
-#     d::AbstractInterpretationSet,
-#     y::AbstractVector;
-#     mode = :replace,
-#     leavesonly = false,
-#     # show_progress = false, # length(ntrees(m)) > 15,
-#     suppress_parity_warning = false,
-#     kwargs...
-# )
-#     # @show y
-#     y = __apply_pre(m, d, y)
-#     # _d = SupportedLogiset(d) TODO?
-#     # @show y
-#     preds = hcat([apply!(subm, d, y; mode, leavesonly, kwargs...) for subm in models(m)]...)
+function apply!(
+    m::DecisionXGBoost,
+    d::AbstractInterpretationSet,
+    y::AbstractVector;
+    mode::Symbol=:replace,
+    leavesonly::Bool=false,
+    suppress_parity_warning::Bool=true,
+    kwargs...
+)
+    y = __apply_pre(m, d, y)
 
-#     preds = __apply_post(m, preds)
+    preds = hcat([apply_leaf_scores(subm, d; suppress_parity_warning, kwargs...) for subm in models(m)]...)
+    preds = __apply_post(m, preds)
+    preds = [
+        scored_aggregation(m)(pred, sort(unique(m.info.supporting_labels)))
+        for pred in eachrow(preds)
+    ]
+    preds = __apply_pre(m, d, preds)
 
-#     preds = [
-#         weighted_aggregation(m)(preds[i,:]; suppress_parity_warning, kwargs...)
-#         for i in 1:size(preds,1)
-#     ]
-
-#     preds = __apply_pre(m, d, preds)
-#     return __apply!(m, mode, preds, y, leavesonly)
-# end
-
+    return __apply!(m, mode, preds, y, leavesonly)
+end
