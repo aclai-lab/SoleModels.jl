@@ -6,7 +6,7 @@ An exact or heuristic logical method for extracting logical rule from symbolic m
 
 Refer to [SolePostHoc](https://github.com/aclai-lab/SolePostHoc.jl) for rule extraction methods.
 
-See also [`modalextractrules`](@ref), [`Rule`](@ref)], [`issymbolicmodel`](@ref).
+See also [`extractrules`](@ref), [`Rule`](@ref)], [`issymbolicmodel`](@ref).
 """
 abstract type RuleExtractor end
 
@@ -16,33 +16,33 @@ Return whether a rule extraction method is known to be exact (as opposed to heur
 isexact(::RuleExtractor) = false
 
 """
-    modalextractrules(re::RuleExtractor, m, args...; kwargs...)
+    extractrules(re::RuleExtractor, m, args...; kwargs...)
 
 Extract rules from symbolic model `m`, using a rule extraction method `re`.
 """
-function modalextractrules(re::RuleExtractor, m, args...; kwargs...)
-    return error("Please, provide method modalextractrules(::$(typeof(m)), args...; kwargs...).")
+function extractrules(re::RuleExtractor, m, args...; kwargs...)
+    return error("Please, provide method extractrules(::$(typeof(m)), args...; kwargs...).")
 end
 
 # Helpers
 function (RE::Type{<:RuleExtractor})(args...; kwargs...)
-    return modalextractrules(RE(), args...; kwargs...)
+    return extractrules(RE(), args...; kwargs...)
 end
 
 # Helpers
 function (re::RuleExtractor)(args...; kwargs...)
-    return modalextractrules(re, args...; kwargs...)
+    return extractrules(re, args...; kwargs...)
 end
 
 """
 Plain extraction method involves listing one rule per each possible symbolic path within the model.
-With this method, [`modalextractrules`](@ref) redirects to [`listrules`](@ref).
+With this method, [`extractrules`](@ref) redirects to [`listrules`](@ref).
 
 See also [`listrules`](@ref), [`Rule`](@ref)], [`issymbolicmodel`](@ref).
 """
 struct PlainRuleExtractor <: RuleExtractor end
 isexact(::PlainRuleExtractor) = true
-function modalextractrules(::PlainRuleExtractor, m, args...; kwargs...)
+function extractrules(::PlainRuleExtractor, m, args...; kwargs...)
     if haslistrules(m)
         listrules(m, args...; kwargs...)
     else

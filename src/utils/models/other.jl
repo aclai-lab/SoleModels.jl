@@ -361,7 +361,7 @@ iscomplete(m::DecisionSet) = m.iscomplete
 isnonoverlapping(m::DecisionSet) = m.isnonoverlapping
 
 function listrules(m::DecisionSet)
-    isnonoverlapping || error("Cannot listrules from non-overlapping decision set. Try `modalextractrules` with heuristics, instead.")
+    isnonoverlapping || error("Cannot listrules from non-overlapping decision set. Try `extractrules` with heuristics, instead.")
     rules(m)
 end
 

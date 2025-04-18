@@ -93,7 +93,10 @@ export subtreeheight
 include("symbolic-utils.jl")
 
 export PlainRuleExtractor
-export modalextractrules, listrules, joinrules
+
+
+
+export extractrules, listrules, joinrules
 
 include("rule-extraction.jl")
 
