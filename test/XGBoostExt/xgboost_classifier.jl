@@ -1,6 +1,7 @@
 using Test
 
 using MLJ
+using MLJ.CategoricalArrays: levelcode, categorical
 using MLJBase
 using DataFrames
 
@@ -141,20 +142,13 @@ println("RandomForest accuracy: ", rm_accuracy)
                     featurenames = mach.report.vals[1].features
                     solem = solemodel(trees, Matrix(X_train), y_train; classlabels, featurenames)
                     X_test_f32 = mapcols(col -> Float32.(col), X_test)
-                    preds = apply(solem, X_test_f32)
+                    preds = apply!(solem, X_test_f32, y_test)
                     predsl = CategoricalArrays.levelcode.(categorical(preds)) .- 1
 
                     yl_train = CategoricalArrays.levelcode.(categorical(y_train)) .- 1
                     bst = XGB.xgboost((X_train, yl_train); num_round, eta, num_class=3, objective="multi:softmax")
                     xg_preds = XGB.predict(bst, X_test)
 
-                    if predsl != xg_preds
-                        println("train_ratio: ", train_ratio)
-                        println("seed: ", seed)
-                        println("num_round: ", num_round)
-                        println("eta: ", eta)
-                        gino
-                    end
                     @test predsl == xg_preds
                 end
             end

@@ -62,3 +62,35 @@ accuracy = sum(preds .== y_test)/length(y_test)
 printmodel(solem; max_depth = 7, show_intermediate_finals = true, show_metrics = true)
 
 # @test_broken printmodel.(listrules(solem, min_lift = 1.0, min_ninstances = 0); show_metrics = true);
+
+# ---------------------------------------------------------------------------- #
+#                                Data Validation                               #
+# ---------------------------------------------------------------------------- #
+@testset "data validation" begin
+  Forest = MLJ.@load RandomForestClassifier pkg=DecisionTree
+
+  for train_ratio in 0.5:0.1:0.9
+      for seed in 1:40
+          train, test = partition(eachindex(y), train_ratio; shuffle=true, rng=Xoshiro(seed))
+          X_train, y_train = X[train, :], y[train]
+          X_test, y_test = X[test, :], y[test]
+
+          for n_trees in 10:10:60
+              # solemodel
+              model = Forest(; n_trees, rng=Xoshiro(seed))
+              mach = machine(model, X_train, y_train)
+              fit!(mach, verbosity=0)
+              classlabels = (mach).fitresult[2][sortperm((mach).fitresult[3])]
+              featurenames = MLJ.report(mach).features
+              solem = solemodel(MLJ.fitted_params(mach).forest; classlabels, featurenames)
+              preds = apply!(solem, X_test, y_test)
+
+              # decisiontree
+              rf_model = DT.build_forest(y_train, Matrix(X_train), -1, n_trees; rng=Xoshiro(seed))
+              rf_preds = DT.apply_forest(rf_model, Matrix(X_test))
+
+              @test preds == rf_preds
+          end
+      end
+  end
+end
