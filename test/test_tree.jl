@@ -13,8 +13,8 @@ using SoleModels
 
 formula_p = SoleLogics.parseformula("p")
 formula_q = SoleLogics.parseformula("q")
-formula_r = SoleLogics.parsebaseformula("r")
-formula_s = SoleLogics.parsebaseformula("s")
+formula_r = SoleLogics.parseformula("r")
+formula_s = SoleLogics.parseformula("s")
 
 branch_q = Branch(formula_q,("yes","no"),(;))
 branch_s = Branch(formula_s,("yes","no"),(;))
