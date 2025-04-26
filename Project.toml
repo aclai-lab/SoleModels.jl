@@ -57,10 +57,6 @@ Graphs = "1.8"
 HTTP = "1.9"
 IterTools = "1"
 Lazy = "0.15.1"
-MLJ = "0.19 - 0.20"
-MLJBase = "1.6 - 1.7"
-MLJDecisionTreeInterface = "0.4"
-MLJModelInterface = "1.8"
 PrettyTables = "2.2"
 ProgressMeter = "1"
 Random = "1"
@@ -85,7 +81,6 @@ MLJ = "add582a8-e3ab-11e8-2d5e-e98b27df1bc7"
 MLJBase = "a7f614a8-145f-11e9-1d2a-a57a1082229d"
 MLJDecisionTreeInterface = "c6f25543-311c-4c74-83dc-3ea6d1015661"
 MLJModelInterface = "e80e1ace-859a-464e-9ed9-23947d8ae3ea"
-MLJXGBoostInterface = "54119dfa-1dab-4055-a167-80440f4f7a91"
 Markdown = "d6f4376e-aef5-505a-96c1-9c027394607a"
 MultiData = "8cc5100c-b3d1-4f82-90cb-0ea93d317aba"
 PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
@@ -94,19 +89,4 @@ SoleData = "123f1ae1-6307-4526-ab5b-aab3a92a2b8c"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = [
-    "Test",
-    "DataFrames",
-    "Random",
-    "MLJ",
-    "MLJXGBoostInterface",
-    "MultiData",
-    "Markdown",
-    "InteractiveUtils",
-    "BenchmarkTools",
-    "MLJBase",
-    "XGBoost",
-    "DecisionTree",
-    "MLJDecisionTreeInterface",
-    "SoleData",
-]
+test = ["Test", "DataFrames", "Random", "MLJ", "MultiData", "Markdown", "InteractiveUtils", "BenchmarkTools", "MLJBase", "XGBoost", "DecisionTree", "MLJModelInterface", "MLJDecisionTreeInterface", "SoleData"]

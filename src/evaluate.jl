@@ -322,10 +322,10 @@ function evaluaterule(
     classmask = (Y .== outcome(consequent(rule)))
     checkmask, explanations = begin
         if compute_explanations
-            # Note: This is kind of quick and dirty.
 
-            #disjs = SoleLogics.disjuncts(SoleLogics.LeftmostDisjunctiveForm(antecedent(rule)))
-            
+            ### from Perry's SoleModels fix for SolePostHoc
+            # Note: This is kind of quick and dirty.
+            # disjs = SoleLogics.disjuncts(SoleLogics.LeftmostDisjunctiveForm(antecedent(rule)))
             ante = antecedent(rule)
             if (ante isa SyntaxBranch)
                 # Radice disgiuntiva: trasformiamo in forma “disjunctive” e poi estraiamo i disgiunti
@@ -335,7 +335,6 @@ function evaluaterule(
                 # Non è un OR in radice → un singolo disgiunto
                 disjs = [ante] 
             end
-            
 
             checkmatrix = hcat([check(disj, X; kwargs...) for disj in disjs]...)
             # @show checkmatrix
@@ -350,15 +349,8 @@ function evaluaterule(
     end
     pos_checkmask = checkmask[classmask]
     neg_checkmask = checkmask[(!).(classmask)]
-    
-    #=
-    println("pos_checkmask: ",pos_checkmask)
-    println("neg_checkmask: ",neg_checkmask)
 
-    println("lgh pos_checkmask ",length(pos_checkmask))
-    println("lgh neg_checkmask ",length(neg_checkmask))
-    =#
-
+    ### from Perry's SoleModels fix for SolePostHoc
     # Controlli per array vuoti
     sensitivity = length(pos_checkmask) > 0 ? sum(pos_checkmask)/length(pos_checkmask) : 0.0
     specificity = length(neg_checkmask) > 0 ? 1-(sum(neg_checkmask)/length(neg_checkmask)) : 1.0
@@ -366,8 +358,13 @@ function evaluaterule(
     out = (;
         classmask = classmask,
         checkmask = checkmask,
+
+        ### from Perry's SoleModels fix for SolePostHoc
+        # sensitivity = sum(pos_checkmask)/length(pos_checkmask),
+        # specificity = 1-(sum(neg_checkmask)/length(neg_checkmask)),
         sensitivity = sensitivity,
         specificity = specificity,
+
         explanations = explanations,
     )
     return out

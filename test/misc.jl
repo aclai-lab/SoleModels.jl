@@ -1,6 +1,6 @@
-using Revise
+# using Revise
 
-using Reexport
+# using Reexport
 using FunctionWrappers: FunctionWrapper
 using Test
 using SoleLogics
