@@ -1,12 +1,7 @@
 name = "SoleModels"
 uuid = "4249d9c7-3290-4ddd-961c-e1d3ec2467f8"
 license = "MIT"
-authors = [
-    "Michele GHIOTTI",
-    "Giovanni PAGLIARINI",
-    "Edoardo PONSANESI",
-    "Eduard I. STAN",
-]
+authors = ["Michele GHIOTTI", "Giovanni PAGLIARINI", "Edoardo PONSANESI", "Eduard I. STAN"]
 version = "0.10.0"
 
 [deps]
@@ -45,7 +40,6 @@ XGBoostExt = "XGBoost"
 
 [compat]
 AbstractTrees = "0.4"
-BenchmarkTools = "1"
 CSV = "0.10"
 CategoricalArrays = "0.10"
 DataFrames = "1"
@@ -74,8 +68,10 @@ ZipFile = "0.10"
 julia = "1"
 
 [extras]
-BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
+CategoricalArrays = "324d7699-5711-5eae-9e2f-1d82baa6b597"
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
+DecisionTree = "7806a523-6efd-50cb-b5f6-3fa6f1930dbb"
+FunctionWrappers = "069b7b12-0de2-55c6-9aab-29f3d0a68a2e"
 InteractiveUtils = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
 MLJ = "add582a8-e3ab-11e8-2d5e-e98b27df1bc7"
 MLJBase = "a7f614a8-145f-11e9-1d2a-a57a1082229d"
@@ -83,10 +79,12 @@ MLJDecisionTreeInterface = "c6f25543-311c-4c74-83dc-3ea6d1015661"
 MLJModelInterface = "e80e1ace-859a-464e-9ed9-23947d8ae3ea"
 Markdown = "d6f4376e-aef5-505a-96c1-9c027394607a"
 MultiData = "8cc5100c-b3d1-4f82-90cb-0ea93d317aba"
-PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 SoleData = "123f1ae1-6307-4526-ab5b-aab3a92a2b8c"
+SoleLogics = "b002da8f-3cb3-4d91-bbe3-2953433912b5"
+SoleModels = "4249d9c7-3290-4ddd-961c-e1d3ec2467f8"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+XGBoost = "009559a3-9522-5dbb-924b-0b6ed2b22bb9"
 
 [targets]
-test = ["Test", "DataFrames", "Random", "MLJ", "MultiData", "Markdown", "InteractiveUtils", "BenchmarkTools", "MLJBase", "XGBoost", "DecisionTree", "MLJModelInterface", "MLJDecisionTreeInterface", "SoleData"]
+test = ["Test", "CategoricalArrays", "DataFrames", "Random", "MLJ", "MultiData", "Markdown", "InteractiveUtils", "MLJBase", "XGBoost", "DecisionTree", "MLJModelInterface", "MLJDecisionTreeInterface", "SoleData", "SoleModels", "SoleLogics", "FunctionWrappers"]

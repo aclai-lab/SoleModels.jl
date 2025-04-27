@@ -1,7 +1,6 @@
 using Test
 
 using MLJ
-using MLJ.CategoricalArrays: levelcode, categorical
 using MLJBase
 using DataFrames
 
@@ -58,7 +57,7 @@ solem = solemodel(trees, Matrix(X_train), y_train; classlabels, featurenames, ke
 # Make test instances flow into the model
 X_test_f32 = mapcols(col -> Float32.(col), X_test)
 preds = apply(solem, X_test_f32)
-predsl = CategoricalArrays.levelcode.(categorical(preds)) .- 1
+predsl = CategoricalArrays.levelcode.(CategoricalArrays.categorical(preds)) .- 1
 
 apply!(solem, X_test, y_test)
 @test solem.info.supporting_predictions == preds
@@ -67,7 +66,7 @@ apply!(solem, X_test, y_test)
 # ---------------------------------------------------------------------------- #
 #                                 julia XGBoost                                #
 # ---------------------------------------------------------------------------- #
-yl_train = CategoricalArrays.levelcode.(categorical(y_train)) .- 1
+yl_train = CategoricalArrays.levelcode.(CategoricalArrays.categorical(y_train)) .- 1
 # create and train a gradient boosted tree model of 5 trees
 bst = XGB.xgboost(
     (X_train, yl_train),
@@ -143,9 +142,9 @@ println("RandomForest accuracy: ", rm_accuracy)
                     solem = solemodel(trees, Matrix(X_train), y_train; classlabels, featurenames)
                     X_test_f32 = mapcols(col -> Float32.(col), X_test)
                     preds = apply!(solem, X_test_f32, y_test)
-                    predsl = CategoricalArrays.levelcode.(categorical(preds)) .- 1
+                    predsl = CategoricalArrays.levelcode.(CategoricalArrays.categorical(preds)) .- 1
 
-                    yl_train = CategoricalArrays.levelcode.(categorical(y_train)) .- 1
+                    yl_train = CategoricalArrays.levelcode.(CategoricalArrays.categorical(y_train)) .- 1
                     bst = XGB.xgboost((X_train, yl_train); num_round, eta, num_class=3, objective="multi:softmax")
                     xg_preds = XGB.predict(bst, X_test)
 
