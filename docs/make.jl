@@ -35,7 +35,7 @@ makedocs(;
 
 deploydocs(;
     repo="github.com/aclai-lab/SoleModels.jl",
-    devbranch = "dev",
+    devbranch = "main",
     target = "build",
     branch = "gh-pages",
     versions = ["main" => "main", "stable" => "v^", "v#.#", "dev" => "dev"],
