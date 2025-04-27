@@ -81,46 +81,30 @@ printmodel.(sort(interesting_rules, by = readmetrics); show_metrics = (; round_d
 #                                Data Validation                               #
 # ---------------------------------------------------------------------------- #
 @testset "data validation" begin
-  Tree = MLJ.@load DecisionTreeClassifier pkg=DecisionTree
+    Tree = MLJ.@load DecisionTreeClassifier pkg=DecisionTree
 
-  for train_ratio in 0.5:0.1:0.9
-      for seed in 1:40
-          train, test = partition(eachindex(y), train_ratio; shuffle=true, rng=Xoshiro(seed))
-          X_train, y_train = X[train, :], y[train]
-          X_test, y_test = X[test, :], y[test]
+    for train_ratio in 0.5:0.1:0.9
+        for seed in 1:40
+            train, test = partition(eachindex(y), train_ratio; shuffle=true, rng=Xoshiro(seed))
+            X_train, y_train = X[train, :], y[train]
+            X_test, y_test = X[test, :], y[test]
 
-          for max_depth in 2:1:6
-              # solemodel
-              model = Tree(; max_depth, rng=Xoshiro(seed))
-              mach = machine(model, X_train, y_train)
-              fit!(mach, verbosity=0)
-              solem = solemodel(MLJ.fitted_params(mach).tree)
-              preds = apply!(solem, X_test, y_test)
+            for max_depth in 2:1:6
+                # solemodel
+                model = Tree(; max_depth, rng=Xoshiro(seed))
+                mach = machine(model, X_train, y_train)
+                fit!(mach, verbosity=0)
+                solem = solemodel(MLJ.fitted_params(mach).tree)
+                preds = apply!(solem, X_test, y_test)
 
-              # decisiontree
-              dt_model = DT.build_tree(y_train, Matrix(X_train), 0, max_depth; rng=Xoshiro(seed))
-              dt_preds = DT.apply_tree(dt_model, Matrix(X_test))
+                # decisiontree
+                y_coded_train = @. CategoricalArrays.levelcode(y_train)
+                dt_model = DT.build_tree(y_coded_train, Matrix(X_train), 0, max_depth; rng=Xoshiro(seed))
+                dt_preds = DT.apply_tree(dt_model, Matrix(X_test))
 
-              @test preds == dt_preds
-          end
-      end
-  end
+                preds_coded = CategoricalArrays.levelcode.(CategoricalArray(preds))
+                @test preds_coded == dt_preds
+            end
+        end
+    end
 end
-
-### the problem rises in fit! in MLJDecisionTreeInterface
-Tree = MLJ.@load DecisionTreeClassifier pkg=DecisionTree
-seed = 1
-max_depth = 3
-train_ratio = 0.5
-train, test = partition(eachindex(y), train_ratio; shuffle=true, rng=Xoshiro(seed))
-X_train, y_train = X[train, :], y[train]
-X_test, y_test = X[test, :], y[test]
-
-model = Tree(; max_depth, rng=Xoshiro(seed))
-mach = machine(model, X_train, y_train)
-fit!(mach, verbosity=0)
-solem = solemodel(MLJ.fitted_params(mach).tree)
-preds = apply!(solem, X_test, y_test)
-
-dt_model = DT.build_tree(y_train, Matrix(X_train), 0, max_depth; rng=Xoshiro(seed))
-dt_preds = DT.apply_tree(dt_model, Matrix(X_test))
