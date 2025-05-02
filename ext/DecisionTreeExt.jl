@@ -57,6 +57,7 @@ function SoleModels.solemodel(
     keep_condensed = false,
     kwargs...
 ) where {T,orig_O}
+@show "PASO"
     # TODO rewrite error according to orig_O
     # if isnothing(classlabels)
     #     error("Please, provide classlabels argument, as in solemodel(forest; classlabels = classlabels, kwargs...). If your forest was trained via MLJ, use `classlabels = (mach).fitresult[2][sortperm((mach).fitresult[3])]`. Also consider providing `featurenames = report(mach).features`.")
