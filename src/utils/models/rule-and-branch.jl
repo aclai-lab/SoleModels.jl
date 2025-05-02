@@ -347,6 +347,35 @@ function apply(
     preds
 end
 
+# ---------------------------------------------------------------------------- #
+#                            DecisionXGBoost apply                             #
+# ---------------------------------------------------------------------------- #
+function apply_leaf_scores(
+    m::Branch,
+    d::AbstractInterpretationSet;
+    check_args::Tuple = (),
+    check_kwargs::NamedTuple = (;),
+    kwargs...
+)
+    checkmask = checkantecedent(m, d, check_args...; check_kwargs...)
+    preds = Vector(undef,length(checkmask))
+    preds[checkmask] .= apply_leaf_scores(
+        posconsequent(m),
+        slicedataset(d, checkmask; return_view = true, allow_no_instances = true);
+        check_args = check_args,
+        check_kwargs = check_kwargs,
+        kwargs...
+    )
+    preds[(!).(checkmask)] .= apply_leaf_scores(
+        negconsequent(m),
+        slicedataset(d, (!).(checkmask); return_view = true, allow_no_instances = true);
+        check_args = check_args,
+        check_kwargs = check_kwargs,
+        kwargs...
+    )
+    preds
+end
+
 function apply!(
     m::Branch,
     d::AbstractInterpretationSet,

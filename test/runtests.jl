@@ -15,14 +15,14 @@ end
 println("Julia version: ", VERSION)
 
 test_suites = [
-    ("Models", ["base.jl", ]),
+    ("Models", ["base.jl", "test_tree.jl"]),
     ("Miscellaneous", ["misc.jl", ]),
     ("Parse", ["parse.jl", ]),
     ("Rules", ["juliacon2024.jl", ]),
     ("Linear forms", ["linear-form-utilities.jl", ]),
     ("Pluto Demo", ["$(dirname(dirname(pathof(SoleModels))))/pluto-demo.jl", ]),
-    ("DecisionTreeExt", ["DecisionTreeExt/tree.jl", "DecisionTreeExt/forest.jl"]),
-    ("XGBoostExt", ["XGBoostExt.jl"]),
+    ("DecisionTreeExt", ["DecisionTreeExt/tree.jl", "DecisionTreeExt/forest.jl", "DecisionTreeExt/adaboost.jl"]),
+    ("XGBoostExt", ["XGBoostExt/xgboost_classifier.jl"]),
 ]
 
 @testset "SoleModels.jl" begin

@@ -1,6 +1,6 @@
-using Revise
+# using Revise
 
-using Reexport
+# using Reexport
 using FunctionWrappers: FunctionWrapper
 using Test
 using SoleLogics
@@ -11,7 +11,6 @@ using SoleModels: listrules, displaymodel, submodels
 
 io = IOBuffer()
 
-# parse_other_kind_of_formula = SoleLogics.parsebaseformula
 parse_other_kind_of_formula = SoleLogics.parseformula
 
 ################################### LeafModel #############################################

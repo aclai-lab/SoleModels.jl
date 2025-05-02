@@ -95,6 +95,43 @@ end
 convert(::Type{ConstantModel{O}}, o::O) where {O} = ConstantModel{O}(o)
 convert(::Type{<:AbstractModel{F}}, m::ConstantModel) where {F} = ConstantModel{F}(m)
 
+# ---------------------------------------------------------------------------- #
+#                            DecisionXGBoost apply                             #
+# ---------------------------------------------------------------------------- #
+outcome_leaf_value(m::ConstantModel) = m.info.leaf_values
+
+apply_leaf_scores(m::ConstantModel, i::AbstractInterpretation; kwargs...) = outcome(m)
+apply_leaf_scores(
+    m::ConstantModel,
+    d::AbstractInterpretationSet,
+    i_instance::Integer;
+    kwargs...
+) = (outcome(m), outcome_leaf_value(m))
+apply_leaf_scores(
+    m::ConstantModel,
+    d::AbstractInterpretationSet;
+    kwargs...
+) = Fill((outcome(m), outcome_leaf_value(m)), ninstances(d))
+
+function apply_leaf_scores!(
+    m::ConstantModel,
+    d::AbstractInterpretationSet,
+    y::AbstractVector;
+    mode = :replace,
+    leavesonly = false,
+    kwargs...
+)
+    # @assert length(y) == ninstances(d) "$(length(y)) == $(ninstances(d))"
+    if mode == :replace
+        recursivelyemptysupports!(m, leavesonly)
+        mode = :append
+    end
+
+    preds = fill((outcome(m), outcome_leaf_value(m)), ninstances(d))
+
+    return __apply!(m, mode, preds, y, leavesonly)
+end
+
 ############################################################################################
 ################################### FunctionModel ##########################################
 ############################################################################################

@@ -51,6 +51,6 @@ Test:
     # Distribution of covered examples for consequent
     # Distribution of examples on which the rule was built
     ✔ Testing parser error @done(24-05-31 11:12)
-
+    ☐ Add test for rule-extraction.jl 
 Questions:
     ✔ Readmetrics for CN2 statistics @done(24-05-31 11:12)
