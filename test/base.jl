@@ -1,10 +1,3 @@
-using SoleModels
-using SoleLogics
-using FunctionWrappers: FunctionWrapper
-using SoleModels: AbstractModel
-using SoleModels: ConstantModel, LeafModel
-using Test
-
 # base.jl
 
 io = IOBuffer()

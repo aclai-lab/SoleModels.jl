@@ -61,6 +61,7 @@ export height
 export DecisionEnsemble, models
 export DecisionForest, trees
 export DecisionSet, rules, nrules
+export DecisionXGBoost
 
 export MixedModel
 
@@ -92,6 +93,9 @@ export subtreeheight
 include("symbolic-utils.jl")
 
 export PlainRuleExtractor
+
+
+
 export extractrules, listrules, joinrules
 
 include("rule-extraction.jl")

@@ -1,17 +1,5 @@
-using Revise
-
-using Reexport
-using FunctionWrappers: FunctionWrapper
-using Test
-using SoleLogics
-using SoleModels
-using SoleModels: AbstractModel
-using SoleModels: ConstantModel, LeafModel
-using SoleModels: listrules, displaymodel, submodels
-
 io = IOBuffer()
 
-# parse_other_kind_of_formula = SoleLogics.parsebaseformula
 parse_other_kind_of_formula = SoleLogics.parseformula
 
 ################################### LeafModel #############################################

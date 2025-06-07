@@ -1,13 +1,13 @@
 ### A Pluto.jl notebook ###
 # v0.19.38
 
-using Markdown
-using InteractiveUtils
+# using Markdown
+# using InteractiveUtils
 
 # ╔═╡ 7685d19e-cc98-4031-a6f9-29ecccc9f417
 begin
-	using SoleModels
-	using DataFrames
+	# using SoleModels
+	# using DataFrames
 
 	# Load an example time-series classification dataset as a tuple (DataFrame, Vector{String})
 	X_df, y = SoleModels.load_arff_dataset("NATOPS")
@@ -32,7 +32,7 @@ end
 
 # ╔═╡ 1ccda54b-1b70-4353-ace6-fe277e5bf67f
 begin
-	using MultiData
+	# using MultiData
 	
 	# Construct a logiset from a DataFrame
 	logiset = scalarlogiset(X_df, features)

@@ -3,7 +3,7 @@ const MixedSymbolicModel = MixedModel
 const List = DecisionList
 const Tree = DecisionTree
 const Forest = DecisionForest
-
+const modalextractrules = extractrules; export modalextractrules
 
 
 @inline function apply(
