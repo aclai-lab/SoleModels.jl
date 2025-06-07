@@ -1,16 +1,3 @@
-using Test
-
-using MLJ
-# using MLJBase
-using DataFrames
-
-using SoleModels
-
-import MLJModelInterface as MMI
-import XGBoost as XGB
-
-using Random, CategoricalArrays
-
 X, y = @load_iris
 X = DataFrame(X)
 

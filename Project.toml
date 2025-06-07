@@ -51,6 +51,7 @@ InteractiveUtils = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
 MLJ = "add582a8-e3ab-11e8-2d5e-e98b27df1bc7"
 MLJDecisionTreeInterface = "c6f25543-311c-4c74-83dc-3ea6d1015661"
 MLJModelInterface = "e80e1ace-859a-464e-9ed9-23947d8ae3ea"
+MLJXGBoostInterface = "54119dfa-1dab-4055-a167-80440f4f7a91"
 Markdown = "d6f4376e-aef5-505a-96c1-9c027394607a"
 MultiData = "8cc5100c-b3d1-4f82-90cb-0ea93d317aba"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
@@ -66,6 +67,7 @@ test = [
     "MLJ",
     "MLJDecisionTreeInterface",
     "MLJModelInterface",
+    "MLJXGBoostInterface",
     "Markdown",
     "MultiData",
     "Random",
