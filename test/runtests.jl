@@ -18,6 +18,7 @@ addprocs(2)
     using MLJ
     using MLJDecisionTreeInterface
     import DecisionTree as DT
+    import XGBoost as XGB
     using DataFrames
     using Test
     using Random
