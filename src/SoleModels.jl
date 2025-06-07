@@ -82,7 +82,6 @@ include("utils/models/linear-forms-utilities.jl")
 include("utils/models/wrap.jl")
 include("utils/models/syntax-utilities.jl")
 
-
 export printmodel, displaymodel
 
 include("print.jl")
