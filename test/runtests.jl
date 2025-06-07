@@ -1,8 +1,28 @@
-# using Revise
-using SoleModels
-using SoleLogics
-using Test
-using Random
+using Distributed
+addprocs(2)
+
+@everywhere begin
+    using SoleModels
+    using SoleModels: AbstractModel
+    using SoleModels: ConstantModel, LeafModel
+    using SoleModels: listrules, displaymodel, submodels
+    using SoleData
+    using SoleData: AbstractUnivariateFeature, Feature
+    using SoleData: ScalarCondition
+    using SoleData: feature
+    using SoleLogics
+    using CategoricalArrays
+    using Markdown
+    using MultiData
+    using InteractiveUtils
+    using MLJ
+    using MLJDecisionTreeInterface
+    import DecisionTree as DT
+    using DataFrames
+    using Test
+    using Random
+    using FunctionWrappers: FunctionWrapper
+end
 
 function run_tests(list)
     println("\n" * ("#"^50))

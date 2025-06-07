@@ -1,16 +1,3 @@
-using Test
-
-using MLJ
-using MLJBase
-using DataFrames
-using CategoricalArrays
-
-using MLJDecisionTreeInterface
-using SoleModels
-using Random
-
-import DecisionTree as DT
-
 X, y = @load_iris
 X = DataFrame(X)
 

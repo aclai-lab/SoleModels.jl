@@ -1,8 +1,3 @@
-using Test
-using SoleLogics
-using SoleModels
-
-
 b = Branch(LeftmostConjunctiveForm((@atoms p q r s)), "YES", "NO")
 
 @test_nowarn b[1:3]

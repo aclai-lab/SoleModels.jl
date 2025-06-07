@@ -1,12 +1,12 @@
 # JuliaCon2024 demo
 
 # Load packages
-begin
-    using MLJ
-    using MLJDecisionTreeInterface
-    using DataFrames
-    using Random
-end
+# begin
+#     using MLJ
+#     using MLJDecisionTreeInterface
+#     using DataFrames
+#     using Random
+# end
 
 # Load dataset
 X, y = begin

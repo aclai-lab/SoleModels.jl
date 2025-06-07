@@ -1,10 +1,3 @@
-using Test
-using SoleModels
-using SoleData
-using SoleData: AbstractUnivariateFeature, Feature
-using SoleData: ScalarCondition
-using SoleData: feature
-
 ############################################################################################
 ############################ Orange parser #################################################
 ############################################################################################

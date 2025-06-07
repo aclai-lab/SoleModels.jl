@@ -8,9 +8,6 @@
         # "yes"   "no"      "yes"   "no"
 ##################################################
 
-using SoleLogics
-using SoleModels
-
 formula_p = SoleLogics.parseformula("p")
 formula_q = SoleLogics.parseformula("q")
 formula_r = SoleLogics.parseformula("r")

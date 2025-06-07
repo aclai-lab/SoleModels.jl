@@ -1,7 +1,7 @@
 using Test
 
 using MLJ
-using MLJBase
+# using MLJBase
 using DataFrames
 
 using SoleModels
