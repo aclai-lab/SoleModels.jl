@@ -46,6 +46,7 @@ julia = "1"
 [extras]
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
 DecisionTree = "7806a523-6efd-50cb-b5f6-3fa6f1930dbb"
+Distributed = "8ba89e20-285c-5b6f-9357-94700520ee1b"
 InteractiveUtils = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
 MLJ = "add582a8-e3ab-11e8-2d5e-e98b27df1bc7"
 MLJDecisionTreeInterface = "c6f25543-311c-4c74-83dc-3ea6d1015661"
@@ -60,6 +61,7 @@ XGBoost = "009559a3-9522-5dbb-924b-0b6ed2b22bb9"
 test = [
     "DataFrames",
     "DecisionTree",
+    "Distributed",
     "InteractiveUtils",
     "MLJ",
     "MLJDecisionTreeInterface",
