@@ -122,7 +122,7 @@ end
 
 function early_return(leaf, antecedent, clabel, classl)
     info =(;
-    leaf_values=leaf,
+    leaf_value=leaf,
     supporting_predictions=clabel,
     supporting_labels=[classl],
     )
@@ -136,13 +136,13 @@ function early_return(leaf, antecedent, clabel, classl)
 end
 
 # ---------------------------------------------------------------------------- #
-#                          DecisionXGBoost solemodel                           #
+#                              XGBoost solemodel                               #
 # ---------------------------------------------------------------------------- #
 function SoleModels.solemodel(
     model::Vector{<:XGBoost.Node},
     X::AbstractMatrix,
     y::AbstractVector;
-    classlabels,
+    classlabels=nothing,
     featurenames=nothing,
     keep_condensed=false,
     use_float32::Bool=true,
@@ -150,25 +150,37 @@ function SoleModels.solemodel(
 )
     keep_condensed && error("Cannot keep condensed XGBoost.Node.")
 
-    nclasses = length(classlabels)
-
-    trees = map(enumerate(model)) do (i, t)
-        class_idx = (i - 1) % nclasses + 1
-        clabels = categorical([classlabels[class_idx]])
-        # xgboost trees could be composed of only one leaf, without any split
-        if isnothing(t.split)
+    if classlabels === nothing
+        # regression
+        if t.split === nothing
             antecedent = Atom(get_condition(class_idx, featurenames; test_operator=(<), featval=Inf))
             leaf = use_float32 ? Float32(t.leaf) : t.leaf
             early_return(leaf, antecedent, clabels, classlabels[class_idx])
         else
             SoleModels.solemodel(t, X, y; classlabels, class_idx, clabels, featurenames, use_float32, kwargs...)
         end
+    else
+        #classification
+        nclasses = length(classlabels)
+
+        trees = map(enumerate(model)) do (i, t)
+            class_idx = (i - 1) % nclasses + 1
+            clabels = categorical([classlabels[class_idx]])
+            # xgboost trees could be composed of only one leaf, without any split
+            if t.split === nothing
+                antecedent = Atom(get_condition(class_idx, featurenames; test_operator=(<), featval=Inf))
+                leaf = use_float32 ? Float32(t.leaf) : t.leaf
+                early_return(leaf, antecedent, clabels, classlabels[class_idx])
+            else
+                SoleModels.solemodel(t, X, y; classlabels, class_idx, clabels, featurenames, use_float32, kwargs...)
+            end
+        end
     end
 
     info = merge(
         isnothing(featurenames) ? (;) : (;featurenames=featurenames),
         (;
-            leaf_values = reduce(vcat, getindex.(getproperty.(trees, :info), :leaf_values)),
+            leaf_value = reduce(vcat, getindex.(getproperty.(trees, :info), :leaf_value)),
             supporting_predictions = reduce(vcat, getindex.(getproperty.(trees, :info), :supporting_predictions)),
             supporting_labels = reduce(vcat, getindex.(getproperty.(trees, :info), :supporting_labels))
         )
@@ -188,9 +200,9 @@ function SoleModels.solemodel(
     tree::XGBoost.Node,
     X::AbstractMatrix,
     y::AbstractVector;
-    classlabels,
-    class_idx,
-    clabels,
+    classlabels=nothing,
+    class_idx=nothing,
+    clabels=nothing,
     featurenames=nothing,
     path_conditions=Formula[],
     use_float32::Bool,
@@ -207,21 +219,19 @@ split_condition = use_float32 ? Float32(tree.split_condition) : tree.split_condi
     push!(right_path, Atom(get_condition(tree.split, split_condition, featurenames; test_operator=(≥))))
     
     lefttree = if isnothing(tree.children[1].split)
-        # @show SoleModels.join_antecedents(left_path)
-        xgbleaf(tree.children[1], left_path, X, y; use_float32)
+        xgbleaf(tree.children[1]; formula=left_path, X, y, classlabels, use_float32)
     else
         SoleModels.solemodel(tree.children[1], X, y; path_conditions=left_path, classlabels, class_idx, clabels, featurenames, use_float32)
     end
 
     righttree = if isnothing(tree.children[2].split)
-        # @show SoleModels.join_antecedents(right_path)
-        xgbleaf(tree.children[2], right_path, X, y; use_float32)
+        xgbleaf(tree.children[2]; formula=right_path, X, y, classlabels, use_float32)
     else
         SoleModels.solemodel(tree.children[2], X, y; path_conditions=right_path, classlabels, class_idx, clabels, featurenames, use_float32)
     end
 
     info = (;
-        leaf_values = [lefttree.info[:leaf_values]..., righttree.info[:leaf_values]...],
+        leaf_value = [lefttree.info[:leaf_value]..., righttree.info[:leaf_value]...],
         supporting_predictions = [lefttree.info[:supporting_predictions]..., righttree.info[:supporting_predictions]...],
         supporting_labels = [lefttree.info[:supporting_labels]..., righttree.info[:supporting_labels]...],
     )
@@ -229,26 +239,32 @@ split_condition = use_float32 ? Float32(tree.split_condition) : tree.split_condi
 end
 
 function xgbleaf(
-    leaf::XGBoost.Node,
+    leaf::XGBoost.Node;
     formula::Vector{<:Formula},
     X::AbstractMatrix,
-    y::AbstractVector;
+    y::AbstractVector,
+    classlabels=nothing,
     use_float32::Bool,
 )
-    bitX = bitmap_check_conditions(X, formula)
+    if classlabels === nothing
+        # regression
+        prediction = use_float32 ? Float32(leaf.leaf) : leaf.leaf
+    else
+        #classification
+        bitX = bitmap_check_conditions(X, formula)
+        # this could happens when the split condition doesn't match any class
+        !any(bitX) && (bitX = trues(length(y)))
+        prediction = SoleModels.bestguess(y[bitX]; suppress_parity_warning=true)
 
-    # this could happens when the split condition doesn't match any class
-    !any(bitX) && (bitX = trues(length(y)))
-    prediction = SoleModels.bestguess(y[bitX]; suppress_parity_warning=true)
+        prediction === nothing && return nothing
+    end
 
+    leaf_value = use_float32 ? Float32(leaf.leaf) : leaf.leaf
+    
     labels = unique(y)
 
-    isnothing(prediction) && return nothing
-
-    leaf_values = use_float32 ? Float32(leaf.leaf) : leaf.leaf
-
     info = (;
-        leaf_values,
+        leaf_value,
         supporting_predictions = fill(prediction, length(labels)),
         supporting_labels = labels,
     )
