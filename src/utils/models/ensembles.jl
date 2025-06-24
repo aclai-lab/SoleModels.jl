@@ -418,7 +418,8 @@ struct DecisionXGBoost{O,T<:AbstractModel,A<:Base.Callable} <: AbstractDecisionE
         models = wrap.(models)
 
         if isnothing(aggregation)
-                aggregation = function(args...; return_sum=false) bestguess(args...; return_sum) end
+                # aggregation = function(args...; return_sum=false) bestguess(args...; return_sum) end
+                aggregation = function(args...) bestguess(args...) end
         end
 
         A = typeof(aggregation)
@@ -478,7 +479,7 @@ listimmediaterules(m::DecisionXGBoost; kwargs...) = error("TODO implement")
 #                            DecisionXGBoost apply                             #
 # ---------------------------------------------------------------------------- #
 function apply(
-    m::DecisionXGBoost,
+    m::DecisionXGBoost{<:CLabel},
     id::AbstractInterpretation;
     suppress_parity_warning=false,
     kwargs...
@@ -490,13 +491,13 @@ end
 
 # TODO parallelize
 function apply(
-    m::DecisionXGBoost,
+    m::DecisionXGBoost{<:CLabel},
     d::AbstractInterpretationSet;
     suppress_parity_warning=false,
     kwargs...
 )
     # we expect X_test * classlabels * nrounds trees, because for every round,
-    # XGBoost for every round, creates a tree for every classlabel.
+    # XGBoost creates a tree for every classlabel.
     # So, in every subm model, we'll find as much trees as classlabels.
     preds = hcat([apply_leaf_scores(subm, d; suppress_parity_warning, kwargs...) for subm in models(m)]...)
     preds = __apply_post(m, preds)
@@ -509,7 +510,7 @@ end
 
 # TODO parallelize
 function apply!(
-    m::DecisionXGBoost,
+    m::DecisionXGBoost{<:CLabel},
     d::AbstractInterpretationSet,
     y::AbstractVector;
     mode::Symbol=:replace,
@@ -528,4 +529,24 @@ function apply!(
     preds = __apply_pre(m, d, preds)
 
     return __apply!(m, mode, preds, y, leavesonly)
+end
+
+function apply!(
+    m::DecisionXGBoost{<:RLabel},
+    d::AbstractInterpretationSet,
+    y::AbstractVector;
+    base_score::AbstractFloat,
+    mode::Symbol=:replace,
+    leavesonly::Bool=false,
+    suppress_parity_warning::Bool=true,
+    kwargs...
+)
+    y = __apply_pre(m, d, y)
+
+    preds = hcat([apply!(subm, d, y; mode, leavesonly) for subm in models(m)]...)
+    preds = __apply_post(m, preds)
+    preds = [aggregation(m)(p) for p in eachrow(preds)]
+    preds = __apply_pre(m, d, preds) * 2 .+ base_score
+    
+    __apply!(m, mode, preds, y, leavesonly)
 end

@@ -150,30 +150,23 @@ function SoleModels.solemodel(
 )
     keep_condensed && error("Cannot keep condensed XGBoost.Node.")
 
-    if classlabels === nothing
-        # regression
+    classlabels === nothing || (nclasses = length(classlabels))
+
+    trees = map(enumerate(model)) do (i, t)
+        classlabels === nothing ? begin
+            class_idx = nothing
+            clabels = nothing
+        end : begin
+            class_idx = (i - 1) % nclasses + 1
+            clabels = categorical([classlabels[class_idx]])
+        end
+        # xgboost trees could be composed of only one leaf, without any split
         if t.split === nothing
             antecedent = Atom(get_condition(class_idx, featurenames; test_operator=(<), featval=Inf))
             leaf = use_float32 ? Float32(t.leaf) : t.leaf
             early_return(leaf, antecedent, clabels, classlabels[class_idx])
         else
             SoleModels.solemodel(t, X, y; classlabels, class_idx, clabels, featurenames, use_float32, kwargs...)
-        end
-    else
-        #classification
-        nclasses = length(classlabels)
-
-        trees = map(enumerate(model)) do (i, t)
-            class_idx = (i - 1) % nclasses + 1
-            clabels = categorical([classlabels[class_idx]])
-            # xgboost trees could be composed of only one leaf, without any split
-            if t.split === nothing
-                antecedent = Atom(get_condition(class_idx, featurenames; test_operator=(<), featval=Inf))
-                leaf = use_float32 ? Float32(t.leaf) : t.leaf
-                early_return(leaf, antecedent, clabels, classlabels[class_idx])
-            else
-                SoleModels.solemodel(t, X, y; classlabels, class_idx, clabels, featurenames, use_float32, kwargs...)
-            end
         end
     end
 
