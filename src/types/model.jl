@@ -189,43 +189,7 @@ function __apply_pre(m, d, y)
     y
 end
 
-
-# function apply!(
-#     m::AbstractModel,
-#     i::AbstractInterpretation,
-#     y;
-#     mode = :replace,
-#     kwargs...
-# ) where {O}
-#     @assert mode in [:append, :replace] "Unexpected apply mode: $mode."
-#     return apply(m, i; mode = mode, y = y, kwargs...)
-# end
-
-# function apply!(
-#     m::AbstractModel,
-#     d::AbstractInterpretationSet,
-#     y::AbstractVector;
-#     mode = :replace,
-#     kwargs...
-# ) where {O}
-#     @assert mode in [:append, :replace] "Unexpected apply mode: $mode."
-#     return apply(m, d; mode = mode, y = y, kwargs...)
-# end
-
-
-# function apply!(
-#     m::AbstractModel,
-#     d::AbstractInterpretationSet,
-#     i_instance::Integer,
-#     y;
-#     mode = :replace,
-#     kwargs...
-# ) where {O}
-#     @assert mode in [:append, :replace] "Unexpected apply mode: $mode."
-#     return apply(m, d, i_instance; mode = mode, y = y, kwargs...)
-# end
-
-function apply(m::AbstractModel, d::Any; silent = false, suppress_parity_warning = silent, kwargs...)
+function apply(m::AbstractModel, d::Any; silent=true, suppress_parity_warning=true, kwargs...)
     if d isa SoleData.AbstractLogiset
         error("Please, provide method apply(::$(typeof(m)), ::$(typeof(d)); kwargs...).")
     else
@@ -234,7 +198,7 @@ function apply(m::AbstractModel, d::Any; silent = false, suppress_parity_warning
     end
 end
 
-function apply!(m::AbstractModel, d::Any, y::AbstractVector; silent = false, suppress_parity_warning = silent, kwargs...)
+function apply!(m::AbstractModel, d::Any, y::AbstractVector; silent=true, suppress_parity_warning = true, kwargs...)
     if d isa SoleData.AbstractLogiset
         error("Please, provide method apply!(::$(typeof(m)), ::$(typeof(d)), ::$(typeof(y)); kwargs...).")
     else
@@ -470,18 +434,3 @@ function __apply!(m, mode, preds, y, leavesonly)
 
     return preds
 end
-
-# function __apply!(m, mode, preds, y)
-
-#     if mode == :replace
-#         m.info.supporting_predictions = preds
-#         m.info.supporting_labels = y
-#         preds
-#     elseif mode == :replace
-#         m.info.supporting_predictions = [info(m, :supporting_predictions)..., preds...]
-#         m.info.supporting_labels = [info(m, :supporting_labels)..., y...]
-#         preds
-#     else
-#         error("Unexpected apply mode: $mode.")
-#     end
-# end
