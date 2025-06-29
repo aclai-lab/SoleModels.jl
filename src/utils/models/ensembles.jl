@@ -546,7 +546,7 @@ function apply!(
     preds = hcat([apply!(subm, d, y; mode, leavesonly) for subm in models(m)]...)
     preds = __apply_post(m, preds)
     preds = [aggregation(m)(p) for p in eachrow(preds)]
-    preds = __apply_pre(m, d, preds) * 2 .+ base_score
-    
+    preds = __apply_pre(m, d, preds) * length(m.models) .+ base_score
+
     __apply!(m, mode, preds, y, leavesonly)
 end
