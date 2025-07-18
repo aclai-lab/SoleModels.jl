@@ -99,9 +99,9 @@ function SoleModels.solemodel(
     # end
 
     if isnothing(weights)
-        m = DecisionEnsemble{O}(trees, info)
+        m = DecisionEnsemble{O}(trees, info; parity_func=x->first(sort(collect(keys(x)))))
     else
-        m = DecisionEnsemble{O}(trees, weights, info)
+        m = DecisionEnsemble{O}(trees, weights, info; parity_func=x->first(sort(collect(keys(x)))))
     end
     return m
 end
