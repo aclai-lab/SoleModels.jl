@@ -12,7 +12,7 @@
 ############################################################################################
 
 """
-    struct DecisionTree{O} <: AbstractModel{O}
+    mutable struct DecisionTree{O} <: AbstractModel{O}
         root::M where {M<:Union{LeafModel{O},Branch{O}}}
         info::NamedTuple
     end
@@ -47,7 +47,7 @@ feasible local outcomes of the block.
 See also [`Branch`](@ref), [`DecisionList`](@ref), [`DecisionForest`](@ref),
 [`LeafModel`](@ref), [`MixedModel`](@ref).
 """
-struct DecisionTree{O} <: AbstractModel{O}
+mutable struct DecisionTree{O} <: AbstractModel{O}
     root::M where {M<:Union{LeafModel{O},Branch{O}}}
     info::NamedTuple
 
