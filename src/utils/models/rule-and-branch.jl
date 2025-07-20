@@ -184,7 +184,7 @@ end
 ############################################################################################
 
 """
-    struct Branch{O} <: AbstractModel{O}
+    mutable struct Branch{O} <: AbstractModel{O}
         antecedent::Formula
         posconsequent::M where {M<:AbstractModel{<:O}}
         negconsequent::M where {M<:AbstractModel{<:O}}
@@ -204,7 +204,7 @@ consequent is applied.
 See also [`AbstractModel`](@ref), [`antecedent`](@ref), `SoleLogics.check`,
 `SoleLogics.Formula`, [`negconsequent`](@ref), [`posconsequent`](@ref), [`Rule`](@ref).
 """
-struct Branch{O} <: AbstractModel{O}
+mutable struct Branch{O} <: AbstractModel{O}
     antecedent::Formula
     posconsequent::M where {M<:AbstractModel{<:O}}
     negconsequent::M where {M<:AbstractModel{<:O}}

@@ -7,7 +7,7 @@ abstract type AbstractDecisionEnsemble{O} <: AbstractModel{O} end
 ############################################################################################
 
 """
-    struct DecisionEnsemble{O,T<:AbstractModel,A<:Base.Callable,W<:Union{Nothing,AbstractVector}} <: AbstractDecisionEnsemble{O}
+    mutable struct DecisionEnsemble{O,T<:AbstractModel,A<:Base.Callable,W<:Union{Nothing,AbstractVector}} <: AbstractDecisionEnsemble{O}
         models::Vector{T}
         aggregation::A
         weights::W
@@ -20,7 +20,7 @@ Optionally, model weights can be specified.
 
 See also [`DecisionForest`](@ref), [`DecisionTree`](@ref), [`MaxDecisionBag`](@ref).
 """
-struct DecisionEnsemble{O,T<:AbstractModel,A<:Base.Callable,W<:Union{Nothing,AbstractVector}} <: AbstractDecisionEnsemble{O}
+mutable struct DecisionEnsemble{O,T<:AbstractModel,A<:Base.Callable,W<:Union{Nothing,AbstractVector}} <: AbstractDecisionEnsemble{O}
     models::Vector{T}
     aggregation::A
     weights::W
@@ -111,7 +111,7 @@ aggregation(m::DecisionEnsemble) = m.aggregation
 weights(m::DecisionEnsemble) = m.weights
 # Returns the aggregation function, patched by weights if the model has them.
 function weighted_aggregation(m::DecisionEnsemble)
-    if isnothing(weights(m))
+    if isempty(weights(m))
         aggregation(m)
     else
         function (labels; kwargs...)
