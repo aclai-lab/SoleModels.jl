@@ -1,9 +1,9 @@
 module DecisionTreeExt
 
 using  SoleModels
-using  SoleBase: CLabel, RLabel, Label
-import SoleModels: solemodel
+using  SoleBase:   Label
 import SoleModels: alphabet
+import SoleModels: solemodel, propositional_solemodel
 
 import DecisionTree as DT
 
