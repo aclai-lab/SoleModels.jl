@@ -213,7 +213,7 @@ end
 # ---------------------------------------------------------------------------- #
 function SoleModels.propositional_solemodel(
     model        :: DT.Ensemble{T,O};
-    weights      :: Vector{Number}=Number[],
+    weights      :: Vector{<:Number}=Number[],
     classlabels  :: Vector{<:Label}=Label[],
     featurenames :: Vector{Symbol}=Symbol[]
 )::DecisionEnsemble where {T,O}
