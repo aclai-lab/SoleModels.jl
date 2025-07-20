@@ -65,7 +65,7 @@ export DecisionXGBoost
 
 export MixedModel
 
-export haslistrules, solemodel
+export haslistrules, solemodel, propositional_solemodel
 
 export isensemble
 

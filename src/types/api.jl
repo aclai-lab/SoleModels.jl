@@ -32,6 +32,27 @@ function solemodel(o::Any, FM::Type{<:AbstractModel} = AbstractModel, args...; k
     end
 end
 
+"""
+    propositional_solemodel(m::Any)
+
+This function translates a propositional model to a symbolic model using the structures defined in SoleModel.jl.
+
+See also [`AbstractModel`](@ref), [`ConstantModel`](@ref), [`FunctionModel`](@ref),
+[`LeafModel`](@ref).
+"""
+function propositional_solemodel(o::Any, FM::Type{<:AbstractModel} = AbstractModel, args...; kwargs...)
+    try
+        # FM TODO
+        convert(FM, wrap(o))
+    catch e
+        if e isa MethodError
+            throw(MethodError("Please, provide propositional_solemodel(::$(typeof(o)))"))
+        else
+            rethrow(e)
+        end
+    end
+end
+
 
 import SoleLogics: alphabet,
                     atoms,
