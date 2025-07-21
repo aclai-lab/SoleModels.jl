@@ -1,7 +1,3 @@
-using Test
-using SoleXplorer
-using MLJ, DataFrames, Random
-
 X, y = @load_boston
 X = DataFrame(X)
 
