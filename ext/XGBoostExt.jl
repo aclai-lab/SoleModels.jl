@@ -150,10 +150,10 @@ function SoleModels.solemodel(
 )
     keep_condensed && error("Cannot keep condensed XGBoost.Node.")
 
-    classlabels === nothing || (nclasses = length(classlabels))
+    isnothing(classlabels) || (nclasses = length(classlabels))
 
     trees = map(enumerate(model)) do (i, t)
-        classlabels === nothing ? begin
+        isnothing(classlabels) ? begin
             class_idx = nothing
             clabels = nothing
         end : begin
@@ -239,7 +239,7 @@ function xgbleaf(
     classlabels=nothing,
     use_float32::Bool,
 )
-    if classlabels === nothing
+    if isnothing(classlabels)
         # regression
         prediction = use_float32 ? Float32(leaf.leaf) : leaf.leaf
     else
@@ -249,7 +249,7 @@ function xgbleaf(
         !any(bitX) && (bitX = trues(length(y)))
         prediction = SoleModels.bestguess(y[bitX]; suppress_parity_warning=true)
 
-        prediction === nothing && return nothing
+        isnothing(prediction) && return nothing
     end
 
     leaf_value = use_float32 ? Float32(leaf.leaf) : leaf.leaf

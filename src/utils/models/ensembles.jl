@@ -31,20 +31,21 @@ struct DecisionEnsemble{O,T<:AbstractModel,A<:Base.Callable,W<:Union{Nothing,Abs
         aggregation::Union{Nothing,Base.Callable},
         weights::Union{Nothing,AbstractVector},
         info::NamedTuple = (;);
-        suppress_parity_warning = nothing,
+        suppress_parity_warning=false,
+        parity_func=x->argmax(x)
     ) where {O,T<:AbstractModel}
         @assert length(models) > 0 "Cannot instantiate empty ensemble!"
         models = wrap.(models)
         if isnothing(aggregation)
             # if a suppress_parity_warning parameter is provided, then the aggregation's suppress_parity_warning defaults to it;
             #  otherwise, it defaults to bestguess's suppress_parity_warning
-            if isnothing(suppress_parity_warning)
-                aggregation = function (args...; kwargs...) bestguess(args...; kwargs...) end
-            else
-                aggregation = function (args...; suppress_parity_warning = suppress_parity_warning, kwargs...) bestguess(args...; suppress_parity_warning, kwargs...) end
-            end
+            # if isnothing(suppress_parity_warning)
+            #     aggregation = function (args...; kwargs...) bestguess(args...; suppress_parity_warning, parity_func, kwargs...) end
+            # else
+                aggregation = function (args...; suppress_parity_warning, kwargs...) bestguess(args...; suppress_parity_warning, parity_func, kwargs...) end
+            # end
         else
-            isnothing(suppress_parity_warning) || @warn "Unexpected value for suppress_parity_warning: $(suppress_parity_warning)."
+            !suppress_parity_warning || @warn "Unexpected value for suppress_parity_warning: $(suppress_parity_warning)."
         end
         # T = typeof(models)
         W = typeof(weights)

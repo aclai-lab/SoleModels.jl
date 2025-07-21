@@ -2,7 +2,7 @@ name: CI
 on:
   push:
     branches:
-      - xgboost_regressor
+      - new_bestguess
     tags: ['*']
   pull_request:
   workflow_dispatch:

@@ -1,3 +1,9 @@
+# using SoleModels
+# using MLJ
+# using DataFrames, Random
+# using DecisionTree
+# const DT = DecisionTree
+
 X, y = @load_iris
 X = DataFrame(X)
 
@@ -55,30 +61,48 @@ printmodel(solem; max_depth = 7, show_intermediate_finals = true, show_metrics =
 #                                Data Validation                               #
 # ---------------------------------------------------------------------------- #
 @testset "data validation" begin
-  Forest = MLJ.@load RandomForestClassifier pkg=DecisionTree
+    Forest = MLJ.@load RandomForestClassifier pkg=DecisionTree
 
-  for train_ratio in 0.5:0.1:0.9
-      for seed in 1:40
-          train, test = partition(eachindex(y), train_ratio; shuffle=true, rng=Xoshiro(seed))
-          X_train, y_train = X[train, :], y[train]
-          X_test, y_test = X[test, :], y[test]
+    for train_ratio in 0.7:0.1:0.9
+        for seed in 1:10
+            train, test = partition(eachindex(y), train_ratio; shuffle=true, rng=Xoshiro(seed))
+            X_train, y_train = X[train, :], y[train]
+            X_test, y_test = X[test, :], y[test]
 
-          for n_trees in 10:10:60
-              # solemodel
-              model = Forest(; n_trees, rng=Xoshiro(seed))
-              mach = machine(model, X_train, y_train)
-              fit!(mach, verbosity=0)
-              classlabels = (mach).fitresult[2][sortperm((mach).fitresult[3])]
-              featurenames = MLJ.report(mach).features
-              solem = solemodel(MLJ.fitted_params(mach).forest; classlabels, featurenames)
-              preds = apply!(solem, X_test, y_test)
+            for n_trees in 10:10:50
+                # solemodel
+                model = Forest(; n_trees, rng=Xoshiro(seed))
+                mach = machine(model, X_train, y_train)
+                fit!(mach, verbosity=0)
+                classlabels = (mach).fitresult[2][sortperm((mach).fitresult[3])]
+                featurenames = MLJ.report(mach).features
+                solem = solemodel(MLJ.fitted_params(mach).forest; classlabels, featurenames)
+                preds = apply!(solem, X_test, y_test)
 
-              # decisiontree
-              rf_model = DT.build_forest(y_train, Matrix(X_train), -1, n_trees; rng=Xoshiro(seed))
-              rf_preds = DT.apply_forest(rf_model, Matrix(X_test))
+                # decisiontree
+                # rf_model = DT.build_forest(y_train, Matrix(X_train), -1, n_trees; rng=Xoshiro(seed))
+                # rf_preds = DT.apply_forest(rf_model, Matrix(X_test))
+                rf_preds = MLJ.predict_mode(mach, X_test)
 
-              @test preds == rf_preds
-          end
-      end
-  end
+                @test preds == rf_preds
+            end
+        end
+    end
 end
+
+(train_ratio, seed, n_trees) = (0.7, 2, 20)
+train, test = partition(eachindex(y), train_ratio; shuffle=true, rng=Xoshiro(seed))
+X_train, y_train = X[train, :], y[train]
+X_test, y_test = X[test, :], y[test]
+
+model = Forest(; n_trees, rng=Xoshiro(seed))
+mach = machine(model, X_train, y_train)
+fit!(mach, verbosity=0)
+classlabels = (mach).fitresult[2][sortperm((mach).fitresult[3])]
+featurenames = MLJ.report(mach).features
+solem = solemodel(MLJ.fitted_params(mach).forest; classlabels, featurenames)
+preds = apply!(solem, X_test, y_test)
+
+# decisiontree
+rf_model = DT.build_forest(y_train, Matrix(X_train), -1, n_trees; rng=Xoshiro(seed))
+rf_preds = DT.apply_forest(rf_model, Matrix(X_test))

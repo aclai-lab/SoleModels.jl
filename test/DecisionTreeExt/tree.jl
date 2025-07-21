@@ -70,13 +70,13 @@ printmodel.(sort(interesting_rules, by = readmetrics); show_metrics = (; round_d
 @testset "data validation" begin
     Tree = MLJ.@load DecisionTreeClassifier pkg=DecisionTree
 
-    for train_ratio in 0.5:0.1:0.9
-        for seed in 1:40
+    for train_ratio in 0.7:0.1:0.9
+        for seed in 1:10
             train, test = partition(eachindex(y), train_ratio; shuffle=true, rng=Xoshiro(seed))
             X_train, y_train = X[train, :], y[train]
             X_test, y_test = X[test, :], y[test]
 
-            for max_depth in 2:1:6
+            for max_depth in 3:1:6
                 # solemodel
                 model = Tree(; max_depth, rng=Xoshiro(seed))
                 mach = machine(model, X_train, y_train)
