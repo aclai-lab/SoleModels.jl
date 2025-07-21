@@ -45,7 +45,7 @@ struct DecisionEnsemble{O,T<:AbstractModel,A<:Base.Callable,W<:Union{Nothing,Abs
                 aggregation = function (args...; suppress_parity_warning, kwargs...) bestguess(args...; suppress_parity_warning, parity_func, kwargs...) end
             # end
         else
-            isnothing(suppress_parity_warning) || @warn "Unexpected value for suppress_parity_warning: $(suppress_parity_warning)."
+            !suppress_parity_warning || @warn "Unexpected value for suppress_parity_warning: $(suppress_parity_warning)."
         end
         # T = typeof(models)
         W = typeof(weights)

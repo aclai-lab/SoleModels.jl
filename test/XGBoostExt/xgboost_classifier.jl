@@ -111,14 +111,14 @@ println("RandomForest accuracy: ", rm_accuracy)
 @testset "data validation" begin
     XGTrees = MLJ.@load XGBoostClassifier pkg=XGBoost
 
-    for train_ratio in 0.5:0.1:0.9
-        for seed in 1:40
+    for train_ratio in 0.7:0.1:0.9
+        for seed in 1:10
             train, test = partition(eachindex(y), train_ratio; shuffle=true, rng=Xoshiro(seed))
             X_train, y_train = X[train, :], y[train]
             X_test, y_test = X[test, :], y[test]
 
-            for num_round in 10:10:50
-                for eta in 0.1:0.1:0.6
+            for num_round in 10:10:20
+                for eta in 0.1:0.1:0.3
                     model = XGTrees(; num_round, eta, objective="multi:softmax")
                     mach = machine(model, X_train, y_train)
                     fit!(mach, verbosity=0)

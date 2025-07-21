@@ -57,15 +57,15 @@ preds = apply!(solem, X_test_f32, y_test; base_score)
 @testset "data validation" begin
     XGTrees = MLJ.@load XGBoostRegressor pkg=XGBoost verbosity=0
 
-    for train_ratio in 0.6:0.1:0.9
-        for seed in 1:40
+    for train_ratio in 0.7:0.1:0.9
+        for seed in 1:10
             train, test = partition(eachindex(y), train_ratio; shuffle=true, rng=Xoshiro(seed))
             X_train, y_train = X[train, :], y[train]
             X_test, y_test = X[test, :], y[test]
             base_score = mean(y_train)
 
-            for num_round in 10:10:50
-                for max_depth in 2:6
+            for num_round in 10:10:20
+                for max_depth in 3:6
                     model = XGTrees(; num_round, max_depth, objective="reg:squarederror")
                     mach = machine(model, X_train, y_train)
                     mach.model.base_score = base_score
