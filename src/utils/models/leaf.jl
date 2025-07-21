@@ -98,7 +98,7 @@ convert(::Type{<:AbstractModel{F}}, m::ConstantModel) where {F} = ConstantModel{
 # ---------------------------------------------------------------------------- #
 #                            DecisionXGBoost apply                             #
 # ---------------------------------------------------------------------------- #
-outcome_leaf_value(m::ConstantModel) = m.info.leaf_values
+outcome_leaf_value(m::ConstantModel) = m.info.leaf_value
 
 apply_leaf_scores(m::ConstantModel, i::AbstractInterpretation; kwargs...) = outcome(m)
 apply_leaf_scores(
