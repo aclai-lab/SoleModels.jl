@@ -141,6 +141,16 @@ function apply!(
     return __apply!(m, mode, preds, y, leavesonly)
 end
 
+function apply!(
+    solem :: DecisionTree{T},
+    X     :: AbstractDataFrame,
+    y     :: AbstractVector{S}
+)::Nothing where {T, S<:Label}
+    predictions = [apply(solem.root, x) for x in eachrow(X)]
+    solem.info = set_predictions(solem.info, predictions, y)
+    return nothing
+end
+
 """
     function nnodes(m::DecisionTree)
 
@@ -177,6 +187,14 @@ end
 immediatesubmodels(m::DecisionTree) = immediatesubmodels(root(m))
 nimmediatesubmodels(m::DecisionTree) = nimmediatesubmodels(root(m))
 listimmediaterules(m::DecisionTree) = listimmediaterules(root(m))
+
+function set_predictions(
+    info  :: NamedTuple,
+    preds :: Vector{T},
+    y     :: AbstractVector{S}
+)::NamedTuple where {T,S<:Label}
+    merge(info, (supporting_predictions=preds, supporting_labels=y))
+end
 
 ############################################################################################
 ##################################### MixedModel ###########################################

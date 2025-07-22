@@ -8,7 +8,10 @@ using Lazy: @forward
 using FunctionWrappers: FunctionWrapper
 using CategoricalArrays
 
+using DataFrames: AbstractDataFrame, DataFrameRow
+
 using SoleBase
+using SoleBase: Label, CLabel, RLabel, XGLabel
 
 @reexport using SoleLogics
 using SoleLogics
@@ -65,7 +68,7 @@ export DecisionXGBoost
 
 export MixedModel
 
-export haslistrules, solemodel, propositional_solemodel
+export haslistrules, solemodel
 
 export isensemble
 
