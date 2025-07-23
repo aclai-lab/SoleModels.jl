@@ -1,3 +1,8 @@
+using SoleModels
+using MLJ, DataFrames, Random, CategoricalArrays
+using DecisionTree
+const DT = DecisionTree
+
 X, y = @load_iris
 X = DataFrame(X)
 
@@ -24,26 +29,24 @@ model = Tree(
 # Bind the model and data into a machine
 mach = machine(model, X_train, y_train)
 # Fit the model
-fit!(mach)
+MLJ.fit!(mach)
 
-
-solem = solemodel(fitted_params(mach).tree)
-solem = solemodel(fitted_params(mach).tree; keep_condensed = false)
+featurenames = MLJ.report(mach).features
+solem = solemodel(fitted_params(mach).tree, featurenames)
 
 @test SoleData.scalarlogiset(X_test; allow_propositional = true) isa PropositionalLogiset
 
 # Make test instances flow into the model
 preds = apply(solem, X_test)
-preds2 = apply!(solem, X_test, y_test)
+apply!(solem, X_test, y_test)
 
-@test preds == preds2
+@test preds == solem.info.supporting_predictions
 accuracy = sum(preds .== y_test)/length(y_test)
 @test accuracy > 0.7
 
-# apply!(solem, X_test, y_test, mode = :append)
-
-solem = @test_nowarn solemodel(fitted_params(mach).tree; keep_condensed = true)
-solem = @test_nowarn solemodel(fitted_params(mach).tree; keep_condensed = false)
+featurenames = MLJ.report(mach).features
+solem = @test_nowarn solemodel(fitted_params(mach).tree, featurenames; keep_condensed = true)
+solem = @test_nowarn solemodel(fitted_params(mach).tree, featurenames; keep_condensed = false)
 
 printmodel(solem; max_depth = 7, show_intermediate_finals = true, show_metrics = true)
 
@@ -80,9 +83,10 @@ printmodel.(sort(interesting_rules, by = readmetrics); show_metrics = (; round_d
                 # solemodel
                 model = Tree(; max_depth, rng=Xoshiro(seed))
                 mach = machine(model, X_train, y_train)
-                fit!(mach, verbosity=0)
-                solem = solemodel(MLJ.fitted_params(mach).tree)
-                preds = apply!(solem, X_test, y_test)
+                MLJ.fit!(mach, verbosity=0)
+                featurenames = MLJ.report(mach).features
+                solem = solemodel(MLJ.fitted_params(mach).tree; featurenames)
+                preds = apply(solem, X_test)
 
                 # decisiontree
                 y_coded_train = @. CategoricalArrays.levelcode(y_train)

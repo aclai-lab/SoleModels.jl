@@ -60,13 +60,31 @@ end
 #                                  solemodel                                   #
 # ---------------------------------------------------------------------------- #
 function SoleModels.solemodel(
-    model        :: DT.Ensemble{T,O};
-    weights      :: Vector{<:Number}=Number[],
-    classlabels  :: Vector{<:Label}=Label[],
-    featurenames :: Vector{Symbol}=Symbol[]
+    model          :: DT.Ensemble{T,O},
+    featurenames   :: Vector{Symbol};
+    weights        :: Vector{<:Number}=Number[],
+    classlabels    :: Vector{<:O}=Label[],
+    keep_condensed :: Bool=false,
 )::DecisionEnsemble where {T,O}
-    trees = map(t -> SoleModels.solemodel(t; classlabels, featurenames), model.trees)
-    info = isempty(featurenames) ? (;) : (; featurenames=featurenames, )
+    if keep_condensed && !isempty(classlabels)
+        info = (;
+            apply_preprocess=(y->O(findfirst(x -> x == y, classlabels))),
+            apply_postprocess=(y->classlabels[y]),
+        )
+        keep_condensed = !keep_condensed
+        # O = eltype(classlabels)
+    else
+        info = (;)
+    end
+
+    trees = map(t -> SoleModels.solemodel(t, featurenames; classlabels, keep_condensed), model.trees)
+    info = merge(info, (;
+            featurenames=featurenames, 
+            supporting_predictions=vcat([t.info[:supporting_predictions] for t in trees]...),
+            supporting_labels=vcat([t.info[:supporting_labels] for t in trees]...),
+        )
+    )
+
     parity_func=x->first(sort(collect(keys(x))))
 
     isnothing(weights) ?
@@ -75,33 +93,71 @@ function SoleModels.solemodel(
 end
 
 function SoleModels.solemodel(
-    tree         :: DT.InfoNode{T,O};
-    featurenames :: Vector{Symbol}=Symbol[]
+    tree         :: DT.InfoNode{T,O},
+    featurenames :: Vector{Symbol};
+    keep_condensed :: Bool=false,
 )::DecisionTree where {T,O}
     classlabels  = hasproperty(tree.info, :classlabels) ? get_classlabels(tree) : Label[]
-    root = SoleModels.solemodel(tree.node; classlabels, featurenames)
-    DecisionTree(root, (;))
+
+    root, info = begin
+        if keep_condensed
+            root = SoleModels.solemodel(tree.node, featurenames; classlabels)
+            info = (;
+                apply_preprocess=(y -> UInt32(findfirst(x -> x == y, classlabels))),
+                apply_postprocess=(y -> classlabels[y]),
+            )
+            # keep_condensed = !keep_condensed
+            root, info
+        else
+            root = SoleModels.solemodel(tree.node, featurenames; classlabels)
+            info = (;)
+            root, info
+        end
+    end
+
+    info = merge(info, (;
+            featurenames=featurenames,
+            supporting_predictions=root.info[:supporting_predictions],
+            supporting_labels=root.info[:supporting_labels],
+        )
+    )
+
+    DecisionTree(root, info)
 end
 
 function SoleModels.solemodel(
-    tree         :: DT.Node;
+    tree         :: DT.Node,
+    featurenames :: Vector{Symbol};
     classlabels  :: Vector{<:Label}=Label[],
-    featurenames :: Vector{Symbol}=Symbol[]
 )::Branch
     cond = get_condition(tree.featid, tree.featval, featurenames)
     antecedent = Atom(cond)
-    lefttree  = SoleModels.solemodel(tree.left;  classlabels, featurenames)
-    righttree = SoleModels.solemodel(tree.right; classlabels, featurenames)
-    return Branch(antecedent, lefttree, righttree)
+    lefttree  = SoleModels.solemodel(tree.left, featurenames; classlabels )
+    righttree = SoleModels.solemodel(tree.right, featurenames; classlabels )
+
+    info = (;
+        supporting_predictions = [lefttree.info[:supporting_predictions]..., righttree.info[:supporting_predictions]...],
+        supporting_labels = [lefttree.info[:supporting_labels]..., righttree.info[:supporting_labels]...],
+    )
+
+    return Branch(antecedent, lefttree, righttree, info)
 end
 
 function SoleModels.solemodel(
-    tree         :: DT.Leaf;
-    classlabels  :: Vector{<:Label}=Label[],
-    featurenames :: Vector{Symbol}=Symbol[]
+    tree         :: DT.Leaf,
+                 :: Vector{Symbol};
+    classlabels  :: Vector{<:Label}=Label[]
 )::ConstantModel
-    prediction = isempty(classlabels) ? tree.majority : classlabels[tree.majority]
-    SoleModels.ConstantModel(prediction)
+    prediction, labels = isempty(classlabels) ? 
+        (tree.majority, tree.values) : 
+        (classlabels[tree.majority], classlabels[tree.values])
+
+    info = (;
+        supporting_predictions = fill(prediction, length(labels)),
+        supporting_labels = labels,
+    )
+
+    SoleModels.ConstantModel(prediction, info)
 end
 
 end

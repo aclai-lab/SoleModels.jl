@@ -44,8 +44,8 @@ mutable struct DecisionEnsemble{O,T<:AbstractModel,A<:Base.Callable,W<:Union{Not
             # else
                 aggregation = function (args...; suppress_parity_warning, kwargs...) bestguess(args...; suppress_parity_warning, parity_func, kwargs...) end
             # end
-        else
-            isnothing(suppress_parity_warning) || @warn "Unexpected value for suppress_parity_warning: $(suppress_parity_warning)."
+        # else
+        #     isnothing(suppress_parity_warning) || @warn "Unexpected value for suppress_parity_warning: $(suppress_parity_warning)."
         end
         # T = typeof(models)
         W = typeof(weights)
@@ -214,18 +214,6 @@ function apply!(
     return __apply!(m, mode, preds, y, leavesonly)
 end
 
-function apply!(
-    solem :: DecisionEnsemble{O,T,A,W},
-    X     :: AbstractDataFrame,
-    y     :: AbstractVector;
-    suppress_parity_warning::Bool=false
-)::Nothing where {O,T,A,W}
-    predictions = permutedims(hcat([apply(s, X, y) for s in get_models(solem)]...))
-    predictions = aggregate(solem, predictions, suppress_parity_warning)
-    solem.info = set_predictions(solem.info, predictions, y)
-    return nothing
-end
-
 """
     const DecisionForest{O} = DecisionEnsemble{<:DecisionTree{O}}
 
@@ -262,16 +250,6 @@ See also [`DecisionForest`](@ref), [`DecisionTree`](@ref), [`trees`](@ref).
 """
 function ntrees(m::DecisionForest)
     length(trees(m))
-end
-
-get_models(s::DecisionEnsemble) = s.models
-
-function aggregate(
-    solem :: DecisionEnsemble,
-    preds :: Matrix{T},
-    suppress_parity_warning::Bool
-)::Vector{T} where T<:Label
-    [weighted_aggregation(solem)(p; suppress_parity_warning) for p in eachcol(preds)]
 end
 
 # """

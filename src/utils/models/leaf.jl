@@ -73,10 +73,6 @@ apply(
     kwargs...
 ) = Fill(outcome(m), ninstances(d))
 
-function apply(leaf::ConstantModel{T}, ::DataFrameRow)::T where T
-    leaf.outcome
-end
-
 function apply!(
     m::ConstantModel,
     d::AbstractInterpretationSet,

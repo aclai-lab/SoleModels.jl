@@ -81,6 +81,7 @@ include("utils/models/rule-and-branch.jl")
 include("utils/models/other.jl")
 include("utils/models/meta.jl") # TODO deprecate?
 include("utils/models/ensembles.jl")
+include("utils/models/dataframes.jl")
 include("utils/models/linear-forms-utilities.jl")
 include("utils/models/wrap.jl")
 include("utils/models/syntax-utilities.jl")

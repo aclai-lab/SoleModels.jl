@@ -347,28 +347,6 @@ function apply(
     preds
 end
 
-function apply(
-    solebranch :: Branch{T},
-    X          :: AbstractDataFrame,
-    y          :: AbstractVector{S}
-) where {T, S<:Label}
-    predictions = Label[apply(solebranch, x) for x in eachrow(X)]
-    solebranch.info = set_predictions(solebranch.info, predictions, y)
-    return predictions
-end
-
-function apply(
-    solebranch :: Branch{T},
-    x          :: DataFrameRow
-)::T where T
-    featid, cond, thr = get_featid(solebranch), get_cond(solebranch), get_thr(solebranch)
-    feature_value = x[featid]
-    condition_result = cond(feature_value, thr)
-    
-    return condition_result ?
-        apply(solebranch.posconsequent, x) :
-        apply(solebranch.negconsequent, x)
-end
 # ---------------------------------------------------------------------------- #
 #                            DecisionXGBoost apply                             #
 # ---------------------------------------------------------------------------- #
@@ -476,6 +454,3 @@ checkantecedent(
     kwargs...
 ) = check(antecedent(m), d, args...; kwargs...)
 
-get_featid(s::Branch) = s.antecedent.value.metacond.feature.i_variable
-get_cond(s::Branch) = s.antecedent.value.metacond.test_operator
-get_thr(s::Branch) = s.antecedent.value.threshold

@@ -42,8 +42,7 @@ test_suites = [
     ("Parse", ["parse.jl", ]),
     ("Rules", ["juliacon2024.jl", ]),
     ("Linear forms", ["linear-form-utilities.jl", ]),
-    # timeseries site closed, look for local dataset in SoleData asap
-    # ("Pluto Demo", ["$(dirname(dirname(pathof(SoleModels))))/pluto-demo.jl", ]),
+    ("Pluto Demo", ["$(dirname(dirname(pathof(SoleModels))))/pluto-demo.jl", ]),
     ("DecisionTreeExt", ["DecisionTreeExt/tree.jl", "DecisionTreeExt/forest.jl", "DecisionTreeExt/adaboost.jl"]),
     ("XGBoostExt", ["XGBoostExt/xgboost_classifier.jl", "XGBoostExt/xgboost_regressor.jl"]),
 ]
