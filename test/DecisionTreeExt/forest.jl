@@ -1,3 +1,8 @@
+# using SoleModels
+# using MLJ, DataFrames, Random, CategoricalArrays
+# using DecisionTree
+# const DT = DecisionTree
+
 X, y = @load_iris
 X = DataFrame(X)
 
@@ -25,23 +30,21 @@ model = Forest(
 # Bind the model and data into a machine
 mach = machine(model, X_train, y_train)
 # Fit the model
-fit!(mach)
+MLJ.fit!(mach)
 
-
-classlabels = (mach).fitresult[2]
-classlabels = classlabels[sortperm((mach).fitresult[3])]
+classlabels  = mach.fitresult[2][sortperm((mach).fitresult[3])]
 featurenames = report(mach).features
 
-solem = solemodel(fitted_params(mach).forest; classlabels, featurenames)
-solem = solemodel(fitted_params(mach).forest; classlabels, featurenames, keep_condensed = false)
+solem = solemodel(fitted_params(mach).forest; featurenames, classlabels)
+solem = solemodel(fitted_params(mach).forest; featurenames, classlabels, keep_condensed = false)
 
 @test SoleData.scalarlogiset(X_test; allow_propositional = true) isa PropositionalLogiset
 
 # Make test instances flow into the model
 preds = apply(solem, X_test)
-preds2 = apply!(solem, X_test, y_test)
+apply!(solem, X_test, y_test)
 
-@test preds == preds2
+@test preds == solem.info.supporting_predictions
 accuracy = sum(preds .== y_test)/length(y_test)
 @test accuracy >= 0.8
 
@@ -55,30 +58,30 @@ printmodel(solem; max_depth = 7, show_intermediate_finals = true, show_metrics =
 #                                Data Validation                               #
 # ---------------------------------------------------------------------------- #
 @testset "data validation" begin
-  Forest = MLJ.@load RandomForestClassifier pkg=DecisionTree
+    Forest = MLJ.@load RandomForestClassifier pkg=DecisionTree
 
-  for train_ratio in 0.5:0.1:0.9
-      for seed in 1:40
-          train, test = partition(eachindex(y), train_ratio; shuffle=true, rng=Xoshiro(seed))
-          X_train, y_train = X[train, :], y[train]
-          X_test, y_test = X[test, :], y[test]
+    for train_ratio in 0.5:0.1:0.9
+        for seed in 1:40
+            train, test = partition(eachindex(y), train_ratio; shuffle=true, rng=Xoshiro(seed))
+            X_train, y_train = X[train, :], y[train]
+            X_test, y_test = X[test, :], y[test]
 
-          for n_trees in 10:10:60
-              # solemodel
-              model = Forest(; n_trees, rng=Xoshiro(seed))
-              mach = machine(model, X_train, y_train)
-              fit!(mach, verbosity=0)
-              classlabels = (mach).fitresult[2][sortperm((mach).fitresult[3])]
-              featurenames = MLJ.report(mach).features
-              solem = solemodel(MLJ.fitted_params(mach).forest; classlabels, featurenames)
-              preds = apply!(solem, X_test, y_test)
+            for n_trees in 10:10:60
+                # solemodel
+                model = Forest(; n_trees, rng=Xoshiro(seed))
+                mach = machine(model, X_train, y_train)
+                MLJ.fit!(mach, verbosity=0)
+                classlabels  = mach.fitresult[2][sortperm((mach).fitresult[3])]
+                featurenames = MLJ.report(mach).features
+                solem = solemodel(MLJ.fitted_params(mach).forest; featurenames, classlabels, parity_func=x->argmax(x))
+                apply!(solem, X_test, y_test)
 
-              # decisiontree
-              rf_model = DT.build_forest(y_train, Matrix(X_train), -1, n_trees; rng=Xoshiro(seed))
-              rf_preds = DT.apply_forest(rf_model, Matrix(X_test))
+                # decisiontree
+                rf_model = DT.build_forest(y_train, Matrix(X_train), -1, n_trees; rng=Xoshiro(seed))
+                rf_preds = DT.apply_forest(rf_model, Matrix(X_test))
 
-              @test preds == rf_preds
-          end
-      end
-  end
+                @test solem.info.supporting_predictions == String.(rf_preds)
+            end
+        end
+    end
 end

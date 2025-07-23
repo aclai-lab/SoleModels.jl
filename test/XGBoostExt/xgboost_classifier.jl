@@ -36,8 +36,8 @@ encoding     = get_encoding(mach.fitresult[2])
 classlabels  = get_classlabels(encoding)
 featurenames = mach.report.vals[1].features
 
-solem = solemodel(trees, Matrix(X_train), y_train; classlabels, featurenames)
-solem = solemodel(trees, Matrix(X_train), y_train; classlabels, featurenames, keep_condensed = false)
+solem = solemodel(trees, X_train, y_train; classlabels, featurenames)
+# solem = solemodel(trees, X_train, y_train; classlabels, featurenames, keep_condensed = false)
 
 @test SoleData.scalarlogiset(X_test; allow_propositional = true) isa PropositionalLogiset
 

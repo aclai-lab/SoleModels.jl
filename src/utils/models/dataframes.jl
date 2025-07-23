@@ -9,7 +9,7 @@ function apply!(
 )::Nothing where {O,T,A,W}
     predictions = permutedims(hcat([apply(s, X, y) for s in get_models(solem)]...))
     predictions = aggregate(solem, predictions, suppress_parity_warning)
-    solem.info = set_predictions(solem.info, predictions, y)
+    solem.info  = set_predictions(solem.info, predictions, y)
     return nothing
 end
 
@@ -19,7 +19,7 @@ function apply!(
     y     :: AbstractVector{S}
 )::Nothing where {T, S<:Label}
     predictions = [apply(solem.root, x) for x in eachrow(X)]
-    solem.info = set_predictions(solem.info, predictions, y)
+    solem.info  = set_predictions(solem.info, predictions, y)
     return nothing
 end
 
@@ -28,7 +28,7 @@ function apply(
     X          :: AbstractDataFrame,
     y          :: AbstractVector{S}
 ) where {T, S<:Label}
-    predictions = Label[apply(solebranch, x) for x in eachrow(X)]
+    predictions     = Label[apply(solebranch, x) for x in eachrow(X)]
     solebranch.info = set_predictions(solebranch.info, predictions, y)
     return predictions
 end
@@ -38,8 +38,8 @@ function apply(
     x          :: DataFrameRow
 )::T where T
     featid, cond, thr = get_featid(solebranch), get_cond(solebranch), get_thr(solebranch)
-    feature_value = x[featid]
-    condition_result = cond(feature_value, thr)
+    feature_value     = x[featid]
+    condition_result  = cond(feature_value, thr)
     
     return condition_result ?
         apply(solebranch.posconsequent, x) :
@@ -56,13 +56,13 @@ end
 get_models(s::DecisionEnsemble) = s.models
 
 get_featid(s::Branch) = s.antecedent.value.metacond.feature.i_variable
-get_cond(s::Branch) = s.antecedent.value.metacond.test_operator
-get_thr(s::Branch) = s.antecedent.value.threshold
+get_cond(s::Branch)   = s.antecedent.value.metacond.test_operator
+get_thr(s::Branch)    = s.antecedent.value.threshold
 
 function aggregate(
     solem :: DecisionEnsemble,
-    preds :: Matrix{T},
-    suppress_parity_warning::Bool
+    preds :: AbstractMatrix{T},
+    suppress_parity_warning :: Bool
 )::Vector{T} where T<:Label
     [weighted_aggregation(solem)(p; suppress_parity_warning) for p in eachcol(preds)]
 end

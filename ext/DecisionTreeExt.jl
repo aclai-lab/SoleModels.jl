@@ -10,7 +10,13 @@ import DecisionTree as DT
 # ---------------------------------------------------------------------------- #
 #                                  utilities                                   #
 # ---------------------------------------------------------------------------- #
-get_classlabels(tree::DT.InfoNode)::Vector{<:Label} = tree.info.classlabels
+function get_featurenames(tree::Union{DT.Ensemble, DT.InfoNode})
+    if !hasproperty(tree, :info)
+        throw(ArgumentError("Please provide featurenames."))
+    end
+    return tree.info.featurenames
+end
+get_classlabels(tree::Union{DT.Ensemble, DT.InfoNode})::Vector{<:Label} = tree.info.classlabels
 
 function get_condition(featid, featval, featurenames)
     test_operator = (<)
@@ -60,24 +66,25 @@ end
 #                                  solemodel                                   #
 # ---------------------------------------------------------------------------- #
 function SoleModels.solemodel(
-    model          :: DT.Ensemble{T,O},
-    featurenames   :: Vector{Symbol};
+    model          :: DT.Ensemble{T,O};
+    featurenames   :: Vector{Symbol}=Symbol[],
     weights        :: Vector{<:Number}=Number[],
-    classlabels    :: Vector{<:O}=Label[],
+    classlabels    :: AbstractVector{<:Label}=Label[],
     keep_condensed :: Bool=false,
+    parity_func    :: Base.Callable=x->first(sort(collect(keys(x))))
 )::DecisionEnsemble where {T,O}
+    isempty(featurenames) && (featurenames = get_featurenames(model))
     if keep_condensed && !isempty(classlabels)
         info = (;
             apply_preprocess=(y->O(findfirst(x -> x == y, classlabels))),
             apply_postprocess=(y->classlabels[y]),
         )
         keep_condensed = !keep_condensed
-        # O = eltype(classlabels)
     else
         info = (;)
     end
 
-    trees = map(t -> SoleModels.solemodel(t, featurenames; classlabels, keep_condensed), model.trees)
+    trees = map(t -> SoleModels.solemodel(t, featurenames; classlabels), model.trees)
     info = merge(info, (;
             featurenames=featurenames, 
             supporting_predictions=vcat([t.info[:supporting_predictions] for t in trees]...),
@@ -85,18 +92,17 @@ function SoleModels.solemodel(
         )
     )
 
-    parity_func=x->first(sort(collect(keys(x))))
-
     isnothing(weights) ?
         DecisionEnsemble{O}(trees, info; parity_func) :
         DecisionEnsemble{O}(trees, weights, info; parity_func)
 end
 
 function SoleModels.solemodel(
-    tree         :: DT.InfoNode{T,O},
-    featurenames :: Vector{Symbol};
+    tree           :: DT.InfoNode{T,O};
+    featurenames   :: Vector{Symbol}=Symbol[],
     keep_condensed :: Bool=false,
 )::DecisionTree where {T,O}
+    isempty(featurenames) && (featurenames = get_featurenames(tree))
     classlabels  = hasproperty(tree.info, :classlabels) ? get_classlabels(tree) : Label[]
 
     root, info = begin
@@ -106,7 +112,6 @@ function SoleModels.solemodel(
                 apply_preprocess=(y -> UInt32(findfirst(x -> x == y, classlabels))),
                 apply_postprocess=(y -> classlabels[y]),
             )
-            # keep_condensed = !keep_condensed
             root, info
         else
             root = SoleModels.solemodel(tree.node, featurenames; classlabels)
@@ -128,7 +133,7 @@ end
 function SoleModels.solemodel(
     tree         :: DT.Node,
     featurenames :: Vector{Symbol};
-    classlabels  :: Vector{<:Label}=Label[],
+    classlabels  :: AbstractVector{<:Label}=Label[],
 )::Branch
     cond = get_condition(tree.featid, tree.featval, featurenames)
     antecedent = Atom(cond)
@@ -146,7 +151,7 @@ end
 function SoleModels.solemodel(
     tree         :: DT.Leaf,
                  :: Vector{Symbol};
-    classlabels  :: Vector{<:Label}=Label[]
+    classlabels  :: AbstractVector{<:Label}=Label[]
 )::ConstantModel
     prediction, labels = isempty(classlabels) ? 
         (tree.majority, tree.values) : 

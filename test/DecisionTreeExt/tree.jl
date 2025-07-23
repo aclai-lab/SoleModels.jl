@@ -1,7 +1,7 @@
-using SoleModels
-using MLJ, DataFrames, Random, CategoricalArrays
-using DecisionTree
-const DT = DecisionTree
+# using SoleModels
+# using MLJ, DataFrames, Random, CategoricalArrays
+# using DecisionTree
+# const DT = DecisionTree
 
 X, y = @load_iris
 X = DataFrame(X)
@@ -32,7 +32,7 @@ mach = machine(model, X_train, y_train)
 MLJ.fit!(mach)
 
 featurenames = MLJ.report(mach).features
-solem = solemodel(fitted_params(mach).tree, featurenames)
+solem = solemodel(fitted_params(mach).tree; featurenames)
 
 @test SoleData.scalarlogiset(X_test; allow_propositional = true) isa PropositionalLogiset
 
@@ -44,9 +44,8 @@ apply!(solem, X_test, y_test)
 accuracy = sum(preds .== y_test)/length(y_test)
 @test accuracy > 0.7
 
-featurenames = MLJ.report(mach).features
-solem = @test_nowarn solemodel(fitted_params(mach).tree, featurenames; keep_condensed = true)
-solem = @test_nowarn solemodel(fitted_params(mach).tree, featurenames; keep_condensed = false)
+solem = @test_nowarn solemodel(fitted_params(mach).tree; keep_condensed = true)
+solem = @test_nowarn solemodel(fitted_params(mach).tree; keep_condensed = false)
 
 printmodel(solem; max_depth = 7, show_intermediate_finals = true, show_metrics = true)
 
