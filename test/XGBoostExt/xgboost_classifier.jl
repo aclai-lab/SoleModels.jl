@@ -1,3 +1,9 @@
+using SoleModels
+using MLJ, DataFrames, Random, CategoricalArrays
+using MLJModelInterface, XGBoost
+const MMI = MLJModelInterface
+const XGB = XGBoost
+
 X, y = @load_iris
 X = DataFrame(X)
 
@@ -44,6 +50,7 @@ solem = solemodel(trees, X_train, y_train; classlabels, featurenames)
 # Make test instances flow into the model
 X_test_f32 = mapcols(col -> Float32.(col), X_test)
 preds = apply(solem, X_test_f32)
+preds = apply(solem, SoleData.scalarlogiset(X_test_f32; allow_propositional = true))
 predsl = CategoricalArrays.levelcode.(CategoricalArrays.categorical(preds)) .- 1
 
 apply!(solem, X_test, y_test)

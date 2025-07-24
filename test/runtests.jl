@@ -17,14 +17,15 @@ addprocs(2)
     using InteractiveUtils
     using MLJ
     using MLJDecisionTreeInterface
-    import DecisionTree as DT
-    import MLJModelInterface as MMI
-    import XGBoost as XGB
     using DataFrames
     using Test
     using Random
     using FunctionWrappers: FunctionWrapper
 end
+
+const DT  = DecisionTree
+const MMI = MLJModelInterface
+const XGB = XGBoost
 
 function run_tests(list)
     println("\n" * ("#"^50))

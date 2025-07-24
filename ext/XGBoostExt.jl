@@ -164,17 +164,57 @@ function SoleModels.solemodel(
         end
     end
 
-    # info = merge(
-    #     isnothing(featurenames) ? (;) : (;featurenames=featurenames),
-    #     (;
-    #         leaf_value = reduce(vcat, getindex.(getproperty.(trees, :info), :leaf_value)),
-    #         supporting_predictions = reduce(vcat, getindex.(getproperty.(trees, :info), :supporting_predictions)),
-    #         supporting_labels = reduce(vcat, getindex.(getproperty.(trees, :info), :supporting_labels))
-    #     )
-    # )
+    info = (;
+        featurenames=featurenames,
+        leaf_value = reduce(vcat, getindex.(getproperty.(trees, :info), :leaf_value)),
+        supporting_predictions = reduce(vcat, getindex.(getproperty.(trees, :info), :supporting_predictions)),
+        supporting_labels = reduce(vcat, getindex.(getproperty.(trees, :info), :supporting_labels))
+    )
 
-    return DecisionXGBoost(trees, (;featurenames=featurenames))
+    return DecisionXGBoost(trees, info)
 end
+
+# function SoleModels.solemodel(
+#     model        :: Vector{<:XGBoost.Node},
+#     X            :: AbstractDataFrame,
+#     y            :: AbstractVector{T};
+#     classlabels  :: Vector{<:Label},
+#     featurenames :: Vector{Symbol},
+#     use_float32  :: Bool=true
+# )::DecisionXGBoost where {T<:RLabel}
+#     keep_condensed && error("Cannot keep condensed XGBoost.Node.")
+
+#     isnothing(classlabels) || (nclasses = length(classlabels))
+
+#     trees = map(enumerate(model)) do (i, t)
+#         isnothing(classlabels) ? begin
+#             class_idx = nothing
+#             clabels = nothing
+#         end : begin
+#             class_idx = (i - 1) % nclasses + 1
+#             clabels = categorical([classlabels[class_idx]])
+#         end
+#         # xgboost trees could be composed of only one leaf, without any split
+#         if t.split === nothing
+#             antecedent = Atom(get_condition(class_idx, featurenames; test_operator=(<), featval=Inf))
+#             leaf = use_float32 ? Float32(t.leaf) : t.leaf
+#             early_return(leaf, antecedent, clabels, classlabels[class_idx])
+#         else
+#             SoleModels.solemodel(t, X, y; classlabels, class_idx, clabels, featurenames, use_float32, kwargs...)
+#         end
+#     end
+
+#     info = merge(
+#         isnothing(featurenames) ? (;) : (;featurenames=featurenames),
+#         (;
+#             leaf_value = reduce(vcat, getindex.(getproperty.(trees, :info), :leaf_value)),
+#             supporting_predictions = reduce(vcat, getindex.(getproperty.(trees, :info), :supporting_predictions)),
+#             supporting_labels = reduce(vcat, getindex.(getproperty.(trees, :info), :supporting_labels))
+#         )
+#     )
+
+#     return DecisionXGBoost(trees, info)
+# end
 
 function SoleModels.solemodel(
     model::Vector{<:XGBoost.Node},
