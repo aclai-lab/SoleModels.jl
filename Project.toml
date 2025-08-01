@@ -29,7 +29,7 @@ XGBoostExt = "XGBoost"
 
 [compat]
 AbstractTrees = "0.4"
-CategoricalArrays = "0.10"
+CategoricalArrays = "0.10, 1"
 DecisionTree = "0.12"
 FillArrays = "1"
 FunctionWrappers = "1"
