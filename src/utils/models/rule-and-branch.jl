@@ -152,14 +152,14 @@ end
 function apply!(
     m::Rule,
     d::AbstractInterpretationSet,
-    y::AbstractVector;
+    y::Union{Nothing,AbstractVector} = nothing;
     check_args::Tuple = (),
     check_kwargs::NamedTuple = (;),
     mode = :replace,
     leavesonly = false,
     kwargs...
 )
-    # @assert length(y) == ninstances(d) "$(length(y)) == $(ninstances(d))"
+    # @assert isnothing(y) || length(y) == ninstances(d) "$(length(y)) == $(ninstances(d))"
     if mode == :replace
         recursivelyemptysupports!(m, leavesonly)
         mode = :append
@@ -168,7 +168,7 @@ function apply!(
     # @show checkmask
     preds = Vector{outputtype(m)}(fill(nothing, ninstances(d)))
     if any(checkmask)
-        preds[checkmask] .= apply!(consequent(m), slicedataset(d, checkmask; return_view = true), y[checkmask];
+        preds[checkmask] .= apply!(consequent(m), slicedataset(d, checkmask; return_view = true), isnothing(y) ? nothing : y[checkmask];
             check_args = check_args,
             check_kwargs = check_kwargs,
             mode = mode,
@@ -379,7 +379,7 @@ end
 function apply!(
     m::Branch,
     d::AbstractInterpretationSet,
-    y::AbstractVector;
+    y::Union{Nothing,AbstractVector} = nothing;
     check_args::Tuple = (),
     check_kwargs::NamedTuple = (;),
     mode = :replace,
@@ -387,7 +387,7 @@ function apply!(
     # show_progress = true,
     kwargs...
 )
-    # @assert length(y) == ninstances(d) "$(length(y)) == $(ninstances(d))"
+    # @assert isnothing(y) || length(y) == ninstances(d) "$(length(y)) == $(ninstances(d))"
     if mode == :replace
         recursivelyemptysupports!(m, leavesonly)
         mode = :append
@@ -399,7 +399,7 @@ function apply!(
             l = Threads.@spawn apply!(
                 posconsequent(m),
                 slicedataset(d, checkmask; return_view = true),
-                y[checkmask];
+                isnothing(y) ? nothing : y[checkmask];
                 check_args = check_args,
                 check_kwargs = check_kwargs,
                 mode = mode,
@@ -412,7 +412,7 @@ function apply!(
             r = Threads.@spawn apply!(
                 negconsequent(m),
                 slicedataset(d, ncheckmask; return_view = true),
-                y[ncheckmask];
+                isnothing(y) ? nothing : y[ncheckmask];
                 check_args = check_args,
                 check_kwargs = check_kwargs,
                 mode = mode,

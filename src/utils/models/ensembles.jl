@@ -190,7 +190,7 @@ end
 function apply!(
     m::DecisionEnsemble,
     d::AbstractInterpretationSet,
-    y::AbstractVector;
+    y::Union{Nothing,AbstractVector} = nothing;
     mode = :replace,
     leavesonly = false,
     # show_progress = false, # length(ntrees(m)) > 15,
@@ -345,7 +345,7 @@ end
 #     return preds
 # end
 
-# function apply!(m::MaxDecisionBag, d::AbstractInterpretationSet, y::AbstractVector; mode = :replace, leavesonly = false, suppress_parity_warning = false, kwargs...)
+# function apply!(m::MaxDecisionBag, d::AbstractInterpretationSet, y::Union{Nothing,AbstractVector} = nothing; mode = :replace, leavesonly = false, suppress_parity_warning = false, kwargs...)
 #     y = __apply_pre(m, d, y)
 #     weights = hcat([apply!(wm, d, y; mode, leavesonly, suppress_parity_warning, kwargs...) for wm in m.weight_producing_models]...)
 #     preds = __apply_post(m, preds)
@@ -513,7 +513,7 @@ end
 function apply!(
     m::DecisionXGBoost{<:CLabel},
     d::AbstractInterpretationSet,
-    y::AbstractVector;
+    y::Union{Nothing,AbstractVector} = nothing;
     mode::Symbol=:replace,
     leavesonly::Bool=false,
     suppress_parity_warning::Bool=true,
@@ -535,7 +535,7 @@ end
 function apply!(
     m::DecisionXGBoost{<:RLabel},
     d::AbstractInterpretationSet,
-    y::AbstractVector;
+    y::Union{Nothing,AbstractVector} = nothing;
     base_score::AbstractFloat,
     mode::Symbol=:replace,
     leavesonly::Bool=false,

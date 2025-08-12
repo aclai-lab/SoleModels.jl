@@ -126,7 +126,7 @@ end
 function apply!(
     m::DecisionTree,
     d::AbstractInterpretationSet,
-    y::AbstractVector;
+    y::Union{Nothing,AbstractVector} = nothing;
     mode = :replace,
     leavesonly = false,
     kwargs...

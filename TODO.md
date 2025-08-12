@@ -2,7 +2,6 @@
 
 - Rename: listrules -> ruleset
 ☐ Optimize Sole apply/predict di LeftMostLinearFormulas e su dataset
-☐ apply_postprocess
 
 
 ☐ AbstractTrees interface for SoleModels

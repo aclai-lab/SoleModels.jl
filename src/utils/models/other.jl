@@ -176,7 +176,7 @@ end
 function apply!(
     m::DecisionList{O},
     d::AbstractInterpretationSet,
-    y::AbstractVector;
+    y::Union{Nothing,AbstractVector} = nothing;
     mode = :replace,
     leavesonly = false,
     show_progress = false, # length(rulebase(m)) > 15,
@@ -184,7 +184,7 @@ function apply!(
 ) where {
     O
 }
-    # @assert length(y) == ninstances(d) "$(length(y)) == $(ninstances(d))"
+    # @assert isnothing(y) || length(y) == ninstances(d) "$(length(y)) == $(ninstances(d))"
     if mode == :replace
         recursivelyemptysupports!(m, leavesonly)
         mode = :append
@@ -203,7 +203,7 @@ function apply!(
         uncovered_d = slicedataset(d, uncovered_idxs; return_view = true)
 
         # @show length(uncovered_idxs)
-        cur_preds = apply!(subm, uncovered_d, y[uncovered_idxs], mode = mode, leavesonly = leavesonly, kwargs...)
+        cur_preds = apply!(subm, uncovered_d, isnothing(y) ? nothing : y[uncovered_idxs], mode = mode, leavesonly = leavesonly, kwargs...)
         idxs_sat = findall(!isnothing, cur_preds)
         # @show cur_preds[idxs_sat]
         preds[uncovered_idxs[idxs_sat]] .= cur_preds[idxs_sat]

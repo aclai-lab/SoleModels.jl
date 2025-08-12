@@ -58,70 +58,95 @@ end
     readmetrics(m::AbstractModel; round_digits = nothing)
 
 Return a `NamedTuple` with some performance metrics for the given symbolic model.
-Performance metrics can be computed when the `info` structure of the model has the
-following keys:
+
+Performance metrics can be computed when the `info` structure of the model has at
+least one of the following keys:
 - `:supporting_labels`
 - `:supporting_predictions`
 
+Current performance metrics computed are:
+- `:ninstances`:
+- `:ncovered`:
+- `:coverage`: the `ncovered/ninstances` ratio (also called "support")
+- `:lift`: (classification only)
+- `:confidence`: (classification only)
+- `:mse`: (regression only)
+- `:natoms`: number of atoms in the model
+
 The `round_digits` keyword argument, if provided, is used to `round` accuracy/confidence metrics.
 """
-function readmetrics(m::LeafModel{L}; class_share_map = nothing, round_digits = nothing, additional_metrics = (;),) where {L<:Label}
-    merge(if haskey(info(m), :supporting_labels)
-        _gts = info(m).supporting_labels
-        if L <: CLabel && isnothing(class_share_map)
-            class_share_map = Dict(map(((k,v),)->k => v./length(_gts), collect(StatsBase.countmap(_gts))))
-        end
-        base_metrics = (; ninstances = length(_gts), ncovered = length(_gts), )
-        if (haskey(info(m), :supporting_predictions) || m isa ConstantModel)
-            _preds = if haskey(info(m), :supporting_predictions)
-                info(m).supporting_predictions
-            elseif m isa ConstantModel
-                Fill(outcome(m), length(_gts))
-            else
-                error("Implementation error in readmetrics.")
-            end
-            conf_metrics = begin
-                if L <: CLabel
-                    confidence = accuracy(_gts, _preds)
-                    cmet = (; confidence = _metround(confidence, round_digits),)
-                    if m isa ConstantModel && !isnothing(class_share_map)
-                        class = outcome(m)
-                        if haskey(class_share_map, class)
-                            lift = confidence/class_share_map[class]
-                            cmet = merge(cmet, (;
-                                lift       = _metround(lift, round_digits),
-                            ))
-                        else # if length(class_share_map) == 0
-                            cmet = merge(cmet, (;
-                                lift       = NaN,
-                            ))
-                        # else
-                        #     @warn "Lift cannot be computed with class $class and class_share_map $class_share_map."
-                        end
-                    end
-                    cmet
-                elseif L <: RLabel
-                    (;
-                        mse = _metround(mse(_gts, _preds), round_digits),
-                    )
-                else
-                    error("Could not compute readmetrics with unknown label type: $(L).")
-                end
-            end
-            base_metrics = merge(base_metrics, conf_metrics)
-        end
-    else
+function readmetrics(
+    m::LeafModel{L};
+    class_share_map = nothing,
+    round_digits = nothing,
+    additional_metrics = (;),
+) where {L<:Label}
+    if !haskey(info(m), :supporting_labels)
         return (;)
-    end, (; coverage = 1.0)) # Note: assuming all leaf models are complete (see `iscomplete`).
+    end
+    
+    _gts = info(m).supporting_labels
+    base_metrics = (; ninstances = length(_gts), )
+    if (haskey(info(m), :supporting_predictions) || m isa ConstantModel)
+        _preds = if haskey(info(m), :supporting_predictions)
+            info(m).supporting_predictions
+        elseif m isa ConstantModel
+            Fill(outcome(m), length(_gts))
+        else
+            error("Implementation error in readmetrics.")
+        end
+        conf_metrics = begin
+            if L <: CLabel
+                if isnothing(class_share_map)
+                    class_share_map = Dict(map(((k,v),)->k => v./length(_gts), collect(StatsBase.countmap(_gts))))
+                end
+                confidence = accuracy(_gts, _preds)
+                cmet = (; confidence = _metround(confidence, round_digits),)
+                if m isa ConstantModel && !isnothing(class_share_map)
+                    class = outcome(m)
+                    if haskey(class_share_map, class)
+                        lift = confidence/class_share_map[class]
+                        cmet = merge(cmet, (;
+                            lift       = _metround(lift, round_digits),
+                        ))
+                    else
+                        cmet = merge(cmet, (;
+                            lift       = NaN,
+                        ))
+                    end
+                end
+                cmet
+            elseif L <: RLabel
+                (;
+                    mse = _metround(mse(_gts, _preds), round_digits),
+                )
+            else
+                error("Could not compute readmetrics with unknown label type: $(L).")
+            end
+        end
+        base_metrics = merge(base_metrics, conf_metrics)
+    end
+    
+    if iscomplete(m)
+        base_metrics = merge(base_metrics, (; ncovered = base_metrics.ninstances, coverage = 1.0))
+    end
+    base_metrics
 end
 
 function readmetrics(m::Rule; kwargs...)
     error("Cannot read metrics on rule of outcometype $(outcometype(m)). Is this a classification, regression rule, or what? See SoleModels.Label.")
 end
 
-default_additional_metrics = (; natoms = r->natoms(antecedent(r)))
-function readmetrics(m::Rule{L}; round_digits = nothing, class_share_map = nothing, additional_metrics = (;), kwargs...) where {L<:Label}
-    additional_metrics = merge(default_additional_metrics, additional_metrics)
+const DEFAULT_RULE_ADDITIONAL_METRICS = (; natoms = r->natoms(antecedent(r)))
+
+function readmetrics(
+    m::Rule{L};
+    round_digits = nothing,
+    class_share_map = nothing,
+    additional_metrics = (;),
+    kwargs...
+) where {L<:Label}
+    additional_metrics = merge(DEFAULT_RULE_ADDITIONAL_METRICS, additional_metrics)
     additional_metrics = map(metname->(metname => additional_metrics[metname](m)), keys(additional_metrics)) |> NamedTuple
 
     if haskey(info(m), :supporting_labels) && haskey(info(consequent(m)), :supporting_labels)
@@ -132,34 +157,33 @@ function readmetrics(m::Rule{L}; round_digits = nothing, class_share_map = nothi
         end
         cons_metrics = readmetrics(consequent(m); round_digits = round_digits, class_share_map = class_share_map, kwargs...)
         coverage = cons_metrics.coverage * (length(_gts_leaf)/length(_gts))
-        confidence = cons_metrics.confidence
         metrics = (;
             ninstances  = length(_gts),
             ncovered = length(_gts_leaf),
             coverage = _metround(coverage, round_digits),
-            confidence = confidence,
+            confidence = cons_metrics.confidence,
         )
         if haskey(cons_metrics, :lift)
             metrics = merge(metrics, (; lift = cons_metrics.lift,))
         end
-        metrics = (;
-            metrics...,
-            additional_metrics...
-        )
-        metrics
+        (; metrics..., additional_metrics...)
     elseif haskey(info(m), :supporting_labels)
-        return (; ninstances = length(info(m).supporting_labels), additional_metrics...)
-    # elseif haskey(info(consequent(m)), :supporting_labels)
-    #     return (; ninstances = length(info(consequent(m)).supporting_labels), additional_metrics...)
+        (; ninstances = length(info(m).supporting_labels), additional_metrics...)
     else
-        return (;)
+        (;)
     end
 end
 
 using PrettyTables
 
 # TODO document
-function metricstable(ms::Vector{<:Rule}; metrics_kwargs = (;), syntaxstring_kwargs = (;), variable_names_map = nothing, pretty_table_kwargs...)
+function metricstable(
+    ms::Vector{<:Rule};
+    metrics_kwargs = (;),
+    syntaxstring_kwargs = (;),
+    variable_names_map = nothing,
+    pretty_table_kwargs...,
+)
     mets = readmetrics.(ms; metrics_kwargs...)
     colnames = unique(Iterators.flatten(keys.(mets)))
 
@@ -208,7 +232,6 @@ See also
 [`Rule`](@ref),
 [`SoleLogics.AbstractInterpretationSet`](@ref),
 [`Label`](@ref),
-[`evaluaterule`](@ref),
 [`outcometype`](@ref),
 [`consequent`](@ref).
 """
@@ -229,7 +252,7 @@ function rulemetrics(
         if outcometype(consequent(rule)) <: CLabel
             # Number of incorrectly classified instances divided by number of instances
             # satisfying the rule condition.
-            _error(ys[checkmask],Y[checkmask])
+            _error(ys[checkmask], [checkmask])
         elseif outcometype(consequent(rule)) <: RLabel
             # Mean Squared Error (mse)
             mse(ys[checkmask],Y[checkmask])
@@ -240,9 +263,9 @@ function rulemetrics(
 
     return (;
         checkmask    = checkmask,
-        coverage   = rule_coverage,
-        error     = rule_error,
-        natoms    = natoms(antecedent(rule)),
+        coverage     = rule_coverage,
+        error        = rule_error,
+        natoms       = natoms(antecedent(rule)),
     )
 end
 
@@ -309,9 +332,7 @@ function evaluaterule(
     )
 end
 
-"""
-TODO
-"""
+# TODO
 function evaluaterule(
     rule::Rule{L},
     X::AbstractInterpretationSet,
