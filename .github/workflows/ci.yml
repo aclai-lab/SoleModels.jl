@@ -2,7 +2,7 @@ name: CI
 on:
   push:
     branches:
-      - new_bestguess
+      - main
     tags: ['*']
   pull_request:
   workflow_dispatch:
