@@ -497,9 +497,6 @@ function apply(
     suppress_parity_warning=false,
     kwargs...
 )
-    # we expect X_test * classlabels * nrounds trees, because for every round,
-    # XGBoost creates a tree for every classlabel.
-    # So, in every subm model, we'll find as much trees as classlabels.
     preds = hcat([apply_leaf_scores(subm, d; suppress_parity_warning, kwargs...) for subm in models(m)]...)
     preds = __apply_post(m, preds)
     preds = [
@@ -523,8 +520,18 @@ function apply!(
 
     preds = hcat([apply_leaf_scores(subm, d; suppress_parity_warning, kwargs...) for subm in models(m)]...)
     preds = __apply_post(m, preds)
+    # multiple classification:
+    # we expect X_test * classlabels * nrounds trees, because for every round,
+    # XGBoost creates a tree for every classlabel.
+    # So, in every subm model, we'll find as much trees as classlabels.
+    supporting_labels = sort(unique(m.info.supporting_labels))
+
+    # binary classification
+    # the score is referred to the second class
+    # swapping classes makes predictions working
+    length(supporting_labels) ≤ 2 && (supporting_labels = [last(supporting_labels), first(supporting_labels)])
     preds = [
-        scored_aggregation(m)(pred, sort(unique(m.info.supporting_labels)))
+        scored_aggregation(m)(pred, supporting_labels)
         for pred in eachrow(preds)
     ]
     preds = __apply_pre(m, d, preds)
