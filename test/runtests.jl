@@ -24,6 +24,7 @@ addprocs(2)
     using Test
     using Random
     using FunctionWrappers: FunctionWrapper
+    using JLD2
 end
 
 function run_tests(list)

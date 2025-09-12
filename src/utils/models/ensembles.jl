@@ -463,6 +463,12 @@ nmodels(m::DecisionXGBoost) = length(models(m))
 aggregation(m::DecisionXGBoost) = m.aggregation
 scored_aggregation(m::DecisionXGBoost) = aggregation(m)
 
+function scored_aggregation(pred, supporting_labels)
+    scores = map(p -> p[2], pred)
+    score = sum(scores) / length(scores)
+    return score > 0. ? last(supporting_labels) : first(supporting_labels)
+end
+
 """
     function height(m::DecisionXGBoost)
 
@@ -499,10 +505,15 @@ function apply(
 )
     preds = hcat([apply_leaf_scores(subm, d; suppress_parity_warning, kwargs...) for subm in models(m)]...)
     preds = __apply_post(m, preds)
-    preds = [
-        scored_aggregation(m)(pred, sort(unique(m.info.supporting_labels)))
-        for pred in eachrow(preds)
-    ]
+
+    supporting_labels = sort(unique(m.info.supporting_labels))
+    
+    preds = length(supporting_labels) ≤ 2 ? begin
+        [scored_aggregation(pred, supporting_labels) for pred in eachrow(preds)]
+    end : begin
+        [scored_aggregation(m)(pred, supporting_labels) for pred in eachrow(preds)]
+    end
+    
     return preds
 end
 
@@ -520,6 +531,7 @@ function apply!(
 
     preds = hcat([apply_leaf_scores(subm, d; suppress_parity_warning, kwargs...) for subm in models(m)]...)
     preds = __apply_post(m, preds)
+
     # multiple classification:
     # we expect X_test * classlabels * nrounds trees, because for every round,
     # XGBoost creates a tree for every classlabel.
@@ -527,13 +539,13 @@ function apply!(
     supporting_labels = sort(unique(m.info.supporting_labels))
 
     # binary classification
-    # the score is referred to the second class
-    # swapping classes makes predictions working
-    length(supporting_labels) ≤ 2 && (supporting_labels = [last(supporting_labels), first(supporting_labels)])
-    preds = [
-        scored_aggregation(m)(pred, supporting_labels)
-        for pred in eachrow(preds)
-    ]
+    # the score is referred to a logistic regression between the two classes
+    preds = length(supporting_labels) ≤ 2 ? begin
+        [scored_aggregation(pred, supporting_labels) for pred in eachrow(preds)]
+    end : begin
+        [scored_aggregation(m)(pred, supporting_labels) for pred in eachrow(preds)]
+    end
+
     preds = __apply_pre(m, d, preds)
 
     return __apply!(m, mode, preds, y, leavesonly)
