@@ -59,6 +59,7 @@ MultiData = "8cc5100c-b3d1-4f82-90cb-0ea93d317aba"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 XGBoost = "009559a3-9522-5dbb-924b-0b6ed2b22bb9"
+JLD2 = "033835bb-8acc-5ee8-8aae-3f567f8a3819"
 
 [targets]
-test = ["DataFrames", "DecisionTree", "Distributed", "InteractiveUtils", "MLJ", "MLJDecisionTreeInterface", "MLJModelInterface", "MLJXGBoostInterface", "Markdown", "MultiData", "Random", "Test", "XGBoost"]
+test = ["DataFrames", "DecisionTree", "Distributed", "InteractiveUtils", "MLJ", "MLJDecisionTreeInterface", "MLJModelInterface", "MLJXGBoostInterface", "Markdown", "MultiData", "Random", "Test", "XGBoost", "JLD2"]
