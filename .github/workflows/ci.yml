@@ -2,7 +2,7 @@ name: CI
 on:
   push:
     branches:
-      - binary_xgb
+      - main
     tags: ['*']
   pull_request:
   workflow_dispatch:
