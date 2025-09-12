@@ -32,6 +32,13 @@ natoms(m::DecisionEnsemble) = sum(natoms, models(m))
 nconnectives(m::DecisionEnsemble) = sum(nconnectives, models(m))
 nsyntaxleaves(m::DecisionEnsemble) = sum(nsyntaxleaves, models(m))
 
+atoms(m::DecisionXGBoost) = vcat(map(atoms, models(m))...)
+connectives(m::DecisionXGBoost) = vcat(map(connectives, models(m))...)
+syntaxleaves(m::DecisionXGBoost) = vcat(map(syntaxleaves, models(m))...)
+natoms(m::DecisionXGBoost) = sum(natoms, models(m))
+nconnectives(m::DecisionXGBoost) = sum(nconnectives, models(m))
+nsyntaxleaves(m::DecisionXGBoost) = sum(nsyntaxleaves, models(m))
+
 
 
 # """

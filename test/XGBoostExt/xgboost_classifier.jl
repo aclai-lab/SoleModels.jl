@@ -128,7 +128,8 @@ println("RandomForest accuracy: ", rm_accuracy)
                     featurenames = mach.report.vals[1].features
                     solem = solemodel(trees, Matrix(X_train), y_train; classlabels, featurenames)
                     X_test_f32 = mapcols(col -> Float32.(col), X_test)
-                    preds = apply!(solem, X_test_f32, y_test)
+                    apply!(solem, X_test_f32, y_test)
+                    preds = solem.info.supporting_predictions
                     predsl = CategoricalArrays.levelcode.(CategoricalArrays.categorical(preds)) .- 1
 
                     yl_train = CategoricalArrays.levelcode.(CategoricalArrays.categorical(y_train)) .- 1
@@ -136,6 +137,55 @@ println("RandomForest accuracy: ", rm_accuracy)
                     xg_preds = XGB.predict(bst, X_test)
 
                     @test predsl == xg_preds
+                end
+            end
+        end
+    end
+end
+
+# ---------------------------------------------------------------------------- #
+#                               Binary Validation                              #
+# ---------------------------------------------------------------------------- #
+data_path = joinpath(@__DIR__, "respiratory_juliacon2025.jld2")
+data  = JLD2.load(data_path)
+X = data["X"]
+y = MLJ.CategoricalArray{String,1,UInt32}(data["y"])
+
+@testset "binary validation" begin
+    XGTrees = MLJ.@load XGBoostClassifier pkg=XGBoost
+
+    for fraction_train in 0.7:0.1:0.9
+        for seed in 1:10
+            for num_round in 10:10:20
+                for eta in 0.1:0.1:0.3
+                    resampling=Holdout(; fraction_train, rng=seed, shuffle=true)
+                    i  = MLJ.MLJBase.train_test_pairs(resampling, 1:length(y))
+                    train, test = i[1][1], i[1][2]
+                    X_train, y_train = X[train, :], y[train]
+                    X_test, y_test = X[test, :], y[test]
+                    model = XGTrees(; num_round, eta, seed)
+                    mach = machine(model, X, y)
+                    fit!(mach, rows=train, verbosity=0)
+                    trees = XGB.trees(mach.fitresult[1])
+                    encoding     = get_encoding(mach.fitresult[2])
+                    classlabels  = get_classlabels(encoding)
+                    featurenames = mach.report.vals[1].features
+                    solem = solemodel(trees, Matrix(X_train), y_train; classlabels, featurenames)
+                    X_test_f32 = mapcols(col -> Float32.(col), X_test)
+                    apply!(solem, X_test_f32, y_test)
+                    # preds = solem.info.supporting_predictions
+                    # predsl = CategoricalArrays.levelcode.(CategoricalArrays.categorical(preds)) .- 1
+                    sole_accuracy = MLJ.accuracy(solem.info.supporting_predictions, solem.info.supporting_labels)
+
+                    mlj_xgboost = evaluate(
+                        model, X, y;
+                        resampling=Holdout(; fraction_train, rng=seed, shuffle=true),
+                        measures=[MLJ.accuracy],
+                        per_observation=false,
+                        verbosity=0
+                    )
+
+                    @test sole_accuracy == mlj_xgboost.measurement[1]
                 end
             end
         end
