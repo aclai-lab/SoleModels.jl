@@ -3,6 +3,7 @@ using MLJ
 using DataFrames, Random
 import MLJModelInterface as MMI
 import XGBoost as XGB
+using JLD2
 
 X, y = @load_iris
 X = DataFrame(X)
@@ -52,8 +53,8 @@ X_test_f32 = mapcols(col -> Float32.(col), X_test)
 preds = apply(solem, X_test_f32)
 predsl = MLJ.levelcode.(MLJ.categorical(preds)) .- 1
 
-apply!(solem, X_test, y_test)
-@test solem.info.supporting_predictions == preds
+preds! = apply!(solem, X_test, y_test)
+@test preds! == preds
 @test solem.info.supporting_labels == y_test
 
 # ---------------------------------------------------------------------------- #
