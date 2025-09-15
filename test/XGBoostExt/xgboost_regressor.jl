@@ -1,3 +1,9 @@
+using SoleModels
+using MLJ
+using DataFrames, Random
+import MLJModelInterface as MMI
+import XGBoost as XGB
+
 X, y = @load_boston
 X = DataFrame(X)
 
@@ -27,7 +33,7 @@ model = XGTrees(;
 # Bind the model and data into a machine
 mach = machine(model, X_train, y_train)
 # Fit the model
-fit!(mach; verbosity=0)
+MLJ.fit!(mach; verbosity=0)
 
 trees = XGB.trees(mach.fitresult[1])
 featurenames = mach.report.vals[1].features
@@ -69,7 +75,7 @@ preds = apply!(solem, X_test_f32, y_test; base_score)
                     model = XGTrees(; num_round, max_depth, objective="reg:squarederror")
                     mach = machine(model, X_train, y_train)
                     mach.model.base_score = base_score
-                    fit!(mach, verbosity=0)
+                    MLJ.fit!(mach, verbosity=0)
                     trees = XGB.trees(mach.fitresult[1])
                     featurenames = mach.report.vals[1].features
                     solem = solemodel(trees, Matrix(X_train), y_train; featurenames)

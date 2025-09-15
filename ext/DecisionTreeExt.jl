@@ -55,6 +55,7 @@ function SoleModels.solemodel(
     classlabels = nothing,
     featurenames = nothing,
     keep_condensed = false,
+    dt_bestguess = false,
     kwargs...
 ) where {T,orig_O}
     # TODO rewrite error according to orig_O
@@ -98,12 +99,11 @@ function SoleModels.solemodel(
     # #     O = nothing
     # end
 
-    if isnothing(weights)
-        m = DecisionEnsemble{O}(trees, info; parity_func=x->first(sort(collect(keys(x)))))
-    else
-        m = DecisionEnsemble{O}(trees, weights, info; parity_func=x->first(sort(collect(keys(x)))))
-    end
-    return m
+    parity_func = dt_bestguess ? x->first(sort(collect(keys(x)))) : x->argmax(x)
+
+    return isnothing(weights) ?
+        DecisionEnsemble{O}(trees, info; parity_func) :
+        DecisionEnsemble{O}(trees, weights, info; parity_func)
 end
 
 function SoleModels.solemodel(

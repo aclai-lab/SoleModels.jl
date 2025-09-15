@@ -1,3 +1,9 @@
+# using SoleModels
+# using MLJ
+# using DataFrames, Random
+# using DecisionTree
+# const DT = DecisionTree
+
 X, y = @load_iris
 X = DataFrame(X)
 
@@ -24,7 +30,7 @@ model = Tree(
 # Bind the model and data into a machine
 mach = machine(model, X_train, y_train)
 # Fit the model
-fit!(mach)
+MLJ.fit!(mach)
 
 
 solem = solemodel(fitted_params(mach).tree)
@@ -80,16 +86,16 @@ printmodel.(sort(interesting_rules, by = readmetrics); show_metrics = (; round_d
                 # solemodel
                 model = Tree(; max_depth, rng=Xoshiro(seed))
                 mach = machine(model, X_train, y_train)
-                fit!(mach, verbosity=0)
+                MLJ.fit!(mach, verbosity=0)
                 solem = solemodel(MLJ.fitted_params(mach).tree)
                 preds = apply!(solem, X_test, y_test)
 
                 # decisiontree
-                y_coded_train = @. CategoricalArrays.levelcode(y_train)
+                y_coded_train = @. MLJ.levelcode(y_train)
                 dt_model = DT.build_tree(y_coded_train, Matrix(X_train), 0, max_depth; rng=Xoshiro(seed))
                 dt_preds = DT.apply_tree(dt_model, Matrix(X_test))
 
-                preds_coded = CategoricalArrays.levelcode.(CategoricalArray(preds))
+                preds_coded = MLJ.levelcode.(MLJ.CategoricalArray(preds))
                 @test preds_coded == dt_preds
             end
         end
