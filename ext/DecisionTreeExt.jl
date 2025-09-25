@@ -4,8 +4,7 @@ using SoleModels
 import SoleModels: solemodel
 import SoleModels: alphabet
 
-using DecisionTree
-const DT = DecisionTree
+import DecisionTree as DT
 
 const Avail_TieBreakers = Dict{Symbol, Function}(
     :argmax => x->argmax(x),
