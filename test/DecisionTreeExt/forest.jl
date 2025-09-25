@@ -1,8 +1,8 @@
-# using SoleModels
-# using MLJ
-# using DataFrames, Random
-# using DecisionTree
-# const DT = DecisionTree
+using SoleModels
+using MLJ
+using DataFrames, Random
+using DecisionTree
+const DT = DecisionTree
 
 X, y = @load_iris
 X = DataFrame(X)
@@ -76,7 +76,7 @@ printmodel(solem; max_depth = 7, show_intermediate_finals = true, show_metrics =
                 MLJ.fit!(mach, verbosity=0)
                 classlabels = (mach).fitresult[2][sortperm((mach).fitresult[3])]
                 featurenames = MLJ.report(mach).features
-                solem = solemodel(MLJ.fitted_params(mach).forest; classlabels, featurenames, dt_bestguess=true)
+                solem = solemodel(MLJ.fitted_params(mach).forest; classlabels, featurenames, tiebreaker=:alphanumeric)
                 preds = apply!(solem, X_test, y_test)
 
                 # decisiontree

@@ -1,8 +1,8 @@
-# using SoleModels
-# using MLJ
-# using DataFrames, Random
-# using DecisionTree
-# const DT = DecisionTree
+using SoleModels
+using MLJ
+using DataFrames, Random
+using DecisionTree
+const DT = DecisionTree
 
 X, y = @load_iris
 X = DataFrame(X)
@@ -121,7 +121,7 @@ println("RandomForest accuracy: ", rm_accuracy)
                 weights = mach.fitresult[2]
                 classlabels = sort(mach.fitresult[3])
                 featurenames = MLJ.report(mach).features
-                solem = solemodel(MLJ.fitted_params(mach).stumps; weights, classlabels, featurenames, dt_bestguess=true)
+                solem = solemodel(MLJ.fitted_params(mach).stumps; weights, classlabels, featurenames, tiebreaker=:alphanumeric)
                 preds = apply(solem, X_test)
 
                 # decisiontree

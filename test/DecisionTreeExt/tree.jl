@@ -1,8 +1,8 @@
-# using SoleModels
-# using MLJ
-# using DataFrames, Random
-# using DecisionTree
-# const DT = DecisionTree
+using SoleModels
+using MLJ
+using DataFrames, Random
+using DecisionTree
+const DT = DecisionTree
 
 X, y = @load_iris
 X = DataFrame(X)

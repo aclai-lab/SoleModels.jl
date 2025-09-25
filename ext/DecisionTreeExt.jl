@@ -4,7 +4,13 @@ using SoleModels
 import SoleModels: solemodel
 import SoleModels: alphabet
 
-import DecisionTree as DT
+using DecisionTree
+const DT = DecisionTree
+
+const Avail_TieBreakers = Dict{Symbol, Function}(
+    :argmax => x->argmax(x),
+    :alphanumeric => x->first(sort(collect(keys(x))))
+)
 
 function get_condition(featid, featval, featurenames)
     test_operator = (<)
@@ -55,7 +61,7 @@ function SoleModels.solemodel(
     classlabels = nothing,
     featurenames = nothing,
     keep_condensed = false,
-    dt_bestguess = false,
+    tiebreaker::Symbol = :argmax,
     kwargs...
 ) where {T,orig_O}
     # TODO rewrite error according to orig_O
@@ -99,7 +105,7 @@ function SoleModels.solemodel(
     # #     O = nothing
     # end
 
-    parity_func = dt_bestguess ? x->first(sort(collect(keys(x)))) : x->argmax(x)
+    parity_func = Avail_TieBreakers[tiebreaker]
 
     return isnothing(weights) ?
         DecisionEnsemble{O}(trees, info; parity_func) :
