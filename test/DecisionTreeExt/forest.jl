@@ -1,8 +1,8 @@
-# using SoleModels
-# using MLJ
-# using DataFrames, Random
-# using DecisionTree
-# const DT = DecisionTree
+using SoleModels
+using MLJ
+using DataFrames, Random
+using DecisionTree
+const DT = DecisionTree
 
 X, y = @load_iris
 X = DataFrame(X)
@@ -22,16 +22,16 @@ println("Test set type: ", typeof(X_test), " - ", typeof(y_test))
 Forest = MLJ.@load RandomForestClassifier pkg=DecisionTree
 
 model = Forest(
-  max_depth=3,
-  min_samples_leaf=1,
-  min_samples_split=2,
-  n_trees = 10,
+    max_depth=3,
+    min_samples_leaf=1,
+    min_samples_split=2,
+    n_trees = 10,
 )
 
 # Bind the model and data into a machine
 mach = machine(model, X_train, y_train)
 # Fit the model
-fit!(mach)
+MLJ.fit!(mach)
 
 
 classlabels = (mach).fitresult[2]
@@ -73,10 +73,10 @@ printmodel(solem; max_depth = 7, show_intermediate_finals = true, show_metrics =
                 # solemodel
                 model = Forest(; n_trees, rng=Xoshiro(seed))
                 mach = machine(model, X_train, y_train)
-                fit!(mach, verbosity=0)
+                MLJ.fit!(mach, verbosity=0)
                 classlabels = (mach).fitresult[2][sortperm((mach).fitresult[3])]
                 featurenames = MLJ.report(mach).features
-                solem = solemodel(MLJ.fitted_params(mach).forest; classlabels, featurenames)
+                solem = solemodel(MLJ.fitted_params(mach).forest; classlabels, featurenames, tiebreaker=:alphanumeric)
                 preds = apply!(solem, X_test, y_test)
 
                 # decisiontree
@@ -97,7 +97,7 @@ X_test, y_test = X[test, :], y[test]
 
 model = Forest(; n_trees, rng=Xoshiro(seed))
 mach = machine(model, X_train, y_train)
-fit!(mach, verbosity=0)
+MLJ.fit!(mach, verbosity=0)
 classlabels = (mach).fitresult[2][sortperm((mach).fitresult[3])]
 featurenames = MLJ.report(mach).features
 solem = solemodel(MLJ.fitted_params(mach).forest; classlabels, featurenames)

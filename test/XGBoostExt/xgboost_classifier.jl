@@ -1,3 +1,10 @@
+using SoleModels
+using MLJ
+using DataFrames, Random
+import MLJModelInterface as MMI
+import XGBoost as XGB
+using JLD2
+
 X, y = @load_iris
 X = DataFrame(X)
 
@@ -27,7 +34,7 @@ model = XGTrees(;
 # Bind the model and data into a machine
 mach = machine(model, X_train, y_train)
 # Fit the model
-fit!(mach; verbosity=0)
+MLJ.fit!(mach; verbosity=0)
 
 get_encoding(classes_seen) = Dict(MMI.int(c) => c for c in MMI.classes(classes_seen))
 get_classlabels(encoding)  = [string(encoding[i]) for i in sort(keys(encoding) |> collect)]
@@ -44,16 +51,16 @@ solem = solemodel(trees, Matrix(X_train), y_train; classlabels, featurenames, ke
 # Make test instances flow into the model
 X_test_f32 = mapcols(col -> Float32.(col), X_test)
 preds = apply(solem, X_test_f32)
-predsl = CategoricalArrays.levelcode.(CategoricalArrays.categorical(preds)) .- 1
+predsl = MLJ.levelcode.(MLJ.categorical(preds)) .- 1
 
-apply!(solem, X_test, y_test)
-@test solem.info.supporting_predictions == preds
+preds! = apply!(solem, X_test, y_test)
+@test preds! == preds
 @test solem.info.supporting_labels == y_test
 
 # ---------------------------------------------------------------------------- #
 #                                 julia XGBoost                                #
 # ---------------------------------------------------------------------------- #
-yl_train = CategoricalArrays.levelcode.(CategoricalArrays.categorical(y_train)) .- 1
+yl_train = MLJ.levelcode.(MLJ.categorical(y_train)) .- 1
 # create and train a gradient boosted tree model of 5 trees
 bst = XGB.xgboost(
     (X_train, yl_train),
@@ -77,7 +84,7 @@ xg_accuracy = sum(preds .== y_test)/length(y_test)
 Tree = MLJ.@load DecisionTreeClassifier pkg=DecisionTree
 dt_model = Tree(max_depth=-1, min_samples_leaf=1, min_samples_split=2)
 dt_mach = machine(dt_model, X_train, y_train)
-fit!(dt_mach, verbosity=0)
+MLJ.fit!(dt_mach, verbosity=0)
 dt_solem = solemodel(fitted_params(dt_mach).tree)
 dt_preds = apply(dt_solem, X_test)
 dt_accuracy = sum(dt_preds .== y_test)/length(y_test)
@@ -86,7 +93,7 @@ dt_accuracy = sum(dt_preds .== y_test)/length(y_test)
 Forest = MLJ.@load RandomForestClassifier pkg=DecisionTree
 rm_model = Forest(;max_depth=3, min_samples_leaf=1, min_samples_split=2, n_trees=10, rng)
 rm_mach = machine(rm_model, X_train, y_train)
-fit!(rm_mach, verbosity=0)
+MLJ.fit!(rm_mach, verbosity=0)
 classlabels = (rm_mach).fitresult[2]
 classlabels = classlabels[sortperm((rm_mach).fitresult[3])]
 featurenames = report(rm_mach).features
@@ -121,7 +128,7 @@ println("RandomForest accuracy: ", rm_accuracy)
                 for eta in 0.1:0.1:0.3
                     model = XGTrees(; num_round, eta, objective="multi:softmax")
                     mach = machine(model, X_train, y_train)
-                    fit!(mach, verbosity=0)
+                    MLJ.fit!(mach, verbosity=0)
                     trees = XGB.trees(mach.fitresult[1])
                     encoding     = get_encoding(mach.fitresult[2])
                     classlabels  = get_classlabels(encoding)
@@ -130,9 +137,9 @@ println("RandomForest accuracy: ", rm_accuracy)
                     X_test_f32 = mapcols(col -> Float32.(col), X_test)
                     apply!(solem, X_test_f32, y_test)
                     preds = solem.info.supporting_predictions
-                    predsl = CategoricalArrays.levelcode.(CategoricalArrays.categorical(preds)) .- 1
+                    predsl = MLJ.levelcode.(MLJ.categorical(preds)) .- 1
 
-                    yl_train = CategoricalArrays.levelcode.(CategoricalArrays.categorical(y_train)) .- 1
+                    yl_train = MLJ.levelcode.(MLJ.categorical(y_train)) .- 1
                     bst = XGB.xgboost((X_train, yl_train); num_round, eta, num_class=3, objective="multi:softmax")
                     xg_preds = XGB.predict(bst, X_test)
 
@@ -165,7 +172,7 @@ y = MLJ.CategoricalArray{String,1,UInt32}(data["y"])
                     X_test, y_test = X[test, :], y[test]
                     model = XGTrees(; num_round, eta, seed)
                     mach = machine(model, X, y)
-                    fit!(mach, rows=train, verbosity=0)
+                    MLJ.fit!(mach, rows=train, verbosity=0)
                     trees = XGB.trees(mach.fitresult[1])
                     encoding     = get_encoding(mach.fitresult[2])
                     classlabels  = get_classlabels(encoding)

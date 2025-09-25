@@ -27,7 +27,7 @@ end;
 mach = begin
     Tree = MLJ.@load DecisionTreeClassifier pkg=DecisionTree
     model = Tree(max_depth=-1, rng = Random.MersenneTwister(42))
-    machine(model, X_train, y_train) |> fit!
+    machine(model, X_train, y_train) |> MLJ.fit!
 end
 
 # Inspect the tree

@@ -220,18 +220,18 @@ rule_r = @test_nowarn Rule(formula_r, branch_r)
 branch_r_mixed = @test_nowarn Branch(formula_r, (rule_r, "no"))
 
 ############################### DecisionTree ###############################################
-dt1 = @test_nowarn DecisionTree(b_p)
-dt2 = @test_nowarn DecisionTree(b_fdx)
+dt1 = @test_nowarn SoleModels.DecisionTree(b_p)
+dt2 = @test_nowarn SoleModels.DecisionTree(b_fdx)
 
-dtmodel0 = @test_nowarn DecisionTree("1")
-dtmodel = @test_nowarn DecisionTree(branch_r)
+dtmodel0 = @test_nowarn SoleModels.DecisionTree("1")
+dtmodel = @test_nowarn SoleModels.DecisionTree(branch_r)
 
 ############################## DecisionForest ##############################################
 df = @test_nowarn DecisionForest([dt1,dt2])
 
 ############################### MixedModel #########################################
 b_msm = @test_nowarn Branch(st_q,outcome_int,outcome_float)
-dt_msm = @test_nowarn DecisionTree(b_msm)
+dt_msm = @test_nowarn SoleModels.DecisionTree(b_msm)
 msm = @test_nowarn MixedModel(dt_msm)
 
 msmodel = @test_nowarn MixedModel(dtmodel)
