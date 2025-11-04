@@ -179,9 +179,9 @@ function __apply_post(m, preds)
     preds
 end
 
-function __apply_pre(m, d, y)
-    @assert length(y) == ninstances(d) "$(length(y)) == $(ninstances(d))"
-    if haskey(info(m), :apply_preprocess)
+function __apply_pre(m, d, y::Union{Nothing,AbstractVector})
+    @assert isnothing(y) || length(y) == ninstances(d) "$(length(y)) == $(ninstances(d))"
+    if !isnothing(y) && haskey(info(m), :apply_preprocess)
         # @show "CIAO"
         apply_preprocess_f = info(m, :apply_preprocess)
         y = apply_preprocess_f.(y)
@@ -198,7 +198,7 @@ function apply(m::AbstractModel, d::Any; silent=true, suppress_parity_warning=tr
     end
 end
 
-function apply!(m::AbstractModel, d::Any, y::AbstractVector; silent=true, suppress_parity_warning = true, kwargs...)
+function apply!(m::AbstractModel, d::Any, y::Union{Nothing,AbstractVector} = nothing; silent=true, suppress_parity_warning = true, kwargs...)
     if d isa SoleData.AbstractLogiset
         error("Please, provide method apply!(::$(typeof(m)), ::$(typeof(d)), ::$(typeof(y)); kwargs...).")
     else
@@ -213,10 +213,19 @@ end
     info(m::AbstractModel, key, defaultval)
 
 Return the `info` structure for model `m`; this structure is used for storing additional
-information that does not affect the model's behavior.
+information that may affect the model's behavior.
 
-This structure can hold, for example, information about the model's statistical performance
-during the learning phase.
+Here's a list of known fields that affect how the model is shown, or how it
+behaves during prediction:
+- `feature_names`: vector of feature names
+- `supporting_predictions`: used for computing performance metrics; populated upon `apply!`;
+- `supporting_labels`: used for computing performance metrics; populated upon `apply!` if the `y` argument is provided;
+- `apply_preprocess`: `Base.Callable` to apply to the ground truth labels, just before prediction
+- `apply_postprocess`: `Base.Callable` to apply to the predicted labels, just after prediction
+
+`supporting_predictions` can be used to compute the support and domain of the model
+and, together with the `supporting_labels`, they can be used to compute many other metrics
+like confidence, accuracy, lift, etc. See [`readmetrics`](@ref).
 
 See also [`AbstractModel`](@ref), [`info!`](@ref).
 """
@@ -407,13 +416,13 @@ function recursivelyemptysupports!(m, leavesonly)
     nothing
 end
 
-function __apply!(m, mode, preds, y, leavesonly)
+function __apply!(m, mode, preds, y::Union{Nothing,AbstractVector}, leavesonly)
     if !leavesonly || m isa LeafModel
         # idxs = filter(i->!isnothing(preds[i]), 1:length(preds))
         # _preds = preds[idxs]
         # _y = y[idxs]
         if mode == :replace
-            if haskey(m.info, :supporting_predictions)
+            if !isnothing(y) && haskey(m.info, :supporting_predictions)
                 empty!(m.info.supporting_predictions)
                 append!(m.info.supporting_predictions, preds)
             end
@@ -422,7 +431,7 @@ function __apply!(m, mode, preds, y, leavesonly)
             # y isa CategoricalArray && (y = y.refs)
             append!(m.info.supporting_labels, y)
         elseif mode == :append
-            if haskey(m.info, :supporting_predictions)
+            if !isnothing(y) && haskey(m.info, :supporting_predictions)
                 append!(m.info.supporting_predictions, preds)
             end
             append!(m.info.supporting_labels, y)

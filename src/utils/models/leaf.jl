@@ -76,12 +76,12 @@ apply(
 function apply!(
     m::ConstantModel,
     d::AbstractInterpretationSet,
-    y::AbstractVector;
+    y::Union{Nothing,AbstractVector} = nothing;
     mode = :replace,
     leavesonly = false,
     kwargs...
 )
-    # @assert length(y) == ninstances(d) "$(length(y)) == $(ninstances(d))"
+    # @assert isnothing(y) || length(y) == ninstances(d) "$(length(y)) == $(ninstances(d))"
     if mode == :replace
         recursivelyemptysupports!(m, leavesonly)
         mode = :append
