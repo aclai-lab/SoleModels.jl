@@ -170,9 +170,9 @@ branch_r = @test_nowarn Branch(formula_r, (branch_r, "yes"))
 rule_r = @test_nowarn Rule(formula_r, branch_r)
 branch_r_mixed = @test_nowarn Branch(formula_r, (rule_r, "no"))
 
-dtmodel0 = @test_nowarn DecisionTree("1")
-dtmodel = @test_nowarn DecisionTree(branch_r)
-@test_nowarn DecisionTree(branch_r_mixed)
+dtmodel0 = @test_nowarn SoleModels.DecisionTree("1")
+dtmodel = @test_nowarn SoleModels.DecisionTree(branch_r)
+@test_nowarn SoleModels.DecisionTree(branch_r_mixed)
 # msmodel = MixedModel(dtmodel)
 
 complex_mixed_model = @test_nowarn Branch(formula_r, (dtmodel, dlmodel_integer))

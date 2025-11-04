@@ -17,13 +17,17 @@ addprocs(2)
     using InteractiveUtils
     using MLJ
     using MLJDecisionTreeInterface
-    import DecisionTree as DT
-    import MLJModelInterface as MMI
-    import XGBoost as XGB
+    using DecisionTree
+    using MLJModelInterface
+    using XGBoost
+    const DT = DecisionTree
+    const MMI = MLJModelInterface
+    const XGB = XGBoost
     using DataFrames
     using Test
     using Random
     using FunctionWrappers: FunctionWrapper
+    using JLD2
 end
 
 function run_tests(list)

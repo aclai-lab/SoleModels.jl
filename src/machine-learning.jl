@@ -1,4 +1,4 @@
-using SoleBase: CLabel, RLabel, Label, _CLabel, _Label
+using SoleBase: CLabel, RLabel, Label
 using SoleBase: bestguess
 using SoleBase: default_weights, balanced_weights, slice_weights
 

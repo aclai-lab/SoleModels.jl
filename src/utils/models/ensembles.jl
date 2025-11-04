@@ -463,6 +463,20 @@ nmodels(m::DecisionXGBoost) = length(models(m))
 aggregation(m::DecisionXGBoost) = m.aggregation
 scored_aggregation(m::DecisionXGBoost) = aggregation(m)
 
+function scored_aggregation(pred::AbstractArray, supporting_labels::Vector{String})
+    scores = map(p -> last(p), pred)
+    score = sum(scores) / length(scores)
+    return score > zero(eltype(score)) ? last(supporting_labels) : first(supporting_labels)
+end
+
+function choose_preds(preds::AbstractArray, supporting_labels::Vector{String}, m::DecisionXGBoost{<:CLabel})
+    return length(supporting_labels) ≤ 2 ? begin
+        [scored_aggregation(pred, supporting_labels) for pred in eachrow(preds)]
+    end : begin
+        [scored_aggregation(m)(pred, supporting_labels) for pred in eachrow(preds)]
+    end
+end
+
 """
     function height(m::DecisionXGBoost)
 
@@ -497,16 +511,14 @@ function apply(
     suppress_parity_warning=false,
     kwargs...
 )
-    # we expect X_test * classlabels * nrounds trees, because for every round,
-    # XGBoost creates a tree for every classlabel.
-    # So, in every subm model, we'll find as much trees as classlabels.
     preds = hcat([apply_leaf_scores(subm, d; suppress_parity_warning, kwargs...) for subm in models(m)]...)
     preds = __apply_post(m, preds)
-    preds = [
-        scored_aggregation(m)(pred, sort(unique(m.info.supporting_labels)))
-        for pred in eachrow(preds)
-    ]
-    return preds
+
+    # take unique supporting_labels from info 
+    # then sorting, because xgboost algo is doing the same
+    supporting_labels = sort(unique(m.info.supporting_labels))
+    
+    return choose_preds(preds, supporting_labels, m)
 end
 
 # TODO parallelize
@@ -523,10 +535,17 @@ function apply!(
 
     preds = hcat([apply_leaf_scores(subm, d; suppress_parity_warning, kwargs...) for subm in models(m)]...)
     preds = __apply_post(m, preds)
-    preds = [
-        scored_aggregation(m)(pred, sort(unique(m.info.supporting_labels)))
-        for pred in eachrow(preds)
-    ]
+
+    # multiple classification:
+    # we expect X_test * classlabels * nrounds trees, because for every round,
+    # XGBoost creates a tree for every classlabel.
+    # So, in every subm model, we'll find as much trees as classlabels.
+    supporting_labels = sort(unique(m.info.supporting_labels))
+
+    # binary classification
+    # the score is referred to a logistic regression between the two classes
+    preds = choose_preds(preds, supporting_labels, m)
+
     preds = __apply_pre(m, d, preds)
 
     return __apply!(m, mode, preds, y, leavesonly)

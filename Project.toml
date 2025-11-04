@@ -2,7 +2,7 @@ name = "SoleModels"
 uuid = "4249d9c7-3290-4ddd-961c-e1d3ec2467f8"
 license = "MIT"
 authors = ["Michele GHIOTTI", "Giovanni PAGLIARINI", "Edoardo PONSANESI", "Eduard I. STAN"]
-version = "0.10.2"
+version = "0.10.6"
 
 [deps]
 AbstractTrees = "1520ce14-60c1-5f80-bbc7-55ef81b5835c"
@@ -29,13 +29,13 @@ XGBoostExt = "XGBoost"
 
 [compat]
 AbstractTrees = "0.4"
-CategoricalArrays = "0.10"
+CategoricalArrays = "0.10, 1"
 DecisionTree = "0.12"
 FillArrays = "1"
 FunctionWrappers = "1"
 IterTools = "1"
 Lazy = "0.15"
-PrettyTables = "2.2"
+PrettyTables = "2.2, 3"
 Reexport = "1"
 SoleBase = "0.13"
 SoleData = "0.16"
@@ -59,6 +59,7 @@ MultiData = "8cc5100c-b3d1-4f82-90cb-0ea93d317aba"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 XGBoost = "009559a3-9522-5dbb-924b-0b6ed2b22bb9"
+JLD2 = "033835bb-8acc-5ee8-8aae-3f567f8a3819"
 
 [targets]
-test = ["DataFrames", "DecisionTree", "Distributed", "InteractiveUtils", "MLJ", "MLJDecisionTreeInterface", "MLJModelInterface", "MLJXGBoostInterface", "Markdown", "MultiData", "Random", "Test", "XGBoost"]
+test = ["DataFrames", "DecisionTree", "Distributed", "InteractiveUtils", "MLJ", "MLJDecisionTreeInterface", "MLJModelInterface", "MLJXGBoostInterface", "Markdown", "MultiData", "Random", "Test", "XGBoost", "JLD2"]
