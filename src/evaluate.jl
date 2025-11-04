@@ -252,10 +252,10 @@ function rulemetrics(
         if outcometype(consequent(rule)) <: CLabel
             # Number of incorrectly classified instances divided by number of instances
             # satisfying the rule condition.
-            _error(ys[checkmask], [checkmask])
+            _error(ys[checkmask], Y[checkmask])
         elseif outcometype(consequent(rule)) <: RLabel
             # Mean Squared Error (mse)
-            mse(ys[checkmask],Y[checkmask])
+            mse(ys[checkmask], Y[checkmask])
         else
             error("The outcome type of the consequent of the input rule $(outcometype(consequent(rule))) is not among those accepted")
         end
