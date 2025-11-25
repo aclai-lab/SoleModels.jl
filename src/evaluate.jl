@@ -328,12 +328,12 @@ function evaluaterule(
             # disjs = SoleLogics.disjuncts(SoleLogics.LeftmostDisjunctiveForm(antecedent(rule)))
             ante = antecedent(rule)
             if (ante isa SyntaxBranch)
-                # Radice disgiuntiva: trasformiamo in forma “disjunctive” e poi estraiamo i disgiunti
+                # disjunct Root: parse the disjuncts from the antecedent
                 dnf = SoleLogics.LeftmostDisjunctiveForm(ante)
                 disjs = SoleLogics.disjuncts(dnf)
             else
-                # Non è un OR in radice → un singolo disgiunto
-                disjs = [ante] 
+                # Is not Or in root → single disjunct
+                disjs = [ante]
             end
 
             checkmatrix = hcat([check(disj, X; kwargs...) for disj in disjs]...)
@@ -350,18 +350,14 @@ function evaluaterule(
     pos_checkmask = checkmask[classmask]
     neg_checkmask = checkmask[(!).(classmask)]
 
-    ### from Perry's SoleModels fix for SolePostHoc
-    # Controlli per array vuoti
-    sensitivity = length(pos_checkmask) > 0 ? sum(pos_checkmask)/length(pos_checkmask) : 0.0
+    # check for empty pos/neg_checkmask
+    sensitivity = length(pos_checkmask) > 0 ? sum(pos_checkmask)/length(pos_checkmask) : 1.0
     specificity = length(neg_checkmask) > 0 ? 1-(sum(neg_checkmask)/length(neg_checkmask)) : 1.0
 
     out = (;
         classmask = classmask,
         checkmask = checkmask,
 
-        ### from Perry's SoleModels fix for SolePostHoc
-        # sensitivity = sum(pos_checkmask)/length(pos_checkmask),
-        # specificity = 1-(sum(neg_checkmask)/length(neg_checkmask)),
         sensitivity = sensitivity,
         specificity = specificity,
 
