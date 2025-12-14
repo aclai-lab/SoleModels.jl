@@ -1,4 +1,4 @@
-using SoleBase: Label, CLabel, RLabel, bestguess
+using SoleBase: bestguess
 
 abstract type AbstractDecisionEnsemble{O} <: AbstractModel{O} end
 
