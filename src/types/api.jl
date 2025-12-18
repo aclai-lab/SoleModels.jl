@@ -72,3 +72,21 @@ nsyntaxleaves(m::AbstractModel) = error("Please, provide method nsyntaxleaves(::
 
 # TODO
 isensemble(m) = false
+
+doc_supervised_ml = """
+    const XGLabel = Tuple{Union{AbstractString, Integer, CategoricalValue}, Real}
+    const CLabel  = Union{AbstractString,Integer,CategoricalValue}
+    const RLabel  = AbstractFloat
+    const Label   = Union{CLabel,RLabel}
+
+Types for supervised machine learning labels (classification and regression).
+"""
+
+"""$(doc_supervised_ml)"""
+const XGLabel = Tuple{Union{AbstractString, Integer, CategoricalValue}, Real}
+"""$(doc_supervised_ml)"""
+const CLabel = Union{AbstractString, Symbol, CategoricalValue, UInt32}
+"""$(doc_supervised_ml)"""
+const RLabel = Real
+"""$(doc_supervised_ml)"""
+const Label = Union{CLabel, RLabel}
