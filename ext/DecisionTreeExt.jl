@@ -111,54 +111,54 @@ end
 #         DecisionEnsemble{O}(trees, weights, info; parity_func)
 # end
 
-function SoleModels.solemodel(
-    tree::DT.InfoNode{T,orig_O};
-    keep_condensed=false,
-    featurenames=true,
-    # classlabels=tree.info.classlabels,
-    kwargs...
-) where {T,orig_O}
-    # @show fieldnames(typeof(tree))
-    featurenames = featurenames == true ? tree.info.featurenames : featurenames
-    classlabels = haskey(tree.info, :classlabels) ? tree.info.classlabels : nothing
+# function SoleModels.solemodel(
+#     tree::DT.InfoNode{T,orig_O};
+#     keep_condensed=false,
+#     featurenames=true,
+#     # classlabels=tree.info.classlabels,
+#     kwargs...
+# ) where {T,orig_O}
+#     # @show fieldnames(typeof(tree))
+#     featurenames = featurenames == true ? tree.info.featurenames : featurenames
+#     classlabels = haskey(tree.info, :classlabels) ? tree.info.classlabels : nothing
     
-    root, info = begin
-        if keep_condensed
-            root = SoleModels.solemodel(tree.node; featurenames, kwargs...)
-            info = (;
-                apply_preprocess=(y -> UInt32(findfirst(x -> x == y, classlabels))),
-                apply_postprocess=(y -> classlabels[y]),
-            )
-            keep_condensed = !keep_condensed
-            root, info
-        else
-            root = SoleModels.solemodel(tree.node; classlabels = classlabels, featurenames, kwargs...)
-            info = (;)
-            root, info
-        end
-    end
+#     root, info = begin
+#         if keep_condensed
+#             root = SoleModels.solemodel(tree.node; featurenames, kwargs...)
+#             info = (;
+#                 apply_preprocess=(y -> UInt32(findfirst(x -> x == y, classlabels))),
+#                 apply_postprocess=(y -> classlabels[y]),
+#             )
+#             keep_condensed = !keep_condensed
+#             root, info
+#         else
+#             root = SoleModels.solemodel(tree.node; classlabels = classlabels, featurenames, kwargs...)
+#             info = (;)
+#             root, info
+#         end
+#     end
 
-    info = merge(info, (;
-            featurenames=tree.info.featurenames,
-            # 
-            supporting_predictions=root.info[:supporting_predictions],
-            supporting_labels=root.info[:supporting_labels],
-        )
-    )
+#     info = merge(info, (;
+#             featurenames=tree.info.featurenames,
+#             # 
+#             supporting_predictions=root.info[:supporting_predictions],
+#             supporting_labels=root.info[:supporting_labels],
+#         )
+#     )
     
-    # if !isnothing(classlabels)
-    #     O = eltype(classlabels)
-    # else
-    #     O = nothing
-    # end
+#     # if !isnothing(classlabels)
+#     #     O = eltype(classlabels)
+#     # else
+#     #     O = nothing
+#     # end
 
-    # if isnothing(O)
-        dt = DecisionTree(root, info)
-    # else
-    #     dt = DecisionTree{O}(root, info)
-    # end
-    return dt
-end
+#     # if isnothing(O)
+#         dt = DecisionTree(root, info)
+#     # else
+#     #     dt = DecisionTree{O}(root, info)
+#     # end
+#     return dt
+# end
 
 # function SoleModels.solemodel(tree::DT.Root)
 #     root = SoleModels.solemodel(tree.node)
