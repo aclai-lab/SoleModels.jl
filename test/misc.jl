@@ -1,3 +1,8 @@
+using Test
+using SoleModels
+
+using FunctionWrappers: FunctionWrapper
+
 io = IOBuffer()
 
 parse_other_kind_of_formula = SoleLogics.parseformula

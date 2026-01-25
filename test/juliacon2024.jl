@@ -1,12 +1,14 @@
 # JuliaCon2024 demo
 
+using SoleModels
+
 # Load packages
-# begin
-#     using MLJ
-#     using MLJDecisionTreeInterface
-#     using DataFrames
-#     using Random
-# end
+begin
+    using MLJ
+    using MLJDecisionTreeInterface
+    using DataFrames
+    using Random
+end
 
 # Load dataset
 X, y = begin
@@ -17,7 +19,7 @@ end
 
 # Split dataset
 X_train, y_train, X_test, y_test = begin
-    train, test = partition(eachindex(y), 0.8, shuffle=true, rng = Random.MersenneTwister(42));
+    train, test = MLJ.partition(eachindex(y), 0.8, shuffle=true, rng = Random.MersenneTwister(42));
     X_train, y_train = X[train, :], y[train];
     X_test, y_test = X[test, :], y[test];
     X_train, y_train, X_test, y_test

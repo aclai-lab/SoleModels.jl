@@ -1,34 +1,5 @@
-using Distributed
-addprocs(2)
-
-@everywhere begin
-    using SoleModels
-    using SoleModels: AbstractModel
-    using SoleModels: ConstantModel, LeafModel
-    using SoleModels: listrules, displaymodel, submodels
-    using SoleData
-    using SoleData: AbstractUnivariateFeature, Feature
-    using SoleData: ScalarCondition
-    using SoleData: feature
-    using SoleLogics
-    using CategoricalArrays
-    using Markdown
-    using MultiData
-    using InteractiveUtils
-    using MLJ
-    using MLJDecisionTreeInterface
-    using DecisionTree
-    using MLJModelInterface
-    using XGBoost
-    const DT = DecisionTree
-    const MMI = MLJModelInterface
-    const XGB = XGBoost
-    using DataFrames
-    using Test
-    using Random
-    using FunctionWrappers: FunctionWrapper
-    using JLD2
-end
+using Test
+using SoleModels
 
 function run_tests(list)
     println("\n" * ("#"^50))
