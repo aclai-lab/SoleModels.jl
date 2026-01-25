@@ -12,7 +12,7 @@ DocMeta.setdocmeta!(SoleModels, :DocTestSetup, :(using SoleModels); recursive=tr
 
 makedocs(;
     modules=[SoleBase, SoleLogics, SoleData, SoleData.DimensionalDatasets, SoleModels],
-    authors="Michele Ghiotti, Giovanni Pagliarini, Eduard I. Stan",
+    authors="Michele Ghiotti, Giovanni Pagliarini, Riccardo Pasini, Edoardo Ponsanesi, Eduard I. Stan",
     repo=Documenter.Remotes.GitHub("aclai-lab", "SoleModels.jl"),
     sitename="SoleModels.jl",
     format=Documenter.HTML(;
