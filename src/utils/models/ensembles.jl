@@ -463,13 +463,13 @@ nmodels(m::DecisionXGBoost) = length(models(m))
 aggregation(m::DecisionXGBoost) = m.aggregation
 scored_aggregation(m::DecisionXGBoost) = aggregation(m)
 
-function scored_aggregation(pred::AbstractArray, supporting_labels::Vector{String})
+function scored_aggregation(pred::AbstractArray, supporting_labels::Vector{<:AbstractString})
     scores = map(p -> last(p), pred)
     score = sum(scores) / length(scores)
     return score > zero(eltype(score)) ? last(supporting_labels) : first(supporting_labels)
 end
 
-function choose_preds(preds::AbstractArray, supporting_labels::Vector{String}, m::DecisionXGBoost{<:CLabel})
+function choose_preds(preds::AbstractArray, supporting_labels::Vector{<:AbstractString}, m::DecisionXGBoost{<:CLabel})
     return length(supporting_labels) ≤ 2 ? begin
         [scored_aggregation(pred, supporting_labels) for pred in eachrow(preds)]
     end : begin
