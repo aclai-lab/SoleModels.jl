@@ -165,14 +165,11 @@ function metricstable(ms::Vector{<:Rule}; metrics_kwargs = (;), syntaxstring_kwa
 
     # data = hcat(AnsiTextCell.(...
     data = hcat((syntaxstring.(antecedent.(ms); variable_names_map = variable_names_map, syntaxstring_kwargs...)), strip.(displaymodel.(consequent.(ms); show_symbols = false)), [[get(met, colname, "") for met in mets] for colname in colnames]...)
-    header = ["Antecedent", "Consequent", colnames...]
+    column_labels = ["Antecedent", "Consequent", colnames...]
     pretty_table(
         data;
-        # formatters    = ft_printf("%5.2f", 2:4),
-        header        = header,
-        header_crayon = crayon"yellow bold",
-        # highlighters  = (hl_10, hl_p, hl_v),
-        # tf            = tf_unicode_rounded
+        column_labels = column_labels,
+        column_label_alignment = :c,
         pretty_table_kwargs...
     )
 end
