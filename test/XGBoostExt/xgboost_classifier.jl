@@ -1,8 +1,12 @@
+using Test
 using SoleModels
+
 using MLJ
 using DataFrames, Random
-import MLJModelInterface as MMI
-import XGBoost as XGB
+using MLJModelInterface
+using XGBoost
+const MMI = MLJModelInterface
+const XGB = XGBoost
 using JLD2
 
 X, y = @load_iris

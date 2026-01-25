@@ -47,10 +47,15 @@ julia = "1"
 
 [extras]
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
+DecisionTree = "7806a523-6efd-50cb-b5f6-3fa6f1930dbb"
 MLJ = "add582a8-e3ab-11e8-2d5e-e98b27df1bc7"
 MLJDecisionTreeInterface = "c6f25543-311c-4c74-83dc-3ea6d1015661"
+MLJModelInterface = "e80e1ace-859a-464e-9ed9-23947d8ae3ea"
+MLJXGBoostInterface = "54119dfa-1dab-4055-a167-80440f4f7a91"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+XGBoost = "009559a3-9522-5dbb-924b-0b6ed2b22bb9"
+JLD2 = "033835bb-8acc-5ee8-8aae-3f567f8a3819"
 
 [targets]
-test = ["DataFrames", "MLJ", "MLJDecisionTreeInterface", "Random", "Test"]
+test = ["DataFrames", "DecisionTree", "MLJ", "MLJDecisionTreeInterface", "MLJModelInterface", "MLJXGBoostInterface", "Random", "Test", "XGBoost", "JLD2"]
