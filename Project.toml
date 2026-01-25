@@ -46,6 +46,7 @@ XGBoost = "2"
 julia = "1"
 
 [extras]
+CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
 DecisionTree = "7806a523-6efd-50cb-b5f6-3fa6f1930dbb"
 MLJ = "add582a8-e3ab-11e8-2d5e-e98b27df1bc7"
@@ -58,4 +59,4 @@ XGBoost = "009559a3-9522-5dbb-924b-0b6ed2b22bb9"
 JLD2 = "033835bb-8acc-5ee8-8aae-3f567f8a3819"
 
 [targets]
-test = ["DataFrames", "DecisionTree", "MLJ", "MLJDecisionTreeInterface", "MLJModelInterface", "MLJXGBoostInterface", "Random", "Test", "XGBoost", "JLD2"]
+test = ["CSV", "DataFrames", "DecisionTree", "MLJ", "MLJDecisionTreeInterface", "MLJModelInterface", "MLJXGBoostInterface", "Random", "Test", "XGBoost", "JLD2"]
