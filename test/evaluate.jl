@@ -1,9 +1,5 @@
-using SoleModels
-using SoleLogics
-using FunctionWrappers: FunctionWrapper
-using SoleModels: AbstractModel
-using SoleModels: ConstantModel, LeafModel
 using Test
+using SoleModels
 
 phi = SoleLogics.parseformula("p")
 phi2 = SoleLogics.parseformula("q∨r")

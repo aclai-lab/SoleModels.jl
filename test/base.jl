@@ -1,4 +1,7 @@
-# base.jl
+using Test
+using SoleModels
+
+using FunctionWrappers: FunctionWrapper
 
 io = IOBuffer()
 
