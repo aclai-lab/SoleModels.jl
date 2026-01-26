@@ -2,7 +2,7 @@ name: CI
 on:
   push:
     branches:
-      - fixXgBoostEnsembles
+      - main
     tags: ['*']
   pull_request:
   workflow_dispatch:
