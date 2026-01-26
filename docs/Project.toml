@@ -5,5 +5,11 @@ SoleData = "123f1ae1-6307-4526-ab5b-aab3a92a2b8c"
 SoleLogics = "b002da8f-3cb3-4d91-bbe3-2953433912b5"
 SoleModels = "4249d9c7-3290-4ddd-961c-e1d3ec2467f8"
 
+[sources]
+SoleModels = {path = ".."}
+
 [compat]
 Documenter = "1"
+SoleBase = "0.13"
+SoleData = "0.16"
+SoleLogics = "0.13"
