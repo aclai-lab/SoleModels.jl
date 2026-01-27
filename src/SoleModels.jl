@@ -14,7 +14,7 @@ using SoleBase
 using SoleLogics
 using SoleLogics: AbstractInterpretation, AbstractInterpretationSet
 using SoleLogics: SyntaxToken
-using SoleLogics: Formula, synstruct
+using SoleLogics: Formula
 using SoleLogics: ⊤, ¬, ∧
 
 @reexport using SoleData
