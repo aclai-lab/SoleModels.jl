@@ -107,11 +107,9 @@ function _scalar_simplification(φ, scalar_simplification)
     if scalar_simplification == false
         φ
     elseif scalar_simplification == true
-        SoleData.scalar_simplification(φ; silent = true)
+        SoleData.scalar_simplification(φ)
     else
-        # @show φ
-        # @show SoleData.scalar_simplification(φ; silent = true, scalar_simplification...)
-        SoleData.scalar_simplification(φ; silent = true, scalar_simplification...)
+        SoleData.scalar_simplification(φ; scalar_simplification...)
     end
 end
 

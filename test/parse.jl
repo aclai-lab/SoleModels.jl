@@ -60,10 +60,10 @@ dl = "
 
 
 @test_nowarn listrules(dl)
-@test_nowarn listrules(dl; normalize=true, force_syntaxtree=true)
-@test_nowarn listrules(dl; normalize=true, force_syntaxtree=false)
-@test_nowarn listrules(dl; normalize=true, force_syntaxtree=true, normalize_kwargs=(; profile=:nnf))
-@test_nowarn listrules(dl; normalize=true, normalize_kwargs=(; profile=:nnf))
-@test_nowarn listrules(dl; normalize=true, normalize_kwargs=(; profile=:nnf, allow_atom_flipping=true));
+@test_nowarn listrules(dl; normalize=true, force_syntaxtree=true, scalar_simplification=false)
+@test_nowarn listrules(dl; normalize=true, force_syntaxtree=false, scalar_simplification=false)
+@test_nowarn listrules(dl; normalize=true, force_syntaxtree=true, normalize_kwargs=(; profile=:nnf), scalar_simplification=false)
+@test_nowarn listrules(dl; normalize=true, normalize_kwargs=(; profile=:nnf), scalar_simplification=false)
+@test_nowarn listrules(dl; normalize=true, normalize_kwargs=(; profile=:nnf, allow_atom_flipping=true), scalar_simplification=false);
 print("")
 # TODO add (theory-basedL) formula simplifier: sepal length>=5.5 ∧ sepal length>=10 ≡ sepal length>=5.5

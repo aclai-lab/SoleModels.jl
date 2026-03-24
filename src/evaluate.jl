@@ -168,8 +168,8 @@ function metricstable(ms::Vector{<:Rule}; metrics_kwargs = (;), syntaxstring_kwa
     column_labels = ["Antecedent", "Consequent", colnames...]
     pretty_table(
         data;
-        column_labels = column_labels,
-        column_label_alignment = :c,
+        # column_labels = column_labels,
+        # column_label_alignment = :c,
         pretty_table_kwargs...
     )
 end
