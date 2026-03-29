@@ -11,7 +11,7 @@ df = CSV.read(filepath, DataFrame)
 X  = DataFrames.select(df, 1:ncol(df)-1)
 y  = CategoricalArrays.categorical(df[!, end])
 
-model = SX.symbolic_analysis(
+model = SX.solexplorer(
     X, y;
     model=SX.XGBoostClassifier(),
     resampling=Holdout(fraction_train=0.7, shuffle=true),
