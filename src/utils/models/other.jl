@@ -136,6 +136,7 @@ function apply(
     i::AbstractInterpretation;
     check_args::Tuple = (),
     check_kwargs::NamedTuple = (;),
+    kwargs...
 )
     for rule in rulebase(m)
         if checkantecedent(rule, i, check_args...; check_kwargs...)
@@ -150,6 +151,7 @@ function apply(
     d::AbstractInterpretationSet;
     check_args::Tuple = (),
     check_kwargs::NamedTuple = (;),
+    kwargs...
 ) where {O}
     nsamp = ninstances(d)
     preds = Vector{O}(undef, nsamp)
