@@ -7,6 +7,8 @@ using SoleLogics: LeftmostLinearForm, LeftmostConjunctiveForm, LeftmostDisjuncti
 
 import SoleLogics: nleaves, height
 
+using ProgressMeter
+
 ############################################################################################
 ################################### DecisionList ###########################################
 ############################################################################################
