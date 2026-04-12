@@ -226,6 +226,7 @@ function _apply!(
     check_args::Tuple = (),
     check_kwargs::NamedTuple = (;),
     compute_metrics::Union{Symbol,Bool} = false,
+    kwargs...
 ) where {
     O
 }
