@@ -158,6 +158,44 @@ immediatesubmodels(m::DecisionEnsemble) = trees(m)
 nimmediatesubmodels(m::DecisionEnsemble) = length(trees(m))
 listimmediaterules(m::DecisionEnsemble; kwargs...) = error("TODO implement")
 
+# This function takes into account whether each submodel in the ensemble has been trained on a different set of features, which
+# are saved by "build_ensemble" into the 'info' field of each model. Each submodel's apply is called only on the subset of the data
+# that each submodel needs.
+function apply(
+    m::DecisionEnsemble,
+    X::PropositionalLogiset;
+    suppress_parity_warning = false,
+    kwargs...
+)   
+    submodels = models(m)
+
+    total_preds = []
+
+    for subm ∈ submodels
+        if hasproperty(subm, :info) && haskey(info(subm), :featurenames)
+            feature_names = info(subm)[:featurenames]
+
+            # TODO: this is unsafe as 'PropositionalLogiset' does not necessarily allow slicing in this manner.
+            # However, until PropositionalLogiset is reworked this must suffice
+            X_model = X[:, feature_names]
+            preds = apply(subm, X_model; suppress_parity_warning = suppress_parity_warning, kwargs...)
+        else
+            preds = apply(subm, X; suppress_parity_warning = suppress_parity_warning, kwargs...)
+        end
+
+        push!(total_preds, preds)
+    end
+
+    preds = hcat(total_preds...)
+    preds = __apply_post(m, preds)
+    preds = [
+        weighted_aggregation(m)(preds[i,:]; suppress_parity_warning)
+        for i in 1:size(preds,1)
+    ]
+    return preds
+end
+
+
 # TODO check these two.
 function apply(
     m::DecisionEnsemble,
