@@ -51,7 +51,7 @@ function for prediction.
 
 # Notes
 
-- It mus tbe possible to convert `X` to a `DataFrame` internally so that row/column indexing and
+- It must tbe possible to convert `X` to a `DataFrame` internally so that row/column indexing and
   column name extraction work reliably.
 - If `n_subfeatures_per_model` is `nothing`, all features are used for each model.
 - Each ensemble member is trained independently using a copied RNG to avoid
