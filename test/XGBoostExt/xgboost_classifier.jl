@@ -41,17 +41,28 @@ mach = machine(model, X_train, y_train)
 # Fit the model
 MLJ.fit!(mach; verbosity=0)
 
-get_encoding(classes_seen) = Dict(MMI.int(c) => c for c in MMI.classes(classes_seen))
-get_classlabels(encoding)  = [string(encoding[i]) for i in sort(keys(encoding) |> collect)]
 trees = XGB.trees(mach.fitresult[1])
-encoding     = get_encoding(mach.fitresult[2])
-classlabels  = get_classlabels(encoding)
+classlabels = MLJ.classes(mach.fitresult[2])
 featurenames = mach.report.vals[1].features
 
-solem = solemodel(trees, Matrix(X_train), y_train; classlabels, featurenames)
-solem = solemodel(trees, Matrix(X_train), y_train; classlabels, featurenames, keep_condensed = false)
+solem = solemodel(
+    trees,
+    Matrix(X_train),
+    y_train;
+    classlabels,
+    featurenames
+)
+solem = solemodel(
+    trees,
+    Matrix(X_train),
+    y_train;
+    classlabels,
+    featurenames,
+    keep_condensed=false
+)
 
-@test SoleData.scalarlogiset(X_test; allow_propositional = true) isa PropositionalLogiset
+@test SoleData.scalarlogiset(
+    X_test; allow_propositional=true,) isa PropositionalLogiset
 
 # Make test instances flow into the model
 X_test_f32 = mapcols(col -> Float32.(col), X_test)
@@ -96,7 +107,8 @@ dt_accuracy = sum(dt_preds .== y_test)/length(y_test)
 
 # random forest
 Forest = MLJ.@load RandomForestClassifier pkg=DecisionTree
-rm_model = Forest(;max_depth=3, min_samples_leaf=1, min_samples_split=2, n_trees=10, rng)
+rm_model = Forest(;
+    max_depth=3, min_samples_leaf=1, min_samples_split=2, n_trees=10, rng)
 rm_mach = machine(rm_model, X_train, y_train)
 MLJ.fit!(rm_mach, verbosity=0)
 classlabels = (rm_mach).fitresult[2]
@@ -125,7 +137,8 @@ println("RandomForest accuracy: ", rm_accuracy)
 
     for train_ratio in 0.7:0.1:0.9
         for seed in 1:10
-            train, test = MLJ.partition(eachindex(y), train_ratio; shuffle=true, rng=Xoshiro(seed))
+            train, test = MLJ.partition(
+                eachindex(y), train_ratio; shuffle=true, rng=Xoshiro(seed))
             X_train, y_train = X[train, :], y[train]
             X_test, y_test = X[test, :], y[test]
 
@@ -135,17 +148,28 @@ println("RandomForest accuracy: ", rm_accuracy)
                     mach = machine(model, X_train, y_train)
                     MLJ.fit!(mach, verbosity=0)
                     trees = XGB.trees(mach.fitresult[1])
-                    encoding     = get_encoding(mach.fitresult[2])
-                    classlabels  = get_classlabels(encoding)
+                    classlabels  = MLJ.classes(mach.fitresult[2])
                     featurenames = mach.report.vals[1].features
-                    solem = solemodel(trees, Matrix(X_train), y_train; classlabels, featurenames)
+                    solem = solemodel(
+                        trees,
+                        Matrix(X_train),
+                        y_train;
+                        classlabels,
+                        featurenames
+                    )
                     X_test_f32 = mapcols(col -> Float32.(col), X_test)
                     apply!(solem, X_test_f32, y_test)
                     preds = solem.info.supporting_predictions
                     predsl = MLJ.levelcode.(MLJ.categorical(preds)) .- 1
 
                     yl_train = MLJ.levelcode.(MLJ.categorical(y_train)) .- 1
-                    bst = XGB.xgboost((X_train, yl_train); num_round, eta, num_class=3, objective="multi:softmax")
+                    bst = XGB.xgboost(
+                        (X_train, yl_train);
+                        num_round,
+                        eta,
+                        num_class=3,
+                        objective="multi:softmax"
+                    )
                     xg_preds = XGB.predict(bst, X_test)
 
                     @test predsl == xg_preds
@@ -170,8 +194,9 @@ y = MLJ.CategoricalArray{String,1,UInt32}(data["y"])
         for seed in 1:10
             for num_round in 10:10:20
                 for eta in 0.1:0.1:0.3
-                    resampling=Holdout(; fraction_train, rng=seed, shuffle=true)
-                    i  = MLJ.MLJBase.train_test_pairs(resampling, 1:length(y))
+                    resampling = Holdout(;
+                        fraction_train, rng=seed, shuffle=true)
+                    i = MLJ.MLJBase.train_test_pairs(resampling, 1:length(y))
                     train, test = i[1][1], i[1][2]
                     X_train, y_train = X[train, :], y[train]
                     X_test, y_test = X[test, :], y[test]
@@ -179,19 +204,27 @@ y = MLJ.CategoricalArray{String,1,UInt32}(data["y"])
                     mach = machine(model, X, y)
                     MLJ.fit!(mach, rows=train, verbosity=0)
                     trees = XGB.trees(mach.fitresult[1])
-                    encoding     = get_encoding(mach.fitresult[2])
-                    classlabels  = get_classlabels(encoding)
+                    classlabels  = MLJ.classes(mach.fitresult[2])
                     featurenames = mach.report.vals[1].features
-                    solem = solemodel(trees, Matrix(X_train), y_train; classlabels, featurenames)
+                    solem = solemodel(
+                        trees,
+                        Matrix(X_train),
+                        y_train;
+                        classlabels,
+                        featurenames
+                    )
                     X_test_f32 = mapcols(col -> Float32.(col), X_test)
                     apply!(solem, X_test_f32, y_test)
-                    # preds = solem.info.supporting_predictions
-                    # predsl = CategoricalArrays.levelcode.(CategoricalArrays.categorical(preds)) .- 1
-                    sole_accuracy = MLJ.accuracy(solem.info.supporting_predictions, solem.info.supporting_labels)
+
+                    sole_accuracy = MLJ.accuracy(
+                        solem.info.supporting_predictions,
+                        solem.info.supporting_labels
+                    )
 
                     mlj_xgboost = evaluate(
                         model, X, y;
-                        resampling=Holdout(; fraction_train, rng=seed, shuffle=true),
+                        resampling=Holdout(;
+                            fraction_train, rng=seed, shuffle=true),
                         measures=[MLJ.accuracy],
                         per_observation=false,
                         verbosity=0
@@ -218,17 +251,19 @@ y_train, y_test = y_str15[train], y_str15[test]
 @test !(y_str15 isa Vector{AbstractString})
 @test y_str15 isa Vector{<:AbstractString}
 
-get_encoding(classes_seen) = Dict(MMI.int(c) => c for c in MMI.classes(classes_seen))
-get_classlabels(encoding)  = [string(encoding[i]) for i in sort(keys(encoding) |> collect)]
-
 XGTrees = MLJ.@load XGBoostClassifier pkg=XGBoost
 model = XGTrees()
 mach = machine(model, X, y)
 MLJ.fit!(mach, rows=train, verbosity=0)
 trees = XGB.trees(mach.fitresult[1])
-encoding     = get_encoding(mach.fitresult[2])
-classlabels  = get_classlabels(encoding)
+classlabels = MLJ.classes(mach.fitresult[2])
 featurenames = mach.report.vals[1].features
 
-@test_nowarn solem = solemodel(trees, Matrix(X_train), y_train; classlabels, featurenames)
+@test_nowarn solem = solemodel(
+    trees,
+    Matrix(X_train),
+    y_train;
+    classlabels,
+    featurenames
+)
 @test solem isa DecisionXGBoost

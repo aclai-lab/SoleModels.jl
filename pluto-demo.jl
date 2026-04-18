@@ -1,16 +1,20 @@
 ### A Pluto.jl notebook ###
 # v0.19.38
 
-# using Markdown
+using Markdown
 # using InteractiveUtils
 
 # ╔═╡ 7685d19e-cc98-4031-a6f9-29ecccc9f417
 begin
 	# using SoleModels
 	# using DataFrames
+    using SoleData.Artifacts
+    # fill your Artifacts.toml file;
+    Artifacts.fillartifacts()
 
 	# Load an example time-series classification dataset as a tuple (DataFrame, Vector{String})
-	X_df, y = SoleModels.load_arff_dataset("NATOPS")
+    natopsloader = Artifacts.NatopsLoader()
+	X_df, y = SoleData.load(natopsloader)
 end
 
 # ╔═╡ 65141ec2-4da9-11ee-2a0a-8974a3ec37da
