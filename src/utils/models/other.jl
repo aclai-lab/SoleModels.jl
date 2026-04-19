@@ -216,7 +216,7 @@ function apply!(
         !show_progress || next!(p)
     end
 
-    return preds
+    return __apply!(m, mode, preds, y, leavesonly)
 end
 
 #TODO write in docstring that possible values for compute_metrics are: :append, true, false
