@@ -1,4 +1,4 @@
-using SoleBase: bestguess
+using SoleBase: bestguess, Label
 
 abstract type AbstractDecisionEnsemble{O} <: AbstractModel{O} end
 
@@ -161,32 +161,88 @@ listimmediaterules(m::DecisionEnsemble; kwargs...) = error("TODO implement")
 # TODO check these two.
 function apply(
     m::DecisionEnsemble,
-    id::AbstractInterpretation;
+    d::AbstractInterpretation;
     suppress_parity_warning = false,
     kwargs...
 )
-    preds = [apply(subm, d; suppress_parity_warning, kwargs...) for subm in models(m)]
+    ms = models(m)
+    preds = Vector{Branch}(undef, nmodels(m))
+
+    Threads.@threads for i in eachindex(ms)
+        preds[i] = apply(ms[i], d; suppress_parity_warning)
+    end
+    # preds = [apply(subm, d; suppress_parity_warning, kwargs...) for subm in models(m)]
+
     preds = __apply_post(m, preds)
     weighted_aggregation(m)(preds; suppress_parity_warning)
 end
 
 # TODO parallelize
+# function apply(
+#     m::DecisionEnsemble,
+#     d::AbstractInterpretationSet;
+#     suppress_parity_warning = false,
+#     kwargs...
+# )
+#     preds = hcat([apply(subm, d; suppress_parity_warning, kwargs...) for subm in models(m)]...)
+#     preds = __apply_post(m, preds)
+#     preds = [
+#         weighted_aggregation(m)(preds[i,:]; suppress_parity_warning)
+#         for i in 1:size(preds,1)
+#     ]
+#     return preds
+# end
+
+# TODO parallelize
+# function apply!(
+#     m::DecisionEnsemble,
+#     d::AbstractInterpretationSet,
+#     y::AbstractVector;
+#     mode = :replace,
+#     leavesonly = false,
+#     # show_progress = false, # length(ntrees(m)) > 15,
+#     suppress_parity_warning = false,
+#     kwargs...
+# )
+#     # @show y
+#     y = __apply_pre(m, d, y)
+#     # _d = SupportedLogiset(d) TODO?
+#     # @show y
+#     preds = hcat([apply!(subm, d, y; mode, leavesonly, kwargs...) for subm in models(m)]...)
+
+#     preds = __apply_post(m, preds)
+
+#     preds = [
+#         weighted_aggregation(m)(preds[i,:]; suppress_parity_warning, kwargs...)
+#         for i in 1:size(preds,1)
+#     ]
+
+#     preds = __apply_pre(m, d, preds)
+#     return __apply!(m, mode, preds, y, leavesonly)
+# end
+
 function apply(
     m::DecisionEnsemble,
     d::AbstractInterpretationSet;
     suppress_parity_warning = false,
     kwargs...
 )
-    preds = hcat([apply(subm, d; suppress_parity_warning, kwargs...) for subm in models(m)]...)
+    ms = models(m)
+    preds = Vector{Union{<:Label,Vector{<:Label}}}(undef, nmodels(m))
+
+    Threads.@threads for i in eachindex(ms)
+        preds[i] = apply(ms[i], d; suppress_parity_warning, kwargs...)
+    end
+
     preds = __apply_post(m, preds)
-    preds = [
-        weighted_aggregation(m)(preds[i,:]; suppress_parity_warning)
-        for i in 1:size(preds,1)
-    ]
+
+    Threads.@threads for i in eachindex(preds)
+        preds[i] = weighted_aggregation(m)(preds[i]; suppress_parity_warning)
+    end
+
     return preds
 end
 
-# TODO parallelize
 function apply!(
     m::DecisionEnsemble,
     d::AbstractInterpretationSet,
@@ -197,24 +253,24 @@ function apply!(
     suppress_parity_warning = false,
     kwargs...
 )
-    # @show y
+
     y = __apply_pre(m, d, y)
-    # _d = SupportedLogiset(d) TODO?
-    # @show y
-    preds = hcat([apply!(subm, d, y; mode, leavesonly, kwargs...) for subm in models(m)]...)
+    ms = models(m)
+    preds = Vector{Union{<:Label,Vector{<:Label}}}(undef, nmodels(m))
+
+    Threads.@threads for i in eachindex(ms)
+        preds[i] = apply!(ms[i], d, y; mode, leavesonly, kwargs...)
+    end
 
     preds = __apply_post(m, preds)
 
-    preds = [
-        weighted_aggregation(m)(preds[i,:]; suppress_parity_warning, kwargs...)
-        for i in 1:size(preds,1)
-    ]
+    Threads.@threads for i in eachindex(preds)
+        preds[i] = weighted_aggregation(m)(preds[i]; suppress_parity_warning, kwargs...)
+    end
 
     preds = __apply_pre(m, d, preds)
     return __apply!(m, mode, preds, y, leavesonly)
 end
-
-
 
 """
     const DecisionForest{O} = DecisionEnsemble{<:DecisionTree{O}}
