@@ -253,23 +253,32 @@ function apply!(
     suppress_parity_warning = false,
     kwargs...
 )
-
     y = __apply_pre(m, d, y)
     ms = models(m)
-    preds = Vector{Union{<:Label,Vector{<:Label}}}(undef, nmodels(m))
+    nm = length(ms)
 
-    Threads.@threads for i in eachindex(ms)
-        preds[i] = apply!(ms[i], d, y; mode, leavesonly, kwargs...)
+    # first column to infer output length/type
+    col1 = apply!(ms[1], d, y; mode, leavesonly, kwargs...)
+    nrows = length(col1)
+
+    T = eltype(col1)
+    preds = Matrix{T}(undef, nrows, nm)
+    @views preds[:, 1] = col1
+
+    Threads.@threads for j in 2:nm
+        col = apply!(ms[j], d, y; mode, leavesonly, kwargs...)
+        @views preds[:, j] = col
     end
 
     preds = __apply_post(m, preds)
 
-    Threads.@threads for i in eachindex(preds)
-        preds[i] = weighted_aggregation(m)(preds[i]; suppress_parity_warning, kwargs...)
+    out = Vector{Label}(undef, nrows)
+    Threads.@threads for i in 1:nrows
+        @views out[i] = weighted_aggregation(m)(preds[i, :]; suppress_parity_warning, kwargs...)
     end
 
-    preds = __apply_pre(m, d, preds)
-    return __apply!(m, mode, preds, y, leavesonly)
+    out = __apply_pre(m, d, out)
+    return __apply!(m, mode, out, y, leavesonly)
 end
 
 """
