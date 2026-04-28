@@ -224,14 +224,27 @@ end
 function apply(
     m::DecisionEnsemble,
     d::AbstractInterpretationSet;
-    suppress_parity_warning = false,
+    use_multithreads::Bool=true,
+    suppress_parity_warning::Bool=false,
     kwargs...
 )
     ms = models(m)
     preds = Vector{Union{<:Label,Vector{<:Label}}}(undef, nmodels(m))
 
-    Threads.@threads for i in eachindex(ms)
-        preds[i] = apply(ms[i], d; suppress_parity_warning, kwargs...)
+    if use_multithreads
+        Threads.@threads for i in eachindex(ms)
+            preds[i] = apply(ms[i], d; suppress_parity_warning, kwargs...)
+        end
+    else
+        # avoid multithreads only for heavy tasks
+        for i in eachindex(ms)
+            predictions[i] = get_apply_function(extractor)(
+                ms[i],
+                d;
+                suppress_parity_warning=true
+            )
+            GC.gc()
+        end
     end
 
     preds = __apply_post(m, preds)
