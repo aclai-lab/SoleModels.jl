@@ -136,6 +136,7 @@ function apply(
     i::AbstractInterpretation;
     check_args::Tuple = (),
     check_kwargs::NamedTuple = (;),
+    kwargs...
 )
     for rule in rulebase(m)
         if checkantecedent(rule, i, check_args...; check_kwargs...)
@@ -150,6 +151,7 @@ function apply(
     d::AbstractInterpretationSet;
     check_args::Tuple = (),
     check_kwargs::NamedTuple = (;),
+    kwargs...
 ) where {O}
     nsamp = ninstances(d)
     preds = Vector{O}(undef, nsamp)
@@ -214,7 +216,7 @@ function apply!(
         !show_progress || next!(p)
     end
 
-    return preds
+    return __apply!(m, mode, preds, y, leavesonly)
 end
 
 #TODO write in docstring that possible values for compute_metrics are: :append, true, false
@@ -224,6 +226,7 @@ function _apply!(
     check_args::Tuple = (),
     check_kwargs::NamedTuple = (;),
     compute_metrics::Union{Symbol,Bool} = false,
+    kwargs...
 ) where {
     O
 }

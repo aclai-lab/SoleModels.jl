@@ -158,7 +158,8 @@ function SoleModels.solemodel(
             clabels = nothing
         end : begin
             class_idx = (i - 1) % nclasses + 1
-            clabels = categorical([classlabels[class_idx]])
+            # clabels = categorical([classlabels[class_idx]])
+            clabels = [classlabels[class_idx]]
         end
         # xgboost trees could be composed of only one leaf, without any split
         if t.split === nothing

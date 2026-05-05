@@ -37,7 +37,7 @@ FunctionWrappers = "1"
 IterTools = "1"
 Lazy = "0.15"
 PrettyTables = "2.2, 3"
-ProgressMeter = "1.11.0"
+ProgressMeter = "1"
 Reexport = "1"
 SoleBase = "0.13"
 SoleData = "0.16"
@@ -52,6 +52,8 @@ CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
 DecisionTree = "7806a523-6efd-50cb-b5f6-3fa6f1930dbb"
 JLD2 = "033835bb-8acc-5ee8-8aae-3f567f8a3819"
+InteractiveUtils = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
+Markdown = "d6f4376e-aef5-505a-96c1-9c027394607a"
 MLJ = "add582a8-e3ab-11e8-2d5e-e98b27df1bc7"
 MLJDecisionTreeInterface = "c6f25543-311c-4c74-83dc-3ea6d1015661"
 MLJModelInterface = "e80e1ace-859a-464e-9ed9-23947d8ae3ea"
@@ -61,4 +63,4 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 XGBoost = "009559a3-9522-5dbb-924b-0b6ed2b22bb9"
 
 [targets]
-test = ["CSV", "DataFrames", "DecisionTree", "MLJ", "MLJDecisionTreeInterface", "MLJModelInterface", "MLJXGBoostInterface", "Random", "Test", "XGBoost", "JLD2"]
+test = ["CSV", "DataFrames", "DecisionTree", "InteractiveUtils", "Markdown", "MLJ", "MLJDecisionTreeInterface", "MLJModelInterface", "MLJXGBoostInterface", "Random", "Test", "XGBoost", "JLD2"]

@@ -347,6 +347,46 @@ function apply(
     preds
 end
 
+# function apply(
+#     m::Branch,
+#     d::AbstractInterpretationSet;
+#     check_args::Tuple = (),
+#     check_kwargs::NamedTuple = (;),
+#     kwargs...
+# )
+#     checkmask = checkantecedent(m, d, check_args...; check_kwargs...)
+#     preds = Vector{outputtype(m)}(undef, length(checkmask))
+#     ncheckmask = (!).(checkmask)
+    
+#     @sync begin
+#         if any(checkmask)
+#             l = Threads.@spawn apply(
+#                 posconsequent(m),
+#                 slicedataset(d, checkmask; return_view = true, allow_no_instances = true);
+#                 check_args = check_args,
+#                 check_kwargs = check_kwargs,
+#                 kwargs...
+#             )
+#         end
+#         if any(ncheckmask)
+#             r = Threads.@spawn apply(
+#                 negconsequent(m),
+#                 slicedataset(d, ncheckmask; return_view = true, allow_no_instances = true);
+#                 check_args = check_args,
+#                 check_kwargs = check_kwargs,
+#                 kwargs...
+#             )
+#         end
+#         if any(checkmask)
+#             preds[checkmask] .= fetch(l)
+#         end
+#         if any(ncheckmask)
+#             preds[ncheckmask] .= fetch(r)
+#         end
+#     end
+#     preds
+# end
+
 # ---------------------------------------------------------------------------- #
 #                            DecisionXGBoost apply                             #
 # ---------------------------------------------------------------------------- #

@@ -182,7 +182,6 @@ end
 function __apply_pre(m, d, y)
     @assert length(y) == ninstances(d) "$(length(y)) == $(ninstances(d))"
     if haskey(info(m), :apply_preprocess)
-        # @show "CIAO"
         apply_preprocess_f = info(m, :apply_preprocess)
         y = apply_preprocess_f.(y)
     end
