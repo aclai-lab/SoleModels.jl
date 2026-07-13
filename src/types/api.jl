@@ -75,8 +75,8 @@ isensemble(m) = false
 
 doc_supervised_ml = """
     const XGLabel = Tuple{Union{AbstractString, Integer, CategoricalValue}, Real}
-    const CLabel  = Union{AbstractString,Integer,CategoricalValue}
-    const RLabel  = AbstractFloat
+    const CLabel  = Union{AbstractString, Symbol, CategoricalValue, Unsigned}
+    const RLabel  = Real
     const Label   = Union{CLabel,RLabel}
 
 Types for supervised machine learning labels (classification and regression).
@@ -85,7 +85,7 @@ Types for supervised machine learning labels (classification and regression).
 """$(doc_supervised_ml)"""
 const XGLabel = Tuple{Union{AbstractString, Integer, CategoricalValue}, Real}
 """$(doc_supervised_ml)"""
-const CLabel = Union{AbstractString, Symbol, CategoricalValue, UInt32}
+const CLabel = Union{AbstractString, Symbol, CategoricalValue, Unsigned}
 """$(doc_supervised_ml)"""
 const RLabel = Real
 """$(doc_supervised_ml)"""
