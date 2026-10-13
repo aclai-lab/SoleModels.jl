@@ -181,7 +181,7 @@ end
 function apply(
     m::DecisionEnsemble,
     d::AbstractInterpretationSet;
-    use_multithreads::Bool=true,
+    use_multithreads::Bool=false,
     suppress_parity_warning = false,
     kwargs...
 )
